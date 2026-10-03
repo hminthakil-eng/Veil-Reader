@@ -44,10 +44,31 @@ internal class SlidePageState {
 
     private var width = 0f
     private var snapshotBuffer: Bitmap? = null
+    private var preparedSnapshotValid = false
+
+    fun prepareBuffer(view: View): Boolean {
+        if (active || view.width <= 0 || view.height <= 0) return false
+        val bitmap = captureIntoSourceBuffer(view) ?: run {
+            preparedSnapshotValid = false
+            return false
+        }
+        preparedSnapshotValid =
+            !bitmap.isRecycled &&
+                bitmap.width == view.width &&
+                bitmap.height == view.height
+        return preparedSnapshotValid
+    }
 
     fun begin(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val bitmap = capture(view) ?: return false
+        val prepared = snapshotBuffer?.takeIf {
+            preparedSnapshotValid &&
+                !it.isRecycled &&
+                it.width == view.width &&
+                it.height == view.height
+        }
+        val bitmap = prepared ?: captureIntoSourceBuffer(view) ?: return false
+        preparedSnapshotValid = false
         width = view.width.toFloat()
         snapshot = bitmap
         offsetPx = 0f
@@ -121,6 +142,7 @@ internal class SlidePageState {
      */
     fun clearImmediately() {
         snapshot = null
+        preparedSnapshotValid = false
         offsetPx = 0f
         width = 0f
         active = false
@@ -128,6 +150,7 @@ internal class SlidePageState {
 
     private suspend fun clearVisual(keepInputLock: Boolean) {
         snapshot = null
+        preparedSnapshotValid = false
         offsetPx = 0f
         width = 0f
         if (keepInputLock) delay(VeilMotion.FRAME_SETTLE_MS)
@@ -149,6 +172,7 @@ internal class SlidePageState {
         if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
+        preparedSnapshotValid = false
     }
 
     fun dispose() {
@@ -156,7 +180,7 @@ internal class SlidePageState {
         releaseBufferIfIdle()
     }
 
-    private fun capture(view: View): Bitmap? =
+    private fun captureIntoSourceBuffer(view: View): Bitmap? =
         runCatching {
             val targetWidth = max(1, view.width)
             val targetHeight = max(1, view.height)
