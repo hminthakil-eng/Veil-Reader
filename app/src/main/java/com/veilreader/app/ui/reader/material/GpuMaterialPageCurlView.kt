@@ -3,7 +3,6 @@ package com.veilreader.app.ui.reader.material
 import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.PixelFormat
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
@@ -21,6 +20,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.irurueta.android.glutils.GLTextureView
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import kotlinx.coroutines.flow.collect
 import java.nio.ByteBuffer
@@ -45,7 +45,7 @@ import javax.microedition.khronos.opengles.GL10
 internal class GpuMaterialPageCurlView(
     context: Context,
     private val onRendererFailure: () -> Unit = {}
-) : GLSurfaceView(context), GLSurfaceView.Renderer {
+) : GLTextureView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
         val bitmap: Bitmap?,
@@ -119,14 +119,13 @@ internal class GpuMaterialPageCurlView(
     init {
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
-        holder.setFormat(PixelFormat.TRANSLUCENT)
-        setZOrderOnTop(true)
+        isOpaque = false
         isClickable = false
         isFocusable = false
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         preserveEGLContextOnPause = true
         setRenderer(this)
-        renderMode = RENDERMODE_WHEN_DIRTY
+        renderMode = GLTextureView.RENDER_MODE_WHEN_DIRTY
     }
 
     fun submitFrame(
