@@ -94,6 +94,7 @@ internal class GpuMaterialPageCurlView(
     private var uCylinderTilt = -1
     private var uCylinderRadius = -1
     private var uPageAspect = -1
+    private var uTexelSize = -1
     private var uSideSign = -1
     private var uFrontTint = -1
     private var uBackTint = -1
@@ -352,6 +353,11 @@ internal class GpuMaterialPageCurlView(
         GLES20.glUniform1f(
             uPageAspect,
             pageAspect.takeIf { it.isFinite() }?.coerceIn(0.5f, 3f) ?: 1f
+        )
+        GLES20.glUniform2f(
+            uTexelSize,
+            1f / bitmap.width.toFloat().coerceAtLeast(1f),
+            1f / bitmap.height.toFloat().coerceAtLeast(1f)
         )
         GLES20.glUniform1f(uSideSign, curl.sideSign)
 
@@ -627,6 +633,7 @@ internal class GpuMaterialPageCurlView(
         uCylinderTilt = GLES20.glGetUniformLocation(program, "uCylinderTilt")
         uCylinderRadius = GLES20.glGetUniformLocation(program, "uCylinderRadius")
         uPageAspect = GLES20.glGetUniformLocation(program, "uPageAspect")
+        uTexelSize = GLES20.glGetUniformLocation(program, "uTexelSize")
         uSideSign = GLES20.glGetUniformLocation(program, "uSideSign")
         uFrontTint = GLES20.glGetUniformLocation(program, "uFrontTint")
         uBackTint = GLES20.glGetUniformLocation(program, "uBackTint")
@@ -724,6 +731,7 @@ internal class GpuMaterialPageCurlView(
             uniform float uSideSign;
             uniform float uShadowPass;
             uniform float uSideSign;
+            uniform vec2 uTexelSize;
 
             varying vec2 vTexCoord;
             varying vec3 vNormal;
@@ -955,6 +963,12 @@ internal class GpuMaterialPageCurlView(
                 );
                 color *=
                     1.0 - outerEdge * uEdgeStrength * 0.055;
+
+                float edgeFeather =
+                    max(uTexelSize.x, uTexelSize.y) * 1.35;
+                float edgeCoverage =
+                    smoothstep(0.0, edgeFeather, outerEdgeDistance);
+                outputAlpha *= edgeCoverage;
 
                 gl_FragColor = vec4(
                     clamp(color, vec3(0.0), vec3(1.0)),
