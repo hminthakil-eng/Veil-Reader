@@ -19,6 +19,9 @@ internal fun launchReaderLookup(
     chooserTitle: String
 ): Boolean {
     val intent = readerLookupIntent(text) ?: return false
+    if (activity.packageManager.queryIntentActivities(intent, 0).isEmpty()) {
+        return false
+    }
     val chooser = Intent.createChooser(intent, chooserTitle)
     return runCatching {
         activity.startActivity(chooser)
