@@ -20,6 +20,7 @@ import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingPaceProfile
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingMilestoneRecord
@@ -69,6 +70,7 @@ class LocalLibraryRepository internal constructor(
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val readingPaceStore = ReadingPaceStore(appContext)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
     private val storageFailure = AtomicReference<Throwable?>(null)
@@ -101,6 +103,11 @@ class LocalLibraryRepository internal constructor(
 
     private val _readingMilestones = MutableStateFlow<List<ReadingMilestoneRecord>>(emptyList())
     val readingMilestones: StateFlow<List<ReadingMilestoneRecord>> = _readingMilestones
+
+    private val _readingPaceProfiles =
+        MutableStateFlow<Map<String, ReadingPaceProfile>>(emptyMap())
+    val readingPaceProfiles: StateFlow<Map<String, ReadingPaceProfile>> =
+        _readingPaceProfiles
 
     init {
         scope.launch {
@@ -151,6 +158,21 @@ class LocalLibraryRepository internal constructor(
             database.readingMilestones().observeAll().collect { rows ->
                 _readingMilestones.value = rows.map { it.toDomain() }
             }
+        }
+        scope.launch {
+            readingPaceStore.profiles.collect { profiles ->
+                _readingPaceProfiles.value = profiles
+            }
+        }
+    }
+
+    internal fun recordReadingPaceInterval(
+        bookId: String,
+        intervalMillis: Long
+    ) {
+        if (bookId.isBlank() || intervalMillis <= 0L) return
+        scope.launch {
+            readingPaceStore.recordInterval(bookId, intervalMillis)
         }
     }
 
@@ -233,6 +255,8 @@ class LocalLibraryRepository internal constructor(
         _readingSessions.value = _readingSessions.value.map { session ->
             if (session.bookId == bookId) session.copy(bookId = null) else session
         }
+        readingPaceStore.remove(bookId)
+        _readingPaceProfiles.value = _readingPaceProfiles.value - bookId
 
         discardImportedArtifacts(deleted)
         return deleted
@@ -249,6 +273,8 @@ class LocalLibraryRepository internal constructor(
             database.books().deleteById(book.id)
         }
         _books.value = _books.value.filterNot { it.id == book.id }
+        readingPaceStore.remove(book.id)
+        _readingPaceProfiles.value = _readingPaceProfiles.value - book.id
         discardImportedArtifacts(book)
     }
 
