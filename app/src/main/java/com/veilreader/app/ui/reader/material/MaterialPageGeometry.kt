@@ -33,7 +33,50 @@ internal data class MaterialPageFrame(
     val strips: List<MaterialPageStrip>
 )
 
-internal fun materialPageGeometry(
+/**
+ * Reusable primitive geometry storage for the production renderer.
+ *
+ * The pure [materialPageGeometry] API below intentionally remains allocation-friendly for tests
+ * and inspection, while live drawing mutates this buffer in place to avoid per-frame strip/point
+ * object churn.
+ */
+internal class MaterialPageMeshBuffer(
+    maxSegments: Int = 36
+) {
+    private val capacity = maxSegments.coerceAtLeast(12)
+
+    var segmentCount: Int = 0
+    var foldX: Float = 0f
+    var flatStartX: Float = 0f
+    var flatEndX: Float = 0f
+    var revealFraction: Float = 0f
+    var foldAngleRadians: Float = 0f
+    var lift: Float = 0f
+    var creaseTopX: Float = 0f
+    var creaseTopY: Float = 0f
+    var creaseBottomX: Float = 0f
+    var creaseBottomY: Float = 0f
+
+    val sourceLeft = FloatArray(capacity)
+    val sourceRight = FloatArray(capacity)
+    val topLeftX = FloatArray(capacity)
+    val topLeftY = FloatArray(capacity)
+    val topRightX = FloatArray(capacity)
+    val topRightY = FloatArray(capacity)
+    val bottomLeftX = FloatArray(capacity)
+    val bottomLeftY = FloatArray(capacity)
+    val bottomRightX = FloatArray(capacity)
+    val bottomRightY = FloatArray(capacity)
+    val backFacing = BooleanArray(capacity)
+    val lightResponse = FloatArray(capacity)
+    val stripLift = FloatArray(capacity)
+
+    fun clampedSegmentCount(requested: Int): Int =
+        requested.coerceIn(12, capacity)
+}
+
+internal fun updateMaterialPageMesh(
+    buffer: MaterialPageMeshBuffer,
     width: Float,
     height: Float,
     progress: Float,
@@ -41,40 +84,39 @@ internal fun materialPageGeometry(
     profile: MaterialPageProfile,
     pullOriginY: Float = 0.5f,
     segmentCount: Int = 26
-): MaterialPageFrame {
-    if (width <= 0f || height <= 0f) {
-        return MaterialPageFrame(
-            foldX = 0f,
-            flatStartX = 0f,
-            flatEndX = 0f,
-            revealFraction = 0f,
-            foldAngleRadians = 0f,
-            lift = 0f,
-            creaseTop = MaterialPagePoint(0f, 0f),
-            creaseBottom = MaterialPagePoint(0f, 0f),
-            strips = emptyList()
-        )
+) {
+    if (
+        !width.isFinite() ||
+        !height.isFinite() ||
+        width <= 0f ||
+        height <= 0f
+    ) {
+        buffer.resetMaterialPageMesh()
+        return
     }
 
-    val p = progress.coerceIn(0f, 1f)
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     if (p <= 0.0001f) {
-        return MaterialPageFrame(
-            foldX = width,
-            flatStartX = 0f,
-            flatEndX = width,
-            revealFraction = 0f,
-            foldAngleRadians = 0f,
-            lift = 0f,
-            creaseTop = MaterialPagePoint(width, 0f),
-            creaseBottom = MaterialPagePoint(width, height),
-            strips = emptyList()
-        )
+        buffer.segmentCount = 0
+        buffer.foldX = width
+        buffer.flatStartX = 0f
+        buffer.flatEndX = width
+        buffer.revealFraction = 0f
+        buffer.foldAngleRadians = 0f
+        buffer.lift = 0f
+        buffer.creaseTopX = width
+        buffer.creaseTopY = 0f
+        buffer.creaseBottomX = width
+        buffer.creaseBottomY = height
+        return
     }
 
     val eased = smoothStep(p)
     val binding = profile.physics.bindingConstraint.coerceIn(0.75f, 1f)
     val foldX = width * (1f - eased * (0.91f + binding * 0.07f))
     val span = (width - foldX).coerceAtLeast(width * 0.002f)
+
+    // Flexible sheets make a tighter curl; stiffer glossy stock keeps a broader radius.
     val bend = profile.physics.bendStiffness.coerceIn(0.35f, 1f)
     val curlRange = 0.72f + (1f - bend) * 0.22f
     val thetaMax = (PI.toFloat() * (0.16f + eased * curlRange))
@@ -82,61 +124,93 @@ internal fun materialPageGeometry(
     val radius = span / thetaMax.coerceAtLeast(0.001f)
     val lift = materialPageLift(p, profile)
 
-    val segments = segmentCount.coerceIn(12, 36)
-    val strips = ArrayList<MaterialPageStrip>(segments)
+    val segments = buffer.clampedSegmentCount(segmentCount)
     val originY = pullOriginY.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.5f
     val topOriginInfluence = 0.34f + (1f - originY) * 0.66f
     val bottomOriginInfluence = 0.34f + originY * 0.66f
+    val safeVerticalBias =
+        verticalBias.takeIf { it.isFinite() }?.coerceIn(-0.18f, 0.18f) ?: 0f
 
-    fun projected(sourceX: Float, top: Boolean): Pair<MaterialPagePoint, ProjectionSample> {
-        val q = ((sourceX - foldX) / span).coerceIn(0f, 1f)
-        val theta = thetaMax * q
-        val x = foldX + radius * sin(theta)
-        val z = radius * (1f - cos(theta))
-        val zNorm = if (radius <= 0.0001f) 0f else (z / (2f * radius)).coerceIn(0f, 1f)
+    buffer.segmentCount = segments
+    buffer.foldX = foldX
+    buffer.flatStartX = 0f
+    buffer.flatEndX = foldX
+    buffer.revealFraction = (1f - foldX / width).coerceIn(0f, 1f)
+    buffer.foldAngleRadians = thetaMax
+    buffer.lift = lift
 
-        // Finger height influences the curl, but binding suppresses large vertical wobble.
-        val verticalShift =
-            verticalBias.coerceIn(-0.18f, 0.18f) *
-                height *
-                (0.24f + q * 0.50f) *
-                zNorm
-        val bindingSkew =
-            (1f - q) *
-                eased *
-                profile.physics.bindingConstraint.coerceIn(0f, 1f) *
-                height *
-                0.010f
-
-        val originInfluence =
-            if (top) topOriginInfluence else bottomOriginInfluence
-        val y = if (top) {
-            verticalShift * originInfluence + bindingSkew
-        } else {
-            height + verticalShift * originInfluence - bindingSkew
-        }
-
-        return MaterialPagePoint(x, y) to ProjectionSample(
-            theta = theta,
-            zNorm = zNorm
-        )
-    }
-
-    repeat(segments) { index ->
+    for (index in 0 until segments) {
         val q0 = index.toFloat() / segments.toFloat()
         val q1 = (index + 1).toFloat() / segments.toFloat()
         val sourceLeft = foldX + span * q0
         val sourceRight = foldX + span * q1
 
-        val (topLeft, leftSample) = projected(sourceLeft, top = true)
-        val (topRight, rightSample) = projected(sourceRight, top = true)
-        val (bottomLeft, _) = projected(sourceLeft, top = false)
-        val (bottomRight, _) = projected(sourceRight, top = false)
+        val leftTheta = thetaMax * q0
+        val rightTheta = thetaMax * q1
+        val leftZNorm = normalizedCurlDepth(leftTheta)
+        val rightZNorm = normalizedCurlDepth(rightTheta)
 
-        val midTheta = (leftSample.theta + rightSample.theta) * 0.5f
-        val midLift = (leftSample.zNorm + rightSample.zNorm) * 0.5f
+        val topLeft = projectedMaterialPoint(
+            sourceX = sourceLeft,
+            q = q0,
+            theta = leftTheta,
+            zNorm = leftZNorm,
+            foldX = foldX,
+            radius = radius,
+            height = height,
+            eased = eased,
+            verticalBias = safeVerticalBias,
+            bindingConstraint = profile.physics.bindingConstraint,
+            originInfluence = topOriginInfluence,
+            top = true
+        )
+        val topRight = projectedMaterialPoint(
+            sourceX = sourceRight,
+            q = q1,
+            theta = rightTheta,
+            zNorm = rightZNorm,
+            foldX = foldX,
+            radius = radius,
+            height = height,
+            eased = eased,
+            verticalBias = safeVerticalBias,
+            bindingConstraint = profile.physics.bindingConstraint,
+            originInfluence = topOriginInfluence,
+            top = true
+        )
+        val bottomLeft = projectedMaterialPoint(
+            sourceX = sourceLeft,
+            q = q0,
+            theta = leftTheta,
+            zNorm = leftZNorm,
+            foldX = foldX,
+            radius = radius,
+            height = height,
+            eased = eased,
+            verticalBias = safeVerticalBias,
+            bindingConstraint = profile.physics.bindingConstraint,
+            originInfluence = bottomOriginInfluence,
+            top = false
+        )
+        val bottomRight = projectedMaterialPoint(
+            sourceX = sourceRight,
+            q = q1,
+            theta = rightTheta,
+            zNorm = rightZNorm,
+            foldX = foldX,
+            radius = radius,
+            height = height,
+            eased = eased,
+            verticalBias = safeVerticalBias,
+            bindingConstraint = profile.physics.bindingConstraint,
+            originInfluence = bottomOriginInfluence,
+            top = false
+        )
+
+        val midTheta = (leftTheta + rightTheta) * 0.5f
+        val midLift = (leftZNorm + rightZNorm) * 0.5f
         val normal = cos(midTheta)
-        val backFacing = normal < 0f
+        val isBackFacing = normal < 0f
         val optical = profile.optics
         val frontLight =
             normal.coerceAtLeast(0f) *
@@ -146,35 +220,97 @@ internal fun materialPageGeometry(
             -normal.coerceAtMost(0f) *
                 (0.08f + optical.translucency * 0.20f)
 
-        strips += MaterialPageStrip(
-            sourceLeft = sourceLeft,
-            sourceRight = sourceRight,
-            topLeft = topLeft,
-            topRight = topRight,
-            bottomLeft = bottomLeft,
-            bottomRight = bottomRight,
-            backFacing = backFacing,
-            lightResponse = (if (backFacing) backLight else frontLight)
-                .coerceIn(-0.10f, 0.54f),
-            lift = midLift
-        )
+        buffer.sourceLeft[index] = sourceLeft
+        buffer.sourceRight[index] = sourceRight
+        buffer.topLeftX[index] = topLeft.x
+        buffer.topLeftY[index] = topLeft.y
+        buffer.topRightX[index] = topRight.x
+        buffer.topRightY[index] = topRight.y
+        buffer.bottomLeftX[index] = bottomLeft.x
+        buffer.bottomLeftY[index] = bottomLeft.y
+        buffer.bottomRightX[index] = bottomRight.x
+        buffer.bottomRightY[index] = bottomRight.y
+        buffer.backFacing[index] = isBackFacing
+        buffer.lightResponse[index] =
+            (if (isBackFacing) backLight else frontLight)
+                .coerceIn(-0.10f, 0.54f)
+        buffer.stripLift[index] = midLift
     }
 
     val creaseShift =
-        verticalBias.coerceIn(-0.18f, 0.18f) *
+        safeVerticalBias *
             height *
             0.06f *
             lift
+    buffer.creaseTopX = foldX
+    buffer.creaseTopY = creaseShift
+    buffer.creaseBottomX = foldX
+    buffer.creaseBottomY = height + creaseShift
+}
+
+internal fun materialPageGeometry(
+    width: Float,
+    height: Float,
+    progress: Float,
+    verticalBias: Float,
+    profile: MaterialPageProfile,
+    pullOriginY: Float = 0.5f,
+    segmentCount: Int = 26
+): MaterialPageFrame {
+    val buffer = MaterialPageMeshBuffer(maxSegments = segmentCount.coerceAtLeast(12))
+    updateMaterialPageMesh(
+        buffer = buffer,
+        width = width,
+        height = height,
+        progress = progress,
+        verticalBias = verticalBias,
+        profile = profile,
+        pullOriginY = pullOriginY,
+        segmentCount = segmentCount
+    )
+
+    val strips = ArrayList<MaterialPageStrip>(buffer.segmentCount)
+    for (index in 0 until buffer.segmentCount) {
+        strips += MaterialPageStrip(
+            sourceLeft = buffer.sourceLeft[index],
+            sourceRight = buffer.sourceRight[index],
+            topLeft = MaterialPagePoint(
+                buffer.topLeftX[index],
+                buffer.topLeftY[index]
+            ),
+            topRight = MaterialPagePoint(
+                buffer.topRightX[index],
+                buffer.topRightY[index]
+            ),
+            bottomLeft = MaterialPagePoint(
+                buffer.bottomLeftX[index],
+                buffer.bottomLeftY[index]
+            ),
+            bottomRight = MaterialPagePoint(
+                buffer.bottomRightX[index],
+                buffer.bottomRightY[index]
+            ),
+            backFacing = buffer.backFacing[index],
+            lightResponse = buffer.lightResponse[index],
+            lift = buffer.stripLift[index]
+        )
+    }
 
     return MaterialPageFrame(
-        foldX = foldX,
-        flatStartX = 0f,
-        flatEndX = foldX,
-        revealFraction = (1f - foldX / width).coerceIn(0f, 1f),
-        foldAngleRadians = thetaMax,
-        lift = lift,
-        creaseTop = MaterialPagePoint(foldX, creaseShift),
-        creaseBottom = MaterialPagePoint(foldX, height + creaseShift),
+        foldX = buffer.foldX,
+        flatStartX = buffer.flatStartX,
+        flatEndX = buffer.flatEndX,
+        revealFraction = buffer.revealFraction,
+        foldAngleRadians = buffer.foldAngleRadians,
+        lift = buffer.lift,
+        creaseTop = MaterialPagePoint(
+            buffer.creaseTopX,
+            buffer.creaseTopY
+        ),
+        creaseBottom = MaterialPagePoint(
+            buffer.creaseBottomX,
+            buffer.creaseBottomY
+        ),
         strips = strips
     )
 }
@@ -235,10 +371,61 @@ internal fun isFiniteMaterialPageFrame(frame: MaterialPageFrame): Boolean {
 private fun MaterialPagePoint.isFinite(): Boolean =
     x.isFinite() && y.isFinite()
 
-private data class ProjectionSample(
-    val theta: Float,
-    val zNorm: Float
+private data class PrimitiveMaterialPoint(
+    val x: Float,
+    val y: Float
 )
+
+private fun projectedMaterialPoint(
+    sourceX: Float,
+    q: Float,
+    theta: Float,
+    zNorm: Float,
+    foldX: Float,
+    radius: Float,
+    height: Float,
+    eased: Float,
+    verticalBias: Float,
+    bindingConstraint: Float,
+    originInfluence: Float,
+    top: Boolean
+): PrimitiveMaterialPoint {
+    val x = foldX + radius * sin(theta)
+    val verticalShift =
+        verticalBias *
+            height *
+            (0.24f + q * 0.50f) *
+            zNorm
+    val bindingSkew =
+        (1f - q) *
+            eased *
+            bindingConstraint.coerceIn(0f, 1f) *
+            height *
+            0.010f
+    val y = if (top) {
+        verticalShift * originInfluence + bindingSkew
+    } else {
+        height + verticalShift * originInfluence - bindingSkew
+    }
+    return PrimitiveMaterialPoint(x, y)
+}
+
+private fun normalizedCurlDepth(theta: Float): Float =
+    ((1f - cos(theta)) * 0.5f).coerceIn(0f, 1f)
+
+private fun MaterialPageMeshBuffer.resetMaterialPageMesh() {
+    segmentCount = 0
+    foldX = 0f
+    flatStartX = 0f
+    flatEndX = 0f
+    revealFraction = 0f
+    foldAngleRadians = 0f
+    lift = 0f
+    creaseTopX = 0f
+    creaseTopY = 0f
+    creaseBottomX = 0f
+    creaseBottomY = 0f
+}
 
 private fun smoothStep(value: Float): Float {
     val t = value.coerceIn(0f, 1f)
