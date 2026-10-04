@@ -162,7 +162,10 @@ internal class MaterialPageEngineState(
     }
 
     internal fun snapshotHasPendingGpuUpload(bitmap: Bitmap?): Boolean =
-        bitmap != null && gpuUploadLeases.any { it === bitmap }
+        materialPageIdentityLeaseContains(
+            leases = gpuUploadLeases,
+            candidate = bitmap
+        )
 
     fun configureReducedMotion(value: Boolean) {
         reducedMotion = value
@@ -823,6 +826,13 @@ internal class MaterialPageEngineState(
             )
         }.getOrNull()
 }
+
+internal fun <T : Any> materialPageIdentityLeaseContains(
+    leases: List<T>,
+    candidate: T?
+): Boolean =
+    candidate != null &&
+        leases.any { it === candidate }
 
 internal fun materialPageToneAdjustedArgb(
     argb: Long,
