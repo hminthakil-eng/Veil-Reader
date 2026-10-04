@@ -1,6 +1,7 @@
 package com.veilreader.app.diagnostics
 
 import android.util.Log
+import com.veilreader.app.BuildConfig
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -12,12 +13,16 @@ object ReaderTrace {
     private const val TAG = "VeilReaderTrace"
     private val sequence = AtomicLong(0L)
 
+    fun isEnabled(): Boolean =
+        BuildConfig.DEBUG || BuildConfig.BUILD_TYPE == "benchmark"
+
     fun event(
         name: String,
         bookId: String? = null,
         sessionId: String? = null,
         details: String? = null
     ): Long {
+        if (!isEnabled()) return -1L
         val seq = sequence.incrementAndGet()
         val payload = buildString {
             append("seq=").append(seq)
