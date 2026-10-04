@@ -102,6 +102,38 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `Paper selector is unavailable when canonical engine rollout is disabled`() {
+        assertFalse(
+            readerPageTurnStyleEnabled(
+                style = PageTurnStyle.PAPER,
+                selectorEnabled = true,
+                materialPageEnabled = false
+            )
+        )
+        assertTrue(
+            readerPageTurnStyleEnabled(
+                style = PageTurnStyle.SLIDE,
+                selectorEnabled = true,
+                materialPageEnabled = false
+            )
+        )
+        assertTrue(
+            readerPageTurnStyleEnabled(
+                style = PageTurnStyle.NONE,
+                selectorEnabled = true,
+                materialPageEnabled = false
+            )
+        )
+        assertFalse(
+            readerPageTurnStyleEnabled(
+                style = PageTurnStyle.SLIDE,
+                selectorEnabled = false,
+                materialPageEnabled = true
+            )
+        )
+    }
+
+    @Test
     fun `disabled GPU Paper degrades to static paged not slide`() {
         val requested = ReaderAppearance(
             scroll = false,
