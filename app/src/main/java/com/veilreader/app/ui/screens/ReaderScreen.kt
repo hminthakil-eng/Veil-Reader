@@ -1216,10 +1216,59 @@ fun ReaderScreen(
                 }
 
                 settleReachedPdfNavigation()
-                val cancelledNavigationJump =
+                val currentLocator =
+                    latestNavigator.value?.currentLocator?.value
+                val cancelledNavigation =
                     navigationTransactionGate
-                        .cancelActive(SystemClock.elapsedRealtime()) != null
+                        .cancelActive(SystemClock.elapsedRealtime())
+                val reachedCancelledNavigation =
+                    cancelledNavigation != null &&
+                        currentLocator != null &&
+                        cancelledNavigation.hasReachedObservedDestination(
+                            observedLocatorJson =
+                                currentLocator.toVeilPersistedJson(opened.format),
+                            observedIdentity =
+                                currentLocator.toReaderNavigationIdentity(),
+                            observedPdfPage =
+                                if (opened.format == BookFormat.PDF) {
+                                    pdfPageNumber(currentLocator)
+                                } else {
+                                    null
+                                }
+                        )
 
+                if (
+                    reachedCancelledNavigation &&
+                    currentLocator != null
+                ) {
+                    val json =
+                        currentLocator.toVeilPersistedJson(opened.format)
+                    previousLocationJson =
+                        cancelledNavigation?.originLocatorJson
+                            ?.takeIf { it != json }
+                    recordLocator(
+                        currentLocator,
+                        ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+                    )
+                    cancelledNavigation
+                        ?.passageVisitAfterSettlement(
+                            if (opened.format == BookFormat.PDF) {
+                                pdfPageNumber(currentLocator)
+                            } else {
+                                null
+                            }
+                        )
+                        ?.let { visitedLocatorJson ->
+                            library.recordPassageVisitForLocator(
+                                bookId = opened.book.id,
+                                locatorJson = visitedLocatorJson
+                            )
+                        }
+                }
+
+                val unresolvedProgrammaticNavigation =
+                    cancelledNavigation != null &&
+                        !reachedCancelledNavigation
                 if (
                     pendingEpubRelayoutSourceJson == null &&
                     shouldTakeFinalNavigatorSnapshot(
@@ -1227,10 +1276,11 @@ fun ReaderScreen(
                         paperPreviewActive = paperCurlState.active,
                         slidePreviewActive = slidePageState.active,
                         previewCancelled = unresolvedPreview,
-                        programmaticNavigationInFlight = cancelledNavigationJump
+                        programmaticNavigationInFlight =
+                            unresolvedProgrammaticNavigation
                     )
                 ) {
-                    latestNavigator.value?.currentLocator?.value?.let { locator ->
+                    currentLocator?.let { locator ->
                         recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
                     }
                 }
