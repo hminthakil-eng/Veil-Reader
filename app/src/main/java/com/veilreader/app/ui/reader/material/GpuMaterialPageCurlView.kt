@@ -67,6 +67,7 @@ internal class GpuMaterialPageCurlView(
     private val meshQuality = gpuPageMeshQuality(lowMemoryDevice)
     private val meshColumns = meshQuality.columns
     private val meshRows = meshQuality.rows
+    private val shadowLayerCount = gpuPageShadowLayerCount(lowMemoryDevice)
     private var submittedFrame: SubmittedFrame? = null
     private var lastSubmittedActive = false
     private var frontTextureDirty = true
@@ -262,7 +263,7 @@ internal class GpuMaterialPageCurlView(
         // Layered mesh-projected shadow approximates the drop-shadow penumbra
         // used by mature GL curl engines without allocating a moving blur texture.
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
-        for (shadowLayer in 1..3) {
+        for (shadowLayer in 1..shadowLayerCount) {
             GLES20.glUniform1f(uShadowPass, shadowLayer.toFloat())
             GLES20.glDrawElements(
                 GLES20.GL_TRIANGLES,
