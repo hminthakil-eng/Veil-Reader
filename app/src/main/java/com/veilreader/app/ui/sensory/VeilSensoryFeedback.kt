@@ -57,6 +57,13 @@ data class VeilMaterialPageSensoryCue(
     val hapticGapMillis: Int
 )
 
+internal fun shouldPerformVeilHaptic(
+    hapticsEnabled: Boolean,
+    foreground: Boolean,
+    attached: Boolean
+): Boolean =
+    hapticsEnabled && foreground && attached
+
 internal fun hapticFeedbackFor(event: VeilSensoryEvent): Int =
     when (event) {
         VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
@@ -127,7 +134,13 @@ class VeilSensoryFeedback(context: android.content.Context) {
 
     fun perform(view: View, event: VeilSensoryEvent) {
         val snapshot = settings
-        if (snapshot.hapticsEnabled) {
+        if (
+            shouldPerformVeilHaptic(
+                hapticsEnabled = snapshot.hapticsEnabled,
+                foreground = foreground,
+                attached = view.isAttachedToWindow
+            )
+        ) {
             view.performHapticFeedback(hapticFeedbackFor(event))
         }
 
@@ -149,9 +162,11 @@ class VeilSensoryFeedback(context: android.content.Context) {
         val token = materialCueGeneration.incrementAndGet()
         val snapshot = settings
         if (
-            snapshot.hapticsEnabled &&
-            foreground &&
-            view.isAttachedToWindow
+            shouldPerformVeilHaptic(
+                hapticsEnabled = snapshot.hapticsEnabled,
+                foreground = foreground,
+                attached = view.isAttachedToWindow
+            )
         ) {
             val feedback = materialHapticFeedbackFor(cue)
             view.performHapticFeedback(feedback)
