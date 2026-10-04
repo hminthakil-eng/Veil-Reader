@@ -44,6 +44,7 @@ import javax.microedition.khronos.opengles.GL10
  */
 internal class GpuMaterialPageCurlView(
     context: Context,
+    private val onRendererReady: (Boolean) -> Unit = {},
     private val onRendererFailure: () -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
@@ -175,6 +176,7 @@ internal class GpuMaterialPageCurlView(
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         rendererFailed = false
+        post { onRendererReady(false) }
         runCatching {
             program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER)
             resolveLocations()
@@ -202,6 +204,7 @@ internal class GpuMaterialPageCurlView(
                 frontTextureDirty = true
                 backTextureDirty = true
             }
+            post { onRendererReady(true) }
         }.onFailure { error ->
             failRenderer("GPU page renderer initialization failed", error)
         }
@@ -1024,6 +1027,7 @@ internal class GpuMaterialPageCurlView(
 }
 
 internal enum class GpuMaterialPageRendererStatus {
+    INITIALIZING,
     READY,
     UNSUPPORTED,
     FAILED,
@@ -1057,10 +1061,12 @@ internal fun GpuMaterialPageOverlay(
         GpuMaterialPageCurlView.isSupported(context)
     }
     val rendererFailed = remember { mutableStateOf(false) }
+    val rendererReady = remember { mutableStateOf(false) }
     val status = when {
         state.reducedMotion -> GpuMaterialPageRendererStatus.REDUCED_MOTION
         !supported -> GpuMaterialPageRendererStatus.UNSUPPORTED
         rendererFailed.value -> GpuMaterialPageRendererStatus.FAILED
+        !rendererReady.value -> GpuMaterialPageRendererStatus.INITIALIZING
         else -> GpuMaterialPageRendererStatus.READY
     }
     LaunchedEffect(status) {
@@ -1142,7 +1148,14 @@ internal fun GpuMaterialPageOverlay(
         factory = { viewContext ->
             GpuMaterialPageCurlView(
                 context = viewContext,
+                onRendererReady = { ready ->
+                    rendererReady.value = ready
+                    if (ready) {
+                        rendererFailed.value = false
+                    }
+                },
                 onRendererFailure = {
+                    rendererReady.value = false
                     rendererFailed.value = true
                 }
             ).also { created ->
