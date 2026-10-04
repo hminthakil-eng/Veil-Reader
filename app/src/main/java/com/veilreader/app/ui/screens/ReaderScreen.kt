@@ -405,7 +405,8 @@ fun ReaderScreen(
     LaunchedEffect(
         performanceRootView,
         presentedReaderAppearance.navigationMode,
-        paperCurlState.performancePhase
+        paperCurlState.performancePhase,
+        paperCurlState.rendererStatus
     ) {
         ReaderPerformanceMetrics.putState(
             root = performanceRootView,
@@ -418,10 +419,23 @@ fun ReaderScreen(
                 key = ReaderPerformanceMetrics.PAPER_PHASE_KEY,
                 value = paperCurlState.performancePhase.name
             )
+            ReaderPerformanceMetrics.putState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_GPU_KEY,
+                value = paperCurlState.rendererStatus.name
+            )
         } else {
             ReaderPerformanceMetrics.removeState(
                 root = performanceRootView,
                 key = ReaderPerformanceMetrics.PAPER_PHASE_KEY
+            )
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_GPU_KEY
+            )
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_GPU_KEY
             )
         }
     }
