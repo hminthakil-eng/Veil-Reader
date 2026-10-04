@@ -9,6 +9,28 @@ import org.junit.Test
 class MaterialPageModelTest {
 
     @Test
+    fun `prepared snapshot requires exact revision viewport and live bitmap`() {
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            32,
+            48,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val prepared = MaterialPagePreparedSnapshot(
+            bitmap = bitmap,
+            sourceRevision = 9L,
+            width = 32,
+            height = 48,
+            capturedAtElapsedNanos = 100L,
+            provider = "test"
+        )
+        assertTrue(materialPagePreparedSnapshotIsCurrent(prepared, 9L, 32, 48))
+        assertFalse(materialPagePreparedSnapshotIsCurrent(prepared, 8L, 32, 48))
+        assertFalse(materialPagePreparedSnapshotIsCurrent(prepared, 9L, 48, 32))
+        bitmap.recycle()
+        assertFalse(materialPagePreparedSnapshotIsCurrent(prepared, 9L, 32, 48))
+    }
+
+    @Test
     fun `snapshot revisions reject stale captures and survive counter rollover`() {
         assertTrue(materialPageSnapshotCaptureIsCurrent(7L, 7L))
         assertFalse(materialPageSnapshotCaptureIsCurrent(6L, 7L))
