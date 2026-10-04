@@ -72,6 +72,61 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun visualDeparture_detectsAdjacentViewportEvenWhenReadiumPositionChunkIsUnchanged() {
+        val origin = ReaderNavigationIdentity(
+            href = "chapter.xhtml",
+            position = 12,
+            cssSelector = null,
+            totalProgression = 0.42,
+            progression = 0.20
+        )
+        val nextViewport = origin.copy(progression = 0.25)
+
+        assertTrue(
+            readerNavigationIdentityMatchesTarget(
+                observed = nextViewport,
+                target = origin
+            )
+        )
+        assertTrue(
+            readerNavigationIdentityHasVisuallyDeparted(
+                origin = origin,
+                observed = nextViewport
+            )
+        )
+    }
+
+    @Test
+    fun visualDeparture_ignoresTinyProgressionNoiseButDetectsResourceChange() {
+        val origin = ReaderNavigationIdentity(
+            href = "text/./chapter.xhtml",
+            position = 12,
+            cssSelector = null,
+            totalProgression = 0.42,
+            progression = 0.20
+        )
+
+        assertFalse(
+            readerNavigationIdentityHasVisuallyDeparted(
+                origin = origin,
+                observed = origin.copy(
+                    href = "text/chapter.xhtml",
+                    progression = 0.20005
+                )
+            )
+        )
+        assertTrue(
+            readerNavigationIdentityHasVisuallyDeparted(
+                origin = origin,
+                observed = origin.copy(
+                    href = "text/chapter-02.xhtml",
+                    progression = 0.20
+                )
+            )
+        )
+    }
+
+    @Test
     fun targetLocator_ignoresIntermediateResource_untilTargetPositionArrives() {
         val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
         val origin = "origin"
