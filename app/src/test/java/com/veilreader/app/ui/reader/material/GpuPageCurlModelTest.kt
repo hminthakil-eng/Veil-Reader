@@ -36,6 +36,13 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `low memory degrades shadow atmosphere before geometry ownership`() {
+        assertEquals(2, gpuPageShadowLayerCount(lowMemoryDevice = true))
+        assertEquals(3, gpuPageShadowLayerCount(lowMemoryDevice = false))
+        assertTrue(gpuPageMeshQuality(lowMemoryDevice = true).rows >= 20)
+    }
+
+    @Test
     fun `ping pong bitmap slots alternate without prewarm reset`() {
         var cursor = -1
         cursor = nextMaterialPageBufferSlot(cursor)
