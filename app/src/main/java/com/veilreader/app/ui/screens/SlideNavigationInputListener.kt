@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import org.readium.r2.navigator.OverflowableNavigator
@@ -50,6 +51,27 @@ internal class SlideNavigationInputListener(
     private var lastMotionAtMillis = 0L
     private var lastDistance = 0f
     private var releaseVelocityPxPerSec = 0f
+    private var operationGeneration = 0L
+    private var activeOperationGeneration = 0L
+
+    private fun beginOperation(): Long {
+        operationGeneration =
+            nextSlideTurnOperationGeneration(operationGeneration)
+        activeOperationGeneration = operationGeneration
+        return activeOperationGeneration
+    }
+
+    private fun invalidateOperation() {
+        operationGeneration =
+            nextSlideTurnOperationGeneration(operationGeneration)
+        activeOperationGeneration = 0L
+    }
+
+    private fun operationIsCurrent(token: Long): Boolean =
+        slideTurnOperationIsCurrent(
+            operationToken = token,
+            activeOperationToken = activeOperationGeneration
+        )
 
     override fun onTap(event: TapEvent): Boolean {
         if (!slideModeEnabled()) return cancelPendingTurn()
@@ -104,6 +126,7 @@ internal class SlideNavigationInputListener(
     }
 
     private fun onDragStart(): Boolean {
+        beginOperation()
         reserved = true
         activeSpec = null
         previewNavigationSucceeded = false
@@ -125,12 +148,38 @@ internal class SlideNavigationInputListener(
     private fun onDragMove(event: DragEvent): Boolean {
         if (!reserved) return false
 
-        val spec = activeSpec ?: resolveDragTurn(event)?.also {
-            activeSpec = it
+        val spec = activeSpec ?: resolveDragTurn(event)?.also { resolved ->
+            activeSpec = resolved
             if (state.active) {
+                val operationToken = activeOperationGeneration
+                val origin = dragStartLocator
                 navigationJob = scope.launch {
                     delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
-                    previewNavigationSucceeded = navigate(it.direction)
+                    if (
+                        origin != null &&
+                        !cancellationRequested &&
+                        operationIsCurrent(operationToken)
+                    ) {
+                        val accepted = navigate(resolved.direction)
+                        val moved =
+                            accepted &&
+                                awaitReaderVisualNavigationDeparture(
+                                    currentLocator = navigator.currentLocator,
+                                    origin = origin
+                                )
+                        if (
+                            accepted &&
+                            (
+                                !moved ||
+                                    cancellationRequested ||
+                                    !operationIsCurrent(operationToken)
+                                )
+                        ) {
+                            restoreDragStart(resolved, forceRequest = true)
+                        } else {
+                            previewNavigationSucceeded = moved
+                        }
+                    }
                 }
             }
         }
@@ -169,8 +218,18 @@ internal class SlideNavigationInputListener(
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
 
+        val operationToken = activeOperationGeneration
         completionJob = scope.launch {
             navigationJob?.join()
+
+            if (!operationIsCurrent(operationToken)) {
+                if (previewNavigationSucceeded) {
+                    restoreDragStart(spec, forceRequest = true)
+                }
+                if (state.active) state.clearImmediately()
+                resetDrag()
+                return@launch
+            }
 
             if (cancellationRequested && !turnCommitted) {
                 if (previewNavigationSucceeded) restoreDragStart(spec)
@@ -200,7 +259,23 @@ internal class SlideNavigationInputListener(
                     }
 
                     commit && !cancellationRequested -> {
-                        val moved = navigate(spec.direction)
+                        val origin =
+                            dragStartLocator ?: navigator.currentLocator.value
+                        val accepted = navigate(spec.direction)
+                        val moved =
+                            accepted &&
+                                awaitReaderVisualNavigationDeparture(
+                                    currentLocator = navigator.currentLocator,
+                                    origin = origin
+                                )
+                        if (!operationIsCurrent(operationToken)) {
+                            if (accepted) {
+                                navigator.go(origin, animated = false)
+                            }
+                            if (state.active) state.clearImmediately()
+                            resetDrag()
+                            return@launch
+                        }
                         if (moved) {
                             turnCommitted = true
                             onCommittedTurn()
@@ -212,6 +287,9 @@ internal class SlideNavigationInputListener(
                                 )
                             }
                         } else {
+                            if (accepted) {
+                                navigator.go(origin, animated = false)
+                            }
                             onBoundaryHit(spec.side)
                             if (!isReducedMotion()) {
                                 state.animateBoundaryBounce(
@@ -224,7 +302,22 @@ internal class SlideNavigationInputListener(
                     else -> if (!isReducedMotion()) state.animateCancel()
                 }
             } else if (commit && !cancellationRequested) {
-                val moved = navigate(spec.direction)
+                val origin =
+                    dragStartLocator ?: navigator.currentLocator.value
+                val accepted = navigate(spec.direction)
+                val moved =
+                    accepted &&
+                        awaitReaderVisualNavigationDeparture(
+                            currentLocator = navigator.currentLocator,
+                            origin = origin
+                        )
+                if (!operationIsCurrent(operationToken)) {
+                    if (accepted) {
+                        navigator.go(origin, animated = false)
+                    }
+                    resetDrag()
+                    return@launch
+                }
                 if (moved) {
                     turnCommitted = true
                     onCommittedTurn()
@@ -242,6 +335,9 @@ internal class SlideNavigationInputListener(
             }
 
             if (state.active) state.clear()
+            if (operationIsCurrent(operationToken)) {
+                activeOperationGeneration = 0L
+            }
             resetDrag()
         }
         return true
@@ -253,7 +349,9 @@ internal class SlideNavigationInputListener(
      */
     fun cancelPendingTurn(): Boolean {
         if (!reserved && activeSpec == null) {
-            if (completionJob != null && state.active) {
+            if (completionJob != null || state.active) {
+                invalidateOperation()
+                cancellationRequested = true
                 completionJob?.cancel()
                 state.clearImmediately()
                 resetDrag()
@@ -262,12 +360,14 @@ internal class SlideNavigationInputListener(
             return false
         }
         if (turnCommitted) {
+            invalidateOperation()
             completionJob?.cancel()
             state.clearImmediately()
             resetDrag()
             return true
         }
 
+        invalidateOperation()
         cancellationRequested = true
         val spec = activeSpec
         if (spec == null) {
@@ -339,6 +439,8 @@ internal class SlideNavigationInputListener(
     fun forceCancelPendingTurn(): Boolean {
         if (!reserved && activeSpec == null) {
             if (completionJob != null || state.active) {
+                invalidateOperation()
+                cancellationRequested = true
                 completionJob?.cancel()
                 state.clearImmediately()
                 resetDrag()
@@ -347,12 +449,14 @@ internal class SlideNavigationInputListener(
             return false
         }
         if (turnCommitted) {
+            invalidateOperation()
             completionJob?.cancel()
             state.clearImmediately()
             resetDrag()
             return true
         }
 
+        invalidateOperation()
         cancellationRequested = true
         navigationJob?.cancel()
         completionJob?.cancel()
@@ -362,7 +466,7 @@ internal class SlideNavigationInputListener(
             // Navigation can complete just before coroutine cancellation but
             // before previewNavigationSucceeded becomes observable. Restore the
             // exact origin whenever a preview transaction had a start locator.
-            restoreDragStart(spec)
+            restoreDragStart(spec, forceRequest = true)
         }
         state.clearImmediately()
         resetDrag()
@@ -370,6 +474,8 @@ internal class SlideNavigationInputListener(
     }
 
     private fun performDiscreteTurn(spec: TurnSpec) {
+        val operationToken = beginOperation()
+        val originLocator = navigator.currentLocator.value
         val reducedMotion = isReducedMotion()
         val visualReady = !reducedMotion && state.begin(navigator.publicationView)
         onInteraction()
@@ -378,14 +484,31 @@ internal class SlideNavigationInputListener(
             if (visualReady) {
                 delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
             }
-            if (cancellationRequested) {
+            if (cancellationRequested || !operationIsCurrent(operationToken)) {
                 if (state.active) state.clear()
                 resetDrag()
                 return@launch
             }
 
-            val moved = navigate(spec.direction)
+            val accepted = navigate(spec.direction)
+            val moved =
+                accepted &&
+                    awaitReaderVisualNavigationDeparture(
+                        currentLocator = navigator.currentLocator,
+                        origin = originLocator
+                    )
+            if (!operationIsCurrent(operationToken)) {
+                if (accepted) {
+                    navigator.go(originLocator, animated = false)
+                }
+                if (state.active) state.clearImmediately()
+                resetDrag()
+                return@launch
+            }
             if (!moved) {
+                if (accepted) {
+                    navigator.go(originLocator, animated = false)
+                }
                 onBoundaryHit(spec.side)
                 if (visualReady && state.active) {
                     state.animateBoundaryBounce(visualDirectionSign(spec.side))
@@ -401,6 +524,9 @@ internal class SlideNavigationInputListener(
                 delay(com.veilreader.app.ui.theme.VeilMotion.PAGE_REVEAL_MS)
                 state.animateComplete(visualDirectionSign(spec.side))
                 state.clear()
+            }
+            if (operationIsCurrent(operationToken)) {
+                activeOperationGeneration = 0L
             }
             resetDrag()
         }
@@ -485,20 +611,27 @@ internal class SlideNavigationInputListener(
         lastDistance = distance
     }
 
-    private fun restoreDragStart(spec: TurnSpec) {
+    private fun restoreDragStart(
+        spec: TurnSpec,
+        forceRequest: Boolean = false
+    ) {
         val exact = dragStartLocator ?: return
         val targetIdentity = exact.toReaderNavigationIdentity()
-        if (
+        val alreadyAtOrigin =
             readerNavigationIdentityMatchesTarget(
                 observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
                 target = targetIdentity
             )
-        ) {
+        if (alreadyAtOrigin && !forceRequest) {
             return
         }
 
         val accepted = navigator.go(exact, animated = false)
-        if (!accepted && previewNavigationSucceeded) {
+        if (
+            !accepted &&
+            previewNavigationSucceeded &&
+            !alreadyAtOrigin
+        ) {
             navigate(
                 when (spec.direction) {
                     PaperTurnDirection.FORWARD -> PaperTurnDirection.BACKWARD
@@ -548,6 +681,16 @@ internal class SlideNavigationInputListener(
         const val RESTORE_SETTLE_TIMEOUT_MS = 1_500L
     }
 }
+
+internal fun nextSlideTurnOperationGeneration(current: Long): Long =
+    if (current == Long.MAX_VALUE) 1L else current + 1L
+
+internal fun slideTurnOperationIsCurrent(
+    operationToken: Long,
+    activeOperationToken: Long
+): Boolean =
+    operationToken > 0L &&
+        operationToken == activeOperationToken
 
 internal fun hasDeliberateSlideIntent(
     offsetX: Float,
