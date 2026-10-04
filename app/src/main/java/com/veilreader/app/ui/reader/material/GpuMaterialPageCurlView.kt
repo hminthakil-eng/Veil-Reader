@@ -136,7 +136,8 @@ internal class GpuMaterialPageCurlView(
         isClickable = false
         isFocusable = false
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        preserveEGLContextOnPause = true
+        preserveEGLContextOnPause =
+            shouldPreserveGpuPageContextOnPause(lowMemoryDevice)
         setRenderer(this)
         renderMode = GLTextureView.RENDER_MODE_WHEN_DIRTY
     }
@@ -234,8 +235,15 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        val resolvedWidth = width.coerceAtLeast(1)
-        val resolvedHeight = height.coerceAtLeast(1)
+        if (width <= 0 || height <= 0) {
+            viewportWidth = 0
+            viewportHeight = 0
+            surfaceReadyReported = false
+            post { onRendererReady(false) }
+            return
+        }
+        val resolvedWidth = width
+        val resolvedHeight = height
         if (
             viewportWidth != resolvedWidth ||
             viewportHeight != resolvedHeight
@@ -1242,6 +1250,10 @@ internal fun consumeGpuPageGlErrors(
     }
     return first
 }
+
+internal fun shouldPreserveGpuPageContextOnPause(
+    lowMemoryDevice: Boolean
+): Boolean = !lowMemoryDevice
 
 internal fun shouldPreallocateGpuPageTexture(
     viewportWidth: Int,
