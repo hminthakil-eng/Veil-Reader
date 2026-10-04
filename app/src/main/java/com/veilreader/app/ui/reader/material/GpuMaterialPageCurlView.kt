@@ -1284,7 +1284,11 @@ internal fun GpuMaterialPageOverlay(
                     rendererReady.value = ready
                     if (ready) {
                         rendererFailed.value = false
-                        rendererFailureCount.intValue = 0
+                        // Do not reset rendererFailureCount here. A context that
+                        // initializes successfully can still fail deterministically
+                        // on the first texture upload or draw. Resetting on READY
+                        // would turn the nominal two-attempt recovery policy into an
+                        // unbounded remount loop on a broken GPU/driver path.
                     }
                 },
                 onRendererFailure = {
