@@ -12,6 +12,7 @@ import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.diagnostics.ReaderJankMonitor
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.screens.ReaderScreen
@@ -31,9 +32,13 @@ import kotlinx.coroutines.withContext
  * release, and Baseline Profile target variants never include this test-only entry point.
  */
 class BenchmarkReaderActivity : FragmentActivity() {
+    private lateinit var readerJankMonitor: ReaderJankMonitor
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        readerJankMonitor = ReaderJankMonitor(window)
+        readerJankMonitor.install()
         MaterialPageEngineRollout.setDebugOverride(true)
 
         val benchmarkReaderSessionId = "benchmark-reader-session-${UUID.randomUUID()}"
@@ -80,6 +85,16 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::readerJankMonitor.isInitialized) readerJankMonitor.resume()
+    }
+
+    override fun onPause() {
+        if (::readerJankMonitor.isInitialized) readerJankMonitor.pause()
+        super.onPause()
     }
 
     private fun ensureFixture(): File {
