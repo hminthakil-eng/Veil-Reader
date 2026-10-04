@@ -139,7 +139,7 @@ internal class MaterialPageEngineState(
 
     fun prepareBuffer(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val nextSlot = (snapshotBufferCursor + 1) and 1
+        val nextSlot = nextMaterialPageBufferSlot(snapshotBufferCursor)
         val warmed = obtainReusableBuffer(
             current = snapshotBuffers[nextSlot],
             view = view
@@ -571,7 +571,7 @@ internal class MaterialPageEngineState(
         }.getOrNull()
 
     private fun obtainSnapshotBuffer(view: View): Bitmap? {
-        snapshotBufferCursor = (snapshotBufferCursor + 1) and 1
+        snapshotBufferCursor = nextMaterialPageBufferSlot(snapshotBufferCursor)
         val slot = snapshotBufferCursor
         return obtainReusableBuffer(
             current = snapshotBuffers[slot],
@@ -593,7 +593,8 @@ internal class MaterialPageEngineState(
         }.getOrNull()
 
     private fun obtainBackSnapshotBuffer(view: View): Bitmap? {
-        backSnapshotBufferCursor = (backSnapshotBufferCursor + 1) and 1
+        backSnapshotBufferCursor =
+            nextMaterialPageBufferSlot(backSnapshotBufferCursor)
         val slot = backSnapshotBufferCursor
         return obtainReusableBuffer(
             current = backSnapshotBuffers[slot],
