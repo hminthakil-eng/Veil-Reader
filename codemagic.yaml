@@ -48,10 +48,16 @@ workflows:
           cd "$CM_BUILD_DIR"
           ./gradlew --version
 
-      - name: Policy and parser checks
+      - name: Policy, canonical-source and parser checks
         script: |
           set -euo pipefail
           cd "$CM_BUILD_DIR"
+
+          git fetch --quiet --no-tags origin main:refs/remotes/origin/main --depth=200
+          MERGE_BASE="$(git merge-base HEAD origin/main)"
+          git diff --check "$MERGE_BASE" HEAD
+
+          sh tools/verify-canonical-paper.sh
           sh tools/test-policy.sh
           python3 tools/test_performance_budget.py
           python3 tools/test_performance_delta.py
@@ -152,10 +158,16 @@ workflows:
           cd "$CM_BUILD_DIR"
           ./gradlew --version
 
-      - name: Policy and parser checks
+      - name: Policy, canonical-source and parser checks
         script: |
           set -euo pipefail
           cd "$CM_BUILD_DIR"
+
+          git fetch --quiet --no-tags origin main:refs/remotes/origin/main --depth=200
+          MERGE_BASE="$(git merge-base HEAD origin/main)"
+          git diff --check "$MERGE_BASE" HEAD
+
+          sh tools/verify-canonical-paper.sh
           sh tools/test-policy.sh
           python3 tools/test_performance_budget.py
           python3 tools/test_performance_delta.py
