@@ -60,11 +60,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
@@ -79,6 +81,8 @@ import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTapZone
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.MaterialPagePreset
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilMaterials
@@ -108,6 +112,12 @@ fun SettingsScreen(
     var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
     var showAdvancedReadingSettings by rememberSaveable { mutableStateOf(false) }
+    var materialPageReviewEnabled by remember {
+        mutableStateOf(MaterialPageEngineRollout.isEnabled())
+    }
+    var materialPageReviewPreset by remember {
+        mutableStateOf(MaterialPageEngineRollout.selectedPreset())
+    }
     var tapGridDraft by remember { mutableStateOf(settings.readerTapGrid) }
     var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
     var hardwareKeysDraft by remember { mutableStateOf(settings.readerHardwareKeys) }
@@ -183,6 +193,27 @@ fun SettingsScreen(
         appearanceDraft = value
         pendingAppearance = value
         onSaveReaderAppearance(value)
+    }
+
+    LaunchedEffect(
+        materialPageReviewEnabled,
+        appearanceDraft.readingMode,
+        appearanceDraft.pageTurnStyle
+    ) {
+        if (
+            BuildConfig.DEBUG &&
+            materialPageReviewEnabled &&
+            (
+                appearanceDraft.readingMode != ReaderReadingMode.PAGED ||
+                    appearanceDraft.pageTurnStyle != PageTurnStyle.PAPER
+                )
+        ) {
+            commitReaderAppearance { current ->
+                current
+                    .withReadingMode(ReaderReadingMode.PAGED)
+                    .withPageTurnStyle(PageTurnStyle.PAPER)
+            }
+        }
     }
 
     val appearance = appearanceDraft
@@ -819,6 +850,61 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
+        }
+
+        if (BuildConfig.DEBUG) {
+            SettingsSection(
+                title = "GPU Material Page Engine v2",
+                description = "Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification."
+            ) {
+                SettingsSwitchRow(
+                    title = "Use GPU Material Page Engine v2",
+                    subtitle = "Forces Paged + Paper and exercises the only Paper renderer included in this build.",
+                    checked = materialPageReviewEnabled,
+                    onCheckedChange = { enabled ->
+                        materialPageReviewEnabled = enabled
+                        MaterialPageEngineRollout.setDebugOverride(enabled)
+                        if (enabled) {
+                            // Review mode must enter the Paper navigation path; otherwise the
+                            // Material engine can be enabled while Slide still owns every gesture.
+                            commitReaderAppearance { current ->
+                                current
+                                    .withReadingMode(ReaderReadingMode.PAGED)
+                                    .withPageTurnStyle(PageTurnStyle.PAPER)
+                            }
+                        }
+                    }
+                )
+
+                if (materialPageReviewEnabled) {
+                    Text(
+                        "Review material",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    ChoiceRow(
+                        entries = MaterialPagePreset.entries,
+                        selected = materialPageReviewPreset,
+                        label = { preset ->
+                            when (preset) {
+                                MaterialPagePreset.GLOSSY -> "Glossy"
+                                MaterialPagePreset.MATTE_BOOK -> "Matte book"
+                                MaterialPagePreset.PARCHMENT -> "Parchment"
+                                MaterialPagePreset.PAPYRUS -> "Papyrus"
+                                MaterialPagePreset.MANUSCRIPT -> "Manuscript"
+                            }
+                        },
+                        onSelected = { preset ->
+                            materialPageReviewPreset = preset
+                            MaterialPageEngineRollout.setPreviewPreset(preset)
+                        }
+                    )
+                    Text(
+                        "Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets GPU v2.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
 
         SettingsSection(

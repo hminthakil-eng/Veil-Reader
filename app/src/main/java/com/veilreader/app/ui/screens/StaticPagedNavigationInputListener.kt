@@ -26,7 +26,7 @@ internal class StaticPagedNavigationInputListener(
     private var reserved = false
 
     override fun onDrag(event: DragEvent): Boolean {
-        if (!isEnabled() || navigator.overflow.value.scroll) {
+        if (!isEnabled()) {
             reserved = false
             return false
         }

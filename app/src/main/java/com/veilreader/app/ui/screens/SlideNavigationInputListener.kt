@@ -248,8 +248,21 @@ internal class SlideNavigationInputListener(
      * closes, or the user changes navigation mode. A committed turn is never rolled back.
      */
     fun cancelPendingTurn(): Boolean {
-        if (!reserved && activeSpec == null) return false
-        if (turnCommitted) return false
+        if (!reserved && activeSpec == null) {
+            if (completionJob != null && state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
 
         cancellationRequested = true
         val spec = activeSpec
@@ -277,9 +290,10 @@ internal class SlideNavigationInputListener(
      * This is the only safe path before taking a durable close snapshot.
      */
     suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val existingCompletion = completionJob
         val requested = cancelPendingTurn()
         if (!requested) return false
-        completionJob?.join()
+        (existingCompletion ?: completionJob)?.join()
         return true
     }
 
@@ -288,15 +302,31 @@ internal class SlideNavigationInputListener(
      * composition scope can disappear immediately, so locator restoration cannot depend on it.
      */
     fun forceCancelPendingTurn(): Boolean {
-        if (!reserved && activeSpec == null) return false
-        if (turnCommitted) return false
+        if (!reserved && activeSpec == null) {
+            if (completionJob != null || state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
 
         cancellationRequested = true
         navigationJob?.cancel()
         completionJob?.cancel()
 
         val spec = activeSpec
-        if (spec != null && previewNavigationSucceeded) {
+        if (spec != null && dragStartLocator != null) {
+            // Navigation can complete just before coroutine cancellation but
+            // before previewNavigationSucceeded becomes observable. Restore the
+            // exact origin whenever a preview transaction had a start locator.
             restoreDragStart(spec)
         }
         state.clearImmediately()
@@ -434,7 +464,10 @@ internal class SlideNavigationInputListener(
         }
 
     private fun slideModeEnabled(): Boolean =
-        isEnabled() && !navigator.overflow.value.scroll
+        // ReaderScreen already supplies the accepted SLIDE contract. Do not
+        // re-check Readium's overflow flow here; it can lag preference changes
+        // and create the same visible-mode/input-owner split that broke Paper.
+        isEnabled()
 
     private fun resetDrag() {
         reserved = false
@@ -506,18 +539,43 @@ internal fun nextSlideReleaseVelocity(
     elapsedMillis: Long,
     sinceLastMotionMillis: Long
 ): Float {
-    if (abs(distanceDeltaPx) >= 1f) {
+    val previous =
+        previousVelocityPxPerSec
+            .takeIf { it.isFinite() }
+            ?.coerceIn(-12_000f, 12_000f)
+            ?: 0f
+    val delta = distanceDeltaPx.takeIf { it.isFinite() } ?: 0f
+
+    if (abs(delta) >= 1f) {
         if (elapsedMillis in 1L..120L) {
-            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
-                .coerceIn(-12_000f, 12_000f)
+            val instantaneous =
+                (delta * 1000f / elapsedMillis.toFloat())
+                    .coerceIn(-12_000f, 12_000f)
+            val sampleTrust = when {
+                elapsedMillis <= 12L -> 0.42f
+                elapsedMillis <= 28L -> 0.58f
+                elapsedMillis <= 60L -> 0.72f
+                else -> 0.82f
+            }
+            val sameDirection =
+                previous == 0f ||
+                    kotlin.math.sign(previous) ==
+                    kotlin.math.sign(instantaneous)
+            val trust =
+                if (sameDirection) sampleTrust
+                else kotlin.math.max(sampleTrust, 0.76f)
+            return (
+                previous * (1f - trust) +
+                    instantaneous * trust
+                ).coerceIn(-12_000f, 12_000f)
         }
         return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
-            previousVelocityPxPerSec
+            previous
         } else {
             0f
         }
     }
-    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
+    return if (sinceLastMotionMillis <= 100L) previous else 0f
 }
 
 internal fun shouldCommitSlideTurn(

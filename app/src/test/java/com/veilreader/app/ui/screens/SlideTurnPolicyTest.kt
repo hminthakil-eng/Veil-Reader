@@ -103,15 +103,28 @@ class SlideTurnPolicyTest {
     }
 
     @Test
-    fun `fresh slide movement replaces previous release velocity`() {
-        assertTrue(
-            nextSlideReleaseVelocity(
-                previousVelocityPxPerSec = 200f,
-                distanceDeltaPx = 24f,
-                elapsedMillis = 12L,
-                sinceLastMotionMillis = 12L
-            ) == 2_000f
+    fun `fresh slide movement is smoothed instead of replacing history`() {
+        val velocity = nextSlideReleaseVelocity(
+            previousVelocityPxPerSec = 200f,
+            distanceDeltaPx = 24f,
+            elapsedMillis = 12L,
+            sinceLastMotionMillis = 12L
         )
+
+        assertTrue(velocity > 200f)
+        assertTrue(velocity < 2_000f)
+    }
+
+    @Test
+    fun `slide reversal trusts the new direction quickly`() {
+        val velocity = nextSlideReleaseVelocity(
+            previousVelocityPxPerSec = 1_600f,
+            distanceDeltaPx = -20f,
+            elapsedMillis = 12L,
+            sinceLastMotionMillis = 12L
+        )
+
+        assertTrue(velocity < 0f)
     }
 
     @Test

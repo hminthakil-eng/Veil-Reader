@@ -75,6 +75,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.R
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
@@ -125,6 +126,12 @@ import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.MaterialPageSensoryAction
+import com.veilreader.app.ui.reader.material.MaterialPageSensorySink
+import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.reader.material.toVeilSensoryCue
+import com.veilreader.app.ui.sensory.VeilMaterialPageSensoryCue
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -203,6 +210,7 @@ fun ReaderScreen(
     returnRitual: BookReturnRitual? = null,
     initialReturnLocatorJson: String? = null,
     onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
+    onMaterialPageSensoryCue: (VeilMaterialPageSensoryCue) -> Unit = {},
     onClose: () -> Unit,
     onLocatorCheckpoint: (String) -> Unit = {}
 ) {
@@ -315,9 +323,16 @@ fun ReaderScreen(
         readerAppearance,
         fixedLayoutPublication
     ) {
-        effectiveReaderAppearanceForPublication(
-            appearance = readerAppearance,
-            fixedLayout = fixedLayoutPublication
+        val publicationAppearance =
+            effectiveReaderAppearanceForPublication(
+                appearance = readerAppearance,
+                fixedLayout = fixedLayoutPublication
+            )
+        applyMaterialPageRolloutToAppearance(
+            appearance = publicationAppearance,
+            format = opened.format,
+            debugReview = BuildConfig.DEBUG,
+            materialPageEnabled = MaterialPageEngineRollout.isEnabled()
         )
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
@@ -385,6 +400,21 @@ fun ReaderScreen(
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
+    val latestMaterialPageSensoryCue =
+        rememberUpdatedState(onMaterialPageSensoryCue)
+    DisposableEffect(paperCurlState) {
+        val sink = MaterialPageSensorySink { cue ->
+            // Reader already owns the generic terminal-boundary feedback path.
+            // Suppress only that duplicate; lift/cancel/complete stay material-specific.
+            if (cue.action != MaterialPageSensoryAction.BOUNDARY) {
+                latestMaterialPageSensoryCue.value(cue.toVeilSensoryCue())
+            }
+        }
+        paperCurlState.materialEngine.setSensorySink(sink)
+        onDispose {
+            paperCurlState.materialEngine.setSensorySink(null)
+        }
+    }
     var paperInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlInputListener?>(null)
     }
@@ -545,71 +575,74 @@ fun ReaderScreen(
         }
     }
     val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
-    val latestTapGrid = rememberUpdatedState(readerTapGrid)
-    val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
-    val paperCurlConfig = remember(
-        presentedReaderAppearance.theme,
-        presentedReaderAppearance.paperPatina
+    LaunchedEffect(
+        navigator,
+        readerSessionReady,
+        presentedReaderAppearance,
+        reducedMotion,
+        paperCurlState.active,
+        readerSessionInstanceId
     ) {
-        val agedPaper =
-            paperCurlMaterialAge(presentedReaderAppearance.paperPatina.toFloat())
-        when (presentedReaderAppearance.theme) {
-            ReaderTheme.PAPER -> PaperCurlVisualConfig(
-                backPageColor = Color(0xFFE3D3B5),
-                backPageContentAlpha = agedPaper.backPageContentAlpha,
-                shadowAlpha = 0.40f,
-                shadowRadius = 30.dp,
-                edgeHighlight = Color(0xFFFFF6E5),
-                creaseHighlightAlpha = 0.28f,
-                creaseShadowAlpha = 0.22f,
-                backPageShadeAlpha = agedPaper.backPageShadeAlpha,
-                contactShadowAlpha = agedPaper.contactShadowAlpha,
-                edgeThicknessAlpha = agedPaper.edgeThicknessAlpha,
-                backsideFiberAlpha = agedPaper.backsideFiberAlpha
+        if (
+            !readerSessionReady ||
+            opened.format != BookFormat.EPUB ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
+            !shouldCapturePaperTurnSnapshot(reducedMotion)
+        ) {
+            paperCurlState.releaseBufferIfIdle()
+            return@LaunchedEffect
+        }
+        if (paperCurlState.active) return@LaunchedEffect
+
+        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        // Capture the current Readium page after it has painted, not inside the
+        // first drag callback. This mirrors mature curl engines that keep page
+        // textures warm before the pointer begins moving.
+        delay(VeilMotion.FRAME_SETTLE_MS * 2)
+        if (
+            !paperCurlState.active &&
+            readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
             )
-            ReaderTheme.SEPIA -> PaperCurlVisualConfig(
-                backPageColor = Color(0xFFD8C39D),
-                backPageContentAlpha = agedPaper.backPageContentAlpha,
-                shadowAlpha = 0.38f,
-                shadowRadius = 29.dp,
-                edgeHighlight = Color(0xFFF8E7C8),
-                creaseHighlightAlpha = 0.26f,
-                creaseShadowAlpha = 0.22f,
-                backPageShadeAlpha = agedPaper.backPageShadeAlpha
-                    .coerceAtLeast(0.15f),
-                contactShadowAlpha = agedPaper.contactShadowAlpha,
-                edgeThicknessAlpha = agedPaper.edgeThicknessAlpha,
-                backsideFiberAlpha = (agedPaper.backsideFiberAlpha * 1.08f)
-                    .coerceAtMost(0.07f)
-            )
-            ReaderTheme.DUSK -> PaperCurlVisualConfig(
-                backPageColor = Color(0xFF27222C),
-                backPageContentAlpha = 0.08f,
-                shadowAlpha = 0.30f,
-                shadowRadius = 24.dp,
-                edgeHighlight = Color(0xFFE8DFF0),
-                creaseHighlightAlpha = 0.18f,
-                creaseShadowAlpha = 0.18f,
-                backPageShadeAlpha = 0.12f,
-                contactShadowAlpha = 0.14f,
-                edgeThicknessAlpha = 0.16f,
-                backsideFiberAlpha = 0.018f
-            )
-            ReaderTheme.OLED -> PaperCurlVisualConfig(
-                backPageColor = Color(0xFF111111),
-                backPageContentAlpha = 0.06f,
-                shadowAlpha = 0.24f,
-                shadowRadius = 20.dp,
-                edgeHighlight = Color(0xFFD8D8D8),
-                creaseHighlightAlpha = 0.14f,
-                creaseShadowAlpha = 0.16f,
-                backPageShadeAlpha = 0.10f,
-                contactShadowAlpha = 0.12f,
-                edgeThicknessAlpha = 0.14f,
-                backsideFiberAlpha = 0.012f
-            )
+        ) {
+            paperCurlState.prepareBuffer(nav.publicationView)
         }
     }
+    LaunchedEffect(
+        navigator,
+        readerSessionReady,
+        presentedReaderAppearance,
+        reducedMotion,
+        slidePageState.active,
+        readerSessionInstanceId
+    ) {
+        if (
+            !readerSessionReady ||
+            opened.format != BookFormat.EPUB ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.SLIDE ||
+            reducedMotion
+        ) {
+            slidePageState.releaseBufferIfIdle()
+            return@LaunchedEffect
+        }
+        if (slidePageState.active) return@LaunchedEffect
+
+        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        delay(VeilMotion.FRAME_SETTLE_MS * 2)
+        if (
+            !slidePageState.active &&
+            readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            )
+        ) {
+            slidePageState.prepareBuffer(nav.publicationView)
+        }
+    }
+
+    val latestTapGrid = rememberUpdatedState(readerTapGrid)
+    val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
     var showTts by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var ttsStartJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     var ttsStartSerial by remember(readerSessionInstanceId) { mutableIntStateOf(0) }
@@ -1670,9 +1703,10 @@ fun ReaderScreen(
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
-                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        if (!paperCurlState.usingMaterialEngine()) {
+                            onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        }
                         val locator = nav.currentLocator.value
-                        val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
                     onBoundaryHit = { side ->
@@ -1691,10 +1725,10 @@ fun ReaderScreen(
                     isEnabled = {
                         latestReaderSessionReady.value &&
                             shouldUseVeilSlideNavigation(
-                            format = opened.format,
-                            scroll = nav.overflow.value.scroll,
-                            pageTurnStyle = latestAppearance.value.pageTurnStyle
-                        )
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
@@ -1723,10 +1757,10 @@ fun ReaderScreen(
                     isEnabled = {
                         latestReaderSessionReady.value &&
                             shouldUseStaticPagedDragNavigation(
-                            format = opened.format,
-                            scroll = nav.overflow.value.scroll,
-                            pageTurnStyle = latestAppearance.value.pageTurnStyle
-                        )
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     onInteraction = ::markReaderNavigationInteraction,
                     onNavigationCommitted = {
@@ -1753,15 +1787,29 @@ fun ReaderScreen(
                     !latestReducedMotion.value &&
                         shouldAnimateDirectionalNavigation(
                             format = opened.format,
-                            scroll = nav.overflow.value.scroll,
+                            scroll = if (opened.format == BookFormat.EPUB) {
+                                latestAppearance.value.scroll
+                            } else {
+                                nav.overflow.value.scroll
+                            },
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
                         )
                 },
-                isEnabled = { latestReaderSessionReady.value },
+                isEnabled = {
+                    latestReaderSessionReady.value &&
+                        (
+                            opened.format != BookFormat.EPUB ||
+                                !latestAppearance.value.scroll
+                            )
+                },
                 isTapNavigationEnabled = {
                     shouldUseDirectionalTapNavigation(
                         format = opened.format,
-                        scroll = nav.overflow.value.scroll,
+                        scroll = if (opened.format == BookFormat.EPUB) {
+                            latestAppearance.value.scroll
+                        } else {
+                            nav.overflow.value.scroll
+                        },
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
                     )
                 },
@@ -1788,8 +1836,14 @@ fun ReaderScreen(
             )
 
             fun performSemanticReaderTurn(direction: PaperTurnDirection): Boolean {
+                val intendedScroll =
+                    if (opened.format == BookFormat.EPUB) {
+                        latestAppearance.value.scroll
+                    } else {
+                        nav.overflow.value.scroll
+                    }
                 if (
-                    nav.overflow.value.scroll ||
+                    intendedScroll ||
                     !latestReaderSessionReady.value
                 ) {
                     return false
@@ -1855,7 +1909,7 @@ fun ReaderScreen(
                         opened.format == BookFormat.EPUB
                 },
                 canTurnPages = {
-                    !nav.overflow.value.scroll
+                    !latestAppearance.value.scroll
                 },
                 onPreviousPage = {
                     performSemanticReaderTurn(PaperTurnDirection.BACKWARD)
@@ -2352,12 +2406,36 @@ fun ReaderScreen(
 
         if (
             opened.format == BookFormat.EPUB &&
+            !fixedLayoutPublication
+        ) {
+            ReaderPageAtmosphere(
+                theme = presentedReaderAppearance.theme,
+                navigationMode = presentedReaderAppearance.navigationMode,
+                paperPatina = presentedReaderAppearance.paperPatina.toFloat(),
+                progress = progress,
+                progression = (navigator as? OverflowableNavigator)
+                    ?.overflow
+                    ?.value
+                    ?.readingProgression
+                    ?: ReadingProgression.LTR,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (
+            opened.format == BookFormat.EPUB &&
             !presentedReaderAppearance.scroll &&
             presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
         ) {
             PaperCurlOverlay(
                 state = paperCurlState,
-                config = paperCurlConfig,
+                patina = presentedReaderAppearance.paperPatina.toFloat(),
+                tone = when (presentedReaderAppearance.theme) {
+                    ReaderTheme.PAPER -> MaterialPageTone.LIGHT
+                    ReaderTheme.SEPIA -> MaterialPageTone.SEPIA
+                    ReaderTheme.DUSK,
+                    ReaderTheme.OLED -> MaterialPageTone.DARK
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -2377,24 +2455,6 @@ fun ReaderScreen(
             state = readerModeHandoffState,
             modifier = Modifier.fillMaxSize()
         )
-
-        if (
-            opened.format == BookFormat.EPUB &&
-            !fixedLayoutPublication
-        ) {
-            ReaderPageAtmosphere(
-                theme = presentedReaderAppearance.theme,
-                navigationMode = presentedReaderAppearance.navigationMode,
-                paperPatina = presentedReaderAppearance.paperPatina.toFloat(),
-                progress = progress,
-                progression = (navigator as? OverflowableNavigator)
-                    ?.overflow
-                    ?.value
-                    ?.readingProgression
-                    ?: ReadingProgression.LTR,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
 
         // No exit animation: OFF and blocking UI remove the guide immediately.
         // The Canvas has no input or semantics modifiers; Readium retains ownership.
@@ -3410,6 +3470,30 @@ internal fun shouldAwaitReaderAppearanceClose(
 private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
 private const val READER_VIEWPORT_REFLOW_QUIET_MS = 650L
 
+internal fun applyMaterialPageRolloutToAppearance(
+    appearance: ReaderAppearance,
+    format: BookFormat,
+    debugReview: Boolean,
+    materialPageEnabled: Boolean
+): ReaderAppearance =
+    when {
+        format == BookFormat.EPUB &&
+            debugReview &&
+            materialPageEnabled ->
+            appearance
+                .withReadingMode(ReaderReadingMode.PAGED)
+                .withPageTurnStyle(PageTurnStyle.PAPER)
+
+        format == BookFormat.EPUB &&
+            appearance.pageTurnStyle == PageTurnStyle.PAPER &&
+            !materialPageEnabled ->
+            appearance
+                .withReadingMode(ReaderReadingMode.PAGED)
+                .withPageTurnStyle(PageTurnStyle.NONE)
+
+        else -> appearance
+    }
+
 internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
     fixedLayout: Boolean
@@ -4261,17 +4345,25 @@ internal fun EpubAppearancePanel(
 
         if (!capabilities.fixedLayout) {
             if (condensedApproach) {
-                TextButton(onClick = { showPreview = !showPreview },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                    Text(stringResource(if (showPreview) R.string.reader_hide_reading_preview
-                        else R.string.reader_show_reading_preview))
+                TextButton(
+                    onClick = { showPreview = !showPreview },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(
+                        stringResource(
+                            if (showPreview) R.string.reader_hide_reading_preview
+                            else R.string.reader_show_reading_preview
+                        )
+                    )
                 }
             }
-            if (showPreview) ReaderAppearancePreview(
-                appearance = draft,
-                typographyEnabled = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (showPreview) {
+                ReaderAppearancePreview(
+                    appearance = draft,
+                    typographyEnabled = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
         if (capabilities.fixedLayout) {

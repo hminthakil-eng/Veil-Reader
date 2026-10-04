@@ -1,0 +1,318 @@
+package com.veilreader.app.ui.reader.material
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class GpuPageCurlModelTest {
+
+    @Test
+    fun `mesh quality keeps low memory conservative and normal devices dense`() {
+        val low = gpuPageMeshQuality(lowMemoryDevice = true)
+        val normal = gpuPageMeshQuality(lowMemoryDevice = false)
+
+        assertEquals(48, low.columns)
+        assertEquals(8, low.rows)
+        assertEquals(72, normal.columns)
+        assertEquals(14, normal.rows)
+        assertTrue(normal.columns * normal.rows > low.columns * low.rows)
+    }
+
+    @Test
+    fun `ping pong bitmap slots alternate without prewarm reset`() {
+        var cursor = -1
+        cursor = nextMaterialPageBufferSlot(cursor)
+        assertEquals(0, cursor)
+        cursor = nextMaterialPageBufferSlot(cursor)
+        assertEquals(1, cursor)
+        cursor = nextMaterialPageBufferSlot(cursor)
+        assertEquals(0, cursor)
+    }
+
+    @Test
+    fun `dual back texture is gated by low ram and memory class`() {
+        assertTrue(
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 256
+            )
+        )
+        assertTrue(
+            !shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = true,
+                memoryClassMb = 512
+            )
+        )
+        assertTrue(
+            !shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 192
+            )
+        )
+    }
+
+    @Test
+    fun `dual back texture budget rejects oversized four-bitmap pool`() {
+        assertTrue(
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 256,
+                pageWidthPx = 1_080,
+                pageHeightPx = 2_400
+            )
+        )
+        assertTrue(
+            !shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 256,
+                pageWidthPx = 1_440,
+                pageHeightPx = 3_120
+            )
+        )
+        assertTrue(
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 512,
+                pageWidthPx = 1_440,
+                pageHeightPx = 3_120
+            )
+        )
+    }
+
+    @Test
+    fun `virtual cylinder starts at free edge and clears viewport at completion`() {
+        val start = gpuPageCurlFrame(
+            progress = 0f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val end = gpuPageCurlFrame(
+            progress = 1f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertEquals(1f, start.cylinderX, 0.0001f)
+        assertTrue(end.cylinderX < 0f)
+        assertTrue(end.radius > 0f)
+    }
+
+    @Test
+    fun `early physical pointer travel keeps curl radius tight before opening`() {
+        val early = gpuPageCurlFrame(
+            progress = 0.08f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            pointerTravel = 0.08f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val opened = gpuPageCurlFrame(
+            progress = 0.08f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            pointerTravel = 0.34f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(early.radius < opened.radius)
+        assertTrue(early.radius > 0f)
+    }
+
+    @Test
+    fun `stiffer glossy stock uses broader cylinder than papyrus`() {
+        val glossy = gpuPageCurlFrame(
+            progress = 0.5f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.Glossy,
+            side = MaterialPageSide.RIGHT
+        )
+        val papyrus = gpuPageCurlFrame(
+            progress = 0.5f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.Papyrus,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(glossy.radius > papyrus.radius)
+    }
+
+    @Test
+    fun `corner pull tilts cylinder while center pull stays vertical`() {
+        val center = gpuPageCurlFrame(
+            progress = 0.45f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val corner = gpuPageCurlFrame(
+            progress = 0.45f,
+            verticalBias = 0.08f,
+            pullOriginY = 0.08f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(kotlin.math.abs(center.cylinderTilt) < 0.001f)
+        assertTrue(kotlin.math.abs(corner.cylinderTilt) > 0.05f)
+    }
+
+    @Test
+    fun `diagonal finger vector directly steers cylinder tilt`() {
+        val neutral = gpuPageCurlFrame(
+            progress = 0.42f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            diagonalPull = 0f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val diagonal = gpuPageCurlFrame(
+            progress = 0.42f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            diagonalPull = 0.75f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(kotlin.math.abs(neutral.cylinderTilt) < 0.001f)
+        assertTrue(diagonal.cylinderTilt > 0.05f)
+    }
+
+    @Test
+    fun `left and right turns share geometry with opposite side sign`() {
+        val right = gpuPageCurlFrame(
+            progress = 0.5f,
+            verticalBias = 0.03f,
+            pullOriginY = 0.25f,
+            profile = MaterialPageProfiles.Parchment,
+            side = MaterialPageSide.RIGHT
+        )
+        val left = gpuPageCurlFrame(
+            progress = 0.5f,
+            verticalBias = 0.03f,
+            pullOriginY = 0.25f,
+            profile = MaterialPageProfiles.Parchment,
+            side = MaterialPageSide.LEFT
+        )
+
+        assertEquals(right.cylinderX, left.cylinderX, 0.0001f)
+        assertEquals(right.radius, left.radius, 0.0001f)
+        assertEquals(1f, right.sideSign, 0f)
+        assertEquals(-1f, left.sideSign, 0f)
+    }
+
+
+    @Test
+    fun `terminal travel tightens radius while mid turn stays broad`() {
+        val mid = gpuPageCurlFrame(
+            progress = 0.5f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val terminal = gpuPageCurlFrame(
+            progress = 0.98f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(terminal.radius < mid.radius)
+    }
+
+    @Test
+    fun `vertical drag moves cylinder grip without escaping page bounds`() {
+        val up = gpuPageCurlFrame(
+            progress = 0.45f,
+            verticalBias = -0.18f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.Parchment,
+            side = MaterialPageSide.RIGHT
+        )
+        val down = gpuPageCurlFrame(
+            progress = 0.45f,
+            verticalBias = 0.18f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.Parchment,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(up.cylinderY < 0.5f)
+        assertTrue(down.cylinderY > 0.5f)
+        assertTrue(up.cylinderY >= 0.03f)
+        assertTrue(down.cylinderY <= 0.97f)
+    }
+
+    @Test
+    fun `tall page binding invariant clamps diagonal cylinder before spine release`() {
+        val square = gpuPageCurlFrame(
+            progress = 0.78f,
+            verticalBias = 0.10f,
+            pullOriginY = 0.90f,
+            diagonalPull = 1f,
+            pointerTravel = 0.78f,
+            pageAspect = 1f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val tall = gpuPageCurlFrame(
+            progress = 0.78f,
+            verticalBias = 0.10f,
+            pullOriginY = 0.90f,
+            diagonalPull = 1f,
+            pointerTravel = 0.78f,
+            pageAspect = 3f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        assertTrue(kotlin.math.abs(tall.cylinderTilt) <= kotlin.math.abs(square.cylinderTilt))
+        if (tall.cylinderX > 0f) {
+            val cy = tall.cylinderY * 3f
+            val reach = if (tall.cylinderTilt >= 0f) cy else 3f - cy
+            assertTrue(
+                kotlin.math.abs(tall.cylinderTilt) * reach <=
+                    tall.cylinderX + 0.0002f
+            )
+        }
+    }
+
+    @Test
+    fun `storage estimate includes CPU buffers and GPU textures`() {
+        val onePage = 1080L * 2400L * 4L
+        assertEquals(
+            onePage * 6L,
+            estimatedMaterialPageStorageBytes(
+                pageWidthPx = 1080,
+                pageHeightPx = 2400,
+                cpuBitmapCount = 4,
+                gpuTextureCount = 2
+            )
+        )
+    }
+
+    @Test
+    fun `non finite inspection input collapses to finite safe frame`() {
+        val frame = gpuPageCurlFrame(
+            progress = Float.NaN,
+            verticalBias = Float.POSITIVE_INFINITY,
+            pullOriginY = Float.NaN,
+            profile = MaterialPageProfiles.Manuscript,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(isFiniteGpuPageCurlFrame(frame))
+        assertEquals(0.5f, frame.cylinderY, 0.0001f)
+    }
+}

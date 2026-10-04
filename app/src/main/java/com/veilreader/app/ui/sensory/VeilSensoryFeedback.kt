@@ -26,6 +26,37 @@ enum class VeilSensoryEvent {
     RELIC
 }
 
+enum class VeilPageMaterial {
+    GLOSSY,
+    MATTE_BOOK,
+    PARCHMENT,
+    PAPYRUS,
+    MANUSCRIPT
+}
+
+enum class VeilMaterialPageAction {
+    LIFT_THRESHOLD,
+    COMPLETE,
+    CANCEL,
+    BOUNDARY
+}
+
+data class VeilMaterialPageSensoryCue(
+    val material: VeilPageMaterial,
+    val action: VeilMaterialPageAction,
+    val durationMillis: Int,
+    val acousticBrightness: Float,
+    val acousticDryness: Float,
+    val acousticBody: Float,
+    val acousticFiber: Float,
+    val acousticGain: Float,
+    val hapticSharpness: Float,
+    val hapticWeight: Float,
+    val hapticPulseCount: Int,
+    val hapticPulseMillis: Int,
+    val hapticGapMillis: Int
+)
+
 internal fun hapticFeedbackFor(event: VeilSensoryEvent): Int =
     when (event) {
         VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
@@ -37,6 +68,20 @@ internal fun hapticFeedbackFor(event: VeilSensoryEvent): Int =
         VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
         VeilSensoryEvent.ADVANCEMENT -> HapticFeedbackConstants.LONG_PRESS
         VeilSensoryEvent.RELIC -> HapticFeedbackConstants.CONTEXT_CLICK
+    }
+
+internal fun materialHapticFeedbackFor(
+    cue: VeilMaterialPageSensoryCue
+): Int =
+    when (cue.action) {
+        VeilMaterialPageAction.LIFT_THRESHOLD -> HapticFeedbackConstants.CLOCK_TICK
+        VeilMaterialPageAction.CANCEL -> HapticFeedbackConstants.KEYBOARD_TAP
+        VeilMaterialPageAction.BOUNDARY -> HapticFeedbackConstants.CONTEXT_CLICK
+        VeilMaterialPageAction.COMPLETE -> when {
+            cue.hapticWeight >= 0.72f -> HapticFeedbackConstants.CONTEXT_CLICK
+            cue.hapticSharpness >= 0.68f -> HapticFeedbackConstants.KEYBOARD_TAP
+            else -> HapticFeedbackConstants.CLOCK_TICK
+        }
     }
 
 /**
@@ -55,6 +100,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         Thread(runnable, "veil-sensory-ambient").apply { isDaemon = true }
     }
     private val ambientGeneration = AtomicInteger(0)
+    private val materialCueGeneration = AtomicInteger(0)
 
     @Volatile
     private var settings = SensorySettings()
@@ -75,6 +121,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
     fun setForeground(value: Boolean) {
         if (foreground == value) return
         foreground = value
+        if (!value) materialCueGeneration.incrementAndGet()
         syncAmbient()
     }
 
@@ -95,8 +142,54 @@ class VeilSensoryFeedback(context: android.content.Context) {
         }
     }
 
+    fun performMaterialPage(
+        view: View,
+        cue: VeilMaterialPageSensoryCue
+    ) {
+        val token = materialCueGeneration.incrementAndGet()
+        val snapshot = settings
+        if (
+            snapshot.hapticsEnabled &&
+            foreground &&
+            view.isAttachedToWindow
+        ) {
+            val feedback = materialHapticFeedbackFor(cue)
+            view.performHapticFeedback(feedback)
+            if (cue.hapticPulseCount > 1) {
+                view.postDelayed(
+                    {
+                        if (
+                            token == materialCueGeneration.get() &&
+                            settings.hapticsEnabled &&
+                            view.isAttachedToWindow
+                        ) {
+                            view.performHapticFeedback(feedback)
+                        }
+                    },
+                    cue.hapticGapMillis.coerceIn(8, 40).toLong()
+                )
+            }
+        }
+
+        if (
+            snapshot.interactionSoundsEnabled &&
+            snapshot.audioVolume > 0.0 &&
+            foreground
+        ) {
+            cueExecutor.execute {
+                if (
+                    token == materialCueGeneration.get() &&
+                    foreground
+                ) {
+                    playMaterialPageCue(cue, snapshot.audioVolume.toFloat())
+                }
+            }
+        }
+    }
+
     fun dispose() {
         ambientGeneration.incrementAndGet()
+        materialCueGeneration.incrementAndGet()
         cueExecutor.shutdownNow()
         ambientExecutor.shutdownNow()
     }
@@ -219,6 +312,90 @@ class VeilSensoryFeedback(context: android.content.Context) {
             pcm[i] = (scaled.coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt().toShort()
         }
 
+        playStaticCue(
+            pcm = pcm,
+            sampleRate = sampleRate,
+            durationMillis = (seconds * 1_000.0).toLong()
+        )
+    }
+
+    private fun playMaterialPageCue(
+        cue: VeilMaterialPageSensoryCue,
+        volume: Float
+    ) {
+        val sampleRate = 22_050
+        val seconds =
+            cue.durationMillis.coerceIn(24, 150).toDouble() / 1_000.0
+        val sampleCount = (sampleRate * seconds).toInt().coerceAtLeast(64)
+        val pcm = ShortArray(sampleCount)
+
+        val brightness = cue.acousticBrightness.coerceIn(0f, 1f).toDouble()
+        val dryness = cue.acousticDryness.coerceIn(0f, 1f).toDouble()
+        val body = cue.acousticBody.coerceIn(0f, 1f).toDouble()
+        val fiber = cue.acousticFiber.coerceIn(0f, 1f).toDouble()
+        val cueGain = cue.acousticGain.coerceIn(0f, 0.78f).toDouble()
+
+        var seed =
+            0x35A1D7B xor
+                (cue.material.ordinal * 0x45D9F3B) xor
+                (cue.action.ordinal * 0x119DE1F3)
+        var smoothNoise = 0.0
+        val smoothing = (0.90 - brightness * 0.24).coerceIn(0.58, 0.90)
+        val bodyFrequency = 68.0 + body * 52.0 + brightness * 36.0
+
+        for (i in pcm.indices) {
+            val t = i.toDouble() / sampleRate.toDouble()
+            val unit = i.toDouble() / pcm.lastIndex.coerceAtLeast(1).toDouble()
+            seed = seed * 1103515245 + 12345
+            val white = (((seed ushr 16) and 0x7FFF) / 16383.5) - 1.0
+            smoothNoise = smoothNoise * smoothing + white * (1.0 - smoothing)
+
+            val bell = sin(PI * unit).coerceAtLeast(0.0)
+            val dryRelease = exp(-unit * (0.6 + dryness * 3.4))
+            val envelope = bell * (0.58 + dryRelease * 0.42)
+            val bodyWave =
+                sin(2.0 * PI * bodyFrequency * t) * body * 0.10
+            val fiberScratch =
+                white *
+                    sin(2.0 * PI * (780.0 + fiber * 920.0) * t) *
+                    fiber *
+                    0.10
+            val sheetNoise =
+                smoothNoise * (0.22 + brightness * 0.30 + dryness * 0.08)
+
+            val actionScale = when (cue.action) {
+                VeilMaterialPageAction.LIFT_THRESHOLD -> 0.32
+                VeilMaterialPageAction.COMPLETE -> 1.0
+                VeilMaterialPageAction.CANCEL -> 0.42
+                VeilMaterialPageAction.BOUNDARY -> 0.30
+            }
+            val raw =
+                (sheetNoise + bodyWave + fiberScratch) *
+                    envelope *
+                    actionScale
+            val scaled =
+                raw *
+                    cueGain *
+                    volume.coerceIn(0f, 0.55f) *
+                    0.74
+            pcm[i] =
+                (scaled.coerceIn(-1.0, 1.0) * Short.MAX_VALUE)
+                    .toInt()
+                    .toShort()
+        }
+
+        playStaticCue(
+            pcm = pcm,
+            sampleRate = sampleRate,
+            durationMillis = cue.durationMillis.toLong()
+        )
+    }
+
+    private fun playStaticCue(
+        pcm: ShortArray,
+        sampleRate: Int,
+        durationMillis: Long
+    ) {
         val minBuffer = AudioTrack.getMinBufferSize(
             sampleRate,
             AudioFormat.CHANNEL_OUT_MONO,
@@ -249,7 +426,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         try {
             if (track.write(pcm, 0, pcm.size) > 0) {
                 track.play()
-                Thread.sleep((seconds * 1000.0).toLong() + 24L)
+                Thread.sleep(durationMillis.coerceAtLeast(1L) + 24L)
             }
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()

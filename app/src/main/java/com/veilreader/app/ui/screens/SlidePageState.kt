@@ -45,9 +45,19 @@ internal class SlidePageState {
     private var width = 0f
     private var snapshotBuffer: Bitmap? = null
 
+    fun prepareBuffer(view: View): Boolean {
+        if (active || view.width <= 0 || view.height <= 0) return false
+        val warmed = obtainReusableBuffer(
+            current = snapshotBuffer,
+            view = view
+        ) ?: return false
+        snapshotBuffer = warmed
+        return true
+    }
+
     fun begin(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val bitmap = capture(view) ?: return false
+        val bitmap = captureIntoSourceBuffer(view) ?: return false
         width = view.width.toFloat()
         snapshot = bitmap
         offsetPx = 0f
@@ -89,8 +99,8 @@ internal class SlidePageState {
         anim.animateTo(
             targetValue = 0f,
             animationSpec = spring(
-                dampingRatio = 0.90f,
-                stiffness = Spring.StiffnessMediumLow
+                dampingRatio = 1f,
+                stiffness = Spring.StiffnessMedium
             )
         ) {
             offsetPx = value
@@ -100,13 +110,13 @@ internal class SlidePageState {
     suspend fun animateBoundaryBounce(directionSign: Float) {
         if (!active || width <= 0f) return
         val anim = Animatable(offsetPx)
-        val peek = width * 0.055f * directionSign.coerceIn(-1f, 1f)
-        anim.animateTo(peek, tween(95)) { offsetPx = value }
+        val peek = width * 0.035f * directionSign.coerceIn(-1f, 1f)
+        anim.animateTo(peek, tween(64)) { offsetPx = value }
         anim.animateTo(
             0f,
             spring(
-                dampingRatio = 0.82f,
-                stiffness = Spring.StiffnessMedium
+                dampingRatio = 1f,
+                stiffness = Spring.StiffnessHigh
             )
         ) { offsetPx = value }
     }
@@ -134,6 +144,17 @@ internal class SlidePageState {
         active = false
     }
 
+    /** Debug/test inspection hook that exercises the real slide overlay. */
+    internal fun installInspectableFrame(
+        bitmap: Bitmap,
+        offsetFraction: Float
+    ) {
+        snapshot = bitmap
+        width = bitmap.width.toFloat()
+        offsetPx = width * offsetFraction.coerceIn(-1f, 1f)
+        active = true
+    }
+
     fun releaseBufferIfIdle() {
         if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
@@ -145,7 +166,7 @@ internal class SlidePageState {
         releaseBufferIfIdle()
     }
 
-    private fun capture(view: View): Bitmap? =
+    private fun captureIntoSourceBuffer(view: View): Bitmap? =
         runCatching {
             val targetWidth = max(1, view.width)
             val targetHeight = max(1, view.height)
@@ -193,7 +214,7 @@ internal fun SlidePageOverlay(
                 .fillMaxSize()
                 .graphicsLayer {
                     translationX = state.offsetPx
-                    alpha = 1f - progress * 0.04f
+                    alpha = 1f
                 }
         )
 
@@ -206,7 +227,7 @@ internal fun SlidePageOverlay(
                 }.coerceIn(0f, size.width)
 
                 val shadowWidth =
-                    (16.dp.toPx() + 38.dp.toPx() * shadowIntensity)
+                    (10.dp.toPx() + 22.dp.toPx() * shadowIntensity)
                 val rawStartX = if (direction < 0f) {
                     edgeX
                 } else {
@@ -226,7 +247,7 @@ internal fun SlidePageOverlay(
                             colorStops = if (direction < 0f) {
                                 arrayOf(
                                     0f to Color.Black.copy(
-                                        alpha = 0.26f * shadowIntensity
+                                        alpha = 0.15f * shadowIntensity
                                     ),
                                     1f to Color.Transparent
                                 )
@@ -234,7 +255,7 @@ internal fun SlidePageOverlay(
                                 arrayOf(
                                     0f to Color.Transparent,
                                     1f to Color.Black.copy(
-                                        alpha = 0.26f * shadowIntensity
+                                        alpha = 0.15f * shadowIntensity
                                     )
                                 )
                             },
@@ -255,13 +276,16 @@ internal fun SlidePageOverlay(
 
 
 /**
- * A weighted slide should feel attached to the finger without looking like a native renderer
- * swipe. It starts with mass, then progressively catches up as the turn becomes intentional.
+ * Slide is intentionally not a paper simulation. It tracks the finger closely,
+ * starts quickly and settles without material resistance or bend metaphors.
  */
 internal fun slideHorizontalDragResponse(progress: Float): Float {
     val t = progress.coerceIn(0f, 1f)
     val smooth = t * t * (3f - 2f * t)
-    return 0.76f + smooth * 0.22f
+    // Slide should feel nearly direct from the first meaningful movement while
+    // retaining a tiny amount of headroom for the completion settle. This keeps it
+    // clearly distinct from Paper resistance without becoming mechanically glued.
+    return 0.94f + smooth * 0.04f
 }
 
 /**
@@ -280,12 +304,13 @@ internal fun slideCompletionDurationMillis(
     val remaining = 1f - progress.coerceIn(0f, 1f)
     val speed = abs(velocityDpPerSec)
     val fullTravelMillis = when {
-        speed >= 1_800f -> 140f
-        speed >= 900f -> 175f
-        else -> 220f
+        speed >= 1_800f -> 112f
+        speed >= 900f -> 136f
+        else -> 168f
     }
-    // Even a nearly completed gesture needs a perceptible settle frame, but it must not crawl.
+    // Slide is the low-latency navigation mode: preserve a brief settle without
+    // simulating paper weight or a long material release.
     return (88f + (fullTravelMillis - 88f) * remaining)
         .roundToInt()
-        .coerceIn(88, 220)
+        .coerceIn(88, 168)
 }
