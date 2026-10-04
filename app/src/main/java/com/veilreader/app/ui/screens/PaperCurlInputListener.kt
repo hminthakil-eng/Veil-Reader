@@ -5,13 +5,9 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import com.veilreader.app.ui.reader.readerNavigationIdentityHasVisuallyDeparted
+import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
@@ -201,7 +197,9 @@ internal class PaperCurlInputListener(
             val accepted = navigate(spec.direction)
             val moved =
                 accepted &&
-                    awaitNavigationDeparture(originLocator)
+                    awaitReaderVisualNavigationDeparture(
+                        currentLocator = navigator.currentLocator,
+                        origin = originLocator)
             if (!operationIsCurrent(operationToken)) {
                 if (accepted) {
                     navigator.go(originLocator, animated = false)
@@ -390,7 +388,9 @@ internal class PaperCurlInputListener(
                     val accepted = navigate(spec.direction)
                     val moved =
                         accepted &&
-                            awaitNavigationDeparture(origin)
+                            awaitReaderVisualNavigationDeparture(
+                        currentLocator = navigator.currentLocator,
+                        origin = origin)
                     if (!operationIsCurrent(operationToken)) {
                         if (accepted) {
                             navigator.go(origin, animated = false)
@@ -627,7 +627,9 @@ internal class PaperCurlInputListener(
                 val moved =
                     accepted &&
                         origin != null &&
-                        awaitNavigationDeparture(origin)
+                        awaitReaderVisualNavigationDeparture(
+                        currentLocator = navigator.currentLocator,
+                        origin = origin)
                 if (
                     accepted &&
                     (
@@ -672,32 +674,6 @@ internal class PaperCurlInputListener(
         if (abs(delta) >= 1f) lastMotionAtMillis = now
         lastDragSampleAtMillis = now
         lastInwardDistance = inward
-    }
-
-    private suspend fun awaitNavigationDeparture(
-        origin: Locator
-    ): Boolean = withContext(NonCancellable) {
-        // Once Readium accepted a navigation request, caller cancellation must not
-        // tear down the settlement handshake before the operation fence can decide
-        // whether to commit or restore the exact origin.
-        val originIdentity = origin.toReaderNavigationIdentity()
-        if (
-            readerNavigationIdentityHasVisuallyDeparted(
-                origin = originIdentity,
-                observed = navigator.currentLocator.value.toReaderNavigationIdentity()
-            )
-        ) {
-            return@withContext true
-        }
-        withTimeoutOrNull(NAVIGATION_SETTLE_TIMEOUT_MS) {
-            navigator.currentLocator.first { locator ->
-                readerNavigationIdentityHasVisuallyDeparted(
-                    origin = originIdentity,
-                    observed = locator.toReaderNavigationIdentity()
-                )
-            }
-            true
-        } ?: false
     }
 
     private fun restoreDragStart(
