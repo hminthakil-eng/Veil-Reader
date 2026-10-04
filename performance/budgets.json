@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "notes": {
     "smoke": "Emulator-only guardrails. Startup uses Macrobenchmark timing; Reader page-turn smoke uses AndroidX gfxinfo metrics because the GitHub API 35 lavapipe emulator does not reliably emit Perfetto frame-timeline expect/actual slices. These are catastrophic-regression guardrails, not product performance claims.",
-    "physical": "Initial Veil Reader product budgets for a representative physical device. Re-baseline only after an intentional performance review."
+    "physical": "Initial Veil Reader product budgets for a representative physical device. Re-baseline only after an intentional performance review. Canonical Paper evidence also requires observed GPU draw, texture-upload, warm-capture and View.draw trace metrics; numeric limits for those traces are calibrated only after stable physical-device measurements."
   },
   "modes": {
     "smoke": [
@@ -97,6 +97,38 @@
         "metric": "frameCount",
         "stat": "median",
         "min": 20
+      },
+      {
+        "id": "paper_gpu_draw_max_observed",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "metrics",
+        "metric": "paperGpuDrawMaxMs",
+        "stat": "median"
+      },
+      {
+        "id": "paper_texture_upload_max_observed",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "metrics",
+        "metric": "paperTextureUploadMaxMs",
+        "stat": "median"
+      },
+      {
+        "id": "paper_prepare_capture_max_observed",
+        "classSuffix": ".PaperWarmupBenchmark",
+        "benchmarkNameSuffix": "firstPaperSnapshotPreparation",
+        "metricGroup": "metrics",
+        "metric": "paperPrepareCaptureMaxMs",
+        "stat": "median"
+      },
+      {
+        "id": "paper_view_draw_capture_max_observed",
+        "classSuffix": ".PaperWarmupBenchmark",
+        "benchmarkNameSuffix": "firstPaperSnapshotPreparation",
+        "metricGroup": "metrics",
+        "metric": "paperViewDrawCaptureMaxMs",
+        "stat": "median"
       }
     ]
   }
