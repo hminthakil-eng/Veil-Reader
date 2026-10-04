@@ -72,8 +72,9 @@ Useful ideas:
 - front/back material handling.
 
 Veil adaptation:
-- existing reusable snapshot buffer remains the single capture source;
-- GPU uploads once per turn rather than per drag frame.
+- source and destination captures use ping-pong CPU bitmap slots so the UI thread never overwrites the bitmap the GL thread may still be uploading;
+- prewarm allocates memory only; page content is always captured fresh at turn start;
+- persistent GPU texture storage is updated with `texSubImage2D` when dimensions are unchanged.
 
 ## v2 architecture
 
@@ -118,13 +119,13 @@ It is renderer-independent and unit-testable.
 
 ### 4. Triangle mesh
 
-`GpuMaterialPageCurlView.kt` uses a static 48 × 8 quad grid:
-- 441 vertices;
-- 2,304 triangle indices;
+`GpuMaterialPageCurlView.kt` uses a static GPU grid selected by device memory tier:
+- normal device: 72 × 14 quads;
+- low-RAM device: 48 × 8 quads;
 - vertex/index buffers created once;
 - no per-frame mesh allocation.
 
-The vertex shader performs the cylinder deformation.
+The vertex shader performs the cylinder deformation. Future quality scaling should be driven by curvature/screen error rather than adding arbitrary density.
 
 ### 5. Real rollover
 
@@ -168,6 +169,24 @@ When debug Material review is enabled and Reader is in Paper mode, the transpare
 - PDF remains unchanged;
 - GPU overlay is non-clickable, non-focusable and accessibility-neutral;
 - Readium remains the only navigation source of truth.
+
+
+### Shader interface contracts
+
+Arena found three independent GLSL defects capable of preventing the renderer from appearing at all:
+- duplicate vertex `uSideSign`;
+- fragment use of undeclared `uTexelSize`;
+- fragment use of undeclared `uSideSign`.
+
+All are fixed. `GpuPageShaderContractTest` now verifies unique/declared uniforms, critical uniform presence, and exact vertex/fragment varying compatibility.
+
+### Physical pointer travel
+
+The cylinder model no longer derives radius from progress alone. `MaterialPageEngineState` tracks normalized physical pointer travel from the real drag vector. Early small travel keeps the curl tight, travel opens the cylinder, and terminal travel tightens it again. This is informed by touch-to-origin/semi-perimeter behavior in mature PageFlip engines while retaining Veil's material profiles and Readium transaction model.
+
+### Source prewarm correctness
+
+`prepareBuffer()` is allocation-only. It never caches publication content. `begin()` captures the current Readium surface fresh. This prevents a locator change between idle prewarm and gesture start from curling stale page content.
 
 ## Verification gates
 
