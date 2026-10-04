@@ -9,6 +9,13 @@ import org.junit.Test
 class ReaderNavigationTransactionTest {
 
     @Test
+    fun navigationTransactionToken_neverUsesZeroOrNegativeSentinel() {
+        assertEquals(1L, nextReaderNavigationTransactionToken(0L))
+        assertEquals(8L, nextReaderNavigationTransactionToken(7L))
+        assertEquals(1L, nextReaderNavigationTransactionToken(Long.MAX_VALUE))
+    }
+
+    @Test
     fun fastPdfFlush_preservesOnlyTruthfulPassageVisits() {
         val gate = ReaderNavigationTransactionGate()
         gate.begin("page1", 10L, expectedPdfPage = 3, originPdfPage = 1, passageVisitLocatorJson = "page3")
