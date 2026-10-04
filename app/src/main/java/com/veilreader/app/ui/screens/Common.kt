@@ -76,22 +76,39 @@ internal data class VeilWindowSizeDp(
     val height: Int
 )
 
+internal fun resolveVeilWindowSizeDp(
+    windowWidthDp: Float,
+    windowHeightDp: Float,
+    fallbackWidthDp: Int,
+    fallbackHeightDp: Int
+): VeilWindowSizeDp {
+    val fallbackWidth = fallbackWidthDp.coerceAtLeast(0).toFloat()
+    val fallbackHeight = fallbackHeightDp.coerceAtLeast(0).toFloat()
+    val width = windowWidthDp.takeIf { it.isFinite() && it > 0f } ?: fallbackWidth
+    val height = windowHeightDp.takeIf { it.isFinite() && it > 0f } ?: fallbackHeight
+    return VeilWindowSizeDp(
+        width = width.coerceAtLeast(0f),
+        height = height.toInt().coerceAtLeast(0)
+    )
+}
+
 /**
  * Current app-window dimensions in dp.
  *
- * Layout decisions use the live Compose window container rather than Configuration screen
- * dimensions so split-screen, desktop resizing and fold/unfold transitions share one authority.
+ * The live Compose window container is the structural authority for split-screen,
+ * desktop resizing and fold/unfold changes. Configuration is only a bootstrap/test
+ * fallback while the window host has not reported a positive container size yet.
  */
 @Composable
 internal fun currentVeilWindowSizeDp(): VeilWindowSizeDp {
-    val density = LocalDensity.current
-    val size = LocalWindowInfo.current.containerSize
-    return with(density) {
-        VeilWindowSizeDp(
-            width = size.width.toDp().value.coerceAtLeast(0f),
-            height = size.height.toDp().value.toInt().coerceAtLeast(0)
-        )
-    }
+    val window = LocalWindowInfo.current.containerDpSize
+    val configuration = LocalConfiguration.current
+    return resolveVeilWindowSizeDp(
+        windowWidthDp = window.width.value,
+        windowHeightDp = window.height.value,
+        fallbackWidthDp = configuration.screenWidthDp,
+        fallbackHeightDp = configuration.screenHeightDp
+    )
 }
 
 @Composable
