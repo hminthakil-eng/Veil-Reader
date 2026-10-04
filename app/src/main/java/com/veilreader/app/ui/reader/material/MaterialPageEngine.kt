@@ -260,6 +260,11 @@ internal class MaterialPageEngineState(
 
     fun dragProgress(): Float = progress.coerceIn(0f, 1f)
 
+    private fun acceptAnimatedProgress(value: Float) {
+        acceptAnimatedProgress(value)
+        pointerTravel = progress
+    }
+
     fun prepareTapGrip() {
         if (!active) return
         pullOriginY = materialPageTapPullOrigin(profile)
@@ -301,7 +306,7 @@ internal class MaterialPageEngineState(
 
         if (reducedMotion) {
             visualAlpha = 0.08f
-            progress = 1f
+            acceptAnimatedProgress(1f)
         } else {
             val anim = Animatable(progress)
             val liftTarget =
@@ -315,7 +320,7 @@ internal class MaterialPageEngineState(
                         easing = FastOutSlowInEasing
                     )
                 ) {
-                    progress = value.coerceIn(0f, 1f)
+                    acceptAnimatedProgress(value)
                 }
             }
 
@@ -337,7 +342,7 @@ internal class MaterialPageEngineState(
                 ),
                 initialVelocity = launchVelocity
             ) {
-                progress = value.coerceIn(0f, 1f)
+                acceptAnimatedProgress(value)
             }
         }
 
@@ -375,7 +380,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-1f, 5f)
             ) {
-                progress = value.coerceIn(0f, 1f)
+                acceptAnimatedProgress(value)
             }
         }
 
@@ -395,7 +400,7 @@ internal class MaterialPageEngineState(
 
         if (reducedMotion) {
             visualAlpha = 1f
-            progress = 0f
+            acceptAnimatedProgress(0f)
         } else {
             val anim = Animatable(progress)
             anim.animateTo(
@@ -412,7 +417,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-5f, 3f)
             ) {
-                progress = value.coerceIn(0f, 1f)
+                acceptAnimatedProgress(value)
             }
         }
 
@@ -434,7 +439,7 @@ internal class MaterialPageEngineState(
         } else {
             val anim = Animatable(progress)
             anim.animateTo(0.045f, tween(72)) {
-                progress = value
+                acceptAnimatedProgress(value)
             }
             anim.animateTo(
                 targetValue = 0f,
@@ -444,7 +449,7 @@ internal class MaterialPageEngineState(
                     visibilityThreshold = 0.001f
                 )
             ) {
-                progress = value.coerceIn(0f, 1f)
+                acceptAnimatedProgress(value)
             }
         }
 
@@ -459,6 +464,7 @@ internal class MaterialPageEngineState(
         verticalBias = 0f
         pullOriginY = 0.5f
         diagonalPull = 0f
+        pointerTravel = 0f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -497,6 +503,7 @@ internal class MaterialPageEngineState(
         verticalBias: Float = 0f,
         pullOriginY: Float = 0.5f,
         diagonalPull: Float = 0f,
+        pointerTravel: Float = progress,
         side: MaterialPageSide = MaterialPageSide.RIGHT,
         profile: MaterialPageProfile = this.profile,
         reducedMotion: Boolean = false,
@@ -519,6 +526,9 @@ internal class MaterialPageEngineState(
         )
         this.diagonalPull =
             diagonalPull.takeIf { it.isFinite() }?.coerceIn(-1f, 1f) ?: 0f
+        this.pointerTravel =
+            pointerTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1.5f)
+                ?: this.progress
         this.side = side
         this.profile = profile
         this.reducedMotion = reducedMotion
