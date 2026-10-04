@@ -5565,10 +5565,19 @@ internal fun ReaderReadingModeSelector(
     }
 }
 
+internal fun readerPageTurnStyleEnabled(
+    style: PageTurnStyle,
+    selectorEnabled: Boolean,
+    materialPageEnabled: Boolean
+): Boolean =
+    selectorEnabled &&
+        (style != PageTurnStyle.PAPER || materialPageEnabled)
+
 @Composable
 internal fun ReaderPageTurnSelector(
     selected: PageTurnStyle,
     enabled: Boolean = true,
+    paperEnabled: Boolean = MaterialPageEngineRollout.isEnabled(),
     onSelect: (PageTurnStyle) -> Unit
 ) {
     val choices = listOf(
@@ -5604,13 +5613,18 @@ internal fun ReaderPageTurnSelector(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 choices.forEach { (style, previewMode, label) ->
+                    val choiceEnabled = readerPageTurnStyleEnabled(
+                        style = style,
+                        selectorEnabled = enabled,
+                        materialPageEnabled = paperEnabled
+                    )
                     ReaderModeChoice(
                         label = label,
                         previewMode = previewMode,
                         active = selected == style,
-                        enabled = enabled,
+                        enabled = choiceEnabled,
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { onSelect(style) }
+                        onClick = { if (choiceEnabled) onSelect(style) }
                     )
                 }
             }
@@ -5622,13 +5636,18 @@ internal fun ReaderPageTurnSelector(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 choices.forEach { (style, previewMode, label) ->
+                    val choiceEnabled = readerPageTurnStyleEnabled(
+                        style = style,
+                        selectorEnabled = enabled,
+                        materialPageEnabled = paperEnabled
+                    )
                     ReaderModeChoice(
                         label = label,
                         previewMode = previewMode,
                         active = selected == style,
-                        enabled = enabled,
+                        enabled = choiceEnabled,
                         modifier = Modifier.weight(1f),
-                        onClick = { onSelect(style) }
+                        onClick = { if (choiceEnabled) onSelect(style) }
                     )
                 }
             }
