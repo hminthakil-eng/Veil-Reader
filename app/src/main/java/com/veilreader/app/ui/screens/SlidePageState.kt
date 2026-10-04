@@ -44,31 +44,20 @@ internal class SlidePageState {
 
     private var width = 0f
     private var snapshotBuffer: Bitmap? = null
-    private var preparedSnapshotValid = false
 
     fun prepareBuffer(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val bitmap = captureIntoSourceBuffer(view) ?: run {
-            preparedSnapshotValid = false
-            return false
-        }
-        preparedSnapshotValid =
-            !bitmap.isRecycled &&
-                bitmap.width == view.width &&
-                bitmap.height == view.height
-        return preparedSnapshotValid
+        val warmed = obtainReusableBuffer(
+            current = snapshotBuffer,
+            view = view
+        ) ?: return false
+        snapshotBuffer = warmed
+        return true
     }
 
     fun begin(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val prepared = snapshotBuffer?.takeIf {
-            preparedSnapshotValid &&
-                !it.isRecycled &&
-                it.width == view.width &&
-                it.height == view.height
-        }
-        val bitmap = prepared ?: captureIntoSourceBuffer(view) ?: return false
-        preparedSnapshotValid = false
+        val bitmap = captureIntoSourceBuffer(view) ?: return false
         width = view.width.toFloat()
         snapshot = bitmap
         offsetPx = 0f
@@ -142,7 +131,6 @@ internal class SlidePageState {
      */
     fun clearImmediately() {
         snapshot = null
-        preparedSnapshotValid = false
         offsetPx = 0f
         width = 0f
         active = false
@@ -150,7 +138,6 @@ internal class SlidePageState {
 
     private suspend fun clearVisual(keepInputLock: Boolean) {
         snapshot = null
-        preparedSnapshotValid = false
         offsetPx = 0f
         width = 0f
         if (keepInputLock) delay(VeilMotion.FRAME_SETTLE_MS)
@@ -172,7 +159,6 @@ internal class SlidePageState {
         if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
-        preparedSnapshotValid = false
     }
 
     fun dispose() {
