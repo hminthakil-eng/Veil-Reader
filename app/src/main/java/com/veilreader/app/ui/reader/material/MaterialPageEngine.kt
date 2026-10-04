@@ -1,8 +1,8 @@
 package com.veilreader.app.ui.reader.material
 
 import android.graphics.Bitmap
-import android.graphics.Canvas as AndroidCanvas
 import android.graphics.PointF
+import android.os.SystemClock
 import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.veilreader.app.BuildConfig
+import com.veilreader.app.diagnostics.ReaderTrace
 import kotlinx.coroutines.delay
 import kotlin.math.hypot
 import kotlin.math.max
@@ -62,7 +63,9 @@ internal object MaterialPageEngineRollout {
 @Stable
 internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
-    private var sensorySink: MaterialPageSensorySink? = null
+    private var sensorySink: MaterialPageSensorySink? = null,
+    private val snapshotProvider: MaterialPageSnapshotProvider =
+        ViewDrawMaterialPageSnapshotProvider
 ) {
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
@@ -108,10 +111,17 @@ internal class MaterialPageEngineState(
     private var density = 1f
     private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
     private var snapshotBufferCursor = -1
+    private var snapshotSourceRevision = 1L
+    private var activeSnapshotRevision = 0L
     private var liftCueEmitted = false
 
     fun configureProfile(value: MaterialPageProfile) {
         if (!active) profile = value
+    }
+
+    fun invalidateSnapshotSource() {
+        snapshotSourceRevision =
+            nextMaterialPageSnapshotRevision(snapshotSourceRevision)
     }
 
     fun setSensorySink(value: MaterialPageSensorySink?) {
@@ -150,7 +160,24 @@ internal class MaterialPageEngineState(
         profile: MaterialPageProfile = this.profile
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val bitmap = captureIntoSourceBuffer(view) ?: return false
+        val capture = captureIntoSourceBuffer(view)
+        val ready = capture as? MaterialPageSnapshotCapture.Ready ?: return false
+        if (
+            !materialPageSnapshotCaptureIsCurrent(
+                captureRevision = ready.sourceRevision,
+                expectedRevision = snapshotSourceRevision
+            )
+        ) {
+            ReaderTrace.event(
+                name = "paper_snapshot_stale_rejected",
+                details =
+                    "captureRevision=${ready.sourceRevision} " +
+                        "expectedRevision=$snapshotSourceRevision"
+            )
+            return false
+        }
+        val bitmap = ready.bitmap
+        activeSnapshotRevision = ready.sourceRevision
 
         width = view.width.toFloat()
         height = view.height.toFloat()
@@ -412,6 +439,7 @@ internal class MaterialPageEngineState(
 
     suspend fun clear() {
         snapshot = null
+        activeSnapshotRevision = 0L
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -430,6 +458,7 @@ internal class MaterialPageEngineState(
 
     fun clearImmediately() {
         snapshot = null
+        activeSnapshotRevision = 0L
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -460,6 +489,7 @@ internal class MaterialPageEngineState(
         tone: MaterialPageTone = this.tone
     ) {
         snapshot = bitmap
+        activeSnapshotRevision = snapshotSourceRevision
         width = bitmap.width.toFloat()
         height = bitmap.height.toFloat()
         this.progress =
@@ -518,14 +548,59 @@ internal class MaterialPageEngineState(
         releaseBufferIfIdle()
     }
 
-    private fun captureIntoSourceBuffer(view: View): Bitmap? =
-        runCatching {
-            val bitmap = obtainSnapshotBuffer(view)
-                ?: return@runCatching null
-            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
-            view.draw(AndroidCanvas(bitmap))
-            bitmap
-        }.getOrNull()
+    private fun captureIntoSourceBuffer(
+        view: View
+    ): MaterialPageSnapshotCapture {
+        val revision = snapshotSourceRevision
+        val bitmap = obtainSnapshotBuffer(view)
+            ?: return MaterialPageSnapshotCapture.Failed(
+                sourceRevision = revision,
+                reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
+                errorType = "BitmapAllocation"
+            )
+
+        val totalStarted = SystemClock.elapsedRealtimeNanos()
+        val capture = snapshotProvider.capture(
+            view = view,
+            target = bitmap,
+            sourceRevision = revision
+        )
+        val totalNanos =
+            (SystemClock.elapsedRealtimeNanos() - totalStarted)
+                .coerceAtLeast(0L)
+
+        when (capture) {
+            is MaterialPageSnapshotCapture.Ready ->
+                ReaderTrace.event(
+                    name = "paper_snapshot_ready",
+                    details =
+                        "provider=${capture.provider} " +
+                            "revision=${capture.sourceRevision} " +
+                            "width=${capture.bitmap.width} " +
+                            "height=${capture.bitmap.height} " +
+                            "captureUs=${capture.elapsedNanos / 1_000L} " +
+                            "totalUs=${totalNanos / 1_000L}"
+                )
+
+            is MaterialPageSnapshotCapture.NotReady ->
+                ReaderTrace.event(
+                    name = "paper_snapshot_not_ready",
+                    details =
+                        "revision=${capture.sourceRevision} " +
+                            "reason=${capture.reason}"
+                )
+
+            is MaterialPageSnapshotCapture.Failed ->
+                ReaderTrace.event(
+                    name = "paper_snapshot_failed",
+                    details =
+                        "revision=${capture.sourceRevision} " +
+                            "reason=${capture.reason} " +
+                            "errorType=${capture.errorType.orEmpty()}"
+                )
+        }
+        return capture
+    }
 
     private fun obtainSnapshotBuffer(view: View): Bitmap? {
         snapshotBufferCursor = nextMaterialPageBufferSlot(snapshotBufferCursor)
