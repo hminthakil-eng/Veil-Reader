@@ -3500,32 +3500,63 @@ fun ReaderScreen(
             passageVisits = bookPassageVisits,
             onDismiss = { showNotebook = false },
             onGo = { json ->
-                val nav = navigator
-                val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
-                if (locator == null || nav == null) {
+                val locator =
+                    runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
+                if (locator == null || navigator == null) {
                     showNotebook = false
                     readerMessage = savedLocationFailedMessage
                 } else {
-                    val originLocator = nav.currentLocator.value
-                    val originJson = originLocator.toVeilPersistedJson(opened.format)
-                    val targetIdentity = locator.toReaderNavigationIdentity()
-                    if (
-                        !shouldStartReaderIdentityJump(
-                            origin = originLocator.toReaderNavigationIdentity(),
-                            target = targetIdentity
-                        )
-                    ) {
-                        showNotebook = false
-                    } else {
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    val expectedSessionId = readerSessionInstanceId
+                    scope.launch {
+                        if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                            showNotebook = false
+                            readerMessage = savedLocationFailedMessage
+                            return@launch
+                        }
+                        if (
+                            !readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId =
+                                    latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) {
+                            return@launch
+                        }
+
+                        val nav = latestNavigator.value ?: return@launch
+                        val originLocator = nav.currentLocator.value
+                        val targetIdentity = locator.toReaderNavigationIdentity()
+                        if (
+                            !shouldStartReaderIdentityJump(
+                                origin = originLocator.toReaderNavigationIdentity(),
+                                target = targetIdentity
+                            )
+                        ) {
+                            showNotebook = false
+                            return@launch
+                        }
+
+                        readerViewModel.onUserInteraction(expectedSessionId)
                         game.rebasePagePacing()
                         val transactionToken = beginProgrammaticNavigation(
-                            originLocatorJson = originJson,
+                            originLocatorJson =
+                                originLocator.toVeilPersistedJson(opened.format),
                             targetIdentity = targetIdentity,
                             passageVisitLocatorJson = json,
-                            expectedPdfPage = if (opened.format == BookFormat.PDF) pdfPageNumber(locator) else null
+                            expectedPdfPage =
+                                if (opened.format == BookFormat.PDF) {
+                                    pdfPageNumber(locator)
+                                } else {
+                                    null
+                                }
                         )
-                        if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
+                        if (
+                            nav.go(
+                                locator,
+                                animated =
+                                    shouldAnimateReaderJump(latestReducedMotion.value)
+                            )
+                        ) {
                             showNotebook = false
                         } else {
                             cancelProgrammaticNavigation(transactionToken)
@@ -3536,34 +3567,63 @@ fun ReaderScreen(
                 }
             },
             onChapter = { link ->
-                val nav = navigator
-                val targetHref = readerEffectiveTargetHref(
-                    currentHref = currentLocationHref,
-                    targetHref = link.href.toString()
-                )
-                if (nav == null) {
+                if (navigator == null) {
                     showNotebook = false
                     readerMessage = chapterFailedMessage
-                } else if (
-                    !shouldStartReaderLinkJump(
-                        currentHref = currentLocationHref,
-                        targetHref = targetHref
-                    )
-                ) {
-                    showNotebook = false
                 } else {
-                    readerViewModel.onUserInteraction(readerSessionInstanceId)
-                    game.rebasePagePacing()
-                    val transactionToken = beginProgrammaticNavigation(
-                        originLocatorJson = currentLocatorJson(),
-                        targetHref = targetHref
-                    )
-                    if (nav.go(link, animated = shouldAnimateReaderJump(reducedMotion))) {
-                        showNotebook = false
-                    } else {
-                        cancelProgrammaticNavigation(transactionToken)
-                        showNotebook = false
-                        readerMessage = chapterFailedMessage
+                    val expectedSessionId = readerSessionInstanceId
+                    scope.launch {
+                        if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                            showNotebook = false
+                            readerMessage = chapterFailedMessage
+                            return@launch
+                        }
+                        if (
+                            !readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId =
+                                    latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) {
+                            return@launch
+                        }
+
+                        val nav = latestNavigator.value ?: return@launch
+                        val current = nav.currentLocator.value
+                        val targetHref = readerEffectiveTargetHref(
+                            currentHref = current.href.toString(),
+                            targetHref = link.href.toString()
+                        )
+                        if (
+                            !shouldStartReaderLinkJump(
+                                currentHref = current.href.toString(),
+                                targetHref = targetHref
+                            )
+                        ) {
+                            showNotebook = false
+                            return@launch
+                        }
+
+                        readerViewModel.onUserInteraction(expectedSessionId)
+                        game.rebasePagePacing()
+                        val transactionToken = beginProgrammaticNavigation(
+                            originLocatorJson =
+                                current.toVeilPersistedJson(opened.format),
+                            targetHref = targetHref
+                        )
+                        if (
+                            nav.go(
+                                link,
+                                animated =
+                                    shouldAnimateReaderJump(latestReducedMotion.value)
+                            )
+                        ) {
+                            showNotebook = false
+                        } else {
+                            cancelProgrammaticNavigation(transactionToken)
+                            showNotebook = false
+                            readerMessage = chapterFailedMessage
+                        }
                     }
                 }
             },
