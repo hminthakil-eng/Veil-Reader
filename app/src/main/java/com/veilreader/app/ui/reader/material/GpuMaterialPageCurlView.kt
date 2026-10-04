@@ -53,6 +53,7 @@ internal class GpuMaterialPageCurlView(
 
     private data class SubmittedFrame(
         val generation: Long,
+        val viewportGeneration: Long,
         val sequence: Long,
         val textureRevision: Long,
         val bitmap: Bitmap?,
@@ -83,6 +84,9 @@ internal class GpuMaterialPageCurlView(
 
     @Volatile
     private var rendererGeneration = 0L
+
+    @Volatile
+    private var viewportGeneration = 0L
 
     private var program = 0
     private var vertexBufferId = 0
@@ -161,6 +165,7 @@ internal class GpuMaterialPageCurlView(
             }
             submittedFrame = SubmittedFrame(
                 generation = rendererGeneration,
+                viewportGeneration = viewportGeneration,
                 sequence = submittedSequence,
                 textureRevision = textureRevision,
                 bitmap = usableBitmap,
@@ -225,6 +230,8 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        viewportGeneration =
+            nextGpuMaterialViewportGeneration(viewportGeneration)
         viewportWidth = width.coerceAtLeast(1)
         viewportHeight = height.coerceAtLeast(1)
         GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
@@ -258,6 +265,8 @@ internal class GpuMaterialPageCurlView(
             !gpuMaterialFrameIsCurrent(
                 frameGeneration = frame.generation,
                 rendererGeneration = rendererGeneration,
+                frameViewportGeneration = frame.viewportGeneration,
+                rendererViewportGeneration = viewportGeneration,
                 frameSequence = frame.sequence,
                 latestSequence = synchronized(frameLock) { submittedSequence }
             )
@@ -297,6 +306,8 @@ internal class GpuMaterialPageCurlView(
             !gpuMaterialFrameIsCurrent(
                 frameGeneration = frame.generation,
                 rendererGeneration = rendererGeneration,
+                frameViewportGeneration = frame.viewportGeneration,
+                rendererViewportGeneration = viewportGeneration,
                 frameSequence = frame.sequence,
                 latestSequence = synchronized(frameLock) { submittedSequence }
             )
@@ -1162,6 +1173,9 @@ internal fun gpuMaterialFrameMatchesRendererGeneration(
     frameGeneration > 0L &&
         frameGeneration == rendererGeneration
 
+internal fun nextGpuMaterialViewportGeneration(current: Long): Long =
+    if (current == Long.MAX_VALUE) 1L else current + 1L
+
 internal fun nextGpuMaterialFrameSequence(current: Long): Long =
     if (current == Long.MAX_VALUE) 1L else current + 1L
 
@@ -1171,6 +1185,8 @@ internal fun nextGpuMaterialTextureRevision(current: Long): Long =
 internal fun gpuMaterialFrameIsCurrent(
     frameGeneration: Long,
     rendererGeneration: Long,
+    frameViewportGeneration: Long,
+    rendererViewportGeneration: Long,
     frameSequence: Long,
     latestSequence: Long
 ): Boolean =
@@ -1178,6 +1194,8 @@ internal fun gpuMaterialFrameIsCurrent(
         frameGeneration = frameGeneration,
         rendererGeneration = rendererGeneration
     ) &&
+        frameViewportGeneration > 0L &&
+        frameViewportGeneration == rendererViewportGeneration &&
         frameSequence > 0L &&
         frameSequence == latestSequence
 
