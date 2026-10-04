@@ -6,7 +6,11 @@ import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
+import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageReleaseDecision
@@ -153,35 +157,42 @@ internal class PaperCurlInputListener(
             return
         }
 
-        val moved = navigate(spec.direction)
-        if (!moved) {
-            onBoundaryHit(spec.side)
-            if (visualReady) {
-                completionJob = scope.launch {
+        // Tap/key turns must obey the same visual transaction as drag turns.
+        // Give the captured source sheet one frame to become drawable before
+        // changing Readium underneath it; otherwise the destination can flash
+        // before the first GPU Paper frame reaches the screen.
+        completionJob = scope.launch {
+            if (visualReady && !reducedMotion) {
+                delay(VeilMotion.FRAME_SETTLE_MS)
+            }
+            if (cancellationRequested) {
+                if (state.active) state.clear()
+                resetDrag()
+                return@launch
+            }
+
+            val moved = navigate(spec.direction)
+            if (!moved) {
+                onBoundaryHit(spec.side)
+                if (visualReady && state.active) {
                     state.animateBoundaryBounce()
                     state.clear()
-                    resetDrag()
                 }
-            } else {
                 resetDrag()
+                return@launch
             }
-            return
-        }
 
-        turnCommitted = true
-        onCommittedTurn()
-        if (visualReady) {
-            completionJob = scope.launch {
-                if (!isReducedMotion()) {
+            turnCommitted = true
+            onCommittedTurn()
+            if (visualReady && state.active) {
+                if (!reducedMotion) {
+                    // Let the destination paint underneath the captured source leaf
+                    // before the sheet exposes it through the release animation.
                     delay(VeilMotion.PAGE_REVEAL_MS)
                 }
-                // The navigated destination is the page underneath the lifted leaf,
-                // not the reverse side of that same physical leaf.
                 state.animateTapTurn()
                 state.clear()
-                resetDrag()
             }
-        } else {
             resetDrag()
         }
     }
@@ -397,12 +408,45 @@ internal class PaperCurlInputListener(
      * Use this before taking a durable locator snapshot.
      */
     suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val targetIdentity =
+            if (!turnCommitted) {
+                dragStartLocator?.toReaderNavigationIdentity()
+            } else {
+                null
+            }
         val existingCompletion = completionJob
         val requested = cancelPendingTurn()
         if (!requested) return false
         (existingCompletion ?: completionJob)?.join()
-        return true
+
+        targetIdentity ?: return true
+        if (
+            readerNavigationIdentityMatchesTarget(
+                observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
+                target = targetIdentity
+            )
+        ) {
+            return true
+        }
+
+        // navigator.go() only acknowledges that a navigation request was accepted.
+        // The authoritative restoration point is currentLocator.
+        return withTimeoutOrNull(RESTORE_SETTLE_TIMEOUT_MS) {
+            navigator.currentLocator.first { locator ->
+                readerNavigationIdentityMatchesTarget(
+                    observed = locator.toReaderNavigationIdentity(),
+                    target = targetIdentity
+                )
+            }
+            true
+        } ?: false
     }
+
+    fun hasPendingTurn(): Boolean =
+        dragReserved ||
+            activeDrag != null ||
+            completionJob != null ||
+            state.active
 
     /**
      * Synchronous teardown for composition/lifecycle disposal where the composition scope may be
@@ -663,6 +707,7 @@ internal class PaperCurlInputListener(
     private companion object {
         const val EDGE_FRACTION = 0.22f
         const val DRAG_DIRECTION_SLOP_PX = 4f
+        const val RESTORE_SETTLE_TIMEOUT_MS = 1_500L
     }
 }
 
