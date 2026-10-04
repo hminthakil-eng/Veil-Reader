@@ -132,3 +132,9 @@ Initial captures precede scroll assertions; 200% landscape checks reachable acti
 An earlier full run exposed three added ConfigurationScreenWidthHeight warnings. All three were corrected through actual window measurement, without suppression. One intermediate rerun was explicitly cancelled before the remaining correction; only the complete subsequent run above is acceptance evidence. ReaderScreen changes are confined to the Appearance presentation/disclosure layer and its window import. Draft/slider/disposal settlement remains unchanged. Canonical data/domain/navigation/Reader ownership and Paper Curl/Slide drawing, geometry and input/state files are unchanged from this continuation’s parent.
 
 **PR #371 stays Draft. DEVICE-GREEN and final visual acceptance remain unestablished.** Every real-publication/device gate above still applies. Next evidence must resolve compact cover balance, long Persian artifact proportions, dense node touch selection, real hinges, preview discoverability/live settlement, system bars/IME, TalkBack, paper/slide mid-drag and long-session comfort. Fictional debug histories do not establish production history.
+
+### Published-source GitHub Actions status
+
+Application candidate `0772c4adc7a682ee2a5a5e8f1e68e99e1ca923e6`: Android CI run `37181420749` / job `111374608440`; Storage Instrumentation run `37181420735` / job `111374608611`; Performance Benchmarks run `37181420707` / job `111374608342`. Each reports failure with **zero executed steps and no job logs**. This is recorded as an infrastructure/account blocker before code execution, not a code regression or CI-GREEN. The connector does not expose the underlying runner/billing reason. Exact returned metadata is retained in [allout-github-ci.json](allout-github-ci.json).
+
+The cloud frozen-source tests/lint/APKs above remain independent evidence. This status-only documentation update does not alter any verified application/test input.

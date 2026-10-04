@@ -1,0 +1,72 @@
+{
+  "source_candidate": "0772c4adc7a682ee2a5a5e8f1e68e99e1ca923e6",
+  "classification": "Infrastructure/account blocked before execution; zero steps and no job logs; underlying runner/billing reason not exposed by connector",
+  "reports": [
+    {
+      "run": {
+        "id": 37181420749,
+        "name": "Android CI",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_number": 1906,
+        "jobs_url": "https://api.github.com/repos/hminthakil-eng/Veil-Reader/actions/runs/37181420749/jobs",
+        "logs_url": "https://api.github.com/repos/hminthakil-eng/Veil-Reader/actions/runs/37181420749/logs",
+        "workflow_id": 355098503
+      },
+      "job": {
+        "id": 111374608440,
+        "name": "build",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 37181420749,
+        "logs_url": null,
+        "steps": null
+      },
+      "steps": []
+    },
+    {
+      "run": {
+        "id": 37181420735,
+        "name": "Storage Instrumentation",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_number": 1133,
+        "jobs_url": "https://api.github.com/repos/hminthakil-eng/Veil-Reader/actions/runs/37181420735/jobs",
+        "logs_url": "https://api.github.com/repos/hminthakil-eng/Veil-Reader/actions/runs/37181420735/logs",
+        "workflow_id": 355538767
+      },
+      "job": {
+        "id": 111374608611,
+        "name": "room-on-android",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 37181420735,
+        "logs_url": null,
+        "steps": null
+      },
+      "steps": []
+    },
+    {
+      "run": {
+        "id": 37181420707,
+        "name": "Performance Benchmarks",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_number": 1521,
+        "jobs_url": "https://api.github.com/repos/hminthakil-eng/Veil-Reader/actions/runs/37181420707/jobs",
+        "logs_url": "https://api.github.com/repos/hminthakil-eng/Veil-Reader/actions/runs/37181420707/logs",
+        "workflow_id": 361067006
+      },
+      "job": {
+        "id": 111374608342,
+        "name": "benchmark-smoke",
+        "status": "completed",
+        "conclusion": "failure",
+        "run_id": 37181420707,
+        "logs_url": null,
+        "steps": null
+      },
+      "steps": []
+    }
+  ]
+}
