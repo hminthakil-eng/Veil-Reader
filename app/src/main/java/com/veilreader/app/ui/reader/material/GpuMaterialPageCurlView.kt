@@ -50,6 +50,7 @@ internal class GpuMaterialPageCurlView(
     private val onRendererReady: (Boolean) -> Unit = {},
     private val onRendererFailure: () -> Unit = {},
     private val onRendererFramePresented: () -> Unit = {},
+    private val onTextureUploadLeaseRequired: (Bitmap) -> Unit = {},
     private val onTextureUploaded: (Bitmap) -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
@@ -155,16 +156,18 @@ internal class GpuMaterialPageCurlView(
     ) {
         val usableBitmap =
             bitmap?.takeIf { !it.isRecycled && it.width > 0 && it.height > 0 }
+        var requiresTextureUpload = false
         synchronized(frameLock) {
             submittedSequence =
                 nextGpuMaterialFrameSequence(submittedSequence)
-            if (
+            requiresTextureUpload =
                 active &&
-                (
-                    !lastSubmittedActive ||
-                        submittedFrame?.bitmap !== usableBitmap
-                    )
-            ) {
+                    usableBitmap != null &&
+                    (
+                        !lastSubmittedActive ||
+                            submittedFrame?.bitmap !== usableBitmap
+                        )
+            if (requiresTextureUpload) {
                 textureRevision =
                     nextGpuMaterialTextureRevision(textureRevision)
             }
@@ -184,6 +187,10 @@ internal class GpuMaterialPageCurlView(
                 highContrast = highContrast
             )
             lastSubmittedActive = active && usableBitmap != null
+        }
+        if (requiresTextureUpload && usableBitmap != null) {
+            // Lease synchronously before the GL thread can observe requestRender().
+            onTextureUploadLeaseRequired(usableBitmap)
         }
         requestRender()
     }
@@ -1395,9 +1402,6 @@ internal fun GpuMaterialPageOverlay(
                     frame.active &&
                     bitmap != null &&
                     !bitmap.isRecycled
-            if (active && bitmap != null) {
-                state.markSnapshotSubmittedForGpu(bitmap)
-            }
             gpuView.submitFrame(
                 bitmap = bitmap,
                 active = active,
@@ -1452,6 +1456,7 @@ internal fun GpuMaterialPageOverlay(
                     // driver path may fail deterministically on first draw.
                     rendererFailureCount.intValue = 0
                 },
+                onTextureUploadLeaseRequired = state::markSnapshotSubmittedForGpu,
                 onTextureUploaded = state::acknowledgeSnapshotUploaded
             ).also { created ->
                 viewRef.value = created
