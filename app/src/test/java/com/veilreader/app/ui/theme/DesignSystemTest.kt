@@ -20,6 +20,21 @@ class DesignSystemTest {
     }
 
     @Test
+    fun `dynamic Persian metadata stays shaping safe across utility and quote roles`() {
+        val dynamic = "Series · دفتر آینه‌ها"
+        listOf(
+            VeilLatinTypography.labelMedium,
+            VeilLatinTypography.bodyMedium,
+            VeilLatinTypography.titleSmall
+        ).forEach { base ->
+            val styled = base.withVeilContentScript(dynamic)
+            assertEquals(0.sp, styled.letterSpacing)
+            assertEquals(VeilPersianTypography.titleSmall.fontFamily, styled.fontFamily)
+            assertTrue(styled.lineHeight >= base.fontSize * 1.5f)
+        }
+    }
+
+    @Test
     fun `Latin publication metadata retains its existing shell typography`() {
         val base = VeilLatinTypography.titleLarge
         assertEquals(base, base.withVeilContentScript("The Cartographer of Quiet Rooms"))

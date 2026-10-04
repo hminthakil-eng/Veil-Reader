@@ -20,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -85,9 +84,7 @@ fun ObservatoryScreen(
     val selectedNode = atlas.nodes.firstOrNull { it.book.id == selectedBookId }
     val connections = selectedNode?.let { atlas.connectionsFor(it.book.id) }.orEmpty()
     val booksById = remember(atlas.nodes) { atlas.nodes.associateBy { it.book.id } }
-    val observatoryAdaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val observatoryAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val observatoryLayout = castleLayoutPolicyFor(observatoryAdaptiveClass)
 
     Box(
@@ -526,12 +523,13 @@ private fun ObservatoryConnectionRow(edge: MemoryAtlasEdge, other: Book) {
             color = VeilMaterials.TextSecondary
         )
         if (MemoryRelationKind.PASSAGE_PATTERN in edge.reasons && edge.sharedPassageTerms.isNotEmpty()) {
+            val sharedTerms = stringResource(
+                R.string.observatory_shared_terms,
+                edge.sharedPassageTerms.joinToString(" · ")
+            )
             Text(
-                stringResource(
-                    R.string.observatory_shared_terms,
-                    edge.sharedPassageTerms.joinToString(" · ")
-                ),
-                style = MaterialTheme.typography.bodySmall,
+                sharedTerms,
+                style = MaterialTheme.typography.bodySmall.withVeilContentScript(sharedTerms),
                 color = VeilMaterials.TextSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

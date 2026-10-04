@@ -807,7 +807,7 @@ fun ReaderNotebook(
                                     Text(
                                         "“$quote”",
                                         modifier = Modifier.padding(12.dp),
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = MaterialTheme.typography.bodyMedium.withVeilContentScript(quote),
                                         color = VeilPalette.Moon.copy(alpha = 0.78f),
                                         maxLines = 4,
                                         overflow = TextOverflow.Ellipsis
@@ -953,7 +953,7 @@ fun ReaderNotebook(
                         highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
                             Text(
                                 "“$quote”",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodyMedium.withVeilContentScript(quote),
                                 color = VeilPalette.Moon.copy(alpha = 0.72f),
                                 maxLines = 3,
                                 overflow = TextOverflow.Ellipsis

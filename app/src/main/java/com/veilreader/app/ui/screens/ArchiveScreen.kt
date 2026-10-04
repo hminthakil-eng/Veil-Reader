@@ -1003,13 +1003,14 @@ private fun NotebookBookmarkCard(
                 )
             }
 
+            val bookmarkLabel = if (bookmark.label.isBlank()) {
+                stringResource(R.string.notebook_saved_location)
+            } else {
+                bookmark.label
+            }
             Text(
-                if (bookmark.label.isBlank()) {
-                    stringResource(R.string.notebook_saved_location)
-                } else {
-                    bookmark.label
-                },
-                style = MaterialTheme.typography.bodyMedium,
+                bookmarkLabel,
+                style = MaterialTheme.typography.bodyMedium.withVeilContentScript(bookmarkLabel),
                 color = VeilPalette.Mist
             )
 

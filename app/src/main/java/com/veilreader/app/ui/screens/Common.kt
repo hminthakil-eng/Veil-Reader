@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
@@ -69,6 +70,29 @@ import java.text.NumberFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+internal data class VeilWindowSizeDp(
+    val width: Float,
+    val height: Int
+)
+
+/**
+ * Current app-window dimensions in dp.
+ *
+ * Layout decisions use the live Compose window container rather than Configuration screen
+ * dimensions so split-screen, desktop resizing and fold/unfold transitions share one authority.
+ */
+@Composable
+internal fun currentVeilWindowSizeDp(): VeilWindowSizeDp {
+    val density = LocalDensity.current
+    val size = LocalWindowInfo.current.containerSize
+    return with(density) {
+        VeilWindowSizeDp(
+            width = size.width.toDp().value.coerceAtLeast(0f),
+            height = size.height.toDp().value.toInt().coerceAtLeast(0)
+        )
+    }
+}
 
 @Composable
 internal fun localizedBookFormatLabel(format: BookFormat): String =

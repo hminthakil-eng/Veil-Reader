@@ -19,7 +19,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -68,9 +67,8 @@ fun ReadingNowScreen(
 ) {
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
-    val thresholdAdaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val windowSize = currentVeilWindowSizeDp()
+    val thresholdAdaptiveClass = adaptiveClassFor(windowSize.width)
     val thresholdLayout = thresholdLayoutPolicyFor(thresholdAdaptiveClass)
     val artifactMemoryByBookId = remember(
         books,
@@ -237,7 +235,7 @@ private fun ThresholdHeader(
 ) {
     val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
     val abbreviatedEntry = hasCurrentBook && (LocalDensity.current.fontScale >= 1.3f ||
-        androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 500)
+        currentVeilWindowSizeDp().height < 500)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1050,6 +1048,11 @@ private fun ThresholdWhisperCard(
     } else {
         whisper.detail
     }
+    val renderedBody = if (whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE) {
+        "“$displayBody”"
+    } else {
+        displayBody
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
@@ -1076,18 +1079,14 @@ private fun ThresholdWhisperCard(
             )
             Text(
                 displayTitle,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.withVeilContentScript(displayTitle),
                 color = VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                if (whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE) {
-                    "“$displayBody”"
-                } else {
-                    displayBody
-                },
-                style = MaterialTheme.typography.bodyMedium,
+                renderedBody,
+                style = MaterialTheme.typography.bodyMedium.withVeilContentScript(renderedBody),
                 color = VeilPalette.Mist.copy(alpha = 0.86f),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
@@ -1095,7 +1094,7 @@ private fun ThresholdWhisperCard(
             displayDetail?.let { detail ->
                 Text(
                     detail,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.withVeilContentScript(detail),
                     color = VeilPalette.Spirit.copy(alpha = 0.70f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis

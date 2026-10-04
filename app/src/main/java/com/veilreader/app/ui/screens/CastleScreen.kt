@@ -26,7 +26,6 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -127,9 +126,7 @@ fun CastleScreen(
     val ritualAfterglow = remember(profile.ritualAftermath, castleNowEpochMs) {
         ritualAfterglowIntensity(profile.ritualAftermath, castleNowEpochMs)
     }
-    val castleAdaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val castleAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val castleLayout = castleLayoutPolicyFor(castleAdaptiveClass)
 
     Box(
@@ -181,7 +178,7 @@ fun CastleScreen(
                             color = VeilPalette.Moon
                         )
                         if (!com.veilreader.app.ui.theme.condenseRealmApproach(
-                            LocalConfiguration.current.fontScale, with(androidx.compose.ui.platform.LocalDensity.current) {
+                            androidx.compose.ui.platform.LocalDensity.current.fontScale, with(androidx.compose.ui.platform.LocalDensity.current) {
                                 androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
                             })) {
                         Text(
@@ -992,13 +989,13 @@ private fun CastleFloor(
             )
 
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val usableWidth = maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f)
+                val usableWidth = maxWidth.value / androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
                 if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
                     if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp) {
                         // A narrow stair datum remains spatial without taking half the reading width.
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                            FloorInscription(floor, unlocked, Modifier.width((com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp * LocalConfiguration.current.fontScale.coerceAtLeast(1f)).dp))
+                            FloorInscription(floor, unlocked, Modifier.width((com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp))
                             CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
                                 chamberMinHeightDp, onOpenRoom, Modifier.weight(1f))
                         }

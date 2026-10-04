@@ -32,7 +32,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -288,9 +287,7 @@ internal fun LibraryArchiveContent(
     initialQuery: String = ""
 ) {
     val focusManager = LocalFocusManager.current
-    val archiveAdaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val archiveAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val archiveLayout = archiveLayoutPolicyFor(archiveAdaptiveClass)
     val libraryNowEpochMs by produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
@@ -688,9 +685,11 @@ internal fun LibraryArchiveContent(
                                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
                                 )
                             ) {
+                                val collectionLabel =
+                                    if (collection.isBlank()) stringResource(R.string.library_collection) else collection
                                 Text(
-                                    if (collection.isBlank()) stringResource(R.string.library_collection) else collection,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    collectionLabel,
+                                    style = MaterialTheme.typography.labelMedium.withVeilContentScript(collectionLabel),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -705,7 +704,12 @@ internal fun LibraryArchiveContent(
                                 )
                                 collections.forEach { label ->
                                     DropdownMenuItem(
-                                        text = { Text(label) },
+                                        text = {
+                                            Text(
+                                                label,
+                                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(label)
+                                            )
+                                        },
                                         onClick = { collection = label; collectionMenu = false }
                                     )
                                 }
@@ -737,7 +741,12 @@ internal fun LibraryArchiveContent(
                                 )
                                 wingState.seriesWings.forEach { wing ->
                                     DropdownMenuItem(
-                                        text = { Text(wing.name) },
+                                        text = {
+                                            Text(
+                                                wing.name,
+                                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(wing.name)
+                                            )
+                                        },
                                         onClick = {
                                             seriesFilter = wing.name
                                             collection = ""
@@ -809,9 +818,10 @@ internal fun LibraryArchiveContent(
                                 VeilPalette.Brass.copy(alpha = 0.44f)
                             )
                         ) {
+                            val seriesFilterLabel = stringResource(R.string.library_series_filter, seriesFilter)
                             Text(
-                                stringResource(R.string.library_series_filter, seriesFilter),
-                                style = MaterialTheme.typography.labelMedium,
+                                seriesFilterLabel,
+                                style = MaterialTheme.typography.labelMedium.withVeilContentScript(seriesFilterLabel),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -1736,7 +1746,7 @@ internal fun BookDetailDestination(
             ) {
                 val heroPolicy = bookDetailAdaptivePolicy(
                     widthDp = maxWidth.value.toInt(),
-                    fontScale = LocalConfiguration.current.fontScale
+                    fontScale = LocalDensity.current.fontScale
                 )
                 val compact = heroPolicy.compactHero
 
@@ -3085,7 +3095,7 @@ private fun ArchiveWingPortal(
                 )
                 Text(
                     wing.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(wing.name),
                     color = VeilPalette.Moon,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
