@@ -34,6 +34,25 @@ internal fun shouldCapturePaperTurnSnapshot(
 ): Boolean =
     MaterialPageEngineRollout.isEnabled() && !reducedMotion
 
+/**
+ * Paper is a visual interaction contract, not merely a navigation label.
+ *
+ * Normal-motion input may commit only while the canonical GPU renderer is READY and the
+ * source sheet was captured successfully. Reduced Motion deliberately permits a static
+ * navigation path because accessibility policy removes the curl by design.
+ */
+internal fun shouldAllowPaperNavigation(
+    reducedMotion: Boolean,
+    rendererStatus: GpuMaterialPageRendererStatus,
+    visualActive: Boolean
+): Boolean =
+    reducedMotion ||
+        (
+            MaterialPageEngineRollout.isEnabled() &&
+                rendererStatus == GpuMaterialPageRendererStatus.READY &&
+                visualActive
+            )
+
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
     private val state: PaperCurlState,
@@ -104,9 +123,10 @@ internal class PaperCurlInputListener(
     }
 
     private fun performDiscreteTurn(spec: TurnSpec) {
-        state.configureReducedMotion(isReducedMotion())
+        val reducedMotion = isReducedMotion()
+        state.configureReducedMotion(reducedMotion)
         val visualReady =
-            shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
+            shouldCapturePaperTurnSnapshot(reducedMotion) &&
                 state.begin(
                     view = navigator.publicationView,
                     side = spec.side,
@@ -118,6 +138,19 @@ internal class PaperCurlInputListener(
         }
 
         onInteraction()
+        if (
+            !shouldAllowPaperNavigation(
+                reducedMotion = reducedMotion,
+                rendererStatus = state.rendererStatus,
+                visualActive = visualReady
+            )
+        ) {
+            // Consume the Paper action rather than silently degrading to a static
+            // page turn when GPU/capture readiness is missing.
+            resetDrag()
+            return
+        }
+
         val moved = navigate(spec.direction)
         if (!moved) {
             onBoundaryHit(spec.side)
@@ -224,22 +257,32 @@ internal class PaperCurlInputListener(
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
         val inward = inwardDistance(spec, event)
-        val commit = if (state.usingMaterialEngine()) {
-            inward > 0f &&
-                materialPageReleaseDecision(
-                    progress = state.dragProgress(),
-                    inwardVelocityDpPerSec =
-                        releaseVelocityPxPerSec / density.coerceAtLeast(0.1f),
-                    profile = state.materialEngine.profile
-                ) == MaterialPageReleaseDecision.COMPLETE
-        } else {
-            shouldCommitPaperTurn(
-                inwardDistance = inward,
-                width = width,
-                density = density,
-                curlProgress = state.dragProgress(),
-                releaseVelocityPxPerSec = releaseVelocityPxPerSec
-            )
+        val reducedMotion = isReducedMotion()
+        val navigationAllowed = shouldAllowPaperNavigation(
+            reducedMotion = reducedMotion,
+            rendererStatus = state.rendererStatus,
+            visualActive = state.active
+        )
+        val commit = when {
+            !navigationAllowed -> false
+            state.usingMaterialEngine() ->
+                inward > 0f &&
+                    materialPageReleaseDecision(
+                        progress = state.dragProgress(),
+                        inwardVelocityDpPerSec =
+                            releaseVelocityPxPerSec / density.coerceAtLeast(0.1f),
+                        profile = state.materialEngine.profile
+                    ) == MaterialPageReleaseDecision.COMPLETE
+            else ->
+                // Reduced Motion intentionally has no curl visual. It keeps the
+                // same deliberate distance/flick threshold for functional paging.
+                shouldCommitPaperTurn(
+                    inwardDistance = inward,
+                    width = width,
+                    density = density,
+                    curlProgress = state.dragProgress(),
+                    releaseVelocityPxPerSec = releaseVelocityPxPerSec
+                )
         }
         completionJob = scope.launch {
             navigationJob?.join()
@@ -273,8 +316,8 @@ internal class PaperCurlInputListener(
                 }
 
                 commit -> {
-                    // Snapshot capture is a visual enhancement, never a navigation prerequisite.
-                    // If capture/preview failed, commit the real turn now on release.
+                    // This branch is reachable without a visual only for Reduced Motion.
+                    // Normal-motion Paper fails closed before a static navigation fallback.
                     val moved = navigate(spec.direction)
                     if (moved) {
                         turnCommitted = true

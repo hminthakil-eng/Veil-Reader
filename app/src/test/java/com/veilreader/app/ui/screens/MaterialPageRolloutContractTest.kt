@@ -4,6 +4,7 @@ import com.veilreader.app.BuildConfig
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPagePreset
 import com.veilreader.app.ui.reader.material.MaterialPageProfiles
@@ -27,6 +28,58 @@ class MaterialPageRolloutContractTest {
             MaterialPageEngineRollout.setDebugOverride(false)
             assertFalse(MaterialPageEngineRollout.isEnabled())
             assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `normal motion Paper fails closed until GPU visual is actually active`() {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(
+                GpuMaterialPageRendererStatus.INITIALIZING,
+                GpuMaterialPageRendererStatus.FAILED,
+                GpuMaterialPageRendererStatus.UNSUPPORTED
+            ).forEach { status ->
+                assertFalse(
+                    shouldAllowPaperNavigation(
+                        reducedMotion = false,
+                        rendererStatus = status,
+                        visualActive = false
+                    )
+                )
+            }
+            assertFalse(
+                shouldAllowPaperNavigation(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.READY,
+                    visualActive = false
+                )
+            )
+            assertTrue(
+                shouldAllowPaperNavigation(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.READY,
+                    visualActive = true
+                )
+            )
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `Reduced Motion keeps functional Paper navigation without a curl visual`() {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            assertTrue(
+                shouldAllowPaperNavigation(
+                    reducedMotion = true,
+                    rendererStatus = GpuMaterialPageRendererStatus.REDUCED_MOTION,
+                    visualActive = false
+                )
+            )
         } finally {
             MaterialPageEngineRollout.setDebugOverride(null)
         }
