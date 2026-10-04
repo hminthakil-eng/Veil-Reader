@@ -10,12 +10,20 @@ import androidx.metrics.performance.PerformanceMetricsState
 object ReaderPerformanceMetrics {
     const val READER_MODE_KEY = "VeilReaderMode"
     const val PAPER_PHASE_KEY = "VeilPaperPhase"
+    const val PAPER_WORK_KEY = "VeilPaperWork"
 
     fun putState(root: View, key: String, value: String) {
         PerformanceMetricsState
             .getHolderForHierarchy(root)
             .state
             ?.putState(key, value)
+    }
+
+    fun putSingleFrameState(root: View, key: String, value: String) {
+        PerformanceMetricsState
+            .getHolderForHierarchy(root)
+            .state
+            ?.putSingleFrameState(key, value)
     }
 
     fun removeState(root: View, key: String) {
