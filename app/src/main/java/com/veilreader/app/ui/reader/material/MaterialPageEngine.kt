@@ -261,7 +261,7 @@ internal class MaterialPageEngineState(
     fun dragProgress(): Float = progress.coerceIn(0f, 1f)
 
     private fun acceptAnimatedProgress(value: Float) {
-        acceptAnimatedProgress(value)
+        progress = value.coerceIn(0f, 1f)
         pointerTravel = progress
     }
 
