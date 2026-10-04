@@ -13,9 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.metrics.performance.FrameDataApi31
-import androidx.metrics.performance.JankStats
-import com.veilreader.app.diagnostics.ReaderTrace
+import com.veilreader.app.diagnostics.ReaderJankMonitor
 import com.veilreader.app.ui.VeilApp
 import com.veilreader.app.ui.reader.ReaderHardwareButton
 import com.veilreader.app.ui.reader.ReaderHardwareButtonEvent
@@ -29,7 +27,7 @@ import com.veilreader.app.ui.theme.VeilTheme
 class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
     private var externalOpenUri by mutableStateOf<Uri?>(null)
     private val readerHardwareKeys = ReaderHardwareKeyDispatcher()
-    private var jankStats: JankStats? = null
+    private lateinit var readerJankMonitor: ReaderJankMonitor
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Readium navigator fragments require a custom factory during FragmentManager restore.
@@ -40,30 +38,8 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
         enableEdgeToEdge()
         externalOpenUri = if (savedInstanceState == null) viewUriFrom(intent) else null
 
-        if (ReaderTrace.isEnabled()) {
-            // Diagnostics are intentionally absent from production builds. Debug and
-            // benchmark builds keep JankStats so performance state can be correlated
-            // with traces without adding permanent release overhead or metadata logs.
-            window.decorView
-            jankStats = JankStats.createAndTrack(window) { frame ->
-                if (!frame.isJank) return@createAndTrack
-                val stateSummary =
-                    frame.states.joinToString(separator = ",") { state ->
-                        "${state.key}=${state.value}"
-                    }
-                val overrunUs =
-                    (frame as? FrameDataApi31)
-                        ?.frameOverrunNanos
-                        ?.div(1_000L)
-                ReaderTrace.event(
-                    name = "ui_jank",
-                    details =
-                        "uiUs=${frame.frameDurationUiNanos / 1_000L} " +
-                            "overrunUs=${overrunUs ?: -1L} " +
-                            "states=$stateSummary"
-                )
-            }
-        }
+        readerJankMonitor = ReaderJankMonitor(window)
+        readerJankMonitor.install()
 
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
@@ -93,11 +69,11 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
 
     override fun onResume() {
         super.onResume()
-        jankStats?.isTrackingEnabled = true
+        if (::readerJankMonitor.isInitialized) readerJankMonitor.resume()
     }
 
     override fun onPause() {
-        jankStats?.isTrackingEnabled = false
+        if (::readerJankMonitor.isInitialized) readerJankMonitor.pause()
         super.onPause()
     }
 
