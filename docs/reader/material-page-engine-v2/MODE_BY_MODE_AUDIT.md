@@ -1,115 +1,99 @@
-# Veil Reader Navigation / Page-Turn Audit
+# Veil Reader — Arena Navigation / Page-Turn Audit
 
-Status: **SOURCE AUDIT ACTIVE — BUILD + DEVICE EVIDENCE STILL REQUIRED**
+Date: 2026-10-04  
+Status: **SOURCE-HARDENED / NOT BUILD-GREEN / NOT DEVICE-GREEN**  
+Branch: `reader/gpu-material-page-engine-v2`  
+PR: `#373`
 
-Branch: `reader/gpu-material-page-engine-v2`
+This audit is intentionally stricter than a visual review. It compares Veil mode-by-mode and code-path-by-code-path against mature curl/navigation references, then records only what the source actually proves.
 
-This audit compares Veil's runtime navigation modes code-by-code against current reference implementations and platform behavior. It intentionally separates:
-- navigation ownership;
-- gesture arbitration;
-- visual renderer;
-- release/commit policy;
-- content/texture lifecycle;
-- accessibility;
-- RTL;
-- lifecycle/restore correctness.
+The four EPUB interaction modes are treated as separate products:
 
-## External references
+| Mode | Gesture owner | Visual owner | Readium role |
+| --- | --- | --- | --- |
+| Paper | Veil Paper listener | GPU Material Page Engine v2 only | locator/navigation truth |
+| Slide | Veil Slide listener | Slide overlay only | locator/navigation truth |
+| Paged / None | Veil Static Paged listener | no page-motion renderer | unanimated page navigation |
+| Scroll | Readium renderer | Readium renderer | scroll + locator truth |
+
+PDF remains outside the EPUB Paper engine.
+
+---
+
+## Reference implementations studied
 
 ### harism/android-pagecurl — Apache-2.0
-https://github.com/harism/android-pagecurl
 
-Reference concepts used in this audit:
-- `CurlView` directly owns the touch-driven curl state.
-- `CurlMesh.curl(curlPos, curlDir, radius)` converts a page into flat/front, cylindrical, and flipped/back regions.
-- front/back page textures are distinct.
-- page-left/page-right/page-curl meshes are explicit roles.
-- radius collapses as the pointer travels through terminal distance.
-- `setCurlPos` constrains position/direction to keep the sheet attached to the book.
-- drop shadow and self-shadow are separate geometric products.
-- textures/meshes are prepared outside the high-frequency draw path.
+Relevant source concepts:
+- direct pointer-driven curl position and direction;
+- `curlLength = PI * radius`;
+- binding constraints that prevent the sheet from geometrically tearing away from the book;
+- explicit static-left, static-right and curling-page mesh roles;
+- separate front/back textures;
+- separate drop-shadow and self-shadow geometry;
+- radius collapse near terminal travel.
+
+Veil uses these as architectural/math references only; no source file is copied.
 
 ### xissburg/XBPageCurl — MIT
-https://github.com/xissburg/XBPageCurl
 
-Reference concepts:
-- virtual-cylinder deformation in a vertex shader.
-- cylinder position + direction + radius are the compact physical state.
-- deformed surface normals are produced by the vertex shader.
-- distinct front/back rendering.
-- touch selects a picking position and release snaps to explicit snapping points.
+Relevant concepts:
+- virtual-cylinder vertex deformation;
+- cylinder position, direction and radius as compact physical state;
+- vertex-shader normals;
+- explicit front/back face behavior;
+- release snapping.
 
 ### albertoirurueta/irurueta-android-gl-curl — Apache-2.0
-https://github.com/albertoirurueta/irurueta-android-gl-curl
 
-Reference concepts:
-- modern Android adaptation of the harism family.
-- `CurlGLSurfaceView`: better raw surface performance but outside ordinary View composition.
-- `CurlTextureView`: normal View hierarchy, transparency/composition support.
-- render-when-dirty lifecycle.
-- surface recreation resets GPU textures.
-- touch/pointer drives curl continuously.
+Relevant concepts:
+- modern Android lifecycle around the harism family;
+- render-when-dirty;
+- explicit surface recreation;
+- `CurlGLSurfaceView` versus `CurlTextureView`;
+- `TextureView` stays in the ordinary View hierarchy and supports normal composition/transparency.
 
-Veil already depends on:
-`com.irurueta:irurueta-android-glutils:1.1.11`
+Veil already depends on `com.irurueta:irurueta-android-glutils:1.1.11`.
+
+### hexingbo/PageFlip — Apache-2.0
+
+Relevant concepts:
+- Android OpenGL ES 2.0 page-flip implementation;
+- touch-to-origin geometry;
+- radius derived from touch/origin distance and semi-perimeter ratio;
+- separate fold-front, fold-back, base-shadow and edge-shadow roles;
+- mesh quality expressed against page geometry rather than only device class;
+- explicit page-origin/corner constraints.
 
 ### oleksandrbalan/pagecurl — Apache-2.0
-https://github.com/oleksandrbalan/pagecurl
 
-Reference concepts:
-- Compose-first gesture/state separation.
-- configurable drag/tap interaction regions.
-- stable page keys/state.
-- fixed four-point backside polygon to prevent 3/4-point topology artifacts.
-- clipped front + mirrored/rotated back + cached shadow.
+Useful primarily as a Compose/state reference:
+- explicit gesture/state separation;
+- configurable interaction regions;
+- stable page state;
+- backside/shadow composition.
 
-This is a useful Compose architecture reference but its renderer is a 2D illusion, not the quality ceiling for Veil Paper.
-
-### eschao/android-PageFlip — Apache-2.0
-https://github.com/eschao/android-PageFlip
-
-Reference concepts:
-- OpenGL ES 2.0 page-flip pipeline.
-- touch-to-origin geometry with explicit fold points.
-- configurable mesh pixels rather than a single fixed polygon budget.
-- semi-cylinder perimeter ratio derived from touch distance.
-- explicit fold-front, fold-back, edge-shadow and base-shadow buffers.
-- constrained page-curl angle and configurable back mask.
-
-Veil takeaway: the current static GPU grid is safe and inexpensive, but future quality scaling should be tied to screen geometry/curvature error rather than RAM tier alone.
+Its Canvas renderer is not Veil's quality ceiling and is not shipped as a v2 fallback.
 
 ### Nodlik/StPageFlip — MIT
-https://github.com/Nodlik/StPageFlip
 
-Reference concepts:
-- active corner is a first-class state.
-- geometry is constrained against center/bounds.
-- flipping page, bottom page and shadows are separate roles.
-- distinct soft/hard page density.
-- separate inner/outer shadows.
-
-### Android Compose Pager
-https://developer.android.com/reference/kotlin/androidx/compose/foundation/pager/PagerDefaults
-
-Reference concepts for Veil Slide:
-- target-based snapping.
-- positional threshold.
-- velocity-aware decay/snap.
-- default maximum one-page fling.
+Relevant concepts:
+- active corner as first-class state;
+- geometry constrained to page bounds/center;
+- flipping page, bottom page and shadows as independent roles;
+- hard/soft page behavior.
 
 ### Readium Kotlin Toolkit 3.4.0
-https://github.com/readium/kotlin-toolkit
-https://readium.org/kotlin-toolkit/3.4.0/
 
-Veil currently uses Readium 3.4.0. Readium remains the location/navigation source of truth.
+Readium remains Veil's publication/navigation truth.
+
+Critical integration rule: multiple `InputListener` implementations can be attached and **consumption order matters**. Veil therefore owns product-mode selection and Readium owns progression/current locator/navigation.
 
 ---
 
 # 1. PAPER — GPU Material Page Engine v2
 
-## Veil runtime
-
-Core files:
+Core runtime:
 - `PaperCurlInputListener.kt`
 - `PaperCurlState.kt`
 - `MaterialPageEngine.kt`
@@ -118,465 +102,454 @@ Core files:
 - `GpuPageCurlModel.kt`
 - `GpuMaterialPageCurlView.kt`
 
-## Old runtime removal
+## 1.1 One Paper renderer only
 
-The v2 build no longer contains:
-- `PaperCurlDraw.kt`
-- `PaperCurlGeometry.kt`
-- `MaterialPageGeometry.kt`
-- legacy `PaperVisualEngine`
-- Canvas `MaterialPageOverlay`
-- `Matrix.setPolyToPoly` strip renderer
-- GPU-vs-Canvas A/B switch
+The v2 tree no longer ships the old visual implementations:
 
-Rollback remains available through Git history / PR #372. It is not shipped as a hidden fallback in v2.
+- deleted `PaperCurlDraw.kt`;
+- deleted `PaperCurlGeometry.kt`;
+- deleted `MaterialPageGeometry.kt`;
+- removed legacy `PaperVisualEngine`;
+- removed Canvas `MaterialPageOverlay`;
+- removed `Matrix.setPolyToPoly` strip deformation;
+- removed GPU-versus-Canvas A/B switch.
 
-### Why this matters
+Rollback remains in Git history / PR #372. It is not hidden in the APK.
 
-Before removal, a real-device test could silently fall back to Canvas and make it impossible to know which renderer the user was actually seeing. The GPU-only build makes failures explicit.
+**Invariant:** an APK from this branch cannot silently show the old curl and be mistaken for GPU v2.
 
-## Gesture ownership
+## 1.2 P0 — three GLSL defects capable of preventing all curl rendering
 
-### Reference
-Readium's injected gesture script calls the app's `InputListener`. Native/default drag continues unless the app returns true and causes `preventDefault()`.
+Arena found three independent source-level shader errors:
 
-### Veil defect found
-Paper visible state used the accepted/presented Reader appearance, but `PaperCurlInputListener` also re-checked `navigator.overflow.value.scroll`.
+1. vertex shader declared `uSideSign` twice;
+2. fragment shader used `uTexelSize` without declaring it;
+3. fragment shader used `uSideSign` without declaring it.
 
-That StateFlow can lag preference application. Result:
-- UI says PAPER;
-- Paper listener declines the drag;
-- Readium default swipe continues;
-- user sees a slide instead of curl.
+Any one of these can cause shader compilation to fail. Together they are the strongest source-level explanation found so far for the device symptom “Paper selected, but no curl ever appears.”
 
-### Fix
-Paper ownership now follows the accepted Reader mode only.
+All three are fixed.
 
-Debug Material review is also enforced at the `ReaderScreen` contract boundary, not as a Settings-screen side effect.
+A new `GpuPageShaderContractTest` now locks:
+- no duplicate uniform declarations within a shader;
+- no `uSomething` token used without declaration;
+- vertex/fragment varyings match exactly;
+- renderer-critical uniforms remain present.
 
-## Release rollout safety
+Static source audit after the fixes:
+- 24 shader uniform names;
+- 24 Kotlin uniform-location fields;
+- 24 `glGetUniformLocation` bindings;
+- no missing/extra mapping.
 
-### Defect created by removing legacy
-With no old Paper renderer, a disabled production GPU rollout could have left a persisted PAPER preference unowned, allowing native Readium swipe to appear.
+This is **not** a substitute for an actual GLES compiler/device run.
 
-### Fix
-`applyMaterialPageRolloutToAppearance()` maps:
-- Debug + GPU enabled -> PAPER
-- PAPER + GPU disabled -> NONE/static PAGED
-- never PAPER -> native slide fallback
+## 1.3 Gesture ownership — P0 fixed
 
-Unit contracts lock both cases.
+### Defect
 
-## GL composition
+Paper UI could be visibly selected while `PaperCurlInputListener` independently re-checked `navigator.overflow.value.scroll`.
 
-### Old Veil
-`GLSurfaceView` + transparent Surface + `setZOrderOnTop(true)`.
+The Readium flow can lag accepted preference state. That created a split-brain condition:
+- UI = Paper;
+- listener declines ownership;
+- native/default Readium swipe continues;
+- user sees slide-like movement instead of curl.
 
-### Reference
-Irurueta explicitly distinguishes:
-- GLSurfaceView: outside normal hierarchy; composition/transparency limitations.
-- GLTextureView: normal hierarchy; conventional composition/transparency.
+### Current rule
 
-### Fix
-Veil GPU curl now uses `GLTextureView` from the already-installed irurueta GL utils dependency.
+For EPUB, product-mode ownership comes from Veil's accepted/presented Reader appearance.
 
-This removes the separate-surface Z-order hack and keeps Paper in the normal Reader hierarchy.
+Readium provides:
+- reading progression;
+- current locator;
+- actual navigation operations.
 
+No Paper listener independently re-decides whether Paper is enabled from the asynchronous overflow state.
 
-GPU failure status is surfaced directly to the persistent debug HUD as `GPU FAILED` or `GPU UNSUPPORTED`; v2 never hides the failure by substituting an older renderer.
+Debug Material review is enforced at the Reader contract boundary as `Paged + Paper`, so an older persisted Slide preference cannot bypass the GPU review path.
 
-## Geometry
+## 1.4 Release rollout after legacy removal — P0 fixed
 
-### Veil strengths
-- real GPU triangle mesh;
-- virtual-cylinder vertex deformation;
-- explicit cylinder X/Y, tilt and material radius;
-- front/curl/post-half-turn regimes;
-- material-dependent radius;
-- radius collapse near terminal travel;
-- direct diagonal finger signal;
-- aspect-correct page geometry;
-- left/right mirroring without mirroring source text;
-- finite-input guards.
+Because GPU v2 is the only Paper visual runtime, a release build with GPU rollout disabled must not leave `PAPER` unowned.
 
-### Gap vs harism/XB — P1 OPEN
-Veil currently maps drag -> progress -> cylinder state with a material response function.
+Current behavior:
+- Debug + Material review enabled -> Paper GPU v2;
+- Paper preference + GPU rollout disabled -> static Paged / `NONE`;
+- it does **not** degrade to native swipe masquerading as Slide.
 
-Harism solves pointer distance and curl arc length more directly:
-- pointer distance;
-- `curlLength = PI * radius`;
-- translation when distance exceeds curl length;
-- additional binding-line constraints so the page cannot geometrically rip away from the book.
+## 1.5 GL composition — P0 fixed
 
-XB also represents full cylinder direction directly.
+Old v2 host:
+- transparent `GLSurfaceView`;
+- `setZOrderOnTop(true)`.
 
-Veil's current clamp/tilt/binding profile is stable, but the pointer-to-cylinder solution is simpler than these references.
+Problem:
+- SurfaceView has separate composition semantics and can fight Compose chrome/dialog ordering.
 
-**Action:** do not change blindly before the GPU is visible on hardware. Add a pure binding-constraint model + invariants, then tune against device footage.
+Current host:
+- `GLTextureView` from the already-installed irurueta GL-utils dependency;
+- `isOpaque = false`;
+- no on-top Surface hack;
+- render-when-dirty;
+- ordinary View hierarchy composition.
 
-## Projection — P1 OPEN
+## 1.6 GPU failure is explicit
 
-XB applies a real MVP matrix to deformed 3D vertices.
+Renderer status is first-class:
+- `READY`;
+- `UNSUPPORTED`;
+- `FAILED`;
+- `REDUCED_MOTION`.
 
-Veil currently uses an orthographic-style clip transform after computing 3D-like Z. Curvature and normals are real enough to produce rollover/light change, but perspective foreshortening is restrained.
+The persistent Debug HUD exposes status and begin-attempt count.
 
-**Action:** evaluate a subtle perspective projection after device verification; do not make reading text distort theatrically.
+No legacy/Canvas renderer substitutes itself when GPU fails.
 
-## Surface roles / page topology
+If the renderer is `FAILED` or `UNSUPPORTED`, later Paper turns remain semantic navigation rather than starting invisible preview transactions.
 
-Harism explicitly carries:
-- static current/previous page;
-- bottom/destination page;
-- curling page.
+## 1.7 Source capture lifecycle — P0 fixed
 
-StPageFlip similarly distinguishes flipping page and bottom page.
+### Defect found
 
-Veil uses:
-- Readium destination rendered underneath after preview navigation;
-- source page as GPU front texture;
-- optional preview destination as GPU back texture.
+An earlier “prewarm” optimization actually drew Readium content into a bitmap ahead of the gesture and allowed `begin()` to reuse it.
 
-This is efficient for integration but less explicit than a full three-page renderer.
+If the locator changed between prewarm and gesture, the GPU could curl stale page content.
 
-**Risk:** backside/destination semantics must be checked on real forward/backward + RTL turns to ensure the destination is not visually duplicated or incorrectly oriented.
+### Current behavior
 
-## Texture lifecycle
+`prepareBuffer()` preallocates bitmap memory only.
 
-### Previous Veil defect
-Only bitmap storage was preallocated. Actual `View.draw()` source capture happened in the first drag callback.
+`begin()` always performs a fresh source capture from the current Readium view.
 
-Readium's legacy EPUB gesture bridge reaches the app on the UI path, so synchronous capture at drag start can hitch the first visible curl frame.
+This keeps the latency benefit of allocation warm-up without caching publication content.
 
-### Fix
-`prepareBuffer()` now pre-captures the settled Readium page off the gesture path.
+### Remaining P1
 
-`ReaderScreen` refreshes the warm source snapshot:
-- after Paper mode settles;
-- after appearance changes;
-- whenever a Paper transaction returns to idle.
+Capture still uses synchronous `View.draw(Canvas(bitmap))`.
 
-The active gesture consumes the prepared bitmap instead of redrawing the WebView when possible.
+Real hardware must prove this is reliable for Readium's hardware-backed WebView. If device evidence shows blank/stale/incomplete captures, replace content capture with an asynchronous PixelCopy-style pipeline/cache rather than adding renderer hacks.
 
-### Remaining snapshot risk — P1 OPEN
-Veil still uses `View.draw(Canvas(bitmap))`.
+## 1.8 CPU/GPU bitmap race — P0 fixed
 
-Android hardware-backed content can have screenshot/snapshot compatibility limitations. If device evidence shows blank/stale source capture, move to an asynchronous PixelCopy-style capture/cache pipeline rather than adding renderer hacks.
+A single reusable mutable CPU bitmap can be overwritten for the next turn while the GL thread still uploads the previous frame.
 
-## Front/back textures
+Material v2 now uses front/back **ping-pong CPU buffers**:
+- two source slots;
+- two destination/back slots;
+- alternating capture;
+- no manual recycle while a GL frame may still hold the bitmap.
 
-Veil:
-- persistent front/back GL texture objects;
-- 1x1 valid initialization;
-- `texSubImage2D` when dimensions are stable;
-- destination back capture gated on memory class;
-- no manual bitmap recycle while GL may still reference a frame.
+GPU texture objects remain persistent and use `texSubImage2D` when dimensions are unchanged.
 
-Reference alignment:
-- harism: separate front/back texture semantics.
-- XB: separate front/back rendering.
-- StPageFlip: separate flipping/bottom page roles.
+## 1.9 Geometry
 
-Status: structurally strong; device orientation/backside-content test still required.
+### Current strengths
 
-## Lighting and shadow
+- static triangle mesh;
+- real vertex-shader virtual-cylinder deformation;
+- normal generation from deformed surface;
+- front/cylinder/post-half-turn regimes;
+- cylinder X/Y, tilt and radius;
+- side-aware mirroring;
+- aspect correction;
+- material-dependent stiffness/mass;
+- terminal radius collapse;
+- vertical grip;
+- diagonal finger-vector steering;
+- finite/NaN guards.
 
-Veil:
-- deformed normal;
+### PageFlip-derived improvement
+
+Veil now tracks normalized **physical pointer travel**:
+`hypot(inward, vertical) / pageWidth`.
+
+The cylinder radius uses this travel signal:
+- small early travel -> tighter curl;
+- more physical travel -> radius opens;
+- terminal progress -> radius tightens again.
+
+This is closer to mature touch/origin cylinder models than radius-from-progress alone.
+
+### P1 open — binding solution
+
+Harism/PageFlip solve pointer-to-cylinder placement with stronger origin/binding geometry:
+- touch-to-origin distance;
+- arc length;
+- fold intersections;
+- page-bound constraints;
+- explicit adjustment when the fold would leave legal geometry.
+
+Veil still uses a simpler normalized cylinder model plus binding clamps.
+
+Do not replace it blindly before hardware visibility is proven. Next geometry work should be a pure/testable binding-constraint model with invariants.
+
+## 1.10 Projection — P1 open
+
+XB uses a real MVP projection.
+
+Veil computes 3D curl Z and normals, then uses a restrained clip-space transform rather than perspective projection.
+
+This is deliberate for text legibility, but hardware review should determine whether subtle perspective foreshortening improves physicality without theatrical distortion.
+
+## 1.11 Front/back semantics — P1 device check
+
+Reference engines model current/bottom/curling pages explicitly.
+
+Veil integrates with Readium differently:
+- Readium preview destination is visible underneath;
+- current/source page becomes front GPU texture;
+- settled preview destination can become back GPU texture;
+- fallback backside uses restrained source ink-through.
+
+Must be checked on device for:
+- forward;
+- backward;
+- LTR;
+- RTL/Persian;
+- repeated quick turns.
+
+The risk is semantic orientation/duplication, not locator correctness.
+
+## 1.12 Lighting/shadow
+
+Current:
+- deformed normals;
 - diffuse;
-- roughness-dependent specular;
+- roughness-driven specular;
 - grazing Fresnel;
 - backside transmission;
-- material edge tint;
-- deterministic grain/fibre;
-- mesh-projected layered cast shadow;
-- self-occlusion term.
-
-Reference gaps:
-- harism builds distinct geometric drop-shadow and self-shadow vertex buffers.
-- StPageFlip uses distinct inner/outer shadow models.
-
-Veil's shadow is cheaper and material-aware, but not yet as geometrically explicit.
-
-**Priority:** P2 after silhouette/ownership/capture are proven.
-
-## Material identity
-
-Veil is stronger than the references in this dimension:
-- Glossy
-- Matte Book
-- Parchment
-- Papyrus
-- Manuscript
-
-Profiles alter:
-- apparent mass;
-- bend stiffness;
-- drag resistance;
-- binding;
-- roughness/specular;
-- translucency;
-- ink ghosting;
+- material edge tint/body;
 - grain/fibre;
-- edge body;
-- haptic/acoustic identity.
+- self-occlusion;
+- three mesh-projected cast-shadow layers.
 
-StPageFlip's hard/soft distinction is useful future inspiration for covers, but should not be mixed into ordinary EPUB text leaves yet.
+Reference gap:
+- harism/PageFlip build more explicit geometric base/edge/self-shadow structures.
 
-## Reduced Motion
+Priority: P2 after visibility/capture/silhouette are device-green.
 
-### Defect found after GPU-only migration
-Canvas fallback was removed, but reduced-motion branches still performed short invisible alpha animations.
+## 1.13 Reduced Motion
 
-### Fix
-Reduced Motion now:
-- preserves semantic navigation;
-- preserves sensory cue policy;
-- performs no geometric curl;
-- settles state immediately instead of spending 52–110ms on invisible animation.
+Reduced Motion:
+- keeps semantic page navigation;
+- bypasses geometric curl;
+- does not activate an older renderer.
+
+This is intentional.
 
 ---
 
 # 2. SLIDE
 
-Core files:
+Core:
 - `SlideNavigationInputListener.kt`
 - `SlidePageState.kt`
 
-## Product contract
-
-Slide is intentionally not Paper:
+Contract:
+- direct horizontal tracking;
 - no bend;
 - no page mass;
-- no material deformation;
-- direct horizontal tracking;
-- short edge shadow only;
-- fast settle.
+- no material shader;
+- narrow transient edge shadow;
+- short settle.
 
-This separation is correct and must remain strict.
+Paper physics must never leak into Slide.
 
-## Ownership defect — FIXED
+## 2.1 Ownership split-brain — P0 fixed
 
-Slide duplicated the Paper split-brain pattern:
-`isEnabled() && !navigator.overflow.value.scroll`.
+Removed redundant `navigator.overflow.value.scroll` mode checks from the Slide listener.
 
-The second gate could lag the accepted Reader appearance.
+ReaderScreen's accepted EPUB appearance is now the only product-mode owner.
 
-Fix:
-`slideModeEnabled()` now trusts the accepted Reader-mode predicate supplied by ReaderScreen.
+## 2.2 Source prewarm stale-content bug — P0 fixed
 
-## Force-cancel race — FIXED
+Slide had the same stale prewarm pattern as Paper.
 
-Previous:
-`forceCancelPendingTurn()` restored only when `previewNavigationSucceeded == true`.
+Current:
+- `prepareBuffer()` allocates only;
+- `begin()` always captures fresh current content.
 
-Race:
-- navigation can complete;
-- coroutine gets cancelled;
-- flag assignment has not become observable;
-- destination remains visible after cancellation.
+## 2.3 Preview restoration race — P0 fixed
 
-Fix:
-restore exact `dragStartLocator` whenever a preview transaction has a spec + origin locator.
+`forceCancelPendingTurn()` previously restored only when `previewNavigationSucceeded` had become observable.
 
-## Await race — FIXED
+Navigation could complete just before coroutine cancellation and before the flag assignment.
 
-Previous `cancelPendingTurnAndAwait()` could lose the completion-job reference when cancellation/reset changed it before join.
+Current:
+- exact `dragStartLocator` is restored whenever an uncommitted preview transaction has an origin locator.
 
-Fix:
-capture existing completion job first, then join existing-or-new completion.
+## 2.4 Cancel-await race — P0 fixed
 
-## Slide motion vs Android Pager — P2
+`cancelPendingTurnAndAwait()` now captures the existing completion job before cancellation/reset and joins the correct job.
 
-Android Pager's canonical behavior is target-based:
-- positional threshold;
+## 2.5 Committed visual handoff — P0 fixed
+
+Slide previously returned early once `turnCommitted == true`, leaving the visual completion coroutine alive through mode/lifecycle handoff.
+
+Current:
+- committed navigation is preserved;
+- remaining Slide visual coroutine is cancelled/cleared;
+- no locator rollback occurs.
+
+## 2.6 Comparison with Android Pager — P2
+
+Veil Slide uses a deliberately faster/direct policy.
+
+Potential later improvement:
+- targeted snap;
 - velocity-aware decay;
-- snap animation;
-- max page distance.
+- one-page maximum.
 
-Veil keeps its intentionally faster direct Slide response, but the release-velocity path now uses the same high-refresh smoothing/reversal-trust strategy as hardened Paper instead of replacing history with one instantaneous sample.
-
-The remaining gap is target animation: completion timing is still a compact Veil policy rather than Android Pager's decay + targeted-snap model.
-
-**Action after Paper is stable:** consider a pure targeted-snap model while preserving one-page maximum and Readium locator ownership.
-
-## Slide source texture — FIXED
-
-Slide previously captured with `View.draw(Canvas)` on begin.
-
-It now uses the same off-gesture warm-source strategy as Paper:
-- capture after the accepted Slide mode/page has painted;
-- reuse the prepared bitmap on drag start;
-- refresh after each transaction returns idle.
-
-This changes texture lifecycle only; Slide motion remains free of Paper material physics.
+Do not mix this work into Paper stabilization.
 
 ---
 
 # 3. PAGED / NONE
 
 Core:
-- `StaticPagedNavigationInputListener.kt`
+- `StaticPagedNavigationInputListener.kt`.
 
 Contract:
-- no curl;
-- no slide;
-- reserve horizontal drag so Readium's animated/native page motion cannot leak in;
-- one unanimated page navigation on deliberate release;
+- reserve deliberate horizontal drag;
+- no visual page-motion engine;
+- release commits one unanimated navigation;
 - short drag does nothing.
 
-## Ownership defect — FIXED
+Removed redundant Readium overflow mode gate.
 
-Removed redundant `navigator.overflow.value.scroll` mode gate.
-
-ReaderScreen's accepted appearance is now the source of truth.
-
-## Comparison
-
-This is intentionally simpler than Android Pager. It is a semantic paged mode, not a motion mode.
-
-Status: architecture correct.
+Status: source architecture is intentionally simple and correct.
 
 ---
 
 # 4. SCROLL
 
-Scroll remains Readium-owned.
+Scroll is Readium-owned.
 
-Veil Paper/Slide/Static Paged predicates all resolve false in Scroll.
+Arena found one overlap:
 
-Readium 3.4.0 supports EPUB scroll/paginated preferences and keeps the navigator as the current-location source of truth.
+### P0 fixed — directional key leakage
 
-Status:
-- do not layer Paper or Slide logic on Scroll;
-- do not reuse Paper resistance in Scroll;
-- keep native document scrolling/selection ownership.
+The directional fallback listener could still handle arrow/page keys in EPUB Scroll mode.
 
-No code change required from this audit.
+Current:
+- EPUB Scroll disables Veil directional navigation;
+- edge taps and keyboard navigation return to the renderer;
+- Paper, Slide and Static Paged all resolve false.
+
+Instrumentation contract now checks both tap and key ownership for Scroll.
+
+Readium 3.4 remains responsible for the scrolling document and locator.
 
 ---
 
 # 5. PDF
 
-PDF remains separate from EPUB page-turn style.
+PDF stays outside EPUB Paper/Slide ownership.
 
-Readium Kotlin Toolkit 3.4.0's PDFium adapter now explicitly supports:
-- continuous scroll;
-- horizontal paginated mode that snaps to page boundaries.
+Readium 3.4 PDFium supports scroll and horizontal paginated modes.
 
-Veil must not apply the EPUB Paper GPU engine to PDF until a dedicated PDF snapshot/render contract exists.
+Veil must not reuse EPUB GPU Paper until a dedicated PDF capture/render contract exists.
 
-Status: intentionally unchanged.
+Status: unchanged by this branch.
 
 ---
 
-# 6. INPUT ARBITRATION
+# 6. ONE-HOT INPUT OWNERSHIP
 
-`ReaderInputArbiter` delegate order:
+For EPUB navigation state, exactly one high-level owner is allowed:
 
-1. content target
-2. tap matrix
-3. Paper
-4. Slide
-5. Static Paged
-6. directional
-7. chrome / renderer fallback
+- Paper -> Paper listener;
+- Slide -> Slide listener;
+- Paged -> Static Paged listener;
+- Scroll -> Readium renderer.
 
-For drag:
-1. Paper
-2. Slide
-3. Static Paged
-4. renderer fallback
+`ReaderInputArbiterTest` already locks one-hot ownership across page-turn styles and Scroll.
 
-Because mode predicates are now based on one accepted Reader appearance, only one navigation-mode delegate should own the gesture.
-
-## Important invariant
-
-No mode-specific listener should independently re-decide whether the Reader is scroll/paged from Readium's asynchronous overflow state.
-
-Readium provides:
-- current locator;
-- progression;
-- actual navigation.
-
-Veil's accepted appearance provides:
-- product-mode ownership.
+No mode listener should independently reinterpret asynchronous Readium overflow state as product mode.
 
 ---
 
-# 7. PRIORITY LIST AFTER THIS AUDIT
+# 7. CURRENT PRIORITY
 
 ## P0 — fixed in source
-- old Legacy Paper runtime shipped beside GPU.
-- Canvas Material v1 hidden fallback.
-- GPU/Canvas A/B ambiguity.
-- Paper ownership split-brain.
-- persisted Slide bypassing Debug Paper review.
-- production GPU gate potentially degrading to native Slide.
-- Reader atmosphere drawn above Paper.
-- GLSurfaceView composition/Z-order architecture.
-- Slide ownership split-brain.
-- Slide force-cancel locator restoration race.
-- Slide cancel-await job-reference race.
-- Static Paged duplicate overflow gate.
-- stale unresolved `dropBackBufferIfCold()` compile symbol.
-- invisible Reduced Motion settle latency.
-- source Paper snapshot captured on first drag instead of prewarmed.
-- Slide source snapshot captured on first drag instead of prewarmed.
-- single-sample Slide release velocity instability at high refresh rates.
-- GPU renderer failure not distinguishable from an idle/blank curl in the HUD.
 
-## P1 — open until build/device evidence
-- validate `View.draw()` WebView snapshot reliability; migrate to PixelCopy-style cache if needed.
-- solve pointer-distance/curl-arc/binding geometry closer to harism without theatrical distortion.
-- evaluate subtle perspective/MVP projection.
-- validate destination/backside semantic mapping in forward/backward and RTL.
+- legacy Paper runtime in APK;
+- Canvas Material hidden fallback;
+- GPU/Canvas A/B ambiguity;
+- GLSL duplicate `uSideSign`;
+- GLSL missing fragment `uTexelSize`;
+- GLSL missing fragment `uSideSign`;
+- SurfaceView Z-order/composition ambiguity;
+- Paper ownership split-brain;
+- Slide ownership split-brain;
+- Static Paged ownership split-brain;
+- ReaderScreen duplicate EPUB overflow gates;
+- Scroll directional key leakage;
+- stale Paper prewarm content;
+- stale Slide prewarm content;
+- mutable bitmap/GL upload race;
+- Paper exact restore races from earlier hardening;
+- Slide exact restore race;
+- Slide cancel-await race;
+- Slide committed-visual handoff race;
+- invisible/ambiguous GPU failure diagnostics.
 
-## P2 — after Paper hardware GREEN
-- move Slide to targeted snap/decay model closer to Android Pager.
-- decide whether explicit geometric self-shadow is worth GPU cost.
-- consider hard-page density only for covers/special surfaces, not ordinary text pages.
+## P1 — requires build/device evidence or isolated pure model work
+
+- prove WebView `View.draw()` source/destination capture;
+- stronger touch-origin/binding geometry;
+- optional subtle perspective;
+- validate destination/backside orientation forward/backward + RTL;
+- inspect first-frame latency on 60/90/120Hz;
+- validate TextureView lifecycle/context recreation on real hardware.
+
+## P2 — only after Paper is hardware-green
+
+- geometric self/base/edge shadow refinement;
+- curvature-error-based adaptive mesh quality;
+- Slide targeted snap/decay;
+- hard-page density for covers/special surfaces.
 
 ---
 
-# 8. BUILD / DEVICE MATRIX
+# 8. REQUIRED NEXT EVIDENCE
 
-The next APK should contain exactly one Paper visual engine: GPU v2.
+Canonical CodeMagic workflow:
+`1 - VEIL UI APK`
 
-Required checks:
+It runs:
+1. policy/parser checks;
+2. `:app:testDebugUnitTest`;
+3. `:app:lintDebug`;
+4. `:app:assembleDebug`.
 
-### HUD ownership
-- idle: `PAPER · GPU v2 · READY · A0`
-- first deliberate horizontal drag: A increments.
-- active gesture: `ACTIVE`
-- if capture cannot start: `CAPTURE FAILED`
-- Reduced Motion: `REDUCED MOTION` and no curl.
+Do not call the branch build-green until those complete successfully.
 
-### Paper
+After APK install, HUD interpretation:
+
+- `PAPER · GPU v2 · READY · A0` -> renderer initialized, no turn attempted;
+- swipe -> attempt count must increase;
+- `ACTIVE` -> Paper transaction + GPU visual state active;
+- `GPU FAILED` -> renderer init/draw failure;
+- `GPU UNSUPPORTED` -> GLES capability path unavailable;
+- `CAPTURE FAILED` -> current-page snapshot failed;
+- `REDUCED MOTION` -> curl intentionally bypassed.
+
+Device matrix:
+- 5 materials;
+- LTR + RTL/Persian;
 - forward/backward;
-- LTR/RTL/Persian;
 - top/middle/bottom grip;
 - slow drag;
 - fast flick;
 - reverse-cancel;
 - boundary;
-- repeated turns;
-- theme changes;
+- repeated rapid turns;
+- mode handoff;
 - rotation/resize;
-- five materials;
+- High Contrast;
+- Reduced Motion;
 - 60/90/120Hz where available.
 
-### Slide
-- no bend/material lighting;
-- direct finger tracking;
-- forward/backward/RTL;
-- cancel/commit;
-- mode handoff while preview is active.
-
-### Paged
-- horizontal drag never shows animation;
-- deliberate release changes exactly one page.
-
-### Scroll
-- vertical scrolling remains native and uninterrupted.
-
-Until build + device evidence passes, PR #373 remains Draft.
+Until this evidence exists, PR #373 remains Draft.
