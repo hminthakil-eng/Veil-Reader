@@ -87,6 +87,47 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `gpu frame sequence rejects superseded work inside same context`() {
+        assertEquals(8L, nextGpuMaterialFrameSequence(7L))
+        assertEquals(1L, nextGpuMaterialFrameSequence(Long.MAX_VALUE))
+        assertEquals(8L, nextGpuMaterialTextureRevision(7L))
+        assertEquals(1L, nextGpuMaterialTextureRevision(Long.MAX_VALUE))
+
+        assertTrue(
+            gpuMaterialFrameIsCurrent(
+                frameGeneration = 4L,
+                rendererGeneration = 4L,
+                frameSequence = 12L,
+                latestSequence = 12L
+            )
+        )
+        assertTrue(
+            !gpuMaterialFrameIsCurrent(
+                frameGeneration = 4L,
+                rendererGeneration = 4L,
+                frameSequence = 11L,
+                latestSequence = 12L
+            )
+        )
+        assertTrue(
+            !gpuMaterialFrameIsCurrent(
+                frameGeneration = 3L,
+                rendererGeneration = 4L,
+                frameSequence = 12L,
+                latestSequence = 12L
+            )
+        )
+        assertTrue(
+            !gpuMaterialFrameIsCurrent(
+                frameGeneration = 4L,
+                rendererGeneration = 4L,
+                frameSequence = 0L,
+                latestSequence = 0L
+            )
+        )
+    }
+
+    @Test
     fun `gpu renderer retries are bounded and accessibility aware`() {
         assertTrue(
             shouldRetryGpuMaterialPageRenderer(
