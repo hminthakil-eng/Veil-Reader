@@ -184,6 +184,9 @@ private fun readerResourceHref(href: String): String {
 private const val LOCATOR_PROGRESSION_TOLERANCE = 0.0025
 private const val VISUAL_PAGE_PROGRESSION_TOLERANCE = 0.0001
 
+internal fun nextReaderNavigationTransactionToken(current: Long): Long =
+    if (current == Long.MAX_VALUE) 1L else (current + 1L).coerceAtLeast(1L)
+
 internal class ReaderNavigationTransactionGate(
     private val timeoutMs: Long = DEFAULT_TIMEOUT_MS
 ) {
@@ -200,8 +203,9 @@ internal class ReaderNavigationTransactionGate(
         expectedPdfPage: Int? = null,
         originPdfPage: Int? = null
     ): ReaderNavigationTransaction {
+        nextToken = nextReaderNavigationTransactionToken(nextToken)
         val transaction = ReaderNavigationTransaction(
-            token = ++nextToken,
+            token = nextToken,
             originLocatorJson = originLocatorJson,
             targetIdentity = targetIdentity,
             targetHref = targetHref,
