@@ -78,6 +78,15 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `gpu context generation rejects stale frames and survives counter rollover`() {
+        assertEquals(8L, nextGpuMaterialRendererGeneration(7L))
+        assertEquals(1L, nextGpuMaterialRendererGeneration(Long.MAX_VALUE))
+        assertTrue(gpuMaterialFrameMatchesRendererGeneration(4L, 4L))
+        assertTrue(!gpuMaterialFrameMatchesRendererGeneration(3L, 4L))
+        assertTrue(!gpuMaterialFrameMatchesRendererGeneration(0L, 0L))
+    }
+
+    @Test
     fun `gpu renderer retries are bounded and accessibility aware`() {
         assertTrue(
             shouldRetryGpuMaterialPageRenderer(
