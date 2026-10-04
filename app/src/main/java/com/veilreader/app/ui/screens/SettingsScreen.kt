@@ -401,13 +401,22 @@ fun SettingsScreen(
                 stringResource(R.string.settings_page_turn_title),
                 style = MaterialTheme.typography.labelLarge
             )
+            val paperTurnAvailable = MaterialPageEngineRollout.isEnabled()
             ReaderPageTurnSelector(
                 selected = appearance.pageTurnStyle,
                 enabled = appearance.readingMode == ReaderReadingMode.PAGED,
+                paperEnabled = paperTurnAvailable,
                 onSelect = { style ->
                     commitReaderAppearance { current -> current.withPageTurnStyle(style) }
                 }
             )
+            if (!paperTurnAvailable) {
+                Text(
+                    stringResource(R.string.settings_mode_curl_unavailable),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             Text(
                 localizedPageTurnStyleDescription(appearance.pageTurnStyle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
