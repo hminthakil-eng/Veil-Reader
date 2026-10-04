@@ -50,9 +50,9 @@ internal class GpuMaterialPageCurlView(
     private val onRendererReady: (Boolean) -> Unit = {},
     private val onRendererFailure: () -> Unit = {},
     private val onRendererFramePresented: () -> Unit = {},
-    private val onTextureUploadLeaseRequired: (Bitmap) -> Unit = {},
-    private val onTextureUploaded: (Bitmap) -> Unit = {},
-    private val onTextureUploadsInvalidated: () -> Unit = {}
+    private val onTextureUploadLeaseRequired: (Bitmap, Long) -> Unit = { _, _ -> },
+    private val onTextureUploaded: (Bitmap, Long) -> Unit = { _, _ -> },
+    private val onTextureUploadsInvalidated: (Long) -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
@@ -191,15 +191,22 @@ internal class GpuMaterialPageCurlView(
         }
         if (requiresTextureUpload && usableBitmap != null) {
             // Lease synchronously before the GL thread can observe requestRender().
-            onTextureUploadLeaseRequired(usableBitmap)
+            onTextureUploadLeaseRequired(
+                usableBitmap,
+                rendererGeneration
+            )
         }
         requestRender()
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         // A new GL context cannot retain a client-memory read from the previous one.
-        // Release any CPU bitmap leases that could never receive an upload ACK.
-        post { onTextureUploadsInvalidated() }
+        // Invalidate only the previous generation: UI delivery can race with a
+        // newly submitted frame for the fresh context.
+        val abandonedGeneration = rendererGeneration
+        if (abandonedGeneration > 0L) {
+            post { onTextureUploadsInvalidated(abandonedGeneration) }
+        }
         rendererGeneration =
             nextGpuMaterialRendererGeneration(rendererGeneration)
         rendererFailed = false
@@ -352,7 +359,12 @@ internal class GpuMaterialPageCurlView(
             }
             // GL has consumed the client bitmap bytes for this texture update.
             // Acknowledge on the UI thread so the CPU snapshot pool may reuse it.
-            post { onTextureUploaded(bitmap) }
+            post {
+                onTextureUploaded(
+                    bitmap,
+                    frame.generation
+                )
+            }
         }
         if (
             !gpuMaterialFrameIsCurrent(
@@ -491,8 +503,9 @@ internal class GpuMaterialPageCurlView(
         }
         if (!failureReported) {
             failureReported = true
+            val failedGeneration = rendererGeneration
             post {
-                onTextureUploadsInvalidated()
+                onTextureUploadsInvalidated(failedGeneration)
                 onRendererFailure()
             }
         }
