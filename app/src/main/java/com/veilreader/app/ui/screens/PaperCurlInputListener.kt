@@ -713,9 +713,14 @@ internal class PaperCurlInputListener(
         }
 
         val accepted = navigator.go(exact, animated = false)
-        if (!accepted && previewNavigationSucceeded) {
+        if (
+            !accepted &&
+            previewNavigationSucceeded &&
+            !alreadyAtOrigin
+        ) {
             // Use a directional fallback only after evidence that this transaction
-            // actually moved to the preview destination.
+            // actually moved away from the origin. A forced no-op restore while
+            // origin is still current must never manufacture a reverse page turn.
             navigate(opposite(spec.direction))
         }
     }
