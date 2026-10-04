@@ -112,7 +112,6 @@ internal class MaterialPageEngineState(
     private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
     private var snapshotBufferCursor = -1
     private var snapshotSourceRevision = 1L
-    private var activeSnapshotRevision = 0L
     private var liftCueEmitted = false
 
     fun configureProfile(value: MaterialPageProfile) {
@@ -177,8 +176,6 @@ internal class MaterialPageEngineState(
             return false
         }
         val bitmap = ready.bitmap
-        activeSnapshotRevision = ready.sourceRevision
-
         width = view.width.toFloat()
         height = view.height.toFloat()
         density = view.resources.displayMetrics.density
@@ -439,7 +436,6 @@ internal class MaterialPageEngineState(
 
     suspend fun clear() {
         snapshot = null
-        activeSnapshotRevision = 0L
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -458,7 +454,6 @@ internal class MaterialPageEngineState(
 
     fun clearImmediately() {
         snapshot = null
-        activeSnapshotRevision = 0L
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -489,7 +484,6 @@ internal class MaterialPageEngineState(
         tone: MaterialPageTone = this.tone
     ) {
         snapshot = bitmap
-        activeSnapshotRevision = snapshotSourceRevision
         width = bitmap.width.toFloat()
         height = bitmap.height.toFloat()
         this.progress =
