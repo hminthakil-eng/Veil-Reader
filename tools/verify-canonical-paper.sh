@@ -33,4 +33,29 @@ grep -q 'GpuMaterialPageRendererStatus.READY' "$input" ||
 grep -q 'GpuMaterialPageRendererStatus.INITIALIZING' "$gpu" ||
   fail "GPU initialization lifecycle state is missing"
 
+snapshot="app/src/main/java/com/veilreader/app/ui/reader/material/MaterialPageSnapshot.kt"
+model="app/src/main/java/com/veilreader/app/ui/reader/material/GpuPageCurlModel.kt"
+benchmark_activity="app/src/benchmark/java/com/veilreader/app/benchmark/BenchmarkReaderActivity.kt"
+
+[ -f "$snapshot" ] || fail "Paper snapshot freshness contract is missing"
+[ -f "$model" ] || fail "Paper GPU geometry model is missing"
+
+grep -q 'awaitMaterialPageSourceVisualReady' "$snapshot" ||
+  fail "Paper warm capture no longer waits for WebView visual readiness"
+
+grep -q 'MATERIAL_PAGE_PREPARED_SNAPSHOT_MAX_AGE_NANOS' "$snapshot" ||
+  fail "Paper warm snapshot age bound is missing"
+
+grep -q 'gpuCylinderXForFreeEdge' "$model" ||
+  fail "finger-to-free-edge geometry constraint is missing"
+
+grep -q 'gpuMaterialFrameMatchesRendererGeneration' "$gpu" ||
+  fail "stale GL-context frame fence is missing"
+
+grep -q 'paper.gpu.texture_upload' "$gpu" ||
+  fail "GPU texture upload trace is missing"
+
+grep -q 'PageTurnStyle.PAPER' "$benchmark_activity" ||
+  fail "benchmark Reader is not exercising canonical Paper"
+
 echo "Canonical Paper source contract: PASS"
