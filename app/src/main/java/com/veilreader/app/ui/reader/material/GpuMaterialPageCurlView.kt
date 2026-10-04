@@ -53,6 +53,8 @@ internal class GpuMaterialPageCurlView(
 
     private data class SubmittedFrame(
         val generation: Long,
+        val sequence: Long,
+        val textureRevision: Long,
         val bitmap: Bitmap?,
         val active: Boolean,
         val curl: GpuPageCurlFrame,
@@ -74,7 +76,9 @@ internal class GpuMaterialPageCurlView(
     private val shadowLayerCount = gpuPageShadowLayerCount(lowMemoryDevice)
     private var submittedFrame: SubmittedFrame? = null
     private var lastSubmittedActive = false
-    private var frontTextureDirty = true
+    private var submittedSequence = 0L
+    private var textureRevision = 0L
+    private var uploadedTextureRevision = 0L
     private var rendererFailed = false
 
     @Volatile
@@ -143,6 +147,8 @@ internal class GpuMaterialPageCurlView(
         val usableBitmap =
             bitmap?.takeIf { !it.isRecycled && it.width > 0 && it.height > 0 }
         synchronized(frameLock) {
+            submittedSequence =
+                nextGpuMaterialFrameSequence(submittedSequence)
             if (
                 active &&
                 (
@@ -150,10 +156,13 @@ internal class GpuMaterialPageCurlView(
                         submittedFrame?.bitmap !== usableBitmap
                     )
             ) {
-                frontTextureDirty = true
+                textureRevision =
+                    nextGpuMaterialTextureRevision(textureRevision)
             }
             submittedFrame = SubmittedFrame(
                 generation = rendererGeneration,
+                sequence = submittedSequence,
+                textureRevision = textureRevision,
                 bitmap = usableBitmap,
                 active = active && usableBitmap != null,
                 curl = curl,
@@ -177,7 +186,9 @@ internal class GpuMaterialPageCurlView(
         synchronized(frameLock) {
             submittedFrame = null
             lastSubmittedActive = false
-            frontTextureDirty = true
+            submittedSequence = 0L
+            textureRevision = 0L
+            uploadedTextureRevision = 0L
         }
         post { onRendererReady(false) }
         runCatching {
@@ -203,9 +214,6 @@ internal class GpuMaterialPageCurlView(
             )
             maxTextureSize = textureLimit[0].coerceAtLeast(1)
             failureReported = false
-            synchronized(frameLock) {
-                frontTextureDirty = true
-            }
             post { onRendererReady(true) }
         }.onFailure { error ->
             failRenderer("GPU page renderer initialization failed", error)
@@ -243,9 +251,11 @@ internal class GpuMaterialPageCurlView(
 
         val frame = synchronized(frameLock) { submittedFrame } ?: return
         if (
-            !gpuMaterialFrameMatchesRendererGeneration(
+            !gpuMaterialFrameIsCurrent(
                 frameGeneration = frame.generation,
-                rendererGeneration = rendererGeneration
+                rendererGeneration = rendererGeneration,
+                frameSequence = frame.sequence,
+                latestSequence = synchronized(frameLock) { submittedSequence }
             )
         ) {
             return
@@ -270,10 +280,23 @@ internal class GpuMaterialPageCurlView(
         }
 
         GLES20.glUseProgram(program)
-        uploadFrontTextureIfNeeded(bitmap)
+        uploadFrontTextureIfNeeded(
+            frontBitmap = bitmap,
+            requiredTextureRevision = frame.textureRevision
+        )
         val uploadError = GLES20.glGetError()
         if (uploadError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page texture upload failed: glError=$uploadError")
+            return
+        }
+        if (
+            !gpuMaterialFrameIsCurrent(
+                frameGeneration = frame.generation,
+                rendererGeneration = rendererGeneration,
+                frameSequence = frame.sequence,
+                latestSequence = synchronized(frameLock) { submittedSequence }
+            )
+        ) {
             return
         }
 
@@ -526,7 +549,7 @@ internal class GpuMaterialPageCurlView(
             frontTextureWidth = width
             frontTextureHeight = height
             synchronized(frameLock) {
-                frontTextureDirty = true
+                uploadedTextureRevision = 0L
             }
         } else {
             // Prewarm is an optimization, never a correctness gate. Keep tracked
@@ -537,13 +560,15 @@ internal class GpuMaterialPageCurlView(
         }
     }
 
-    private fun uploadFrontTextureIfNeeded(frontBitmap: Bitmap) {
-        val uploadFront = synchronized(frameLock) {
-            val dirty = frontTextureDirty
-            frontTextureDirty = false
-            dirty
+    private fun uploadFrontTextureIfNeeded(
+        frontBitmap: Bitmap,
+        requiredTextureRevision: Long
+    ) {
+        val alreadyUploaded = synchronized(frameLock) {
+            requiredTextureRevision > 0L &&
+                uploadedTextureRevision == requiredTextureRevision
         }
-        if (!uploadFront) return
+        if (alreadyUploaded) return
 
         Trace.beginSection("paper.gpu.texture_upload")
         try {
@@ -568,6 +593,9 @@ internal class GpuMaterialPageCurlView(
                 )
                 frontTextureWidth = frontBitmap.width
                 frontTextureHeight = frontBitmap.height
+            }
+            synchronized(frameLock) {
+                uploadedTextureRevision = requiredTextureRevision
             }
         } finally {
             Trace.endSection()
@@ -1116,6 +1144,25 @@ internal fun gpuMaterialFrameMatchesRendererGeneration(
 ): Boolean =
     frameGeneration > 0L &&
         frameGeneration == rendererGeneration
+
+internal fun nextGpuMaterialFrameSequence(current: Long): Long =
+    if (current == Long.MAX_VALUE) 1L else current + 1L
+
+internal fun nextGpuMaterialTextureRevision(current: Long): Long =
+    if (current == Long.MAX_VALUE) 1L else current + 1L
+
+internal fun gpuMaterialFrameIsCurrent(
+    frameGeneration: Long,
+    rendererGeneration: Long,
+    frameSequence: Long,
+    latestSequence: Long
+): Boolean =
+    gpuMaterialFrameMatchesRendererGeneration(
+        frameGeneration = frameGeneration,
+        rendererGeneration = rendererGeneration
+    ) &&
+        frameSequence > 0L &&
+        frameSequence == latestSequence
 
 internal fun shouldPreallocateGpuPageTexture(
     viewportWidth: Int,
