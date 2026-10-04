@@ -1,6 +1,5 @@
 package com.veilreader.app.ui.reader.material
 
-import android.app.ActivityManager
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.PointF
@@ -68,9 +67,6 @@ internal class MaterialPageEngineState(
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
 
-    var backSnapshot: Bitmap? by mutableStateOf(null)
-        private set
-
     var progress: Float by mutableFloatStateOf(0f)
         private set
 
@@ -111,10 +107,7 @@ internal class MaterialPageEngineState(
     private var height = 0f
     private var density = 1f
     private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
-    private val backSnapshotBuffers = arrayOfNulls<Bitmap>(2)
     private var snapshotBufferCursor = -1
-    private var backSnapshotBufferCursor = -1
-    private var backSnapshotAllowed = true
     private var liftCueEmitted = false
 
     fun configureProfile(value: MaterialPageProfile) {
@@ -165,20 +158,9 @@ internal class MaterialPageEngineState(
             .takeIf { it.isFinite() }
             ?.coerceIn(0.75f, 4f)
             ?: 1f
-        val memory = view.context.getSystemService(
-            android.content.Context.ACTIVITY_SERVICE
-        ) as? ActivityManager
-        backSnapshotAllowed =
-            shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = memory?.isLowRamDevice == true,
-                memoryClassMb = memory?.memoryClass ?: 256,
-                pageWidthPx = view.width,
-                pageHeightPx = view.height
-            )
         this.side = side
         this.profile = profile
         snapshot = bitmap
-        backSnapshot = null
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -266,25 +248,6 @@ internal class MaterialPageEngineState(
         )
     }
 
-    /**
-     * Captures the previewed destination after Readium navigation has settled.
-     * This becomes the physical back-side texture of the lifted leaf. Failure is
-     * non-fatal: the GPU renderer falls back to mirrored ink-through from the
-     * source snapshot.
-     */
-    fun captureBack(view: View): Boolean {
-        if (
-            !active ||
-            !backSnapshotAllowed ||
-            view.width <= 0 ||
-            view.height <= 0
-        ) {
-            return false
-        }
-        val bitmap = captureBackSnapshot(view) ?: return false
-        backSnapshot = bitmap
-        return true
-    }
 
     suspend fun animateTapTurn() {
         if (!active) return
@@ -449,7 +412,6 @@ internal class MaterialPageEngineState(
 
     suspend fun clear() {
         snapshot = null
-        backSnapshot = null
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -468,7 +430,6 @@ internal class MaterialPageEngineState(
 
     fun clearImmediately() {
         snapshot = null
-        backSnapshot = null
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -499,7 +460,6 @@ internal class MaterialPageEngineState(
         tone: MaterialPageTone = this.tone
     ) {
         snapshot = bitmap
-        backSnapshot = null
         width = bitmap.width.toFloat()
         height = bitmap.height.toFloat()
         this.progress =
@@ -544,16 +504,13 @@ internal class MaterialPageEngineState(
     }
 
     fun releaseBufferIfIdle() {
-        if (active || snapshot != null || backSnapshot != null) return
+        if (active || snapshot != null) return
         // Do not manually recycle buffers that may still be referenced by the GL
         // render thread. Dropping ownership lets Android reclaim them once all
         // in-flight frame references are gone.
         snapshotBuffers[0] = null
         snapshotBuffers[1] = null
-        backSnapshotBuffers[0] = null
-        backSnapshotBuffers[1] = null
         snapshotBufferCursor = -1
-        backSnapshotBufferCursor = -1
     }
 
     fun dispose() {
@@ -583,28 +540,6 @@ internal class MaterialPageEngineState(
         }
     }
 
-    private fun captureBackSnapshot(view: View): Bitmap? =
-        runCatching {
-            val bitmap = obtainBackSnapshotBuffer(view)
-                ?: return@runCatching null
-            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
-            view.draw(AndroidCanvas(bitmap))
-            bitmap
-        }.getOrNull()
-
-    private fun obtainBackSnapshotBuffer(view: View): Bitmap? {
-        backSnapshotBufferCursor =
-            nextMaterialPageBufferSlot(backSnapshotBufferCursor)
-        val slot = backSnapshotBufferCursor
-        return obtainReusableBuffer(
-            current = backSnapshotBuffers[slot],
-            view = view
-        ).also { resolved ->
-            if (resolved != null) {
-                backSnapshotBuffers[slot] = resolved
-            }
-        }
-    }
 
     private fun obtainReusableBuffer(
         current: Bitmap?,

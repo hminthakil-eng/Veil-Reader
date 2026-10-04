@@ -44,25 +44,6 @@ internal fun estimatedMaterialPageStorageBytes(
         (cpuBitmapCount.coerceAtLeast(0) + gpuTextureCount.coerceAtLeast(0)).toLong()
 }
 
-internal fun shouldCaptureMaterialBackSnapshot(
-    lowMemoryDevice: Boolean,
-    memoryClassMb: Int,
-    pageWidthPx: Int = 0,
-    pageHeightPx: Int = 0
-): Boolean {
-    if (lowMemoryDevice || memoryClassMb < 256) return false
-    if (pageWidthPx <= 0 || pageHeightPx <= 0) return true
-
-    val projectedTotalBytes = estimatedMaterialPageStorageBytes(
-        pageWidthPx = pageWidthPx,
-        pageHeightPx = pageHeightPx,
-        cpuBitmapCount = 4,
-        gpuTextureCount = 2
-    )
-    val conservativeDeviceBudgetBytes =
-        (memoryClassMb.toLong() * 1024L * 1024L * 25L) / 100L
-    return projectedTotalBytes <= conservativeDeviceBudgetBytes
-}
 
 internal data class GpuPageCurlFrame(
     val cylinderX: Float,

@@ -50,8 +50,6 @@ class GpuPageShaderContractTest {
             "uSideSign",
             "uShadowPass",
             "uFrontTexture",
-            "uBackTexture",
-            "uHasBackTexture",
             "uTexelSize",
             "uFrontTint",
             "uBackTint",
@@ -77,6 +75,15 @@ class GpuPageShaderContractTest {
         assertTrue(!shouldMountGpuMaterialPageRenderer(GpuMaterialPageRendererStatus.FAILED))
         assertTrue(!shouldMountGpuMaterialPageRenderer(GpuMaterialPageRendererStatus.UNSUPPORTED))
         assertTrue(!shouldMountGpuMaterialPageRenderer(GpuMaterialPageRendererStatus.REDUCED_MOTION))
+    }
+
+    @Test
+    fun `reverse face stays source derived and cannot duplicate destination content`() {
+        val source = GpuMaterialPageCurlView.FRAGMENT_SHADER
+        assertTrue(source.contains("mirroredFrontInk"))
+        assertTrue(!source.contains("uBackTexture"))
+        assertTrue(!source.contains("uHasBackTexture"))
+        assertTrue(!source.contains("destinationInk"))
     }
 
     @Test

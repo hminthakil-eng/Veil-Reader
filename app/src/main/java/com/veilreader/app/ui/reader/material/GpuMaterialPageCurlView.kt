@@ -50,7 +50,6 @@ internal class GpuMaterialPageCurlView(
 
     private data class SubmittedFrame(
         val bitmap: Bitmap?,
-        val backBitmap: Bitmap?,
         val active: Boolean,
         val curl: GpuPageCurlFrame,
         val profile: MaterialPageProfile,
@@ -71,18 +70,14 @@ internal class GpuMaterialPageCurlView(
     private var submittedFrame: SubmittedFrame? = null
     private var lastSubmittedActive = false
     private var frontTextureDirty = true
-    private var backTextureDirty = true
     private var rendererFailed = false
 
     private var program = 0
     private var vertexBufferId = 0
     private var indexBufferId = 0
     private var frontTextureId = 0
-    private var backTextureId = 0
     private var frontTextureWidth = 1
     private var frontTextureHeight = 1
-    private var backTextureWidth = 1
-    private var backTextureHeight = 1
     private var indexCount = 0
     private var viewportWidth = 0
     private var viewportHeight = 0
@@ -93,8 +88,6 @@ internal class GpuMaterialPageCurlView(
     private var aPosition = -1
     private var aTexCoord = -1
     private var uFrontTexture = -1
-    private var uBackTexture = -1
-    private var uHasBackTexture = -1
     private var uCylinderPosition = -1
     private var uCylinderTilt = -1
     private var uCylinderRadius = -1
@@ -131,7 +124,6 @@ internal class GpuMaterialPageCurlView(
 
     fun submitFrame(
         bitmap: Bitmap?,
-        backBitmap: Bitmap?,
         active: Boolean,
         curl: GpuPageCurlFrame,
         profile: MaterialPageProfile,
@@ -142,8 +134,6 @@ internal class GpuMaterialPageCurlView(
     ) {
         val usableBitmap =
             bitmap?.takeIf { !it.isRecycled && it.width > 0 && it.height > 0 }
-        val usableBackBitmap =
-            backBitmap?.takeIf { !it.isRecycled && it.width > 0 && it.height > 0 }
         synchronized(frameLock) {
             if (
                 active &&
@@ -154,12 +144,8 @@ internal class GpuMaterialPageCurlView(
             ) {
                 frontTextureDirty = true
             }
-            if (submittedFrame?.backBitmap !== usableBackBitmap) {
-                backTextureDirty = true
-            }
             submittedFrame = SubmittedFrame(
                 bitmap = usableBitmap,
-                backBitmap = usableBackBitmap,
                 active = active && usableBitmap != null,
                 curl = curl,
                 profile = profile,
@@ -202,7 +188,6 @@ internal class GpuMaterialPageCurlView(
             failureReported = false
             synchronized(frameLock) {
                 frontTextureDirty = true
-                backTextureDirty = true
             }
             post { onRendererReady(true) }
         }.onFailure { error ->
@@ -226,7 +211,7 @@ internal class GpuMaterialPageCurlView(
         val frame = synchronized(frameLock) { submittedFrame } ?: return
         val bitmap = frame.bitmap ?: return
         if (!frame.active || bitmap.isRecycled) return
-        if (!textureFits(bitmap) || frame.backBitmap?.let { !textureFits(it) } == true) {
+        if (!textureFits(bitmap)) {
             failRenderer(
                 "GPU page texture exceeds GL_MAX_TEXTURE_SIZE=$maxTextureSize"
             )
@@ -244,10 +229,7 @@ internal class GpuMaterialPageCurlView(
         }
 
         GLES20.glUseProgram(program)
-        uploadTexturesIfNeeded(
-            frontBitmap = bitmap,
-            backBitmap = frame.backBitmap
-        )
+        uploadFrontTextureIfNeeded(bitmap)
         val uploadError = GLES20.glGetError()
         if (uploadError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page texture upload failed: glError=$uploadError")
@@ -431,13 +413,6 @@ internal class GpuMaterialPageCurlView(
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
         GLES20.glUniform1i(uFrontTexture, 0)
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, backTextureId)
-        GLES20.glUniform1i(uBackTexture, 1)
-        GLES20.glUniform1f(
-            uHasBackTexture,
-            if (frame.backBitmap != null && !frame.backBitmap.isRecycled) 1f else 0f
-        )
     }
 
     private fun setColorUniform(location: Int, argb: Long) {
@@ -447,86 +422,45 @@ internal class GpuMaterialPageCurlView(
         GLES20.glUniform3f(location, r, g, b)
     }
 
-    private fun uploadTexturesIfNeeded(
-        frontBitmap: Bitmap,
-        backBitmap: Bitmap?
-    ) {
-        val uploadFront: Boolean
-        val uploadBack: Boolean
-        synchronized(frameLock) {
-            uploadFront = frontTextureDirty
-            uploadBack = backTextureDirty && backBitmap != null
+    private fun uploadFrontTextureIfNeeded(frontBitmap: Bitmap) {
+        val uploadFront = synchronized(frameLock) {
+            val dirty = frontTextureDirty
             frontTextureDirty = false
-            if (uploadBack) backTextureDirty = false
+            dirty
         }
+        if (!uploadFront) return
 
-        if (uploadFront) {
-            uploadBitmapToTexture(
-                textureId = frontTextureId,
-                bitmap = frontBitmap,
-                front = true
-            )
-        }
-
-        if (uploadBack && backBitmap != null && !backBitmap.isRecycled) {
-            uploadBitmapToTexture(
-                textureId = backTextureId,
-                bitmap = backBitmap,
-                front = false
-            )
-        }
-    }
-
-    private fun uploadBitmapToTexture(
-        textureId: Int,
-        bitmap: Bitmap,
-        front: Boolean
-    ) {
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
-        val currentWidth =
-            if (front) frontTextureWidth else backTextureWidth
-        val currentHeight =
-            if (front) frontTextureHeight else backTextureHeight
-
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
         if (
-            currentWidth == bitmap.width &&
-            currentHeight == bitmap.height
+            frontTextureWidth == frontBitmap.width &&
+            frontTextureHeight == frontBitmap.height
         ) {
             GLUtils.texSubImage2D(
                 GLES20.GL_TEXTURE_2D,
                 0,
                 0,
                 0,
-                bitmap
+                frontBitmap
             )
         } else {
             GLUtils.texImage2D(
                 GLES20.GL_TEXTURE_2D,
                 0,
-                bitmap,
+                frontBitmap,
                 0
             )
-            if (front) {
-                frontTextureWidth = bitmap.width
-                frontTextureHeight = bitmap.height
-            } else {
-                backTextureWidth = bitmap.width
-                backTextureHeight = bitmap.height
-            }
+            frontTextureWidth = frontBitmap.width
+            frontTextureHeight = frontBitmap.height
         }
     }
 
     private fun createTextures() {
-        val ids = IntArray(2)
-        GLES20.glGenTextures(2, ids, 0)
+        val ids = IntArray(1)
+        GLES20.glGenTextures(1, ids, 0)
         frontTextureId = ids[0]
-        backTextureId = ids[1]
         frontTextureWidth = 1
         frontTextureHeight = 1
-        backTextureWidth = 1
-        backTextureHeight = 1
         configureTexture(frontTextureId)
-        configureTexture(backTextureId)
     }
 
     private fun configureTexture(textureId: Int) {
@@ -639,8 +573,6 @@ internal class GpuMaterialPageCurlView(
         aPosition = GLES20.glGetAttribLocation(program, "aPosition")
         aTexCoord = GLES20.glGetAttribLocation(program, "aTexCoord")
         uFrontTexture = GLES20.glGetUniformLocation(program, "uFrontTexture")
-        uBackTexture = GLES20.glGetUniformLocation(program, "uBackTexture")
-        uHasBackTexture = GLES20.glGetUniformLocation(program, "uHasBackTexture")
         uCylinderPosition = GLES20.glGetUniformLocation(program, "uCylinderPosition")
         uCylinderTilt = GLES20.glGetUniformLocation(program, "uCylinderTilt")
         uCylinderRadius = GLES20.glGetUniformLocation(program, "uCylinderRadius")
@@ -669,8 +601,6 @@ internal class GpuMaterialPageCurlView(
             "aPosition" to aPosition,
             "aTexCoord" to aTexCoord,
             "uFrontTexture" to uFrontTexture,
-            "uBackTexture" to uBackTexture,
-            "uHasBackTexture" to uHasBackTexture,
             "uCylinderPosition" to uCylinderPosition,
             "uCylinderTilt" to uCylinderTilt,
             "uCylinderRadius" to uCylinderRadius,
@@ -869,8 +799,6 @@ internal class GpuMaterialPageCurlView(
             precision mediump float;
 
             uniform sampler2D uFrontTexture;
-            uniform sampler2D uBackTexture;
-            uniform float uHasBackTexture;
             uniform vec3 uFrontTint;
             uniform vec3 uBackTint;
             uniform vec3 uEdgeTint;
@@ -918,8 +846,6 @@ internal class GpuMaterialPageCurlView(
                 vec4 frontInk = texture2D(uFrontTexture, vTexCoord);
                 vec4 mirroredFrontInk =
                     texture2D(uFrontTexture, vec2(1.0 - vTexCoord.x, vTexCoord.y));
-                vec4 destinationInk =
-                    texture2D(uBackTexture, vec2(1.0 - vTexCoord.x, vTexCoord.y));
                 vec3 n = normalize(vNormal);
                 float facing = clamp(abs(n.z), 0.0, 1.0);
                 float grazing = 1.0 - facing;
@@ -959,13 +885,16 @@ internal class GpuMaterialPageCurlView(
                         color * max(0.58, diffuse - selfOcclusion) +
                         vec3(materialSpecular + fresnel);
                 } else {
-                    vec4 backInk =
-                        mix(mirroredFrontInk, destinationInk, uHasBackTexture);
+                    // The reverse of the lifted leaf is not the Readium destination page.
+                    // Until a true opposite-leaf provider exists, derive only restrained
+                    // ink-through from the source sheet and let the live destination remain
+                    // physically underneath the mesh.
+                    vec4 backInk = mirroredFrontInk;
                     float backContent =
-                        mix(
-                            clamp(uGhostAlpha, 0.0, 0.34),
-                            0.92 - uRoughness * 0.06,
-                            uHasBackTexture
+                        clamp(
+                            uGhostAlpha * (0.72 + uTranslucency * 0.28),
+                            0.06,
+                            0.34
                         );
                     color = mix(
                         uBackTint,
@@ -1043,7 +972,6 @@ internal fun shouldMountGpuMaterialPageRenderer(
 
 private data class GpuOverlaySnapshot(
     val bitmap: Bitmap?,
-    val backBitmap: Bitmap?,
     val active: Boolean,
     val progress: Float,
     val verticalBias: Float,
@@ -1113,7 +1041,6 @@ internal fun GpuMaterialPageOverlay(
         snapshotFlow {
             GpuOverlaySnapshot(
                 bitmap = state.snapshot,
-                backBitmap = state.backSnapshot,
                 active = state.active,
                 progress = state.progress,
                 verticalBias = state.verticalBias,
@@ -1135,7 +1062,6 @@ internal fun GpuMaterialPageOverlay(
                     !bitmap.isRecycled
             gpuView.submitFrame(
                 bitmap = bitmap,
-                backBitmap = frame.backBitmap,
                 active = active,
                 curl = gpuPageCurlFrame(
                     progress = frame.progress,

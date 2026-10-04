@@ -30,56 +30,6 @@ class GpuPageCurlModelTest {
     }
 
     @Test
-    fun `dual back texture is gated by low ram and memory class`() {
-        assertTrue(
-            shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = false,
-                memoryClassMb = 256
-            )
-        )
-        assertTrue(
-            !shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = true,
-                memoryClassMb = 512
-            )
-        )
-        assertTrue(
-            !shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = false,
-                memoryClassMb = 192
-            )
-        )
-    }
-
-    @Test
-    fun `dual back texture budget rejects oversized four-bitmap pool`() {
-        assertTrue(
-            shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = false,
-                memoryClassMb = 256,
-                pageWidthPx = 1_080,
-                pageHeightPx = 2_400
-            )
-        )
-        assertTrue(
-            !shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = false,
-                memoryClassMb = 256,
-                pageWidthPx = 1_440,
-                pageHeightPx = 3_120
-            )
-        )
-        assertTrue(
-            shouldCaptureMaterialBackSnapshot(
-                lowMemoryDevice = false,
-                memoryClassMb = 512,
-                pageWidthPx = 1_440,
-                pageHeightPx = 3_120
-            )
-        )
-    }
-
-    @Test
     fun `virtual cylinder starts at free edge and clears viewport at completion`() {
         val start = gpuPageCurlFrame(
             progress = 0f,
@@ -289,15 +239,15 @@ class GpuPageCurlModelTest {
     }
 
     @Test
-    fun `storage estimate includes CPU buffers and GPU textures`() {
+    fun `canonical storage estimate covers source ping pong and one GPU texture`() {
         val onePage = 1080L * 2400L * 4L
         assertEquals(
-            onePage * 6L,
+            onePage * 3L,
             estimatedMaterialPageStorageBytes(
                 pageWidthPx = 1080,
                 pageHeightPx = 2400,
-                cpuBitmapCount = 4,
-                gpuTextureCount = 2
+                cpuBitmapCount = 2,
+                gpuTextureCount = 1
             )
         )
     }
