@@ -436,7 +436,6 @@ internal class MaterialPageEngineState(
         snapshot = null
         backSnapshot = null
         preparedSnapshot = null
-        preparedSnapshot = null
         preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
@@ -456,6 +455,7 @@ internal class MaterialPageEngineState(
     fun clearImmediately() {
         snapshot = null
         backSnapshot = null
+        preparedSnapshot = null
         preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
