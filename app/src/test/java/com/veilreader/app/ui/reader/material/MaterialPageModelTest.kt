@@ -80,6 +80,19 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `gpu upload leases use storage identity not value equality`() {
+        data class Token(val value: Int)
+
+        val leased = Token(7)
+        val equalButDistinct = Token(7)
+        val leases = listOf(leased)
+
+        assertTrue(materialPageIdentityLeaseContains(leases, leased))
+        assertFalse(materialPageIdentityLeaseContains(leases, equalButDistinct))
+        assertFalse(materialPageIdentityLeaseContains(leases, null))
+    }
+
+    @Test
     fun `snapshot revisions reject stale captures and survive counter rollover`() {
         assertTrue(materialPageSnapshotCaptureIsCurrent(7L, 7L))
         assertFalse(materialPageSnapshotCaptureIsCurrent(6L, 7L))
