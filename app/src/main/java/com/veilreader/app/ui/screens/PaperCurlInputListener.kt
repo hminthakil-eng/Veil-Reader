@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageReleaseDecision
 import com.veilreader.app.ui.reader.material.materialPageReleaseDecision
@@ -55,6 +56,7 @@ internal class PaperCurlInputListener(
     private var lastMotionAtMillis = 0L
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
+    private var visualStartAttempted = false
 
     override fun onTap(event: TapEvent): Boolean {
         if (!paperModeEnabled()) return false
@@ -423,9 +425,17 @@ internal class PaperCurlInputListener(
     ): Boolean {
         if (state.active) return true
         if (!shouldCapturePaperTurnSnapshot(isReducedMotion())) return false
+        if (state.rendererStatus != GpuMaterialPageRendererStatus.READY) return false
+
+        val view = navigator.publicationView
+        if (view.width <= 0 || view.height <= 0) return false
+        // Once GL is READY, make at most one synchronous capture attempt for this
+        // gesture. A real capture failure must not trigger View.draw() on every Move.
+        if (visualStartAttempted) return false
+        visualStartAttempted = true
 
         val visualReady = state.begin(
-            navigator.publicationView,
+            view,
             spec.side,
             spec.direction
         )
@@ -597,6 +607,7 @@ internal class PaperCurlInputListener(
         lastMotionAtMillis = 0L
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
+        visualStartAttempted = false
     }
 
     private data class TurnSpec(
