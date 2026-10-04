@@ -1143,7 +1143,6 @@ internal fun GpuMaterialPageOverlay(
                 context = viewContext,
                 onRendererFailure = {
                     rendererFailed.value = true
-                    onRendererFailure()
                 }
             ).also { created ->
                 viewRef.value = created
