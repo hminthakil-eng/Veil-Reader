@@ -187,21 +187,21 @@ internal fun PaperCurlOverlay(
         if (BuildConfig.DEBUG) {
             val label = when {
                 !MaterialPageEngineRollout.isEnabled() ->
-                    "PAPER · GPU v2 · DISABLED"
+                    "PAPER · GPU CANONICAL · DISABLED"
                 state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ->
-                    "PAPER · GPU v2 · INITIALIZING · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · INITIALIZING · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
-                    "PAPER · GPU v2 · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
-                    "PAPER · GPU v2 · GPU FAILED · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · GPU FAILED · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.REDUCED_MOTION ->
-                    "PAPER · GPU v2 · REDUCED MOTION · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · REDUCED MOTION · A${state.debugBeginAttempts}"
                 state.lastBeginFailed ->
-                    "PAPER · GPU v2 · CAPTURE FAILED · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · CAPTURE FAILED · A${state.debugBeginAttempts}"
                 state.active ->
-                    "PAPER · GPU v2 · ACTIVE · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · ACTIVE · A${state.debugBeginAttempts}"
                 else ->
-                    "PAPER · GPU v2 · READY · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · READY · A${state.debugBeginAttempts}"
             }
             Text(
                 text = label,
