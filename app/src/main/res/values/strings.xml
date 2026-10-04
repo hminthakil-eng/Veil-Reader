@@ -154,6 +154,7 @@
     <string name="settings_mode_paged">Paged</string>
     <string name="settings_mode_scroll">Scroll</string>
     <string name="settings_mode_curl_description">Physical page curl with weighted drag, release velocity, and page-stack depth.</string>
+    <string name="settings_mode_curl_unavailable">Paper curl is temporarily unavailable in this build. Your saved Paper preference is preserved and will return when the canonical GPU engine is enabled.</string>
     <string name="settings_mode_slide_description">Paginated reading with a lightweight horizontal transition and no paper deformation.</string>
     <string name="settings_mode_paged_description">Static pagination with no decorative page transition.</string>
     <string name="settings_mode_scroll_description">Continuous vertical reading when the publication format supports it.</string>
