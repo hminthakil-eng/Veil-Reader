@@ -201,7 +201,9 @@ internal fun PaperCurlOverlay(
                 state.rendererStatus == GpuMaterialPageRendererStatus.REDUCED_MOTION ->
                     "PAPER · GPU CANONICAL · REDUCED MOTION · A${state.debugBeginAttempts}"
                 state.lastBeginFailed ->
-                    "PAPER · GPU CANONICAL · CAPTURE FAILED · A${state.debugBeginAttempts}"
+                    "PAPER · GPU CANONICAL · CAPTURE FAILED " +
+                        "(${state.materialEngine.lastSnapshotFailureReason ?: "UNKNOWN"}) " +
+                        "· A${state.debugBeginAttempts}"
                 state.active ->
                     "PAPER · GPU CANONICAL · ACTIVE · A${state.debugBeginAttempts}"
                 else ->
