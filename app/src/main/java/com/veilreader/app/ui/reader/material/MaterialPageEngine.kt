@@ -124,6 +124,7 @@ internal class MaterialPageEngineState(
     private var preparedSnapshot: MaterialPagePreparedSnapshot? = null
     private var preparedSnapshotBufferSlot = -1
     private val gpuUploadLeases = mutableListOf<Bitmap>()
+    private var releaseBuffersWhenUploadsSettle = false
     private var liftCueEmitted = false
 
     fun configureProfile(value: MaterialPageProfile) {
@@ -159,6 +160,17 @@ internal class MaterialPageEngineState(
      */
     fun acknowledgeSnapshotUploaded(bitmap: Bitmap) {
         gpuUploadLeases.removeAll { it === bitmap }
+        if (
+            releaseBuffersWhenUploadsSettle &&
+            !active &&
+            snapshot == null
+        ) {
+            releaseUnleasedBuffers()
+            if (gpuUploadLeases.isEmpty()) {
+                snapshotBufferCursor = -1
+                releaseBuffersWhenUploadsSettle = false
+            }
+        }
     }
 
     internal fun snapshotHasPendingGpuUpload(bitmap: Bitmap?): Boolean =
@@ -180,6 +192,7 @@ internal class MaterialPageEngineState(
     }
 
     suspend fun prepareSnapshot(view: View): Boolean {
+        releaseBuffersWhenUploadsSettle = false
         if (
             active ||
             view.width <= 0 ||
@@ -217,7 +230,8 @@ internal class MaterialPageEngineState(
             return false
         }
 
-        val nextSlot = nextMaterialPageBufferSlot(snapshotBufferCursor)
+        val nextSlot = nextWritableSnapshotBufferSlot()
+            ?: return false
         val target = obtainReusableBuffer(
             current = snapshotBuffers[nextSlot],
             view = view
@@ -278,6 +292,7 @@ internal class MaterialPageEngineState(
         side: MaterialPageSide,
         profile: MaterialPageProfile = this.profile
     ): Boolean {
+        releaseBuffersWhenUploadsSettle = false
         if (active || view.width <= 0 || view.height <= 0) return false
         val prepared = preparedSnapshot
         val usePrepared =
@@ -711,14 +726,23 @@ internal class MaterialPageEngineState(
 
     fun releaseBufferIfIdle() {
         if (active || snapshot != null) return
-        // Do not manually recycle buffers that may still be referenced by the GL
-        // render thread. Dropping ownership lets Android reclaim them once all
-        // in-flight frame references are gone.
-        snapshotBuffers[0] = null
-        snapshotBuffers[1] = null
-        snapshotBufferCursor = -1
         preparedSnapshot = null
         preparedSnapshotBufferSlot = -1
+        releaseBuffersWhenUploadsSettle = gpuUploadLeases.isNotEmpty()
+        releaseUnleasedBuffers()
+        if (gpuUploadLeases.isEmpty()) {
+            snapshotBufferCursor = -1
+            releaseBuffersWhenUploadsSettle = false
+        }
+    }
+
+    private fun releaseUnleasedBuffers() {
+        snapshotBuffers.indices.forEach { slot ->
+            val bitmap = snapshotBuffers[slot]
+            if (!snapshotHasPendingGpuUpload(bitmap)) {
+                snapshotBuffers[slot] = null
+            }
+        }
     }
 
     fun dispose() {
@@ -792,9 +816,19 @@ internal class MaterialPageEngineState(
         return capture
     }
 
+    private fun nextWritableSnapshotBufferSlot(): Int? {
+        val preferred = nextMaterialPageBufferSlot(snapshotBufferCursor)
+        val alternate = nextMaterialPageBufferSlot(preferred)
+        return sequenceOf(preferred, alternate)
+            .distinct()
+            .firstOrNull { slot ->
+                !snapshotHasPendingGpuUpload(snapshotBuffers[slot])
+            }
+    }
+
     private fun obtainSnapshotBuffer(view: View): Bitmap? {
-        snapshotBufferCursor = nextMaterialPageBufferSlot(snapshotBufferCursor)
-        val slot = snapshotBufferCursor
+        val slot = nextWritableSnapshotBufferSlot() ?: return null
+        snapshotBufferCursor = slot
         return obtainReusableBuffer(
             current = snapshotBuffers[slot],
             view = view
