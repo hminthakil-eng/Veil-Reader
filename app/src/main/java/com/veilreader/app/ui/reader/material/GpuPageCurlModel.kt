@@ -2,6 +2,7 @@ package com.veilreader.app.ui.reader.material
 
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.sin
 
 /**
  * Pure, renderer-independent frame description for the GPU Material Page Engine.
@@ -60,6 +61,50 @@ internal fun estimatedMaterialPageStorageBytes(
 }
 
 
+internal fun gpuProjectedFreeEdgeX(
+    cylinderX: Float,
+    radius: Float
+): Float {
+    val safeRadius =
+        radius.takeIf { it.isFinite() }?.coerceAtLeast(0.0001f) ?: 0.0001f
+    val distance = 1f - cylinderX
+    if (distance <= 0f) return 1f
+
+    val halfTurn = PI.toFloat() * safeRadius
+    return if (distance <= halfTurn) {
+        cylinderX +
+            sin((distance / safeRadius).toDouble()).toFloat() * safeRadius
+    } else {
+        2f * cylinderX - 1f + halfTurn
+    }
+}
+
+internal fun gpuCylinderXForFreeEdge(
+    targetFreeEdgeX: Float,
+    radius: Float
+): Float {
+    val target =
+        targetFreeEdgeX
+            .takeIf { it.isFinite() }
+            ?.coerceIn(-0.25f, 1f)
+            ?: 1f
+    val safeRadius =
+        radius.takeIf { it.isFinite() }?.coerceIn(0.020f, 0.132f) ?: 0.052f
+
+    var low = -0.75f
+    var high = 1f
+    repeat(24) {
+        val mid = (low + high) * 0.5f
+        val projected = gpuProjectedFreeEdgeX(mid, safeRadius)
+        if (projected > target) {
+            high = mid
+        } else {
+            low = mid
+        }
+    }
+    return ((low + high) * 0.5f).coerceIn(-0.75f, 1f)
+}
+
 internal data class GpuPageCurlFrame(
     val cylinderX: Float,
     val cylinderY: Float,
@@ -76,6 +121,7 @@ internal fun gpuPageCurlFrame(
     pullOriginY: Float,
     diagonalPull: Float = 0f,
     pointerTravel: Float = progress,
+    edgeTravel: Float = progress,
     pageAspect: Float = 1f,
     profile: MaterialPageProfile,
     side: MaterialPageSide
@@ -89,6 +135,8 @@ internal fun gpuPageCurlFrame(
         diagonalPull.takeIf { it.isFinite() }?.coerceIn(-1f, 1f) ?: 0f
     val travel =
         pointerTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1.5f) ?: p
+    val edge =
+        edgeTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: p
     val aspect =
         pageAspect.takeIf { it.isFinite() }?.coerceIn(0.5f, 4f) ?: 1f
 
@@ -123,12 +171,27 @@ internal fun gpuPageCurlFrame(
             (1f - terminalT * 0.48f)
         ).coerceIn(0.020f, 0.132f)
 
-    // Progress moves the virtual cylinder through the page. Clearance is based on
-    // the authored material radius so a breathing radius never traps the terminal
-    // sheet near the spine.
+    // During direct manipulation, solve the cylinder from the user's physical
+    // inward travel so the free edge follows the finger instead of merely being
+    // correlated with a generic animation progress. Near completion we smoothly
+    // hand ownership to a terminal clearance path which moves the cylinder beyond
+    // the binding and guarantees the whole leaf can clear the viewport.
+    val targetFreeEdgeX = 1f - edge
+    val pointerCylinderX =
+        gpuCylinderXForFreeEdge(
+            targetFreeEdgeX = targetFreeEdgeX,
+            radius = radius
+        )
     val terminalOvershoot = (PI.toFloat() * baseRadius * 0.62f)
-    val cylinderX =
+    val terminalCylinderX =
         1f - p * (1.045f + terminalOvershoot)
+    val terminalBlend =
+        ((p - 0.76f) / 0.24f).coerceIn(0f, 1f).let { t ->
+            t * t * (3f - 2f * t)
+        }
+    val cylinderX =
+        pointerCylinderX * (1f - terminalBlend) +
+            terminalCylinderX * terminalBlend
 
     val cornerSignal = ((0.5f - origin) * 2f).coerceIn(-1f, 1f)
     val verticalSignal = (vertical / 0.18f).coerceIn(-1f, 1f)
