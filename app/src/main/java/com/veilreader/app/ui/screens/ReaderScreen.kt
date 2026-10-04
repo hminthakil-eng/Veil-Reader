@@ -1844,7 +1844,10 @@ fun ReaderScreen(
                     isPaperMode =
                         opened.format == BookFormat.EPUB &&
                             latestAppearance.value.navigationMode ==
-                                ReaderNavigationMode.PAPER_CURL
+                                ReaderNavigationMode.PAPER_CURL,
+                    isSlidePreviewActive =
+                        opened.format == BookFormat.EPUB &&
+                            slidePageState.active
                 )
                 val wasInitialLocator = initialLocatorPending
                 initialLocatorPending = false
