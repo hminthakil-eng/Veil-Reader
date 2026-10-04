@@ -63,6 +63,18 @@ SAMPLE = {
                     "maximum": 90.0,
                     "median": 85.0,
                     "runs": [80.0, 85.0, 90.0],
+                },
+                "paperGpuDrawMaxMs": {
+                    "minimum": 2.0,
+                    "maximum": 5.0,
+                    "median": 3.5,
+                    "runs": [2.0, 3.5, 5.0],
+                },
+                "paperTextureUploadMaxMs": {
+                    "minimum": 0.8,
+                    "maximum": 2.2,
+                    "median": 1.4,
+                    "runs": [0.8, 1.4, 2.2],
                 }
             },
             "sampledMetrics": {
@@ -81,6 +93,25 @@ SAMPLE = {
                     "runs": [[5.0, 8.0, 10.0, 15.0]],
                 },
             },
+        },
+        {
+            "name": "EMULATOR_firstPaperSnapshotPreparation",
+            "className": "com.veilreader.benchmark.PaperWarmupBenchmark",
+            "metrics": {
+                "paperPrepareCaptureMaxMs": {
+                    "minimum": 2.0,
+                    "maximum": 6.0,
+                    "median": 4.0,
+                    "runs": [2.0, 4.0, 6.0],
+                },
+                "paperViewDrawCaptureMaxMs": {
+                    "minimum": 1.5,
+                    "maximum": 5.0,
+                    "median": 3.0,
+                    "runs": [1.5, 3.0, 5.0],
+                },
+            },
+            "sampledMetrics": {},
         },
     ]
 }
@@ -180,6 +211,35 @@ class PerformanceBudgetTest(unittest.TestCase):
         passes, failures = budget.evaluate(SAMPLE["benchmarks"], checks)
         self.assertEqual(3, len(passes))
         self.assertEqual([], failures)
+
+    def test_evidence_only_checks_require_paper_trace_metrics(self):
+        checks = [
+            {
+                "id": "paper_draw",
+                "classSuffix": ".ReaderFrameBenchmark",
+                "benchmarkNameSuffix": "pageTurns",
+                "metricGroup": "metrics",
+                "metric": "paperGpuDrawMaxMs",
+                "stat": "median",
+            },
+            {
+                "id": "paper_capture",
+                "classSuffix": ".PaperWarmupBenchmark",
+                "benchmarkNameSuffix": "firstPaperSnapshotPreparation",
+                "metricGroup": "metrics",
+                "metric": "paperPrepareCaptureMaxMs",
+                "stat": "median",
+            },
+        ]
+        passes, failures = budget.evaluate(SAMPLE["benchmarks"], checks)
+        self.assertEqual(2, len(passes))
+        self.assertEqual([], failures)
+        self.assertTrue(all("(observed)" in item for item in passes))
+
+        missing = [dict(checks[0], metric="missingPaperMetric")]
+        passes, failures = budget.evaluate(SAMPLE["benchmarks"], missing)
+        self.assertEqual([], passes)
+        self.assertEqual(1, len(failures))
 
     def test_budget_violation_fails(self):
         checks = [
