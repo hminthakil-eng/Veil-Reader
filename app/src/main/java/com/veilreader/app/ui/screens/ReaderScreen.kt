@@ -2030,6 +2030,7 @@ fun ReaderScreen(
                                 pageTurnStyle = latestAppearance.value.pageTurnStyle
                             )
                     },
+                    scope = scope,
                     onInteraction = ::markReaderNavigationInteraction,
                     onNavigationCommitted = {
                         onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
