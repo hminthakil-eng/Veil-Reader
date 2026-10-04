@@ -1059,6 +1059,7 @@ private data class GpuOverlaySnapshot(
     val pullOriginY: Float,
     val diagonalPull: Float,
     val pointerTravel: Float,
+    val edgeTravel: Float,
     val profile: MaterialPageProfile,
     val patina: Float,
     val tone: MaterialPageTone,
@@ -1156,6 +1157,7 @@ internal fun GpuMaterialPageOverlay(
                 pullOriginY = state.pullOriginY,
                 diagonalPull = state.diagonalPull,
                 pointerTravel = state.pointerTravel,
+                edgeTravel = state.edgeTravel,
                 profile = state.profile,
                 patina = state.patina,
                 tone = state.tone,
@@ -1178,6 +1180,7 @@ internal fun GpuMaterialPageOverlay(
                     pullOriginY = frame.pullOriginY,
                     diagonalPull = frame.diagonalPull,
                     pointerTravel = frame.pointerTravel,
+                    edgeTravel = frame.edgeTravel,
                     pageAspect =
                         if (bitmap != null && bitmap.width > 0) {
                             bitmap.height.toFloat() / bitmap.width.toFloat()
