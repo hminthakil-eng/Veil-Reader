@@ -28,6 +28,15 @@ import com.veilreader.app.ui.reader.material.MaterialPageTone
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
 
+internal enum class PaperPerformancePhase {
+    IDLE,
+    CAPTURE,
+    DRAG,
+    RELEASE,
+    CANCEL,
+    GL_RECREATE
+}
+
 /**
  * Single Paper runtime for the GPU Material Page Engine.
  *
@@ -58,6 +67,13 @@ internal class PaperCurlState {
     )
         private set
 
+    var performancePhase: PaperPerformancePhase by mutableStateOf(
+        PaperPerformancePhase.IDLE
+    )
+        private set
+
+    private var rendererEverReady = false
+
     internal val materialEngine = MaterialPageEngineState(
         initialProfile = MaterialPageEngineRollout.selectedProfile()
     )
@@ -71,13 +87,40 @@ internal class PaperCurlState {
 
     fun updateRendererStatus(value: GpuMaterialPageRendererStatus) {
         rendererStatus = value
+        when (value) {
+            GpuMaterialPageRendererStatus.READY -> {
+                rendererEverReady = true
+                if (!active && performancePhase == PaperPerformancePhase.GL_RECREATE) {
+                    performancePhase = PaperPerformancePhase.IDLE
+                }
+            }
+            GpuMaterialPageRendererStatus.INITIALIZING,
+            GpuMaterialPageRendererStatus.FAILED -> {
+                if (rendererEverReady && !active) {
+                    performancePhase = PaperPerformancePhase.GL_RECREATE
+                }
+            }
+            GpuMaterialPageRendererStatus.UNSUPPORTED,
+            GpuMaterialPageRendererStatus.REDUCED_MOTION -> {
+                if (!active) {
+                    performancePhase = PaperPerformancePhase.IDLE
+                }
+            }
+        }
     }
 
     internal fun usingMaterialEngine(): Boolean = active
 
     suspend fun prepareSnapshot(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        return materialEngine.prepareSnapshot(view)
+        performancePhase = PaperPerformancePhase.CAPTURE
+        return try {
+            materialEngine.prepareSnapshot(view)
+        } finally {
+            if (!active) {
+                performancePhase = PaperPerformancePhase.IDLE
+            }
+        }
     }
 
     fun invalidateSnapshotSource() {
@@ -103,6 +146,7 @@ internal class PaperCurlState {
             return false
         }
 
+        performancePhase = PaperPerformancePhase.CAPTURE
         materialEngine.configureProfile(MaterialPageEngineRollout.selectedProfile())
         val started = materialEngine.begin(
             view = view,
@@ -116,6 +160,9 @@ internal class PaperCurlState {
             this.side = side
             this.direction = direction
             active = true
+            performancePhase = PaperPerformancePhase.DRAG
+        } else {
+            performancePhase = PaperPerformancePhase.IDLE
         }
         return started
     }
@@ -128,6 +175,7 @@ internal class PaperCurlState {
 
     fun updateDrag(start: PointF, offset: PointF) {
         if (active) {
+            performancePhase = PaperPerformancePhase.DRAG
             materialEngine.updateDrag(start, offset)
         }
     }
@@ -136,30 +184,44 @@ internal class PaperCurlState {
         if (active) materialEngine.dragProgress() else 0f
 
     suspend fun animateTapTurn() {
-        if (active) materialEngine.animateTapTurn()
+        if (active) {
+            performancePhase = PaperPerformancePhase.RELEASE
+            materialEngine.animateTapTurn()
+        }
     }
 
     suspend fun animateComplete(releaseVelocityDpPerSec: Float = 0f) {
-        if (active) materialEngine.animateComplete(releaseVelocityDpPerSec)
+        if (active) {
+            performancePhase = PaperPerformancePhase.RELEASE
+            materialEngine.animateComplete(releaseVelocityDpPerSec)
+        }
     }
 
     suspend fun animateCancel(releaseVelocityDpPerSec: Float = 0f) {
-        if (active) materialEngine.animateCancel(releaseVelocityDpPerSec)
+        if (active) {
+            performancePhase = PaperPerformancePhase.CANCEL
+            materialEngine.animateCancel(releaseVelocityDpPerSec)
+        }
     }
 
     suspend fun animateBoundaryBounce() {
-        if (active) materialEngine.animateBoundaryBounce()
+        if (active) {
+            performancePhase = PaperPerformancePhase.CANCEL
+            materialEngine.animateBoundaryBounce()
+        }
     }
 
     suspend fun clear() {
         if (!active) return
         materialEngine.clear()
         active = false
+        performancePhase = PaperPerformancePhase.IDLE
     }
 
     fun clearImmediately() {
         materialEngine.clearImmediately()
         active = false
+        performancePhase = PaperPerformancePhase.IDLE
     }
 
     fun releaseBufferIfIdle() {
@@ -169,6 +231,7 @@ internal class PaperCurlState {
     fun dispose() {
         materialEngine.dispose()
         active = false
+        performancePhase = PaperPerformancePhase.IDLE
     }
 }
 
