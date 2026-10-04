@@ -217,6 +217,12 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `low memory devices release EGL context across background pause`() {
+        assertTrue(shouldPreserveGpuPageContextOnPause(lowMemoryDevice = false))
+        assertTrue(!shouldPreserveGpuPageContextOnPause(lowMemoryDevice = true))
+    }
+
+    @Test
     fun `gpu texture prewarm accepts only valid viewport within hardware limit`() {
         assertTrue(shouldPreallocateGpuPageTexture(1080, 2400, 4096))
         assertTrue(!shouldPreallocateGpuPageTexture(0, 2400, 4096))
