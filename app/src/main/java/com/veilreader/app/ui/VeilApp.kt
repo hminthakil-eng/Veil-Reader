@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -91,6 +92,7 @@ import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.sensory.VeilSensoryFeedback
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -934,6 +936,14 @@ fun VeilApp(
 
     LaunchedEffect(externalOpenUri) {
         val uri = externalOpenUri ?: return@LaunchedEffect
+
+        // Keep an external "Open with Veil" request alive while another storage
+        // mutation owns the import gate. snapshotFlow suspends without polling and
+        // rechecks the live Compose state before this URI is consumed.
+        snapshotFlow {
+            !isImporting && !restoring && !exporting
+        }.first { ready -> ready }
+
         importBook(uri)
         onExternalOpenUriConsumed()
     }
