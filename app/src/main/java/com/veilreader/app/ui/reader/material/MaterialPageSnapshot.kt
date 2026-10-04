@@ -12,13 +12,50 @@ import android.view.View
  * A provider may change (software View.draw today, hardware-composited capture after
  * device A/B evidence) without changing Paper physics, navigation or GL ownership.
  */
-internal fun interface MaterialPageSnapshotProvider {
+internal fun interface MaterialPageImmediateSnapshotProvider {
     fun capture(
         view: View,
         target: Bitmap,
         sourceRevision: Long
     ): MaterialPageSnapshotCapture
 }
+
+/**
+ * Async/warm capture seam. PixelCopy belongs here, never inside the synchronous
+ * input path. A prepared result may only be consumed while its revision and
+ * viewport still match the live Readium source.
+ */
+internal fun interface MaterialPagePreparedSnapshotProvider {
+    suspend fun capture(
+        view: View,
+        target: Bitmap,
+        sourceRevision: Long
+    ): MaterialPageSnapshotCapture
+}
+
+internal data class MaterialPagePreparedSnapshot(
+    val bitmap: Bitmap,
+    val sourceRevision: Long,
+    val width: Int,
+    val height: Int,
+    val capturedAtElapsedNanos: Long,
+    val provider: String
+)
+
+internal fun materialPagePreparedSnapshotIsCurrent(
+    prepared: MaterialPagePreparedSnapshot?,
+    expectedRevision: Long,
+    expectedWidth: Int,
+    expectedHeight: Int
+): Boolean =
+    prepared != null &&
+        !prepared.bitmap.isRecycled &&
+        prepared.sourceRevision > 0L &&
+        prepared.sourceRevision == expectedRevision &&
+        prepared.width == expectedWidth &&
+        prepared.height == expectedHeight &&
+        prepared.bitmap.width == expectedWidth &&
+        prepared.bitmap.height == expectedHeight
 
 internal sealed interface MaterialPageSnapshotCapture {
     data class Ready(
@@ -48,7 +85,7 @@ internal enum class MaterialPageSnapshotFailureReason {
     DRAW_FAILED
 }
 
-internal object ViewDrawMaterialPageSnapshotProvider : MaterialPageSnapshotProvider {
+internal object ViewDrawMaterialPageImmediateSnapshotProvider : MaterialPageImmediateSnapshotProvider {
     override fun capture(
         view: View,
         target: Bitmap,
