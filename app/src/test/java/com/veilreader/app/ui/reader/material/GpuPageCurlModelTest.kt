@@ -263,6 +263,78 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `extreme material geometry matrix stays finite bound and terminal safe`() {
+        val aspects = listOf(0.5f, 1f, 2f, 4f)
+        val origins = listOf(0.04f, 0.5f, 0.96f)
+        val diagonals = listOf(-1f, 0f, 1f)
+        val verticalBiases = listOf(-0.18f, 0f, 0.18f)
+        val progresses = listOf(0f, 0.03f, 0.12f, 0.35f, 0.60f, 0.72f, 0.90f, 1f)
+
+        MaterialPageProfiles.all.forEach { profile ->
+            MaterialPageSide.entries.forEach { side ->
+                aspects.forEach { aspect ->
+                    origins.forEach { origin ->
+                        diagonals.forEach { diagonal ->
+                            verticalBiases.forEach { vertical ->
+                                progresses.forEach { progress ->
+                                    val frame = gpuPageCurlFrame(
+                                        progress = progress,
+                                        verticalBias = vertical,
+                                        pullOriginY = origin,
+                                        diagonalPull = diagonal,
+                                        pointerTravel = progress.coerceAtLeast(0.02f),
+                                        pageAspect = aspect,
+                                        profile = profile,
+                                        side = side
+                                    )
+
+                                    assertTrue(
+                                        "non-finite frame preset=${profile.preset} side=$side " +
+                                            "aspect=$aspect origin=$origin diagonal=$diagonal " +
+                                            "vertical=$vertical progress=$progress",
+                                        isFiniteGpuPageCurlFrame(frame)
+                                    )
+                                    assertTrue(frame.cylinderY in 0f..1f)
+                                    assertTrue(frame.radius in 0.020f..0.132f)
+                                    assertEquals(
+                                        if (side == MaterialPageSide.RIGHT) 1f else -1f,
+                                        frame.sideSign,
+                                        0f
+                                    )
+
+                                    if (frame.cylinderX > 0f) {
+                                        val yInAspect = frame.cylinderY * aspect
+                                        val bindingReach =
+                                            if (frame.cylinderTilt >= 0f) {
+                                                yInAspect
+                                            } else {
+                                                aspect - yInAspect
+                                            }
+                                        assertTrue(
+                                            "binding release preset=${profile.preset} side=$side " +
+                                                "aspect=$aspect progress=$progress",
+                                            kotlin.math.abs(frame.cylinderTilt) *
+                                                bindingReach.coerceAtLeast(0f) <=
+                                                frame.cylinderX + 0.00025f
+                                        )
+                                    }
+
+                                    if (progress == 1f) {
+                                        assertTrue(
+                                            "terminal cylinder must clear free edge",
+                                            frame.cylinderX < 0f
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun `canonical storage estimate covers source ping pong and one GPU texture`() {
         val onePage = 1080L * 2400L * 4L
         assertEquals(
