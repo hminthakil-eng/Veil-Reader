@@ -28,9 +28,23 @@ internal fun gpuPageMeshQuality(
 
 internal fun shouldCaptureMaterialBackSnapshot(
     lowMemoryDevice: Boolean,
-    memoryClassMb: Int
-): Boolean =
-    !lowMemoryDevice && memoryClassMb >= 256
+    memoryClassMb: Int,
+    pageWidthPx: Int = 0,
+    pageHeightPx: Int = 0
+): Boolean {
+    if (lowMemoryDevice || memoryClassMb < 256) return false
+    if (pageWidthPx <= 0 || pageHeightPx <= 0) return true
+
+    val pageBytes =
+        pageWidthPx.toLong() *
+            pageHeightPx.toLong() *
+            4L
+    val projectedCpuPoolBytes = pageBytes * 4L
+    val heapBudgetBytes =
+        (memoryClassMb.toLong() * 1024L * 1024L * 22L) / 100L
+
+    return projectedCpuPoolBytes <= heapBudgetBytes
+}
 
 internal data class GpuPageCurlFrame(
     val cylinderX: Float,
