@@ -11,6 +11,7 @@ import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -22,6 +23,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.irurueta.android.glutils.GLTextureView
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -200,6 +202,20 @@ internal class GpuMaterialPageCurlView(
         viewportWidth = width.coerceAtLeast(1)
         viewportHeight = height.coerceAtLeast(1)
         GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
+
+        // Reserve texture storage while the Reader is idle so the first deliberate
+        // Paper gesture pays only the bitmap upload, not a simultaneous GPU storage
+        // allocation. If the publication capture size differs, the normal upload
+        // path still reallocates safely on demand.
+        if (
+            shouldPreallocateGpuPageTexture(
+                viewportWidth = viewportWidth,
+                viewportHeight = viewportHeight,
+                maxTextureSize = maxTextureSize
+            )
+        ) {
+            preallocateFrontTextureStorage(viewportWidth, viewportHeight)
+        }
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -421,6 +437,42 @@ internal class GpuMaterialPageCurlView(
         val g = ((argb ushr 8) and 0xFF).toFloat() / 255f
         val b = (argb and 0xFF).toFloat() / 255f
         GLES20.glUniform3f(location, r, g, b)
+    }
+
+    private fun preallocateFrontTextureStorage(width: Int, height: Int) {
+        if (
+            frontTextureId == 0 ||
+            (frontTextureWidth == width && frontTextureHeight == height)
+        ) {
+            return
+        }
+
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D,
+            0,
+            GLES20.GL_RGBA,
+            width,
+            height,
+            0,
+            GLES20.GL_RGBA,
+            GLES20.GL_UNSIGNED_BYTE,
+            null
+        )
+        val error = GLES20.glGetError()
+        if (error == GLES20.GL_NO_ERROR) {
+            frontTextureWidth = width
+            frontTextureHeight = height
+            synchronized(frameLock) {
+                frontTextureDirty = true
+            }
+        } else {
+            // Prewarm is an optimization, never a correctness gate. Keep tracked
+            // dimensions mismatched so the first real frame retries with texImage2D.
+            frontTextureWidth = 1
+            frontTextureHeight = 1
+            Log.w(TAG, "GPU page texture preallocation skipped: glError=$error")
+        }
     }
 
     private fun uploadFrontTextureIfNeeded(frontBitmap: Bitmap) {
@@ -971,6 +1023,34 @@ internal fun shouldMountGpuMaterialPageRenderer(
     status == GpuMaterialPageRendererStatus.INITIALIZING ||
         status == GpuMaterialPageRendererStatus.READY
 
+internal const val GPU_MATERIAL_PAGE_MAX_AUTO_RETRIES = 2
+
+internal fun shouldRetryGpuMaterialPageRenderer(
+    failureCount: Int,
+    supported: Boolean,
+    reducedMotion: Boolean
+): Boolean =
+    supported &&
+        !reducedMotion &&
+        failureCount in 1..GPU_MATERIAL_PAGE_MAX_AUTO_RETRIES
+
+internal fun gpuMaterialPageRendererRetryDelayMillis(failureCount: Int): Long =
+    when (failureCount.coerceAtLeast(1)) {
+        1 -> 180L
+        else -> 420L
+    }
+
+internal fun shouldPreallocateGpuPageTexture(
+    viewportWidth: Int,
+    viewportHeight: Int,
+    maxTextureSize: Int
+): Boolean =
+    viewportWidth > 0 &&
+        viewportHeight > 0 &&
+        maxTextureSize > 0 &&
+        viewportWidth <= maxTextureSize &&
+        viewportHeight <= maxTextureSize
+
 private data class GpuOverlaySnapshot(
     val bitmap: Bitmap?,
     val active: Boolean,
@@ -998,6 +1078,7 @@ internal fun GpuMaterialPageOverlay(
     }
     val rendererFailed = remember { mutableStateOf(false) }
     val rendererReady = remember { mutableStateOf(false) }
+    val rendererFailureCount = remember { mutableIntStateOf(0) }
     val status = when {
         state.reducedMotion -> GpuMaterialPageRendererStatus.REDUCED_MOTION
         !supported -> GpuMaterialPageRendererStatus.UNSUPPORTED
@@ -1007,6 +1088,33 @@ internal fun GpuMaterialPageOverlay(
     }
     LaunchedEffect(status) {
         onRendererStatus(status)
+    }
+    LaunchedEffect(
+        rendererFailed.value,
+        rendererFailureCount.intValue,
+        supported,
+        state.reducedMotion
+    ) {
+        if (
+            rendererFailed.value &&
+            shouldRetryGpuMaterialPageRenderer(
+                failureCount = rendererFailureCount.intValue,
+                supported = supported,
+                reducedMotion = state.reducedMotion
+            )
+        ) {
+            delay(
+                gpuMaterialPageRendererRetryDelayMillis(
+                    rendererFailureCount.intValue
+                )
+            )
+            if (!state.reducedMotion) {
+                // FAILED unmounts the poisoned GL host. Clearing the failure flag
+                // re-enters INITIALIZING and mounts a fresh context exactly once
+                // per bounded retry attempt.
+                rendererFailed.value = false
+            }
+        }
     }
     if (!shouldMountGpuMaterialPageRenderer(status)) {
         // INITIALIZING must stay mounted: this GLTextureView creates the
@@ -1096,10 +1204,12 @@ internal fun GpuMaterialPageOverlay(
                     rendererReady.value = ready
                     if (ready) {
                         rendererFailed.value = false
+                        rendererFailureCount.intValue = 0
                     }
                 },
                 onRendererFailure = {
                     rendererReady.value = false
+                    rendererFailureCount.intValue += 1
                     rendererFailed.value = true
                 }
             ).also { created ->
