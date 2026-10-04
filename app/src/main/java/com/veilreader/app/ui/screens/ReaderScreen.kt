@@ -433,10 +433,6 @@ fun ReaderScreen(
                 root = performanceRootView,
                 key = ReaderPerformanceMetrics.PAPER_GPU_KEY
             )
-            ReaderPerformanceMetrics.removeState(
-                root = performanceRootView,
-                key = ReaderPerformanceMetrics.PAPER_GPU_KEY
-            )
         }
     }
     DisposableEffect(performanceRootView, readerSessionInstanceId) {
@@ -448,6 +444,14 @@ fun ReaderScreen(
             ReaderPerformanceMetrics.removeState(
                 root = performanceRootView,
                 key = ReaderPerformanceMetrics.PAPER_PHASE_KEY
+            )
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_GPU_KEY
+            )
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_WORK_KEY
             )
         }
     }
@@ -1176,36 +1180,61 @@ fun ReaderScreen(
         ttsStartJob?.cancel()
         ttsSession?.close()
 
-        // A drag preview can already have moved the live navigator underneath its captured page.
-        // Roll it back synchronously before reading currentLocator; otherwise Close can persist the
-        // preview destination even though the user never committed that page turn.
-        val cancelledPaperPreview =
-            paperInputListener?.forceCancelPendingTurn() == true
-        val cancelledSlidePreview =
-            slideInputListener?.forceCancelPendingTurn() == true
-        val cancelledPreview = cancelledPaperPreview || cancelledSlidePreview
-
-        settleReachedPdfNavigation()
-        val cancelledNavigationJump =
-            navigationTransactionGate.cancelActive(SystemClock.elapsedRealtime()) != null
-        if (
-            pendingEpubRelayoutSourceJson == null &&
-            shouldTakeFinalNavigatorSnapshot(
-                format = opened.format,
-                paperPreviewActive = paperCurlState.active,
-                slidePreviewActive = slidePageState.active,
-                previewCancelled = cancelledPreview,
-                programmaticNavigationInFlight = cancelledNavigationJump
-            )
-        ) {
-            latestNavigator.value?.currentLocator?.value?.let { locator ->
-                recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
-            }
-        }
-
         val expectedSessionId = readerSessionInstanceId
+        val paperHadPendingTurn =
+            paperInputListener?.hasPendingTurn() == true
+        val slideHadPendingTurn =
+            slideInputListener?.hasPendingTurn() == true
+
         scope.launch {
             try {
+                // Normal user-initiated Close has a live composition scope, so unlike
+                // emergency lifecycle teardown we can wait for preview restoration to
+                // become authoritative in Readium's currentLocator before snapshotting.
+                val paperPreviewSettled =
+                    !paperHadPendingTurn ||
+                        paperInputListener?.cancelPendingTurnAndAwait() == true ||
+                        paperInputListener?.hasPendingTurn() != true
+                val slidePreviewSettled =
+                    !slideHadPendingTurn ||
+                        slideInputListener?.cancelPendingTurnAndAwait() == true ||
+                        slideInputListener?.hasPendingTurn() != true
+                val unresolvedPreview =
+                    !paperPreviewSettled || !slidePreviewSettled
+
+                if (unresolvedPreview) {
+                    // A timed-out navigator restoration must never be persisted as a
+                    // committed destination. Emergency cleanup is visual/resource-only;
+                    // the previously durable locator remains the safe fallback.
+                    paperInputListener?.forceCancelPendingTurn()
+                    slideInputListener?.forceCancelPendingTurn()
+                    ReaderTrace.event(
+                        "reader_close_preview_restore_unsettled",
+                        bookId = opened.book.id,
+                        sessionId = expectedSessionId
+                    )
+                }
+
+                settleReachedPdfNavigation()
+                val cancelledNavigationJump =
+                    navigationTransactionGate
+                        .cancelActive(SystemClock.elapsedRealtime()) != null
+
+                if (
+                    pendingEpubRelayoutSourceJson == null &&
+                    shouldTakeFinalNavigatorSnapshot(
+                        format = opened.format,
+                        paperPreviewActive = paperCurlState.active,
+                        slidePreviewActive = slidePageState.active,
+                        previewCancelled = unresolvedPreview,
+                        programmaticNavigationInFlight = cancelledNavigationJump
+                    )
+                ) {
+                    latestNavigator.value?.currentLocator?.value?.let { locator ->
+                        recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    }
+                }
+
                 ReaderTrace.event(
                     "reader_close_durability_wait",
                     bookId = opened.book.id,
