@@ -6,7 +6,9 @@ import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
@@ -199,7 +201,8 @@ internal class PaperCurlInputListener(
                 accepted &&
                     awaitReaderVisualNavigationDeparture(
                         currentLocator = navigator.currentLocator,
-                        origin = originLocator)
+                        origin = originLocator
+                    )
             if (!operationIsCurrent(operationToken)) {
                 if (accepted) {
                     navigator.go(originLocator, animated = false)
@@ -390,7 +393,8 @@ internal class PaperCurlInputListener(
                         accepted &&
                             awaitReaderVisualNavigationDeparture(
                         currentLocator = navigator.currentLocator,
-                        origin = origin)
+                        origin = origin
+                            )
                     if (!operationIsCurrent(operationToken)) {
                         if (accepted) {
                             navigator.go(origin, animated = false)
@@ -629,7 +633,8 @@ internal class PaperCurlInputListener(
                         origin != null &&
                         awaitReaderVisualNavigationDeparture(
                         currentLocator = navigator.currentLocator,
-                        origin = origin)
+                        origin = origin
+                            )
                 if (
                     accepted &&
                     (
@@ -834,7 +839,6 @@ internal class PaperCurlInputListener(
         const val EDGE_FRACTION = 0.22f
         const val DRAG_DIRECTION_SLOP_PX = 4f
         const val RESTORE_SETTLE_TIMEOUT_MS = 1_500L
-        const val NAVIGATION_SETTLE_TIMEOUT_MS = 1_500L
     }
 }
 
