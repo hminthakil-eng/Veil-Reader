@@ -67,6 +67,22 @@ internal data class MaterialPageGpuUploadLease(
     val rendererGeneration: Long
 )
 
+internal fun materialPageGpuUploadLeaseMatches(
+    lease: MaterialPageGpuUploadLease,
+    bitmap: Bitmap?,
+    rendererGeneration: Long
+): Boolean =
+    bitmap != null &&
+        lease.bitmap === bitmap &&
+        lease.rendererGeneration == rendererGeneration
+
+internal fun materialPageGpuUploadLeaseOwnsBitmap(
+    lease: MaterialPageGpuUploadLease,
+    bitmap: Bitmap?
+): Boolean =
+    bitmap != null &&
+        lease.bitmap === bitmap
+
 @Stable
 internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
@@ -159,8 +175,11 @@ internal class MaterialPageEngineState(
         if (bitmap.isRecycled || rendererGeneration <= 0L) return
         if (
             gpuUploadLeases.none {
-                it.bitmap === bitmap &&
-                    it.rendererGeneration == rendererGeneration
+                materialPageGpuUploadLeaseMatches(
+                    lease = it,
+                    bitmap = bitmap,
+                    rendererGeneration = rendererGeneration
+                )
             }
         ) {
             gpuUploadLeases += MaterialPageGpuUploadLease(
@@ -179,8 +198,11 @@ internal class MaterialPageEngineState(
         rendererGeneration: Long
     ) {
         gpuUploadLeases.removeAll {
-            it.bitmap === bitmap &&
-                it.rendererGeneration == rendererGeneration
+            materialPageGpuUploadLeaseMatches(
+                lease = it,
+                bitmap = bitmap,
+                rendererGeneration = rendererGeneration
+            )
         }
         releaseDeferredBuffersIfPossible()
     }
@@ -213,8 +235,12 @@ internal class MaterialPageEngineState(
     }
 
     internal fun snapshotHasPendingGpuUpload(bitmap: Bitmap?): Boolean =
-        bitmap != null &&
-            gpuUploadLeases.any { it.bitmap === bitmap }
+        gpuUploadLeases.any {
+            materialPageGpuUploadLeaseOwnsBitmap(
+                lease = it,
+                bitmap = bitmap
+            )
+        }
 
     fun configureReducedMotion(value: Boolean) {
         reducedMotion = value
@@ -897,13 +923,6 @@ internal class MaterialPageEngineState(
             )
         }.getOrNull()
 }
-
-internal fun <T : Any> materialPageIdentityLeaseContains(
-    leases: List<T>,
-    candidate: T?
-): Boolean =
-    candidate != null &&
-        leases.any { it === candidate }
 
 internal fun materialPageToneAdjustedArgb(
     argb: Long,
