@@ -192,7 +192,6 @@ internal class MaterialPageEngineState(
     }
 
     suspend fun prepareSnapshot(view: View): Boolean {
-        releaseBuffersWhenUploadsSettle = false
         if (
             active ||
             view.width <= 0 ||
@@ -201,6 +200,7 @@ internal class MaterialPageEngineState(
         ) {
             return false
         }
+        releaseBuffersWhenUploadsSettle = false
 
         val revision = snapshotSourceRevision
         val widthAtRequest = view.width
@@ -292,8 +292,8 @@ internal class MaterialPageEngineState(
         side: MaterialPageSide,
         profile: MaterialPageProfile = this.profile
     ): Boolean {
-        releaseBuffersWhenUploadsSettle = false
         if (active || view.width <= 0 || view.height <= 0) return false
+        releaseBuffersWhenUploadsSettle = false
         val prepared = preparedSnapshot
         val usePrepared =
             materialPagePreparedSnapshotIsCurrent(
