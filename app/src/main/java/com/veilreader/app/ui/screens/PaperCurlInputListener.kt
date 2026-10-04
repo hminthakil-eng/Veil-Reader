@@ -46,11 +46,13 @@ internal fun shouldAllowPaperNavigation(
     rendererStatus: GpuMaterialPageRendererStatus,
     visualActive: Boolean
 ): Boolean =
-    reducedMotion ||
+    MaterialPageEngineRollout.isEnabled() &&
         (
-            MaterialPageEngineRollout.isEnabled() &&
-                rendererStatus == GpuMaterialPageRendererStatus.READY &&
-                visualActive
+            reducedMotion ||
+                (
+                    rendererStatus == GpuMaterialPageRendererStatus.READY &&
+                        visualActive
+                    )
             )
 
 internal class PaperCurlInputListener(
