@@ -1724,10 +1724,10 @@ fun ReaderScreen(
                     isEnabled = {
                         latestReaderSessionReady.value &&
                             shouldUseVeilSlideNavigation(
-                            format = opened.format,
-                            scroll = nav.overflow.value.scroll,
-                            pageTurnStyle = latestAppearance.value.pageTurnStyle
-                        )
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
@@ -1756,10 +1756,10 @@ fun ReaderScreen(
                     isEnabled = {
                         latestReaderSessionReady.value &&
                             shouldUseStaticPagedDragNavigation(
-                            format = opened.format,
-                            scroll = nav.overflow.value.scroll,
-                            pageTurnStyle = latestAppearance.value.pageTurnStyle
-                        )
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     onInteraction = ::markReaderNavigationInteraction,
                     onNavigationCommitted = {
@@ -1786,7 +1786,11 @@ fun ReaderScreen(
                     !latestReducedMotion.value &&
                         shouldAnimateDirectionalNavigation(
                             format = opened.format,
-                            scroll = nav.overflow.value.scroll,
+                            scroll = if (opened.format == BookFormat.EPUB) {
+                                latestAppearance.value.scroll
+                            } else {
+                                nav.overflow.value.scroll
+                            },
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
                         )
                 },
@@ -1794,7 +1798,11 @@ fun ReaderScreen(
                 isTapNavigationEnabled = {
                     shouldUseDirectionalTapNavigation(
                         format = opened.format,
-                        scroll = nav.overflow.value.scroll,
+                        scroll = if (opened.format == BookFormat.EPUB) {
+                            latestAppearance.value.scroll
+                        } else {
+                            nav.overflow.value.scroll
+                        },
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
                     )
                 },
@@ -1894,7 +1902,7 @@ fun ReaderScreen(
                         opened.format == BookFormat.EPUB
                 },
                 canTurnPages = {
-                    !nav.overflow.value.scroll
+                    !latestAppearance.value.scroll
                 },
                 onPreviousPage = {
                     performSemanticReaderTurn(PaperTurnDirection.BACKWARD)
