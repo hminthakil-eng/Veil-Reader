@@ -1707,6 +1707,7 @@ fun ReaderScreen(
                         if (!paperCurlState.usingMaterialEngine()) {
                             onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         }
+                        paperCurlState.invalidateSnapshotSource()
                         val locator = nav.currentLocator.value
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
@@ -2202,6 +2203,7 @@ fun ReaderScreen(
             presentedReaderAppearance = requested
             acceptedReaderAppearance = requestedSource
             presentedFixedLayoutSpread = requestedSpread
+            paperCurlState.invalidateSnapshotSource()
             if (captured) {
                 readerModeHandoffState.release(reducedMotion)
             }
@@ -2350,6 +2352,7 @@ fun ReaderScreen(
                     previousSize != IntSize.Zero &&
                     previousSize != newSize
                 ) {
+                    paperCurlState.invalidateSnapshotSource()
                     if (readerModeHandoffState.snapshot != null) {
                         readerModeHandoffState.clearImmediately()
                         scope.launch {
