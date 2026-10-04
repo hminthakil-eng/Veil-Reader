@@ -170,7 +170,9 @@ internal class MaterialPageEngineState(
         backSnapshotAllowed =
             shouldCaptureMaterialBackSnapshot(
                 lowMemoryDevice = memory?.isLowRamDevice == true,
-                memoryClassMb = memory?.memoryClass ?: 256
+                memoryClassMb = memory?.memoryClass ?: 256,
+                pageWidthPx = view.width,
+                pageHeightPx = view.height
             )
         this.side = side
         this.profile = profile
