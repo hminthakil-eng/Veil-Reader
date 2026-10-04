@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.veilreader.app.BuildConfig
 import kotlinx.coroutines.delay
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -80,6 +81,9 @@ internal class MaterialPageEngineState(
         private set
 
     var diagonalPull: Float by mutableFloatStateOf(0f)
+        private set
+
+    var pointerTravel: Float by mutableFloatStateOf(0f)
         private set
 
     var visualAlpha: Float by mutableFloatStateOf(1f)
@@ -187,6 +191,7 @@ internal class MaterialPageEngineState(
         verticalBias = 0f
         pullOriginY = 0.5f
         diagonalPull = 0f
+        pointerTravel = 0f
         visualAlpha = 1f
         liftCueEmitted = false
         active = true
@@ -223,6 +228,16 @@ internal class MaterialPageEngineState(
                     slope * (sample.rawProgress / 0.14f).coerceIn(0f, 1f)
                 }
                 ?: 0f
+        pointerTravel =
+            (
+                hypot(
+                    inward.coerceAtLeast(0f).toDouble(),
+                    offset.y.toDouble()
+                ) / width.toDouble().coerceAtLeast(1.0)
+                ).toFloat()
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0f, 1.5f)
+                ?: sample.rawProgress
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -249,6 +264,9 @@ internal class MaterialPageEngineState(
         if (!active) return
         pullOriginY = materialPageTapPullOrigin(profile)
         diagonalPull = materialPageTapDiagonalPull(profile)
+        pointerTravel = progress.coerceAtLeast(
+            materialPageTapLiftFraction(profile)
+        )
     }
 
     /**
