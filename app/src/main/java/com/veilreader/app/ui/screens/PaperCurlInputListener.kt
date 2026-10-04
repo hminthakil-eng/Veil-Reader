@@ -570,13 +570,24 @@ internal class PaperCurlInputListener(
     }
 
     private fun restoreDragStart(spec: TurnSpec) {
-        val exact = dragStartLocator
-        val restored = exact?.let {
-            navigator.go(it, animated = false)
-        } ?: false
+        val exact = dragStartLocator ?: return
+        val targetIdentity = exact.toReaderNavigationIdentity()
+        if (
+            readerNavigationIdentityMatchesTarget(
+                observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
+                target = targetIdentity
+            )
+        ) {
+            // Cancellation can beat the delayed preview navigation. In that race the
+            // source is already authoritative and any directional fallback would
+            // incorrectly move one extra page.
+            return
+        }
 
-        if (!restored) {
-            // Defensive fallback if a transient locator cannot be restored.
+        val accepted = navigator.go(exact, animated = false)
+        if (!accepted && previewNavigationSucceeded) {
+            // Use a directional fallback only after evidence that this transaction
+            // actually moved to the preview destination.
             navigate(opposite(spec.direction))
         }
     }
