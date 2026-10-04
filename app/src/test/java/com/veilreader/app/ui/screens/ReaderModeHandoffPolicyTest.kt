@@ -1,6 +1,8 @@
 package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderNavigationMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -8,6 +10,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderModeHandoffPolicyTest {
+    @Test
+    fun `fixed-layout EPUB cannot enter single-sheet Paper or Slide transitions`() {
+        listOf(PageTurnStyle.PAPER, PageTurnStyle.SLIDE).forEach { style ->
+            val effective = effectiveReaderAppearanceForPublication(
+                appearance = ReaderAppearance(
+                    scroll = true,
+                    pageTurnStyle = style
+                ),
+                fixedLayout = true
+            )
+            assertFalse(effective.scroll)
+            assertEquals(PageTurnStyle.NONE, effective.pageTurnStyle)
+        }
+    }
+
     @Test
     fun `EPUB navigation mode change captures one continuity frame`() {
         assertTrue(
