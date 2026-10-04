@@ -62,6 +62,9 @@ internal class PaperCurlState {
         initialProfile = MaterialPageEngineRollout.selectedProfile()
     )
 
+    val snapshotSourceRevision: Long
+        get() = materialEngine.snapshotSourceRevision
+
     fun configureReducedMotion(value: Boolean) {
         materialEngine.configureReducedMotion(value)
     }
