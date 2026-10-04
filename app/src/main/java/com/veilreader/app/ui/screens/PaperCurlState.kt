@@ -83,7 +83,12 @@ internal class PaperCurlState {
         if (BuildConfig.DEBUG) {
             debugBeginAttempts += 1
         }
-        if (active || view.width <= 0 || view.height <= 0) {
+        if (
+            gpuRendererFailed ||
+            active ||
+            view.width <= 0 ||
+            view.height <= 0
+        ) {
             lastBeginFailed = true
             return false
         }
