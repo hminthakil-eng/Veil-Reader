@@ -439,6 +439,33 @@ class ReaderInputArbiterTest {
     }
 
     @Test
+    fun `Paper physical side and semantic direction remain exact in LTR and RTL`() {
+        assertEquals(
+            PaperCurlSide.RIGHT,
+            paperTurnSideFor(PaperTurnDirection.FORWARD, ReadingProgression.LTR)
+        )
+        assertEquals(
+            PaperCurlSide.LEFT,
+            paperTurnSideFor(PaperTurnDirection.BACKWARD, ReadingProgression.LTR)
+        )
+        assertEquals(
+            PaperCurlSide.LEFT,
+            paperTurnSideFor(PaperTurnDirection.FORWARD, ReadingProgression.RTL)
+        )
+        assertEquals(
+            PaperCurlSide.RIGHT,
+            paperTurnSideFor(PaperTurnDirection.BACKWARD, ReadingProgression.RTL)
+        )
+
+        PaperCurlSide.entries.forEach { side ->
+            listOf(ReadingProgression.LTR, ReadingProgression.RTL).forEach { progression ->
+                val direction = paperTurnDirectionFor(side, progression)
+                assertEquals(side, paperTurnSideFor(direction, progression))
+            }
+        }
+    }
+
+    @Test
     fun `accessibility and selection keys stay with renderer while blocked mode consumes`() {
         assertEquals(
             ReaderKeyRoute.RENDERER,
