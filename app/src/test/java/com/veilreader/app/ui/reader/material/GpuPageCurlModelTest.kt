@@ -11,11 +11,28 @@ class GpuPageCurlModelTest {
         val low = gpuPageMeshQuality(lowMemoryDevice = true)
         val normal = gpuPageMeshQuality(lowMemoryDevice = false)
 
-        assertEquals(48, low.columns)
-        assertEquals(8, low.rows)
-        assertEquals(72, normal.columns)
-        assertEquals(14, normal.rows)
+        assertEquals(56, low.columns)
+        assertEquals(22, low.rows)
+        assertEquals(80, normal.columns)
+        assertEquals(32, normal.rows)
         assertTrue(normal.columns * normal.rows > low.columns * low.rows)
+        assertTrue(low.rows >= 20)
+        assertTrue(normal.rows >= 30)
+    }
+
+    @Test
+    fun `mesh topology stays smooth while remaining GLES2 ushort safe`() {
+        listOf(
+            gpuPageMeshQuality(lowMemoryDevice = true),
+            gpuPageMeshQuality(lowMemoryDevice = false)
+        ).forEach { quality ->
+            val vertices = gpuPageMeshVertexCount(quality)
+            val indices = gpuPageMeshIndexCount(quality)
+
+            assertTrue(vertices in 1..65_535)
+            assertTrue(indices > vertices)
+            assertEquals(0, indices % 6)
+        }
     }
 
     @Test
