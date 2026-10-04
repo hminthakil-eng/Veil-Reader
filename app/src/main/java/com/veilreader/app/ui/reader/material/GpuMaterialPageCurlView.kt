@@ -412,6 +412,8 @@ internal class GpuMaterialPageCurlView(
             frameSuccessReportedForGeneration = true
             post { onRendererFramePresented() }
         }
+        } catch (error: Exception) {
+            failRenderer("GPU page draw threw ${error::class.java.simpleName}", error)
         } finally {
             Trace.endSection()
         }
