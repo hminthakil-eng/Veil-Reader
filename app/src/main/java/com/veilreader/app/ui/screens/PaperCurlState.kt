@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.BuildConfig
 import com.veilreader.app.ui.reader.material.GpuMaterialPageOverlay
@@ -210,6 +211,7 @@ internal fun PaperCurlOverlay(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(6.dp)
+                    .clearAndSetSemantics { }
             )
         }
     }
