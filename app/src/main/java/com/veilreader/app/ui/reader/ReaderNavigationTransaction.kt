@@ -69,7 +69,8 @@ internal data class ReaderNavigationIdentity(
     val href: String?,
     val position: Int?,
     val cssSelector: String?,
-    val totalProgression: Double?
+    val totalProgression: Double?,
+    val progression: Double? = null
 )
 
 internal fun Locator.toReaderNavigationIdentity(): ReaderNavigationIdentity =
@@ -79,7 +80,8 @@ internal fun Locator.toReaderNavigationIdentity(): ReaderNavigationIdentity =
         cssSelector = (locations["cssSelector"] as? String)
             ?.trim()
             ?.takeIf { it.isNotEmpty() },
-        totalProgression = locations.totalProgression
+        totalProgression = locations.totalProgression,
+        progression = locations.progression
     )
 
 internal fun readerNavigationTargetMatches(
@@ -133,6 +135,44 @@ internal fun readerNavigationIdentityMatchesTarget(
     return !targetHasLocationDiscriminator
 }
 
+/**
+ * Page-turn settlement is intentionally stricter than programmatic-target matching.
+ *
+ * Readium's EPUB navigator derives locations.position from coarse publication-position
+ * chunks, while locations.progression tracks the actual paginated WebView viewport.
+ * Adjacent visible pages can therefore share the same position and totalProgression.
+ */
+internal fun readerNavigationIdentityHasVisuallyDeparted(
+    origin: ReaderNavigationIdentity,
+    observed: ReaderNavigationIdentity?
+): Boolean {
+    observed ?: return false
+
+    val originHref = origin.href?.trim()?.takeIf { it.isNotEmpty() }
+    val observedHref = observed.href?.trim()?.takeIf { it.isNotEmpty() }
+    if (originHref != null && observedHref != null) {
+        if (readerResourceHref(originHref) != readerResourceHref(observedHref)) {
+            return true
+        }
+    } else if (originHref != observedHref) {
+        return true
+    }
+
+    val originProgression =
+        origin.progression?.takeIf { it.isFinite() }
+    val observedProgression =
+        observed.progression?.takeIf { it.isFinite() }
+    if (originProgression != null && observedProgression != null) {
+        return abs(originProgression - observedProgression) >
+            VISUAL_PAGE_PROGRESSION_TOLERANCE
+    }
+
+    return !readerNavigationIdentityMatchesTarget(
+        observed = observed,
+        target = origin
+    )
+}
+
 private fun readerResourceHref(href: String): String {
     val resource = href.trim().substringBefore('#')
     if (resource.isEmpty()) return resource
@@ -142,6 +182,7 @@ private fun readerResourceHref(href: String): String {
 }
 
 private const val LOCATOR_PROGRESSION_TOLERANCE = 0.0025
+private const val VISUAL_PAGE_PROGRESSION_TOLERANCE = 0.0001
 
 internal class ReaderNavigationTransactionGate(
     private val timeoutMs: Long = DEFAULT_TIMEOUT_MS
