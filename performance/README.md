@@ -18,7 +18,21 @@ The current physical targets are Veil Reader product budgets, not Android platfo
 - Reader CPU frame duration P99: <= 24 ms
 - Reader journey must produce at least 20 frames so a no-op benchmark cannot pass.
 
+Canonical Paper additionally requires raw physical-device evidence for:
+- GPU draw maximum trace (`paperGpuDrawMaxMs`)
+- texture upload maximum trace (`paperTextureUploadMaxMs`)
+- idle warm-capture maximum trace (`paperPrepareCaptureMaxMs`)
+- underlying `View.draw` capture maximum trace (`paperViewDrawCaptureMaxMs`)
+
+These four metrics are currently **evidence-required, not threshold-calibrated**. Do not invent
+limits before stable physical-device samples exist. After repeated measurements on the reference
+device class, add explicit limits in a reviewed performance change.
+
 ## Running the gate
+
+For the physical Paper gate, run the benchmark module on a connected physical device so both
+`ReaderFrameBenchmark` and `PaperWarmupBenchmark` produce results. Do not substitute the hosted
+lavapipe smoke lane for product evidence.
 
 After Macrobenchmark has produced one or more `*-benchmarkData.json` files:
 
