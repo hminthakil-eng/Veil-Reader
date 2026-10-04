@@ -54,6 +54,55 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `interactive free edge follows physical finger travel before terminal handoff`() {
+        val travels = listOf(0f, 0.03f, 0.08f, 0.16f, 0.28f, 0.45f, 0.62f, 0.72f)
+
+        MaterialPageProfiles.all.forEach { profile ->
+            travels.forEach { travel ->
+                val frame = gpuPageCurlFrame(
+                    progress = travel,
+                    verticalBias = 0f,
+                    pullOriginY = 0.5f,
+                    diagonalPull = 0f,
+                    pointerTravel = travel,
+                    edgeTravel = travel,
+                    pageAspect = 1.8f,
+                    profile = profile,
+                    side = MaterialPageSide.RIGHT
+                )
+                val projectedEdge =
+                    gpuProjectedFreeEdgeX(
+                        cylinderX = frame.cylinderX,
+                        radius = frame.radius
+                    )
+                val expectedEdge = 1f - travel
+
+                assertTrue(
+                    "free-edge error preset=${profile.preset} travel=$travel " +
+                        "projected=$projectedEdge expected=$expectedEdge",
+                    kotlin.math.abs(projectedEdge - expectedEdge) < 0.001f
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `free edge solver is finite and bounded for malformed input`() {
+        val cylinder = gpuCylinderXForFreeEdge(
+            targetFreeEdgeX = Float.NaN,
+            radius = Float.POSITIVE_INFINITY
+        )
+        assertTrue(cylinder.isFinite())
+        assertTrue(cylinder in -0.75f..1f)
+        assertTrue(
+            gpuProjectedFreeEdgeX(
+                cylinderX = cylinder,
+                radius = 0.052f
+            ).isFinite()
+        )
+    }
+
+    @Test
     fun `virtual cylinder starts at free edge and clears viewport at completion`() {
         val start = gpuPageCurlFrame(
             progress = 0f,
