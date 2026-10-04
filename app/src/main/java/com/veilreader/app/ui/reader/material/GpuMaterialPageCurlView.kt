@@ -213,6 +213,10 @@ internal class GpuMaterialPageCurlView(
                 0
             )
             maxTextureSize = textureLimit[0].coerceAtLeast(1)
+            val initError = consumeGpuPageGlErrors()
+            check(initError == GLES20.GL_NO_ERROR) {
+                "GPU page renderer initialization glError=$initError"
+            }
             failureReported = false
             post { onRendererReady(true) }
         }.onFailure { error ->
@@ -284,7 +288,7 @@ internal class GpuMaterialPageCurlView(
             frontBitmap = bitmap,
             requiredTextureRevision = frame.textureRevision
         )
-        val uploadError = GLES20.glGetError()
+        val uploadError = consumeGpuPageGlErrors()
         if (uploadError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page texture upload failed: glError=$uploadError")
             return
@@ -298,6 +302,11 @@ internal class GpuMaterialPageCurlView(
             )
         ) {
             return
+        }
+
+        val staleDrawError = consumeGpuPageGlErrors()
+        if (staleDrawError != GLES20.GL_NO_ERROR) {
+            Log.w(TAG, "Cleared stale GL error before Paper draw: $staleDrawError")
         }
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vertexBufferId)
@@ -351,7 +360,7 @@ internal class GpuMaterialPageCurlView(
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
 
-        val drawError = GLES20.glGetError()
+        val drawError = consumeGpuPageGlErrors()
         if (drawError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page draw failed: glError=$drawError")
         }
@@ -532,6 +541,10 @@ internal class GpuMaterialPageCurlView(
             return
         }
 
+        val staleError = consumeGpuPageGlErrors()
+        if (staleError != GLES20.GL_NO_ERROR) {
+            Log.w(TAG, "Cleared stale GL error before texture preallocation: $staleError")
+        }
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
         GLES20.glTexImage2D(
             GLES20.GL_TEXTURE_2D,
@@ -544,7 +557,7 @@ internal class GpuMaterialPageCurlView(
             GLES20.GL_UNSIGNED_BYTE,
             null
         )
-        val error = GLES20.glGetError()
+        val error = consumeGpuPageGlErrors()
         if (error == GLES20.GL_NO_ERROR) {
             frontTextureWidth = width
             frontTextureHeight = height
@@ -572,6 +585,10 @@ internal class GpuMaterialPageCurlView(
 
         Trace.beginSection("paper.gpu.texture_upload")
         try {
+            val staleError = consumeGpuPageGlErrors()
+            if (staleError != GLES20.GL_NO_ERROR) {
+                Log.w(TAG, "Cleared stale GL error before texture upload: $staleError")
+            }
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
             if (
                 frontTextureWidth == frontBitmap.width &&
@@ -1163,6 +1180,18 @@ internal fun gpuMaterialFrameIsCurrent(
     ) &&
         frameSequence > 0L &&
         frameSequence == latestSequence
+
+internal fun consumeGpuPageGlErrors(
+    getError: () -> Int = { GLES20.glGetError() }
+): Int {
+    var first = GLES20.GL_NO_ERROR
+    repeat(16) {
+        val error = getError()
+        if (error == GLES20.GL_NO_ERROR) return first
+        if (first == GLES20.GL_NO_ERROR) first = error
+    }
+    return first
+}
 
 internal fun shouldPreallocateGpuPageTexture(
     viewportWidth: Int,
