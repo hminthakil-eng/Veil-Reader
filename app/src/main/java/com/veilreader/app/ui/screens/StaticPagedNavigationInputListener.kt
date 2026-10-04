@@ -2,6 +2,10 @@ package com.veilreader.app.ui.screens
 
 import kotlin.math.abs
 import kotlin.math.max
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
@@ -19,17 +23,20 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 internal class StaticPagedNavigationInputListener(
     private val navigator: OverflowableNavigator,
     private val isEnabled: () -> Boolean,
+    private val scope: CoroutineScope,
     private val onInteraction: () -> Unit,
     private val onNavigationCommitted: () -> Unit,
     private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
     private var reserved = false
+    private var navigationJob: Job? = null
 
     override fun onDrag(event: DragEvent): Boolean {
         if (!isEnabled()) {
             reserved = false
             return false
         }
+        if (navigationJob != null) return true
 
         return when (event.type) {
             DragEvent.Type.Start -> {
@@ -54,19 +61,39 @@ internal class StaticPagedNavigationInputListener(
                     progression = navigator.overflow.value.readingProgression
                 ) ?: return true
 
-                val moved = when (direction) {
+                val origin = navigator.currentLocator.value
+                val accepted = when (direction) {
                     PaperTurnDirection.FORWARD -> navigator.goForward(animated = false)
                     PaperTurnDirection.BACKWARD -> navigator.goBackward(animated = false)
                 }
-                if (moved) {
-                    onNavigationCommitted()
-                } else {
+                if (!accepted) {
                     onBoundaryHit(
                         paperTurnSideFor(
                             direction = direction,
                             progression = navigator.overflow.value.readingProgression
                         )
                     )
+                    return true
+                }
+
+                navigationJob = scope.launch {
+                    val moved =
+                        awaitReaderVisualNavigationDeparture(
+                            currentLocator = navigator.currentLocator,
+                            origin = origin
+                        )
+                    if (moved) {
+                        onNavigationCommitted()
+                    } else {
+                        navigator.go(origin, animated = false)
+                        onBoundaryHit(
+                            paperTurnSideFor(
+                                direction = direction,
+                                progression = navigator.overflow.value.readingProgression
+                            )
+                        )
+                    }
+                    navigationJob = null
                 }
                 true
             }
