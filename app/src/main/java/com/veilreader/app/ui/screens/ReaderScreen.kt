@@ -581,6 +581,7 @@ fun ReaderScreen(
         presentedReaderAppearance,
         reducedMotion,
         paperCurlState.active,
+        paperCurlState.snapshotSourceRevision,
         readerSessionInstanceId
     ) {
         if (
@@ -1497,10 +1498,22 @@ fun ReaderScreen(
             return@LaunchedEffect
         }
         var initialLocatorPending = true
+        var lastPaperVisualLocatorJson: String? = null
         nav.currentLocator
             .onEach { locator ->
-                // A link destination is already authoritative before the UI debounce. Capture it
-                // once so a rapid subsequent native swipe or lifecycle pause cannot erase it.
+                // Paper pixels follow the visual navigator, not only durable commits. Invalidate
+                // immediately for TOC jumps, previous-location returns and preview navigation so
+                // an old warm snapshot cannot survive until the next gesture.
+                if (opened.format == BookFormat.EPUB) {
+                    val visualLocatorJson =
+                        locator.toVeilPersistedJson(opened.format)
+                    if (visualLocatorJson != lastPaperVisualLocatorJson) {
+                        lastPaperVisualLocatorJson = visualLocatorJson
+                        paperCurlState.invalidateSnapshotSource()
+                    }
+                }
+                // A PDF link destination is already authoritative before the UI debounce. Capture
+                // it once so a rapid subsequent native swipe or lifecycle pause cannot erase it.
                 if (opened.format == BookFormat.PDF) settleReachedPdfNavigation(locator)
             }
             .debounce(500)
@@ -1707,7 +1720,6 @@ fun ReaderScreen(
                         if (!paperCurlState.usingMaterialEngine()) {
                             onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         }
-                        paperCurlState.invalidateSnapshotSource()
                         val locator = nav.currentLocator.value
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
@@ -2262,6 +2274,9 @@ fun ReaderScreen(
             )
         }
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
+        if (opened.format == BookFormat.EPUB) {
+            paperCurlState.invalidateSnapshotSource()
+        }
     }
 
     val readerCanvas = readerCanvasColor(presentedReaderAppearance.theme)
