@@ -484,6 +484,34 @@ fun ReaderScreen(
         onDispose { navigationTransactionGate.reset() }
     }
 
+    suspend fun settlePagePreviewsBeforeProgrammaticNavigation(): Boolean {
+        val paperHadPendingTurn =
+            paperInputListener?.hasPendingTurn() == true
+        val slideHadPendingTurn =
+            slideInputListener?.hasPendingTurn() == true
+
+        val paperSettled =
+            !paperHadPendingTurn ||
+                paperInputListener?.cancelPendingTurnAndAwait() == true ||
+                paperInputListener?.hasPendingTurn() != true
+        val slideSettled =
+            !slideHadPendingTurn ||
+                slideInputListener?.cancelPendingTurnAndAwait() == true ||
+                slideInputListener?.hasPendingTurn() != true
+
+        if (!paperSettled || !slideSettled) {
+            paperInputListener?.forceCancelPendingTurn()
+            slideInputListener?.forceCancelPendingTurn()
+            ReaderTrace.event(
+                "navigation_jump_blocked_unsettled_preview",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId
+            )
+            return false
+        }
+        return true
+    }
+
     fun beginProgrammaticNavigation(
         originLocatorJson: String?,
         targetIdentity: ReaderNavigationIdentity? = null,
@@ -491,8 +519,6 @@ fun ReaderScreen(
         passageVisitLocatorJson: String? = null,
         expectedPdfPage: Int? = null
     ): Long {
-        paperInputListener?.forceCancelPendingTurn()
-        slideInputListener?.forceCancelPendingTurn()
         val transaction = navigationTransactionGate.begin(
             originLocatorJson = originLocatorJson,
             nowElapsedMs = SystemClock.elapsedRealtime(),
@@ -1123,39 +1149,65 @@ fun ReaderScreen(
         val locator = runCatching {
             Locator.fromJSON(JSONObject(targetJson))
         }.getOrNull()
-        val nav = navigator
-        if (locator == null || nav == null) {
+        if (locator == null || navigator == null) {
             readerMessage = previousLocationFailedMessage
             return
         }
 
-        val originLocator = nav.currentLocator.value
-        val originJson = originLocator.toVeilPersistedJson(opened.format)
-        val targetIdentity = locator.toReaderNavigationIdentity()
-        if (
-            !shouldStartReaderIdentityJump(
-                origin = originLocator.toReaderNavigationIdentity(),
-                target = targetIdentity
+        val expectedSessionId = readerSessionInstanceId
+        scope.launch {
+            if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                readerMessage = previousLocationFailedMessage
+                return@launch
+            }
+            if (
+                !readerAsyncResultBelongsToSession(
+                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                    expectedSessionInstanceId = expectedSessionId
+                )
+            ) {
+                return@launch
+            }
+
+            val nav = latestNavigator.value ?: return@launch
+            val originLocator = nav.currentLocator.value
+            val targetIdentity = locator.toReaderNavigationIdentity()
+            if (
+                !shouldStartReaderIdentityJump(
+                    origin = originLocator.toReaderNavigationIdentity(),
+                    target = targetIdentity
+                )
+            ) {
+                previousLocationJson = null
+                controlsVisible = false
+                return@launch
+            }
+
+            readerViewModel.onUserInteraction(expectedSessionId)
+            game.rebasePagePacing()
+            val transactionToken = beginProgrammaticNavigation(
+                originLocatorJson =
+                    originLocator.toVeilPersistedJson(opened.format),
+                targetIdentity = targetIdentity,
+                expectedPdfPage =
+                    if (opened.format == BookFormat.PDF) {
+                        pdfPageNumber(locator)
+                    } else {
+                        null
+                    }
             )
-        ) {
-            previousLocationJson = null
-            controlsVisible = false
-            return
-        }
 
-        readerViewModel.onUserInteraction(readerSessionInstanceId)
-        game.rebasePagePacing()
-        val transactionToken = beginProgrammaticNavigation(
-            originLocatorJson = originJson,
-            targetIdentity = targetIdentity,
-            expectedPdfPage = if (opened.format == BookFormat.PDF) pdfPageNumber(locator) else null
-        )
-
-        if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
-            controlsVisible = false
-        } else {
-            cancelProgrammaticNavigation(transactionToken)
-            readerMessage = previousLocationFailedMessage
+            if (
+                nav.go(
+                    locator,
+                    animated = shouldAnimateReaderJump(latestReducedMotion.value)
+                )
+            ) {
+                controlsVisible = false
+            } else {
+                cancelProgrammaticNavigation(transactionToken)
+                readerMessage = previousLocationFailedMessage
+            }
         }
     }
 
@@ -1398,40 +1450,101 @@ fun ReaderScreen(
                         false
                     }
                     else -> {
-                        paperInputListener?.forceCancelPendingTurn()
-                        slideInputListener?.forceCancelPendingTurn()
-                        val currentLocator = latestNavigator.value
-                            ?.currentLocator
-                            ?.value
-                        val origin = currentLocator
-                            ?.toVeilPersistedJson(opened.format)
-                        val targetHref = readerEffectiveTargetHref(
-                            currentHref = currentLocator?.href?.toString(),
-                            targetHref = link.href.toString()
-                        )
-                        val trackJump = shouldStartReaderLinkJump(
-                            currentHref = currentLocator?.href?.toString(),
-                            targetHref = targetHref
-                        )
-                        if (trackJump) {
-                            val transaction = navigationTransactionGate.begin(
-                                originLocatorJson = origin,
-                                nowElapsedMs = SystemClock.elapsedRealtime(),
+                        val hasPendingPreview =
+                            paperInputListener?.hasPendingTurn() == true ||
+                                slideInputListener?.hasPendingTurn() == true
+
+                        if (hasPendingPreview) {
+                            val expectedSessionId = readerSessionInstanceId
+                            // Consume Readium's automatic link navigation now. Veil will
+                            // replay the exact link after the preview origin is authoritative.
+                            scope.launch {
+                                if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                                    readerMessage = chapterFailedMessage
+                                    return@launch
+                                }
+                                if (
+                                    !readerAsyncResultBelongsToSession(
+                                        currentSessionInstanceId =
+                                            latestReaderSessionInstanceId.value,
+                                        expectedSessionInstanceId =
+                                            expectedSessionId
+                                    )
+                                ) {
+                                    return@launch
+                                }
+
+                                val nav = latestNavigator.value ?: return@launch
+                                val currentLocator = nav.currentLocator.value
+                                val targetHref = readerEffectiveTargetHref(
+                                    currentHref = currentLocator.href.toString(),
+                                    targetHref = link.href.toString()
+                                )
+                                if (
+                                    shouldStartReaderLinkJump(
+                                        currentHref = currentLocator.href.toString(),
+                                        targetHref = targetHref
+                                    )
+                                ) {
+                                    val token = beginProgrammaticNavigation(
+                                        originLocatorJson =
+                                            currentLocator.toVeilPersistedJson(opened.format),
+                                        targetHref = targetHref
+                                    )
+                                    game.rebasePagePacing()
+                                    if (
+                                        !nav.go(
+                                            link,
+                                            animated =
+                                                shouldAnimateReaderJump(
+                                                    latestReducedMotion.value
+                                                )
+                                        )
+                                    ) {
+                                        cancelProgrammaticNavigation(token)
+                                        readerMessage = chapterFailedMessage
+                                        return@launch
+                                    }
+                                }
+                                controlsVisible = false
+                                readerViewModel.onUserInteraction(expectedSessionId)
+                            }
+                            false
+                        } else {
+                            val currentLocator = latestNavigator.value
+                                ?.currentLocator
+                                ?.value
+                            val origin = currentLocator
+                                ?.toVeilPersistedJson(opened.format)
+                            val targetHref = readerEffectiveTargetHref(
+                                currentHref = currentLocator?.href?.toString(),
+                                targetHref = link.href.toString()
+                            )
+                            val trackJump = shouldStartReaderLinkJump(
+                                currentHref = currentLocator?.href?.toString(),
                                 targetHref = targetHref
                             )
-                            ReaderTrace.event(
-                                "navigation_jump_requested",
-                                bookId = opened.book.id,
-                                sessionId = readerSessionInstanceId,
-                                details = "token=${transaction.token} source=internal_link"
-                            )
-                            game.rebasePagePacing()
+                            if (trackJump) {
+                                val transaction = navigationTransactionGate.begin(
+                                    originLocatorJson = origin,
+                                    nowElapsedMs = SystemClock.elapsedRealtime(),
+                                    targetHref = targetHref
+                                )
+                                ReaderTrace.event(
+                                    "navigation_jump_requested",
+                                    bookId = opened.book.id,
+                                    sessionId = readerSessionInstanceId,
+                                    details =
+                                        "token=${transaction.token} source=internal_link"
+                                )
+                                game.rebasePagePacing()
+                            }
+                            activity.runOnUiThread {
+                                controlsVisible = false
+                            }
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            true
                         }
-                        activity.runOnUiThread {
-                            controlsVisible = false
-                        }
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
-                        true
                     }
                 }
 
