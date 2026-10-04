@@ -26,6 +26,9 @@ internal fun gpuPageMeshQuality(
         GpuPageMeshQuality(columns = 72, rows = 14)
     }
 
+internal fun nextMaterialPageBufferSlot(cursor: Int): Int =
+    (cursor + 1) and 1
+
 internal fun shouldCaptureMaterialBackSnapshot(
     lowMemoryDevice: Boolean,
     memoryClassMb: Int,
