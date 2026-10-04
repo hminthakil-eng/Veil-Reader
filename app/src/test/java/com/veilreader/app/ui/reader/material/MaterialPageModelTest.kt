@@ -9,6 +9,15 @@ import org.junit.Test
 class MaterialPageModelTest {
 
     @Test
+    fun `snapshot revisions reject stale captures and survive counter rollover`() {
+        assertTrue(materialPageSnapshotCaptureIsCurrent(7L, 7L))
+        assertFalse(materialPageSnapshotCaptureIsCurrent(6L, 7L))
+        assertFalse(materialPageSnapshotCaptureIsCurrent(0L, 0L))
+        assertEquals(8L, nextMaterialPageSnapshotRevision(7L))
+        assertEquals(1L, nextMaterialPageSnapshotRevision(Long.MAX_VALUE))
+    }
+
+    @Test
     fun `tap grip begins from lower corner with material variation`() {
         val glossyOrigin = materialPageTapPullOrigin(MaterialPageProfiles.Glossy)
         val manuscriptOrigin = materialPageTapPullOrigin(MaterialPageProfiles.Manuscript)
