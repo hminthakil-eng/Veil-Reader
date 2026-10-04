@@ -51,7 +51,7 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
-    fun `debug review forces persisted slide into GPU Paper contract`() {
+    fun `debug GPU availability never overwrites explicit slide choice`() {
         val persistedSlide = ReaderAppearance(
             scroll = false,
             pageTurnStyle = PageTurnStyle.SLIDE
@@ -65,6 +65,24 @@ class MaterialPageRolloutContractTest {
         )
 
         assertFalse(effective.scroll)
+        assertEquals(PageTurnStyle.SLIDE, effective.pageTurnStyle)
+    }
+
+    @Test
+    fun `debug GPU availability preserves scroll ownership`() {
+        val persistedScroll = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+
+        val effective = applyMaterialPageRolloutToAppearance(
+            appearance = persistedScroll,
+            format = BookFormat.EPUB,
+            debugReview = true,
+            materialPageEnabled = true
+        )
+
+        assertTrue(effective.scroll)
         assertEquals(PageTurnStyle.PAPER, effective.pageTurnStyle)
     }
 

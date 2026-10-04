@@ -3470,6 +3470,7 @@ internal fun shouldAwaitReaderAppearanceClose(
 private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
 private const val READER_VIEWPORT_REFLOW_QUIET_MS = 650L
 
+@Suppress("UNUSED_PARAMETER")
 internal fun applyMaterialPageRolloutToAppearance(
     appearance: ReaderAppearance,
     format: BookFormat,
@@ -3477,13 +3478,9 @@ internal fun applyMaterialPageRolloutToAppearance(
     materialPageEnabled: Boolean
 ): ReaderAppearance =
     when {
-        format == BookFormat.EPUB &&
-            debugReview &&
-            materialPageEnabled ->
-            appearance
-                .withReadingMode(ReaderReadingMode.PAGED)
-                .withPageTurnStyle(PageTurnStyle.PAPER)
-
+        // Engine availability is not mode ownership. Debug review enters Paper
+        // explicitly from Settings once; subsequent Slide/Paged/Scroll choices
+        // must remain user-owned instead of being rewritten on every recomposition.
         format == BookFormat.EPUB &&
             appearance.pageTurnStyle == PageTurnStyle.PAPER &&
             !materialPageEnabled ->
