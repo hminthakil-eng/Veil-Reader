@@ -44,6 +44,7 @@ internal enum class MaterialPageSnapshotFailureReason {
     VIEW_NOT_READY,
     TARGET_MISMATCH,
     TARGET_RECYCLED,
+    STALE_REVISION,
     DRAW_FAILED
 }
 
@@ -93,7 +94,7 @@ internal object ViewDrawMaterialPageSnapshotProvider : MaterialPageSnapshotProvi
                     (SystemClock.elapsedRealtimeNanos() - started)
                         .coerceAtLeast(0L)
             )
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             MaterialPageSnapshotCapture.Failed(
                 sourceRevision = sourceRevision,
                 reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
