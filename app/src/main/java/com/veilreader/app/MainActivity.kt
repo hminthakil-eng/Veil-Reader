@@ -29,7 +29,7 @@ import com.veilreader.app.ui.theme.VeilTheme
 class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
     private var externalOpenUri by mutableStateOf<Uri?>(null)
     private val readerHardwareKeys = ReaderHardwareKeyDispatcher()
-    private lateinit var jankStats: JankStats
+    private var jankStats: JankStats? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Readium navigator fragments require a custom factory during FragmentManager restore.
@@ -40,26 +40,29 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
         enableEdgeToEdge()
         externalOpenUri = if (savedInstanceState == null) viewUriFrom(intent) else null
 
-        // Force creation of the hierarchy before JankStats so Reader composables can
-        // publish PerformanceMetricsState from their first frame.
-        window.decorView
-        jankStats = JankStats.createAndTrack(window) { frame ->
-            if (!frame.isJank) return@createAndTrack
-            val stateSummary =
-                frame.states.joinToString(separator = ",") { state ->
-                    "${state.key}=${state.value}"
-                }
-            val overrunUs =
-                (frame as? FrameDataApi31)
-                    ?.frameOverrunNanos
-                    ?.div(1_000L)
-            ReaderTrace.event(
-                name = "ui_jank",
-                details =
-                    "uiUs=${frame.frameDurationUiNanos / 1_000L} " +
-                        "overrunUs=${overrunUs ?: -1L} " +
-                        "states=$stateSummary"
-            )
+        if (ReaderTrace.isEnabled()) {
+            // Diagnostics are intentionally absent from production builds. Debug and
+            // benchmark builds keep JankStats so performance state can be correlated
+            // with traces without adding permanent release overhead or metadata logs.
+            window.decorView
+            jankStats = JankStats.createAndTrack(window) { frame ->
+                if (!frame.isJank) return@createAndTrack
+                val stateSummary =
+                    frame.states.joinToString(separator = ",") { state ->
+                        "${state.key}=${state.value}"
+                    }
+                val overrunUs =
+                    (frame as? FrameDataApi31)
+                        ?.frameOverrunNanos
+                        ?.div(1_000L)
+                ReaderTrace.event(
+                    name = "ui_jank",
+                    details =
+                        "uiUs=${frame.frameDurationUiNanos / 1_000L} " +
+                            "overrunUs=${overrunUs ?: -1L} " +
+                            "states=$stateSummary"
+                )
+            }
         }
 
         setContent {
@@ -90,15 +93,11 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
 
     override fun onResume() {
         super.onResume()
-        if (::jankStats.isInitialized) {
-            jankStats.isTrackingEnabled = true
-        }
+        jankStats?.isTrackingEnabled = true
     }
 
     override fun onPause() {
-        if (::jankStats.isInitialized) {
-            jankStats.isTrackingEnabled = false
-        }
+        jankStats?.isTrackingEnabled = false
         super.onPause()
     }
 
