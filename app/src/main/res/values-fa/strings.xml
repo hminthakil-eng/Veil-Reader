@@ -1362,4 +1362,9 @@
     <string name="reader_eta_range_description">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</string>
     <string name="reader_theme_specimen">کتاب</string>
     <string name="library_all_series">همهٔ مجموعه‌های دنباله‌دار</string>
+    <string name="material_engine_enable">کاغذ مادی · پیش‌نمایش</string>
+    <string name="material_glossy">کاغذ براق</string>
+    <string name="material_matte">کاغذ مات کتاب</string>
+    <string name="material_parchment">پوست‌نوشت</string>
+    <string name="material_papyrus">پاپیروس</string>
 </resources>

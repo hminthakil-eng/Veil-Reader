@@ -1362,4 +1362,9 @@
     <string name="reader_eta_range_description">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</string>
     <string name="reader_theme_specimen">Aa</string>
     <string name="library_all_series">All series</string>
+    <string name="material_engine_enable">Material paper · Preview</string>
+    <string name="material_glossy">Glossy paper</string>
+    <string name="material_matte">Matte book paper</string>
+    <string name="material_parchment">Parchment</string>
+    <string name="material_papyrus">Papyrus</string>
 </resources>

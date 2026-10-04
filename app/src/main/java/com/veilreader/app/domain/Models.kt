@@ -123,6 +123,9 @@ enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
 enum class PageTurnStyle { PAPER, SLIDE, NONE }
 
+/** Stable persisted IDs; material is independent of the four navigation modes. */
+enum class PageMaterial { GLOSSY, MATTE, PARCHMENT, PAPYRUS }
+
 enum class ReaderReadingMode { PAGED, SCROLL }
 
 /**
@@ -176,7 +179,9 @@ data class ReaderAppearance(
     val wordSpacing: Double? = null,
     val typeScale: Double? = null,
     val darkImageTreatment: ReaderDarkImageTreatment = ReaderDarkImageTreatment.NONE,
-    val paperPatina: Double = 0.72
+    val paperPatina: Double = 0.72,
+    val materialEngineEnabled: Boolean = false,
+    val pageMaterial: PageMaterial = PageMaterial.MATTE
 ) {
     val readingMode: ReaderReadingMode
         get() = if (scroll) ReaderReadingMode.SCROLL else ReaderReadingMode.PAGED

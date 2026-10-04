@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.sensory
 
+import com.veilreader.app.ui.reader.material.*
+import java.util.concurrent.atomic.AtomicBoolean
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
@@ -55,6 +57,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         Thread(runnable, "veil-sensory-ambient").apply { isDaemon = true }
     }
     private val ambientGeneration = AtomicInteger(0)
+    private val materialCueBusy = AtomicBoolean(false)
 
     @Volatile
     private var settings = SensorySettings()
@@ -92,6 +95,37 @@ class VeilSensoryFeedback(context: android.content.Context) {
             cueExecutor.execute {
                 playCue(event, snapshot.audioVolume.toFloat())
             }
+        }
+    }
+
+    fun performMaterial(view: View, cue: MaterialSensoryCue) {
+        if (!foreground) return
+        val snapshot = settings
+        if (snapshot.hapticsEnabled) {
+            val material = PageMaterials.forId(cue.material)
+            val effect = when (cue.moment) {
+                MaterialSensoryMoment.CANCEL -> HapticFeedbackConstants.CLOCK_TICK
+                else -> when {
+                    material.hapticWeight < .4f -> HapticFeedbackConstants.CLOCK_TICK
+                    material.hapticWeight < .6f -> HapticFeedbackConstants.VIRTUAL_KEY
+                    material.roughness > .9f -> HapticFeedbackConstants.KEYBOARD_TAP
+                    else -> HapticFeedbackConstants.CONTEXT_CLICK
+                }
+            }
+            view.performHapticFeedback(effect) // Respect Android's own haptic preference; no ignore flags.
+        }
+        if (snapshot.interactionSoundsEnabled && snapshot.audioVolume > 0 &&
+            materialAcousticProfile(cue).gain > 0f && materialCueBusy.compareAndSet(false, true)) {
+            runCatching {
+                cueExecutor.execute {
+                    try {
+                        if (foreground && settings.interactionSoundsEnabled) {
+                            val pcm = materialCuePcm(cue, settings.audioVolume.toFloat())
+                            playPcm(pcm, 22050, pcm.size / 22050.0)
+                        }
+                    } finally { materialCueBusy.set(false) }
+                }
+            }.onFailure { materialCueBusy.set(false) }
         }
     }
 
@@ -219,6 +253,10 @@ class VeilSensoryFeedback(context: android.content.Context) {
             pcm[i] = (scaled.coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt().toShort()
         }
 
+        playPcm(pcm, sampleRate, seconds)
+    }
+
+    private fun playPcm(pcm: ShortArray, sampleRate: Int, seconds: Double) {
         val minBuffer = AudioTrack.getMinBufferSize(
             sampleRate,
             AudioFormat.CHANNEL_OUT_MONO,

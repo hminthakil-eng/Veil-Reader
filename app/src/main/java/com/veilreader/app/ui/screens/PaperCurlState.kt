@@ -26,12 +26,41 @@ import androidx.compose.ui.layout.ContentScale
 import com.veilreader.app.ui.theme.VeilMotion
 import kotlinx.coroutines.delay
 import kotlin.math.max
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.graphics.toArgb
+import com.veilreader.app.ui.reader.material.*
 
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
 
 @Stable
 internal class PaperCurlState {
+    var materialConfiguration: MaterialTurnConfiguration = MaterialTurnConfiguration()
+    var capturedMaterial: MaterialTurnConfiguration by mutableStateOf(MaterialTurnConfiguration())
+        private set
+    var materialProgress by mutableFloatStateOf(0f)
+        private set
+    var materialOriginY by mutableFloatStateOf(.8f)
+        private set
+    var materialTilt by mutableFloatStateOf(0f)
+        private set
+    var materialPhase by mutableStateOf(MaterialTurnPhase.IDLE)
+        private set
+    private var density = 1f
+
+    private suspend fun releaseMaterial(target: Float, velocityDpPerSecond: Float = 0f) {
+        materialPhase = if (target == 1f) MaterialTurnPhase.COMPLETING else MaterialTurnPhase.CANCELLING
+        val release = MaterialRelease(materialProgress, target,
+            velocityDpPerSecond * density / width.coerceAtLeast(1f), capturedMaterial.material)
+        val start = withFrameNanos { it }
+        do {
+            val seconds = withFrameNanos { (it - start) / 1_000_000_000f }
+            materialProgress = release.position(seconds)
+        } while (materialProgress != target)
+        materialPhase = MaterialTurnPhase.SETTLED
+    }
+
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
     var edge: PaperCurlEdge by mutableStateOf(
@@ -67,6 +96,12 @@ internal class PaperCurlState {
         this.side = side
         this.direction = direction
         snapshot = bitmap
+        capturedMaterial = materialConfiguration
+        density = view.resources.displayMetrics.density
+        materialProgress = 0f
+        materialOriginY = .8f
+        materialTilt = 0f
+        materialPhase = MaterialTurnPhase.DRAGGING
         edge = rightEdge()
         active = true
         return true
@@ -80,6 +115,13 @@ internal class PaperCurlState {
             start.y + offset.y
         )
         val canonicalStart = canonical(actualStart)
+        if (capturedMaterial.enabled) {
+            val inward = if (side == PaperCurlSide.RIGHT) -offset.x else offset.x
+            materialProgress = materialDragProgress(inward / width, capturedMaterial.material)
+            materialOriginY = (start.y / height).coerceIn(0f, 1f)
+            materialTilt = (offset.y / height).coerceIn(-.22f, .22f)
+            return
+        }
         val rawCanonicalCurrent = canonical(actualCurrent)
         val inwardFraction = paperInwardDragFraction(
             start = canonicalStart,
@@ -114,12 +156,14 @@ internal class PaperCurlState {
 
     fun dragProgress(): Float {
         if (!active || width <= 0f) return 0f
+        if (capturedMaterial.enabled) return materialProgress
         val centerX = (edge.top.x + edge.bottom.x) * 0.5f
         return (1f - centerX / width).coerceIn(0f, 1f)
     }
 
     suspend fun animateTapTurn() {
         if (!active) return
+        if (capturedMaterial.enabled) { releaseMaterial(1f); return }
         val anim = Animatable(
             edge,
             PaperCurlEdge.VectorConverter,
@@ -147,6 +191,7 @@ internal class PaperCurlState {
 
     suspend fun animateComplete(releaseVelocityDpPerSec: Float = 0f) {
         if (!active) return
+        if (capturedMaterial.enabled) { releaseMaterial(1f, releaseVelocityDpPerSec); return }
         val profile = paperReleaseProfile(releaseVelocityDpPerSec)
         if (profile.regime == PaperReleaseRegime.FLING) {
             // A flick is a release regime, not the slow manipulation animation sped up.
@@ -183,6 +228,7 @@ internal class PaperCurlState {
 
     suspend fun animateCancel() {
         if (!active) return
+        if (capturedMaterial.enabled) { releaseMaterial(0f); return }
         animateTo(
             target = rightEdge(),
             dampingRatio = 0.96f,
@@ -192,6 +238,7 @@ internal class PaperCurlState {
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
+        if (capturedMaterial.enabled) { materialProgress = .025f; releaseMaterial(0f); return }
         val anim = Animatable(
             edge,
             PaperCurlEdge.VectorConverter,
@@ -234,6 +281,8 @@ internal class PaperCurlState {
 
     private fun resetVisual() {
         snapshot = null
+        materialProgress = 0f
+        materialPhase = MaterialTurnPhase.IDLE
         width = 0f
         height = 0f
         edge = PaperCurlEdge(Offset.Zero, Offset.Zero)
@@ -294,8 +343,12 @@ internal class PaperCurlState {
         paperTerminalTurnEdge(width = width, height = height)
     private fun capture(view: View): Bitmap? =
         runCatching {
-            val targetWidth = max(1, view.width)
-            val targetHeight = max(1, view.height)
+            val captureScale = if (materialConfiguration.enabled) {
+                minOf(1f, 1800f / max(view.width, view.height),
+                    kotlin.math.sqrt(2_000_000f / (view.width.toFloat() * view.height)))
+            } else 1f
+            val targetWidth = max(1, (view.width * captureScale).toInt())
+            val targetHeight = max(1, (view.height * captureScale).toInt())
             val reusable = snapshotBuffer?.takeIf {
                 !it.isRecycled &&
                     it.width == targetWidth &&
@@ -313,7 +366,9 @@ internal class PaperCurlState {
             }
 
             bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
-            view.draw(Canvas(bitmap))
+            val canvas = Canvas(bitmap)
+            canvas.scale(targetWidth.toFloat() / view.width, targetHeight.toFloat() / view.height)
+            view.draw(canvas)
             bitmap
         }.getOrNull()
 }
@@ -344,6 +399,12 @@ internal fun PaperCurlOverlay(
     val bitmap = state.snapshot ?: return
     if (!state.active || bitmap.isRecycled) return
 
+    if (state.capturedMaterial.enabled) {
+        MaterialPageSurface(bitmap, { state.materialProgress }, { state.materialOriginY },
+            { state.materialTilt }, state.side == PaperCurlSide.LEFT, state.capturedMaterial,
+            config.backPageColor.toArgb(), config.edgeHighlight.toArgb(), modifier)
+        return
+    }
     val mirror = state.side == PaperCurlSide.LEFT
     val mirrorScale = if (mirror) -1f else 1f
     Box(

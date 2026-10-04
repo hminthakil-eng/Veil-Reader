@@ -125,6 +125,8 @@ import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
+import com.veilreader.app.ui.reader.material.*
+import androidx.compose.runtime.SideEffect
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilMaterials
@@ -202,6 +204,7 @@ fun ReaderScreen(
     returnRitual: BookReturnRitual? = null,
     initialReturnLocatorJson: String? = null,
     onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
+    onMaterialSensoryCue: (MaterialSensoryCue) -> Unit = {},
     onClose: () -> Unit,
     onLocatorCheckpoint: (String) -> Unit = {}
 ) {
@@ -544,6 +547,22 @@ fun ReaderScreen(
         }
     }
     val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
+    var materialSettleSerial by remember(opened.book.id, readerSessionInstanceId) { mutableIntStateOf(0) }
+    val latestMaterialFeedback = rememberUpdatedState<(MaterialSensoryCue) -> Unit> { cue ->
+        if (cue.moment == MaterialSensoryMoment.COMPLETE || cue.moment == MaterialSensoryMoment.CANCEL) {
+            materialSettleSerial += 1
+        }
+        onMaterialSensoryCue(cue)
+    }
+    SideEffect {
+        paperCurlState.materialConfiguration = MaterialTurnConfiguration(
+            enabled = materialMotionPath(presentedReaderAppearance.materialEngineEnabled,
+                opened.format, fixedLayoutPublication, presentedReaderAppearance.scroll,
+                presentedReaderAppearance.pageTurnStyle, reducedMotion) != MaterialMotionPath.LEGACY,
+            material = PageMaterials.forId(presentedReaderAppearance.pageMaterial),
+            age = presentedReaderAppearance.paperPatina.toFloat()
+        )
+    }
     val latestTapGrid = rememberUpdatedState(readerTapGrid)
     val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
     val paperCurlConfig = remember(
@@ -1667,9 +1686,12 @@ fun ReaderScreen(
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
+                    onMaterialFeedback = { latestMaterialFeedback.value(it) },
                     onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
-                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        if (!(if (paperCurlState.active) paperCurlState.capturedMaterial else paperCurlState.materialConfiguration).enabled) {
+                            onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        }
                         val locator = nav.currentLocator.value
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
@@ -2354,6 +2376,17 @@ fun ReaderScreen(
             !presentedReaderAppearance.scroll &&
             presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
         ) {
+            if (materialMotionPath(presentedReaderAppearance.materialEngineEnabled, opened.format,
+                    fixedLayoutPublication, presentedReaderAppearance.scroll,
+                    presentedReaderAppearance.pageTurnStyle, reducedMotion) == MaterialMotionPath.LIVE_EDGE) {
+                val materialOverflow = (navigator as? OverflowableNavigator)?.overflow?.collectAsStateWithLifecycle()
+                MaterialReducedMotionSurface(
+                    MaterialTurnConfiguration(true, PageMaterials.forId(presentedReaderAppearance.pageMaterial),
+                        presentedReaderAppearance.paperPatina.toFloat()),
+                    mirror = materialOverflow?.value?.readingProgression == ReadingProgression.RTL,
+                    serial = materialSettleSerial, edgeColor = paperCurlConfig.edgeHighlight
+                )
+            }
             PaperCurlOverlay(
                 state = paperCurlState,
                 config = paperCurlConfig,
@@ -4483,6 +4516,9 @@ internal fun EpubAppearancePanel(
                         updateDraft(draft.withPageTurnStyle(style))
                     }
                 )
+                if (draft.pageTurnStyle == PageTurnStyle.PAPER) {
+                    MaterialEngineControls(draft) { updateDraft(it) }
+                }
                 Text(
                     localizedPageTurnStyleDescription(draft.pageTurnStyle),
                     style = MaterialTheme.typography.bodySmall,

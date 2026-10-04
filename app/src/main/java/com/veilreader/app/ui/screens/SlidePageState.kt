@@ -4,8 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.view.View
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -88,10 +86,7 @@ internal class SlidePageState {
         val anim = Animatable(offsetPx)
         anim.animateTo(
             targetValue = 0f,
-            animationSpec = spring(
-                dampingRatio = 0.90f,
-                stiffness = Spring.StiffnessMediumLow
-            )
+            animationSpec = tween(140)
         ) {
             offsetPx = value
         }
@@ -104,10 +99,7 @@ internal class SlidePageState {
         anim.animateTo(peek, tween(95)) { offsetPx = value }
         anim.animateTo(
             0f,
-            spring(
-                dampingRatio = 0.82f,
-                stiffness = Spring.StiffnessMedium
-            )
+            tween(130)
         ) { offsetPx = value }
     }
 
@@ -176,14 +168,6 @@ internal fun SlidePageOverlay(
 ) {
     val bitmap = state.snapshot ?: return
     if (!state.active || bitmap.isRecycled) return
-    val progress = state.dragProgress()
-    val shadowIntensity = slideEdgeShadowIntensity(progress)
-    val direction = when {
-        state.offsetPx < 0f -> -1f
-        state.offsetPx > 0f -> 1f
-        else -> 0f
-    }
-
     Box(modifier.fillMaxSize()) {
         Image(
             bitmap = bitmap.asImageBitmap(),
@@ -193,12 +177,19 @@ internal fun SlidePageOverlay(
                 .fillMaxSize()
                 .graphicsLayer {
                     translationX = state.offsetPx
-                    alpha = 1f - progress * 0.04f
+                    alpha = 1f
                 }
         )
 
-        if (direction != 0f && progress > 0.001f) {
-            Canvas(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize()) {
+            val progress = state.dragProgress()
+            val shadowIntensity = slideEdgeShadowIntensity(progress)
+            val direction = when {
+                state.offsetPx < 0f -> -1f
+                state.offsetPx > 0f -> 1f
+                else -> 0f
+            }
+            if (direction != 0f && progress > 0.001f) {
                 val edgeX = if (direction < 0f) {
                     size.width + state.offsetPx
                 } else {
@@ -206,7 +197,7 @@ internal fun SlidePageOverlay(
                 }.coerceIn(0f, size.width)
 
                 val shadowWidth =
-                    (16.dp.toPx() + 38.dp.toPx() * shadowIntensity)
+                    (3.dp.toPx() + 5.dp.toPx() * shadowIntensity)
                 val rawStartX = if (direction < 0f) {
                     edgeX
                 } else {
@@ -226,7 +217,7 @@ internal fun SlidePageOverlay(
                             colorStops = if (direction < 0f) {
                                 arrayOf(
                                     0f to Color.Black.copy(
-                                        alpha = 0.26f * shadowIntensity
+                                        alpha = 0.10f * shadowIntensity
                                     ),
                                     1f to Color.Transparent
                                 )
@@ -234,7 +225,7 @@ internal fun SlidePageOverlay(
                                 arrayOf(
                                     0f to Color.Transparent,
                                     1f to Color.Black.copy(
-                                        alpha = 0.26f * shadowIntensity
+                                        alpha = 0.10f * shadowIntensity
                                     )
                                 )
                             },
@@ -254,15 +245,9 @@ internal fun SlidePageOverlay(
 }
 
 
-/**
- * A weighted slide should feel attached to the finger without looking like a native renderer
- * swipe. It starts with mass, then progressively catches up as the turn becomes intentional.
- */
-internal fun slideHorizontalDragResponse(progress: Float): Float {
-    val t = progress.coerceIn(0f, 1f)
-    val smooth = t * t * (3f - 2f * t)
-    return 0.76f + smooth * 0.22f
-}
+/** Direct finger tracking is deliberate: Slide carries no paper stiffness or mass. */
+internal fun slideHorizontalDragResponse(progress: Float): Float =
+    if (progress.isFinite()) 1f else 0f
 
 /**
  * Contact shadow belongs to the lifted/moving edge, so it disappears both at rest and when the

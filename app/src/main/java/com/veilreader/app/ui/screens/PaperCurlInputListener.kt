@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.os.SystemClock
+import com.veilreader.app.ui.reader.material.*
 import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,7 @@ internal fun shouldCapturePaperTurnSnapshot(
 ): Boolean =
     !reducedMotion
 
+@OptIn(ExperimentalReadiumApi::class)
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
     private val state: PaperCurlState,
@@ -38,8 +40,10 @@ internal class PaperCurlInputListener(
     private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
     private val onCommittedTurn: () -> Unit,
-    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {},
+    private val onMaterialFeedback: (MaterialSensoryCue) -> Unit = {}
 ) : InputListener {
+    private var thresholdEmitted = false
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
     private var navigationJob: Job? = null
@@ -124,6 +128,7 @@ internal class PaperCurlInputListener(
         }
 
         turnCommitted = true
+        emitMaterial(MaterialSensoryMoment.COMPLETE)
         onCommittedTurn()
         if (visualReady) {
             completionJob = scope.launch {
@@ -182,6 +187,7 @@ internal class PaperCurlInputListener(
             state.updateDrag(event.start, event.offset)
         }
         sampleReleaseVelocity(spec, event)
+        emitThresholdIfReady(spec, event)
         return true
     }
 
@@ -199,12 +205,18 @@ internal class PaperCurlInputListener(
             state.updateDrag(event.start, event.offset)
         }
         sampleReleaseVelocity(spec, event)
+        emitThresholdIfReady(spec, event)
 
         val view = navigator.publicationView
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
         val inward = inwardDistance(spec, event)
-        val commit = shouldCommitPaperTurn(
+        val material = if (state.active) state.capturedMaterial else state.materialConfiguration
+        val commit = if (material.enabled) materialShouldComplete(
+            inward, width, density,
+            if (state.active) state.dragProgress() else materialDragProgress(inward / width.coerceAtLeast(1f), material.material),
+            releaseVelocityPxPerSec, material.material
+        ) else shouldCommitPaperTurn(
             inwardDistance = inward,
             width = width,
             density = density,
@@ -222,6 +234,7 @@ internal class PaperCurlInputListener(
                 commit && previewNavigationSucceeded -> {
                     // Persist/count and emit sensory feedback only after a real commit.
                     turnCommitted = true
+                    emitMaterial(MaterialSensoryMoment.COMPLETE)
                     onCommittedTurn()
                     if (!isReducedMotion()) {
                         state.animateComplete(
@@ -236,6 +249,7 @@ internal class PaperCurlInputListener(
                     if (!isReducedMotion()) {
                         delay(VeilMotion.PAGE_REVEAL_MS)
                         state.animateCancel()
+                        emitMaterial(MaterialSensoryMoment.CANCEL)
                     }
                 }
 
@@ -245,6 +259,7 @@ internal class PaperCurlInputListener(
                     val moved = navigate(spec.direction)
                     if (moved) {
                         turnCommitted = true
+                        emitMaterial(MaterialSensoryMoment.COMPLETE)
                         onCommittedTurn()
                         if (state.active && !isReducedMotion()) {
                             state.animateComplete(
@@ -262,6 +277,7 @@ internal class PaperCurlInputListener(
 
                 else -> {
                     if (state.active && !isReducedMotion()) state.animateCancel()
+                    emitMaterial(MaterialSensoryMoment.CANCEL)
                 }
             }
 
@@ -351,6 +367,8 @@ internal class PaperCurlInputListener(
         if (visualReady) {
             state.updateDrag(event.start, event.offset)
         }
+        emitMaterial(MaterialSensoryMoment.LIFT)
+        emitThresholdIfReady(spec, event)
         onInteraction()
 
         // Preview only when the captured sheet exists. Without a snapshot we keep the gesture
@@ -498,7 +516,25 @@ internal class PaperCurlInputListener(
             PaperTurnDirection.BACKWARD -> PaperTurnDirection.FORWARD
         }
 
+    private fun emitThresholdIfReady(spec: TurnSpec, event: DragEvent) {
+        val config = if (state.active) state.capturedMaterial else state.materialConfiguration
+        if (!config.enabled || thresholdEmitted) return
+        val progress = if (state.active) state.dragProgress() else materialDragProgress(
+            inwardDistance(spec, event) / navigator.publicationView.width.toFloat().coerceAtLeast(1f), config.material)
+        if (progress >= materialCompletionThreshold(config.material)) {
+            thresholdEmitted = true
+            emitMaterial(MaterialSensoryMoment.THRESHOLD)
+        }
+    }
+
+    private fun emitMaterial(moment: MaterialSensoryMoment) {
+        val config = if (state.active) state.capturedMaterial else state.materialConfiguration
+        if (config.enabled) onMaterialFeedback(MaterialSensoryCue(config.material.id, moment,
+            releaseVelocityPxPerSec / navigator.publicationView.resources.displayMetrics.density.coerceAtLeast(.1f)))
+    }
+
     private fun resetDrag() {
+        thresholdEmitted = false
         activeDrag = null
         dragReserved = false
         navigationJob = null

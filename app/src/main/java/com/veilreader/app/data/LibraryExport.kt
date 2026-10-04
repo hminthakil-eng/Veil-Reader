@@ -885,10 +885,13 @@ private fun passageVisitFromJson(o: JSONObject): PassageVisit = PassageVisit(
     viewedAtEpochMs = o.optLong("viewedAt", 0L)
 )
 
-private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
+internal fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
     put("scroll", scroll); put("publisherStyles", publisherStyles); put("pageTurnStyle", pageTurnStyle.name)
     put("screenBrightness", screenBrightness ?: JSONObject.NULL)
+    put("materialEngineEnabled", materialEngineEnabled)
+    put("pageMaterial", pageMaterial.name)
+    put("paperPatina", paperPatina)
 }
 
 private fun bookFromJson(o: JSONObject): Book {
@@ -946,7 +949,7 @@ private fun readingSessionFromJson(o: JSONObject): ReadingSessionSnapshot = Read
     noteCount = o.optInt("noteCount", 0).coerceAtLeast(0)
 )
 
-private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearance(
+internal fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearance(
     theme = runCatching { ReaderTheme.valueOf(o.optString("theme", "DUSK")) }.getOrDefault(ReaderTheme.DUSK),
     fontScale = (o.optDouble("fontScale", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.75, 1.8),
     lineHeight = (o.optDouble("lineHeight", 1.45).takeIf { it.isFinite() } ?: 1.45).coerceIn(1.1, 2.0),
@@ -956,7 +959,12 @@ private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearan
     pageTurnStyle = runCatching {
         PageTurnStyle.valueOf(o.optString("pageTurnStyle", PageTurnStyle.PAPER.name))
     }.getOrDefault(PageTurnStyle.PAPER),
-    screenBrightness = o.optFiniteDouble("screenBrightness")?.coerceIn(.05, 1.0)
+    screenBrightness = o.optFiniteDouble("screenBrightness")?.coerceIn(.05, 1.0),
+    materialEngineEnabled = o.optBoolean("materialEngineEnabled", false),
+    pageMaterial = runCatching {
+        com.veilreader.app.domain.PageMaterial.valueOf(o.optString("pageMaterial", "MATTE"))
+    }.getOrDefault(com.veilreader.app.domain.PageMaterial.MATTE),
+    paperPatina = o.optFiniteDouble("paperPatina")?.coerceIn(0.0, 1.0) ?: .72
 )
 
 private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = buildList {

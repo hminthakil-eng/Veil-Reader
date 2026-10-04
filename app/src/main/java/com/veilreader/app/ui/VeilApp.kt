@@ -1064,6 +1064,7 @@ fun VeilApp(
             returnRitual = activeReturnRitual,
             initialReturnLocatorJson = activeReturnLocatorJson,
             onSensoryEvent = { event -> sensory.perform(view, event) },
+            onMaterialSensoryCue = { cue -> sensory.performMaterial(view, cue) },
             onClose = {
                 if (openedPublicationSessionId == openedSessionId) {
                     openedPublication = null

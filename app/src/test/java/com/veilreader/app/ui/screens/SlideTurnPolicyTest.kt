@@ -143,15 +143,11 @@ class SlideTurnPolicyTest {
     }
 
     @Test
-    fun `slide drag starts weighted and converges toward the finger`() {
-        val early = slideHorizontalDragResponse(0.05f)
-        val middle = slideHorizontalDragResponse(0.50f)
-        val late = slideHorizontalDragResponse(0.95f)
-
-        assertTrue(early < middle)
-        assertTrue(middle < late)
-        assertTrue(early >= 0.75f)
-        assertTrue(late <= 0.98f)
+    fun `slide follows finger directly without material resistance`() {
+        listOf(0f, .05f, .50f, .95f, 1f).forEach {
+            assertTrue(slideHorizontalDragResponse(it) == 1f)
+        }
+        assertTrue(slideHorizontalDragResponse(Float.NaN) == 0f)
     }
 
     @Test

@@ -89,6 +89,8 @@ class SettingsStore(private val context: Context) {
         val typeScale = doublePreferencesKey("reader_type_scale")
         val darkImageTreatment = stringPreferencesKey("reader_dark_image_treatment")
         val paperPatina = doublePreferencesKey("reader_paper_patina")
+        val materialEngine = booleanPreferencesKey("reader_material_engine_v1")
+        val pageMaterial = stringPreferencesKey("reader_page_material")
         val tapGrid = stringPreferencesKey("reader_tap_grid")
         val volumeUpAction = stringPreferencesKey("reader_volume_up_action")
         val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
@@ -184,7 +186,11 @@ class SettingsStore(private val context: Context) {
                         prefs[Keys.darkImageTreatment] ?: ReaderDarkImageTreatment.NONE.name
                     )
                 }.getOrDefault(ReaderDarkImageTreatment.NONE),
-                paperPatina = prefs[Keys.paperPatina] ?: 0.72
+                paperPatina = prefs[Keys.paperPatina] ?: 0.72,
+                materialEngineEnabled = prefs[Keys.materialEngine] ?: false,
+                pageMaterial = runCatching {
+                    com.veilreader.app.domain.PageMaterial.valueOf(prefs[Keys.pageMaterial] ?: "MATTE")
+                }.getOrDefault(com.veilreader.app.domain.PageMaterial.MATTE)
             ).normalized(),
             readerTapGrid = decodeReaderTapGrid(prefs[Keys.tapGrid]),
             readerHardwareKeys = ReaderHardwareKeyMap(
@@ -269,9 +275,8 @@ class SettingsStore(private val context: Context) {
             } ?: prefs.remove(Keys.typeScale)
             prefs[Keys.darkImageTreatment] = normalized.darkImageTreatment.name
             prefs[Keys.paperPatina] = normalized.paperPatina
-                .takeIf { it.isFinite() }
-                ?.coerceIn(0.0, 1.0)
-                ?: 0.72
+            prefs[Keys.materialEngine] = normalized.materialEngineEnabled
+            prefs[Keys.pageMaterial] = normalized.pageMaterial.name
         }
     }
 

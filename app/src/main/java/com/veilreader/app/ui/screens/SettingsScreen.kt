@@ -371,6 +371,14 @@ fun SettingsScreen(
                     commitReaderAppearance { current -> current.withPageTurnStyle(style) }
                 }
             )
+            if (!appearance.scroll && appearance.pageTurnStyle == com.veilreader.app.domain.PageTurnStyle.PAPER) {
+                MaterialEngineControls(appearance) { updated ->
+                    commitReaderAppearance { current -> current.copy(
+                        materialEngineEnabled = updated.materialEngineEnabled,
+                        pageMaterial = updated.pageMaterial
+                    ) }
+                }
+            }
             Text(
                 localizedPageTurnStyleDescription(appearance.pageTurnStyle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
