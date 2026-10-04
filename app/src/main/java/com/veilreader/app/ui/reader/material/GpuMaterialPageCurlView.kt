@@ -1101,6 +1101,9 @@ internal fun GpuMaterialPageOverlay(
             lifecycleOwner.lifecycle.removeObserver(observer)
             viewRef.value?.pauseRenderer()
             viewRef.value = null
+            // A disposed GL host cannot remain authoritative READY state.
+            // The next mount must earn readiness from a new onSurfaceCreated().
+            rendererReady.value = false
         }
     }
 
@@ -1174,6 +1177,9 @@ internal fun GpuMaterialPageOverlay(
                 }
             ).also { created ->
                 viewRef.value = created
+                if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    created.pauseRenderer()
+                }
             }
         },
         modifier = modifier,
