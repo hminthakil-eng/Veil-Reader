@@ -486,10 +486,19 @@ internal class SlideNavigationInputListener(
     }
 
     private fun restoreDragStart(spec: TurnSpec) {
-        val restored = dragStartLocator?.let {
-            navigator.go(it, animated = false)
-        } ?: false
-        if (!restored) {
+        val exact = dragStartLocator ?: return
+        val targetIdentity = exact.toReaderNavigationIdentity()
+        if (
+            readerNavigationIdentityMatchesTarget(
+                observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
+                target = targetIdentity
+            )
+        ) {
+            return
+        }
+
+        val accepted = navigator.go(exact, animated = false)
+        if (!accepted && previewNavigationSucceeded) {
             navigate(
                 when (spec.direction) {
                     PaperTurnDirection.FORWARD -> PaperTurnDirection.BACKWARD
