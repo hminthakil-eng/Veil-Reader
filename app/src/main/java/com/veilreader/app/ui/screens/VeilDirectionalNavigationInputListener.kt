@@ -27,8 +27,6 @@ internal class VeilDirectionalNavigationInputListener(
     override fun onTap(event: TapEvent): Boolean {
         if (!isEnabled()) return false
         if (!isTapNavigationEnabled()) return false
-        if (navigator.overflow.value.scroll) return false
-
         val width = navigator.publicationView.width.toFloat()
         if (width <= 0f) return false
         val density = navigator.publicationView.resources.displayMetrics.density
