@@ -41,6 +41,34 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `dual back texture budget rejects oversized four-bitmap pool`() {
+        assertTrue(
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 256,
+                pageWidthPx = 1_080,
+                pageHeightPx = 2_400
+            )
+        )
+        assertTrue(
+            !shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 256,
+                pageWidthPx = 1_440,
+                pageHeightPx = 3_120
+            )
+        )
+        assertTrue(
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 512,
+                pageWidthPx = 1_440,
+                pageHeightPx = 3_120
+            )
+        )
+    }
+
+    @Test
     fun `virtual cylinder starts at free edge and clears viewport at completion`() {
         val start = gpuPageCurlFrame(
             progress = 0f,
