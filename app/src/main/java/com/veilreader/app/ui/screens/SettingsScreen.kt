@@ -91,6 +91,9 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
 import com.veilreader.app.ui.theme.withVeilTracking
 
+internal fun materialPageReviewDebugOverride(enabled: Boolean): Boolean? =
+    if (enabled) true else null
+
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
@@ -867,7 +870,7 @@ fun SettingsScreen(
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
                         MaterialPageEngineRollout.setDebugOverride(
-                            if (enabled) true else null
+                            materialPageReviewDebugOverride(enabled)
                         )
                         if (enabled) {
                             // Review mode must enter the Paper navigation path; otherwise the
