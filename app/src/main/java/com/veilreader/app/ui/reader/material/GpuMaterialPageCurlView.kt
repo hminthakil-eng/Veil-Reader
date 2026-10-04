@@ -497,7 +497,10 @@ internal class GpuMaterialPageCurlView(
             }
         GLES20.glUniform1f(
             uPageAspect,
-            pageAspect.takeIf { it.isFinite() }?.coerceIn(0.5f, 3f) ?: 1f
+            pageAspect
+                .takeIf { it.isFinite() }
+                ?.coerceIn(GPU_PAGE_MIN_ASPECT, GPU_PAGE_MAX_ASPECT)
+                ?: 1f
         )
         GLES20.glUniform2f(
             uTexelSize,
