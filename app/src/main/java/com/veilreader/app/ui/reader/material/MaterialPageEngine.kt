@@ -160,6 +160,19 @@ internal class MaterialPageEngineState(
      */
     fun acknowledgeSnapshotUploaded(bitmap: Bitmap) {
         gpuUploadLeases.removeAll { it === bitmap }
+        releaseDeferredBuffersIfPossible()
+    }
+
+    /**
+     * Called only after the GL renderer has proven that the previous context/frame
+     * ownership is gone (context recreation or terminal renderer failure).
+     */
+    fun abandonGpuUploadLeases() {
+        gpuUploadLeases.clear()
+        releaseDeferredBuffersIfPossible()
+    }
+
+    private fun releaseDeferredBuffersIfPossible() {
         if (
             releaseBuffersWhenUploadsSettle &&
             !active &&
