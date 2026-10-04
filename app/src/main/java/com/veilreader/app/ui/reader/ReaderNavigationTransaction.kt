@@ -262,3 +262,26 @@ internal class ReaderNavigationTransactionGate(
 /** Fast PDF swipes can flush beyond a jump target, but cannot fabricate a passage revisit there. */
 internal fun ReaderNavigationTransaction.passageVisitAfterSettlement(observedPdfPage: Int? = null): String? =
     passageVisitLocatorJson?.takeIf { expectedPdfPage == null || expectedPdfPage == observedPdfPage }
+
+internal fun ReaderNavigationTransaction.hasReachedObservedDestination(
+    observedLocatorJson: String?,
+    observedIdentity: ReaderNavigationIdentity?,
+    observedPdfPage: Int? = null
+): Boolean {
+    if (
+        originLocatorJson != null &&
+        observedLocatorJson == originLocatorJson
+    ) {
+        return false
+    }
+    if (
+        !readerNavigationTargetMatches(
+            observed = observedIdentity,
+            target = targetIdentity,
+            targetHref = targetHref
+        )
+    ) {
+        return false
+    }
+    return expectedPdfPage == null || expectedPdfPage == observedPdfPage
+}
