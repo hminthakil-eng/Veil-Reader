@@ -529,7 +529,7 @@ internal class PaperCurlInputListener(
         isEnabled()
 
     private fun shouldAnimatePaperVisual(): Boolean =
-        state.usingMaterialEngine() || !isReducedMotion()
+        state.active
 
     private fun isMostlyHorizontal(event: DragEvent): Boolean {
         val view = navigator.publicationView
