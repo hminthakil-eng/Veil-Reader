@@ -98,8 +98,9 @@ def evaluate(
             if value > maximum:
                 failed = True
 
+        expectation = " and ".join(bounds) if bounds else "observed"
         detail = (
-            f"{check_id}: {value:.3f} ({' and '.join(bounds)}) "
+            f"{check_id}: {value:.3f} ({expectation}) "
             f"[{benchmark.get('className', '')}.{benchmark.get('name', '')}]"
         )
         (failures if failed else passes).append(detail)
