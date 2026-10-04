@@ -1593,6 +1593,17 @@ fun ReaderScreen(
                             }
                         }
                         readerViewModel.onPause(readerSessionInstanceId)
+                        if (
+                            event == Lifecycle.Event.ON_STOP ||
+                            event == Lifecycle.Event.ON_DESTROY
+                        ) {
+                            // Hidden Readers should not retain warm CPU page captures.
+                            // Active previews keep ownership until the cancellation path
+                            // above clears them; idle caches are immediately expendable.
+                            paperCurlState.releaseBufferIfIdle()
+                            slidePageState.releaseBufferIfIdle()
+                            readerModeHandoffState.releaseBufferIfIdle()
+                        }
                     }
                 }
                 else -> Unit
