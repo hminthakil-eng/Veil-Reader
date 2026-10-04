@@ -86,9 +86,7 @@ internal class PaperCurlState {
             debugBeginAttempts += 1
         }
         if (
-            rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ||
-            rendererStatus == GpuMaterialPageRendererStatus.FAILED ||
-            rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ||
+            rendererStatus != GpuMaterialPageRendererStatus.READY ||
             active
         ) {
             return false
