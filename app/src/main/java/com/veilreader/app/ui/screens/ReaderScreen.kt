@@ -607,7 +607,7 @@ fun ReaderScreen(
                 expectedSessionInstanceId = readerSessionInstanceId
             )
         ) {
-            paperCurlState.prepareBuffer(nav.publicationView)
+            paperCurlState.prepareSnapshot(nav.publicationView)
         }
     }
     LaunchedEffect(
