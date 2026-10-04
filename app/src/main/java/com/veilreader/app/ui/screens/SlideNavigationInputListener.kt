@@ -6,7 +6,11 @@ import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
+import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
@@ -290,12 +294,43 @@ internal class SlideNavigationInputListener(
      * This is the only safe path before taking a durable close snapshot.
      */
     suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val targetIdentity =
+            if (!turnCommitted) {
+                dragStartLocator?.toReaderNavigationIdentity()
+            } else {
+                null
+            }
         val existingCompletion = completionJob
         val requested = cancelPendingTurn()
         if (!requested) return false
         (existingCompletion ?: completionJob)?.join()
-        return true
+
+        targetIdentity ?: return true
+        if (
+            readerNavigationIdentityMatchesTarget(
+                observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
+                target = targetIdentity
+            )
+        ) {
+            return true
+        }
+
+        return withTimeoutOrNull(RESTORE_SETTLE_TIMEOUT_MS) {
+            navigator.currentLocator.first { locator ->
+                readerNavigationIdentityMatchesTarget(
+                    observed = locator.toReaderNavigationIdentity(),
+                    target = targetIdentity
+                )
+            }
+            true
+        } ?: false
     }
+
+    fun hasPendingTurn(): Boolean =
+        reserved ||
+            activeSpec != null ||
+            completionJob != null ||
+            state.active
 
     /**
      * Synchronous teardown for configuration changes and composition disposal. The reader's
@@ -335,31 +370,38 @@ internal class SlideNavigationInputListener(
     }
 
     private fun performDiscreteTurn(spec: TurnSpec) {
-        val visualReady = !isReducedMotion() && state.begin(navigator.publicationView)
+        val reducedMotion = isReducedMotion()
+        val visualReady = !reducedMotion && state.begin(navigator.publicationView)
         onInteraction()
-        val moved = navigate(spec.direction)
-        if (!moved) {
-            onBoundaryHit(spec.side)
+
+        completionJob = scope.launch {
             if (visualReady) {
-                completionJob = scope.launch {
+                delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
+            }
+            if (cancellationRequested) {
+                if (state.active) state.clear()
+                resetDrag()
+                return@launch
+            }
+
+            val moved = navigate(spec.direction)
+            if (!moved) {
+                onBoundaryHit(spec.side)
+                if (visualReady && state.active) {
                     state.animateBoundaryBounce(visualDirectionSign(spec.side))
                     state.clear()
-                    resetDrag()
                 }
+                resetDrag()
+                return@launch
             }
-            return
-        }
 
-        turnCommitted = true
-        onCommittedTurn()
-        if (visualReady) {
-            completionJob = scope.launch {
+            turnCommitted = true
+            onCommittedTurn()
+            if (visualReady && state.active) {
                 delay(com.veilreader.app.ui.theme.VeilMotion.PAGE_REVEAL_MS)
                 state.animateComplete(visualDirectionSign(spec.side))
                 state.clear()
-                resetDrag()
             }
-        } else {
             resetDrag()
         }
     }
@@ -494,6 +536,7 @@ internal class SlideNavigationInputListener(
 
     private companion object {
         const val EDGE_FRACTION = 0.22f
+        const val RESTORE_SETTLE_TIMEOUT_MS = 1_500L
     }
 }
 
