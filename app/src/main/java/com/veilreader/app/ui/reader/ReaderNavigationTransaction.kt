@@ -2,6 +2,11 @@ package com.veilreader.app.ui.reader
 
 import java.net.URI
 import kotlin.math.abs
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.readium.r2.shared.publication.Locator
 
 /**
@@ -171,6 +176,33 @@ internal fun readerNavigationIdentityHasVisuallyDeparted(
         observed = observed,
         target = origin
     )
+}
+
+internal suspend fun awaitReaderVisualNavigationDeparture(
+    currentLocator: StateFlow<Locator>,
+    origin: Locator,
+    timeoutMillis: Long = 1_500L
+): Boolean = withContext(NonCancellable) {
+    val originIdentity = origin.toReaderNavigationIdentity()
+    val currentIdentity = currentLocator.value.toReaderNavigationIdentity()
+    if (
+        readerNavigationIdentityHasVisuallyDeparted(
+            origin = originIdentity,
+            observed = currentIdentity
+        )
+    ) {
+        return@withContext true
+    }
+
+    withTimeoutOrNull(timeoutMillis.coerceAtLeast(1L)) {
+        currentLocator.first { locator ->
+            readerNavigationIdentityHasVisuallyDeparted(
+                origin = originIdentity,
+                observed = locator.toReaderNavigationIdentity()
+            )
+        }
+        true
+    } ?: false
 }
 
 private fun readerResourceHref(href: String): String {
