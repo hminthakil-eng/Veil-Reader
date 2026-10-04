@@ -174,6 +174,22 @@ class LocalLibraryRepository internal constructor(
                 _readingPaceProfiles.value = profiles
             }
         }
+        scope.launch {
+            try {
+                initialized.await()
+                reconcileOrphanedAppPrivateArtifacts()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                // Orphan cleanup is maintenance, not durable user-data authority.
+                // Never poison the serialized write queue because housekeeping
+                // could not inspect or delete an unowned derived/private file.
+                ReaderTrace.event(
+                    "library_orphan_reconcile_failed",
+                    details = "error=${error::class.java.simpleName}"
+                )
+            }
+        }
     }
 
     internal fun recordReadingPaceInterval(
@@ -1283,6 +1299,59 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
+    private suspend fun reconcileOrphanedAppPrivateArtifacts() {
+        val books = database.books()
+            .listAllWithCollections()
+            .map { it.toDomain() }
+
+        withContext(Dispatchers.IO) {
+            val publicationsRoot =
+                File(appContext.filesDir, "publications").canonicalFile
+            val coversRoot =
+                File(appContext.filesDir, "covers").canonicalFile
+
+            val ownedPublications = books.mapNotNullTo(mutableSetOf()) { book ->
+                canonicalOwnedArtifactPath(
+                    rawPath = book.sourceUri
+                        ?.let(Uri::parse)
+                        ?.takeIf { it.scheme == "file" }
+                        ?.path,
+                    root = publicationsRoot
+                )
+            }
+            val ownedCovers = books.mapNotNullTo(mutableSetOf()) { book ->
+                canonicalOwnedArtifactPath(
+                    rawPath = book.coverCachePath,
+                    root = coversRoot
+                )
+            }
+
+            val now = System.currentTimeMillis()
+            val deletedPublications =
+                reconcileOrphanedArtifactDirectory(
+                    root = publicationsRoot,
+                    ownedCanonicalPaths = ownedPublications,
+                    nowEpochMs = now,
+                    graceMillis = ORPHAN_ARTIFACT_GRACE_MS
+                )
+            val deletedCovers =
+                reconcileOrphanedArtifactDirectory(
+                    root = coversRoot,
+                    ownedCanonicalPaths = ownedCovers,
+                    nowEpochMs = now,
+                    graceMillis = ORPHAN_ARTIFACT_GRACE_MS
+                )
+
+            if (deletedPublications > 0 || deletedCovers > 0) {
+                ReaderTrace.event(
+                    "library_orphan_reconciled",
+                    details =
+                        "publications=$deletedPublications covers=$deletedCovers"
+                )
+            }
+        }
+    }
+
     private suspend fun discardImportedArtifacts(book: Book) = withContext(Dispatchers.IO) {
         deleteAppPrivateFile(book.sourceUri, "publications")
         book.coverCachePath?.takeIf { it.isNotBlank() }?.let { path ->
@@ -1354,8 +1423,53 @@ private data class PendingProgressWrite(
 
 private const val PROGRESS_WRITE_INTERVAL_MS = 250L
 private const val SESSION_WRITE_INTERVAL_MS = 1_000L
+private const val ORPHAN_ARTIFACT_GRACE_MS = 24L * 60L * 60L * 1000L
 private const val PASSAGE_REVISIT_MIN_AGE_MS = 30_000L
 private const val PASSAGE_REVISIT_DEDUPE_MS = 5L * 60L * 1000L
+
+internal fun canonicalOwnedArtifactPath(
+    rawPath: String?,
+    root: File
+): String? {
+    if (rawPath.isNullOrBlank()) return null
+    return runCatching {
+        val canonicalRoot = root.canonicalFile
+        val candidate = File(rawPath).canonicalFile
+        candidate
+            .takeIf { it.toPath().startsWith(canonicalRoot.toPath()) }
+            ?.absolutePath
+    }.getOrNull()
+}
+
+internal fun reconcileOrphanedArtifactDirectory(
+    root: File,
+    ownedCanonicalPaths: Set<String>,
+    nowEpochMs: Long,
+    graceMillis: Long
+): Int {
+    if (nowEpochMs <= 0L || graceMillis < 0L) return 0
+    val canonicalRoot = runCatching { root.canonicalFile }.getOrNull()
+        ?: return 0
+    val children = canonicalRoot.listFiles() ?: return 0
+    var deleted = 0
+
+    children.forEach { child ->
+        val candidate = runCatching { child.canonicalFile }.getOrNull()
+            ?: return@forEach
+        // Only direct children are managed here. A symlink escaping the app-private
+        // root or a nested directory is never a cleanup candidate.
+        if (candidate.parentFile?.canonicalFile != canonicalRoot) return@forEach
+        if (!candidate.isFile) return@forEach
+        if (candidate.absolutePath in ownedCanonicalPaths) return@forEach
+
+        val modifiedAt = candidate.lastModified()
+        if (modifiedAt <= 0L || nowEpochMs < modifiedAt) return@forEach
+        if (nowEpochMs - modifiedAt < graceMillis) return@forEach
+
+        if (candidate.delete()) deleted += 1
+    }
+    return deleted
+}
 
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
