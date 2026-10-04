@@ -154,6 +154,7 @@
     <string name="settings_mode_paged">صفحهٔ ثابت</string>
     <string name="settings_mode_scroll">پیمایش</string>
     <string name="settings_mode_curl_description">ورق‌زدن کاغذی با کشش وزن‌دار، واکنش به سرعت رهاسازی و ضخامت متغیر صفحات.</string>
+    <string name="settings_mode_curl_unavailable">ورق‌زدن کاغذی در این بیلد موقتاً در دسترس نیست. انتخاب ذخیره‌شدهٔ Paper حفظ می‌شود و با فعال‌شدن موتور GPU نهایی دوباره برمی‌گردد.</string>
     <string name="settings_mode_slide_description">مطالعهٔ صفحه‌بندی‌شده با جابه‌جایی افقی سبک، بدون خمیدگی کاغذ.</string>
     <string name="settings_mode_paged_description">صفحه‌بندی ثابت، بدون حرکت تزئینی.</string>
     <string name="settings_mode_scroll_description">پیمایش عمودی پیوسته، در صورت پشتیبانی فرمت کتاب.</string>
