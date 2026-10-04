@@ -7,6 +7,14 @@ import org.junit.Test
 
 class VeilSensoryFeedbackPolicyTest {
     @Test
+    fun `haptics require enabled foreground attached surface`() {
+        assertEquals(true, shouldPerformVeilHaptic(true, true, true))
+        assertEquals(false, shouldPerformVeilHaptic(false, true, true))
+        assertEquals(false, shouldPerformVeilHaptic(true, false, true))
+        assertEquals(false, shouldPerformVeilHaptic(true, true, false))
+    }
+
+    @Test
     fun `paper slide and static paged turns have distinct tactile identities`() {
         val paper = hapticFeedbackFor(VeilSensoryEvent.PAGE_TURN)
         val slide = hapticFeedbackFor(VeilSensoryEvent.SLIDE_TURN)
