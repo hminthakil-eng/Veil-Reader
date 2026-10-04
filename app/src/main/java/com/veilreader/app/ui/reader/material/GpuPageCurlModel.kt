@@ -47,6 +47,7 @@ internal fun gpuPageCurlFrame(
     verticalBias: Float,
     pullOriginY: Float,
     diagonalPull: Float = 0f,
+    pointerTravel: Float = progress,
     profile: MaterialPageProfile,
     side: MaterialPageSide
 ): GpuPageCurlFrame {
@@ -57,6 +58,8 @@ internal fun gpuPageCurlFrame(
         pullOriginY.takeIf { it.isFinite() }?.coerceIn(0.04f, 0.96f) ?: 0.5f
     val diagonal =
         diagonalPull.takeIf { it.isFinite() }?.coerceIn(-1f, 1f) ?: 0f
+    val travel =
+        pointerTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1.5f) ?: p
 
     val physics = profile.physics
     val optics = profile.optics
@@ -76,11 +79,18 @@ internal fun gpuPageCurlFrame(
         ((p - 0.72f) / 0.28f).coerceIn(0f, 1f).let { t ->
             t * t * (3f - 2f * t)
         }
+    val travelT =
+        (travel / 0.32f).coerceIn(0f, 1f).let { t ->
+            t * t * (3f - 2f * t)
+        }
+    val touchRadiusScale =
+        0.34f + travelT * 0.66f
     val radius = (
         baseRadius *
+            touchRadiusScale *
             (0.78f + liftEnvelope * (0.22f + (1f - bend) * 0.05f)) *
             (1f - terminalT * 0.48f)
-        ).coerceIn(0.028f, 0.132f)
+        ).coerceIn(0.020f, 0.132f)
 
     // Progress moves the virtual cylinder through the page. Clearance is based on
     // the authored material radius so a breathing radius never traps the terminal
