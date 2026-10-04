@@ -35,11 +35,13 @@ internal fun readerObservedLocatorEvent(
     viewportRelayoutPending: Boolean,
     isInitialEmission: Boolean,
     isContinuousScroll: Boolean,
-    isPaperMode: Boolean
+    isPaperMode: Boolean,
+    isSlidePreviewActive: Boolean = false
 ): ReaderLocatorEvent =
     when {
         programmaticNavigationSettled -> ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
         viewportRelayoutPending -> ReaderLocatorEvent.FINAL_SNAPSHOT
+        isSlidePreviewActive -> ReaderLocatorEvent.NAVIGATOR_POSITION
         else -> navigatorLocatorEvent(
             isInitialEmission = isInitialEmission,
             isContinuousScroll = isContinuousScroll,
