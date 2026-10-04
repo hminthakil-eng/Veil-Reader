@@ -595,10 +595,10 @@ fun ReaderScreen(
         if (paperCurlState.active) return@LaunchedEffect
 
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        // Pre-allocate the next CPU bitmap after Readium has painted. Content is
-        // intentionally captured again at gesture start so a stale page can never
-        // be lifted after navigation/reflow; this removes allocation jitter without
-        // trading away visual correctness.
+        // Prepare an exact Readium source snapshot while the reader is idle, after
+        // the visible WebView reports visual readiness. begin() consumes it only if
+        // revision + viewport + ping-pong buffer ownership still match; otherwise
+        // the gesture falls back to a fresh immediate capture.
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
             !paperCurlState.active &&
