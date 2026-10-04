@@ -248,8 +248,21 @@ internal class SlideNavigationInputListener(
      * closes, or the user changes navigation mode. A committed turn is never rolled back.
      */
     fun cancelPendingTurn(): Boolean {
-        if (!reserved && activeSpec == null) return false
-        if (turnCommitted) return false
+        if (!reserved && activeSpec == null) {
+            if (completionJob != null && state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
 
         cancellationRequested = true
         val spec = activeSpec
@@ -289,8 +302,21 @@ internal class SlideNavigationInputListener(
      * composition scope can disappear immediately, so locator restoration cannot depend on it.
      */
     fun forceCancelPendingTurn(): Boolean {
-        if (!reserved && activeSpec == null) return false
-        if (turnCommitted) return false
+        if (!reserved && activeSpec == null) {
+            if (completionJob != null || state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
 
         cancellationRequested = true
         navigationJob?.cancel()
