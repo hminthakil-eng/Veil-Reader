@@ -66,7 +66,7 @@ internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
     private var sensorySink: MaterialPageSensorySink? = null,
     private val snapshotProvider: MaterialPageImmediateSnapshotProvider =
-        ViewDrawMaterialPageImmediateSnapshotProvider
+        ViewDrawImmediateMaterialPageSnapshotProvider
 ) {
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
@@ -119,6 +119,8 @@ internal class MaterialPageEngineState(
     private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
     private var snapshotBufferCursor = -1
     private var snapshotSourceRevision = 1L
+    private var preparedSnapshot: MaterialPagePreparedSnapshot? = null
+    private var preparedSnapshotBufferSlot = -1
     private var liftCueEmitted = false
 
     fun configureProfile(value: MaterialPageProfile) {
@@ -128,6 +130,8 @@ internal class MaterialPageEngineState(
     fun invalidateSnapshotSource() {
         snapshotSourceRevision =
             nextMaterialPageSnapshotRevision(snapshotSourceRevision)
+        preparedSnapshot = null
+        preparedSnapshotBufferSlot = -1
     }
 
     fun setSensorySink(value: MaterialPageSensorySink?) {
@@ -146,17 +150,92 @@ internal class MaterialPageEngineState(
         tone = value
     }
 
-    fun prepareBuffer(view: View): Boolean {
-        if (active || view.width <= 0 || view.height <= 0) return false
+    suspend fun prepareSnapshot(view: View): Boolean {
+        if (
+            active ||
+            view.width <= 0 ||
+            view.height <= 0 ||
+            !view.isAttachedToWindow
+        ) {
+            return false
+        }
+
+        val revision = snapshotSourceRevision
+        val widthAtRequest = view.width
+        val heightAtRequest = view.height
+        if (
+            !awaitMaterialPageSourceVisualReady(
+                root = view,
+                requestId = revision
+            )
+        ) {
+            ReaderTrace.event(
+                name = "paper_snapshot_prepare_not_ready",
+                details = "revision=$revision"
+            )
+            return false
+        }
+        if (
+            active ||
+            revision != snapshotSourceRevision ||
+            widthAtRequest != view.width ||
+            heightAtRequest != view.height
+        ) {
+            return false
+        }
+
         val nextSlot = nextMaterialPageBufferSlot(snapshotBufferCursor)
-        val warmed = obtainReusableBuffer(
+        val target = obtainReusableBuffer(
             current = snapshotBuffers[nextSlot],
             view = view
         ) ?: return false
-        snapshotBuffers[nextSlot] = warmed
-        // Do not advance/reset the cursor here. begin() claims exactly this next
-        // slot, preserving ping-pong separation from the bitmap the GL thread
-        // may still be uploading from the previous turn.
+        snapshotBuffers[nextSlot] = target
+
+        val totalStarted = SystemClock.elapsedRealtimeNanos()
+        Trace.beginSection("paper.capture.prepare")
+        val capture = try {
+            snapshotProvider.capture(
+                view = view,
+                target = target,
+                sourceRevision = revision
+            )
+        } finally {
+            Trace.endSection()
+        }
+        val totalNanos =
+            (SystemClock.elapsedRealtimeNanos() - totalStarted)
+                .coerceAtLeast(0L)
+        val ready = capture as? MaterialPageSnapshotCapture.Ready
+            ?: return false
+        if (
+            active ||
+            !materialPageSnapshotCaptureIsCurrent(
+                captureRevision = ready.sourceRevision,
+                expectedRevision = snapshotSourceRevision
+            ) ||
+            ready.bitmap.width != view.width ||
+            ready.bitmap.height != view.height
+        ) {
+            return false
+        }
+
+        preparedSnapshot = MaterialPagePreparedSnapshot(
+            bitmap = ready.bitmap,
+            sourceRevision = ready.sourceRevision,
+            width = ready.bitmap.width,
+            height = ready.bitmap.height,
+            capturedAtElapsedNanos = SystemClock.elapsedRealtimeNanos(),
+            provider = ready.provider
+        )
+        preparedSnapshotBufferSlot = nextSlot
+        ReaderTrace.event(
+            name = "paper_snapshot_prepared",
+            details =
+                "provider=${ready.provider} revision=${ready.sourceRevision} " +
+                    "width=${ready.bitmap.width} height=${ready.bitmap.height} " +
+                    "captureUs=${ready.elapsedNanos / 1_000L} " +
+                    "totalUs=${totalNanos / 1_000L}"
+        )
         return true
     }
 
@@ -166,7 +245,43 @@ internal class MaterialPageEngineState(
         profile: MaterialPageProfile = this.profile
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val capture = captureIntoSourceBuffer(view)
+        val prepared = preparedSnapshot
+        val usePrepared =
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = snapshotSourceRevision,
+                expectedWidth = view.width,
+                expectedHeight = view.height
+            ) &&
+                preparedSnapshotBufferSlot in snapshotBuffers.indices
+        val capture =
+            if (usePrepared && prepared != null) {
+                snapshotBufferCursor = preparedSnapshotBufferSlot
+                preparedSnapshot = null
+                preparedSnapshotBufferSlot = -1
+                ReaderTrace.event(
+                    name = "paper_snapshot_prepared_consumed",
+                    details =
+                        "provider=${prepared.provider} " +
+                            "revision=${prepared.sourceRevision} " +
+                            "ageUs=${
+                                (
+                                    SystemClock.elapsedRealtimeNanos() -
+                                        prepared.capturedAtElapsedNanos
+                                    ).coerceAtLeast(0L) / 1_000L
+                            }"
+                )
+                MaterialPageSnapshotCapture.Ready(
+                    bitmap = prepared.bitmap,
+                    sourceRevision = prepared.sourceRevision,
+                    provider = prepared.provider,
+                    elapsedNanos = 0L
+                )
+            } else {
+                preparedSnapshot = null
+                preparedSnapshotBufferSlot = -1
+                captureIntoSourceBuffer(view)
+            }
         val ready = when (capture) {
             is MaterialPageSnapshotCapture.Ready -> capture
             is MaterialPageSnapshotCapture.NotReady -> {
@@ -565,6 +680,8 @@ internal class MaterialPageEngineState(
         snapshotBuffers[0] = null
         snapshotBuffers[1] = null
         snapshotBufferCursor = -1
+        preparedSnapshot = null
+        preparedSnapshotBufferSlot = -1
     }
 
     fun dispose() {
