@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import org.robolectric.RuntimeEnvironment
 import com.veilreader.app.ui.review.GrayfogReviewContent
@@ -29,7 +30,7 @@ import org.robolectric.annotation.GraphicsMode
 class GrayfogCloudRenderTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun captureMatrix(name: String, scale: Float = 1f, contrast: Boolean = false) {
+    private fun captureMatrix(name: String, scale: Float = 1f, contrast: Boolean = false, scrollAccess: Boolean = false) {
         val current = mutableStateOf(GrayfogReviewSurface.THRESHOLD_ACTIVE)
         compose.setContent {
             val density = LocalDensity.current
@@ -41,14 +42,6 @@ class GrayfogCloudRenderTest {
         for (surface in GrayfogReviewSurface.entries) {
             compose.runOnIdle { current.value = surface }
             compose.waitForIdle()
-            if (surface == GrayfogReviewSurface.THRESHOLD_ACTIVE || surface == GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG) {
-                compose.onNodeWithText(RuntimeEnvironment.getApplication().getString(R.string.threshold_return_volume))
-                    .assertIsDisplayed().assertHasClickAction()
-            }
-            if (surface == GrayfogReviewSurface.PROFILE) {
-                compose.onNodeWithText(RuntimeEnvironment.getApplication().getString(R.string.profile_settings), ignoreCase = true)
-                    .assertIsDisplayed().assertHasClickAction()
-            }
             val roots = compose.onAllNodes(isRoot())
             val root = if (surface.name.startsWith("BOOK_DETAIL") || surface == GrayfogReviewSurface.RITUAL || surface == GrayfogReviewSurface.ERROR) compose.onNode(isDialog())
                 else roots[roots.fetchSemanticsNodes().lastIndex]
@@ -57,6 +50,16 @@ class GrayfogCloudRenderTest {
             val file = File("build/outputs/grayfog-cloud/$name/${surface.name.lowercase()}.png")
             requireNotNull(file.parentFile).mkdirs()
             file.outputStream().use { check(image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)) }
+            if (surface == GrayfogReviewSurface.THRESHOLD_ACTIVE || surface == GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG) {
+                val action = compose.onNodeWithText(RuntimeEnvironment.getApplication().getString(R.string.threshold_return_volume))
+                if (scrollAccess) action.performScrollTo()
+                action.assertIsDisplayed().assertHasClickAction().assertHeightIsAtLeast(48.dp)
+            }
+            if (surface == GrayfogReviewSurface.PROFILE) {
+                val action = compose.onNodeWithText(RuntimeEnvironment.getApplication().getString(R.string.profile_settings), ignoreCase = true)
+                if (scrollAccess) action.performScrollTo()
+                action.assertIsDisplayed().assertHasClickAction().assertHeightIsAtLeast(48.dp)
+            }
         }
     }
 
@@ -92,4 +95,15 @@ class GrayfogCloudRenderTest {
 
     @Test @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
     fun highContrast200() = captureMatrix("fa-200-360-contrast", 2f, true)
+    @Test @Config(qualifiers = "en-w320dp-h720dp-mdpi")
+    fun compact200() = captureMatrix("en-200-320", 2f)
+
+    @Test @Config(qualifiers = "fa-rIR-w900dp-h420dp-mdpi")
+    fun landscapePersian200() = captureMatrix("fa-200-900-landscape", 2f, scrollAccess = true)
+
+    @Test @Config(qualifiers = "fa-rIR-w720dp-h720dp-mdpi")
+    fun foldedPersian200() = captureMatrix("fa-200-720-foldable", 2f)
+
+    @Test @Config(qualifiers = "fa-rIR-w1280dp-h900dp-mdpi")
+    fun tabletPersian200() = captureMatrix("fa-200-1280-tablet", 2f)
 }

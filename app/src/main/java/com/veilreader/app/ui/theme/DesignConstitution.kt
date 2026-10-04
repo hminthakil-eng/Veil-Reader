@@ -386,3 +386,10 @@ fun useArchitecturalPair(widthDp: Float, fontScale: Float): Boolean =
     widthDp.isFinite() && fontScale.isFinite() && fontScale > 0f &&
         widthDp >= VeilComposition.ArchitecturalPairMinWidthDp &&
         widthDp / fontScale.coerceAtLeast(1f) >= VeilComposition.ArchitecturalPairReadableWidthDp
+
+/** Optional approach copy yields to instruments when text or vertical pressure grows. */
+fun condenseRealmApproach(fontScale: Float, heightDp: Int): Boolean {
+    val scale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    return scale >= VeilComposition.ApproachCondenseFontScale ||
+        heightDp in 1 until VeilComposition.ApproachShortHeightDp
+}

@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.ui.review.GrayfogReviewContent
+import com.veilreader.app.ui.review.GrayfogReviewSurface
 import com.veilreader.app.ui.review.GrayfogReviewFixtures
 import com.veilreader.app.ui.theme.VeilTheme
 import org.junit.Assert.assertEquals
@@ -61,4 +63,26 @@ class GrayfogCloudAccessibilityTest {
 
     @Test @Config(qualifiers = "fa-rIR-w360dp-h900dp-mdpi")
     fun persianLargeGalleryUtilities() = checkGallery(2f, 224)
+    private fun checkSearchLabel(scale: Float) {
+        val context = RuntimeEnvironment.getApplication()
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                VeilTheme(AppThemeMode.DARK) {
+                    GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY)
+                }
+            }
+        }
+        val label = context.getString(R.string.library_search_hint)
+        val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
+        search.performScrollTo().assertHeightIsAtLeast(48.dp).performTextInput("Still")
+        search.assertTextContains("Still")
+        search.assertIsDisplayed()
+    }
+
+    @Test @Config(qualifiers = "en-w320dp-h720dp-mdpi")
+    fun searchPurposeSurvivesEnteredText() = checkSearchLabel(1f)
+
+    @Test @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
+    fun persianLargeTextSearchRetainsItsAccessibleLabel() = checkSearchLabel(2f)
 }

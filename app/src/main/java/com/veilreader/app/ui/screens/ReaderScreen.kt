@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -4170,6 +4171,11 @@ internal fun EpubAppearancePanel(
     var hasPendingDraft by remember { mutableStateOf(false) }
     var sliderPending by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(initiallyAdvanced) }
+    val condensedApproach = com.veilreader.app.ui.theme.condenseRealmApproach(
+        LocalDensity.current.fontScale, with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
+        })
+    var showPreview by remember(condensedApproach) { mutableStateOf(!condensedApproach) }
     val capabilities = readerAppearanceCapabilities(
         fixedLayout = fixedLayout,
         languageTag = publicationLanguage,
@@ -4234,11 +4240,13 @@ internal fun EpubAppearancePanel(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            VeilMicroLabel(
-                text = stringResource(R.string.reader_instruments),
-                strong = true
-            )
-            BrassRule(Modifier.width(76.dp))
+            if (!condensedApproach) {
+                VeilMicroLabel(
+                    text = stringResource(R.string.reader_instruments),
+                    strong = true
+                )
+                BrassRule(Modifier.width(76.dp))
+            }
             Text(
                 stringResource(R.string.settings_appearance_title),
                 style = MaterialTheme.typography.headlineMedium,
@@ -4252,7 +4260,14 @@ internal fun EpubAppearancePanel(
         }
 
         if (!capabilities.fixedLayout) {
-            ReaderAppearancePreview(
+            if (condensedApproach) {
+                TextButton(onClick = { showPreview = !showPreview },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Text(stringResource(if (showPreview) R.string.reader_hide_reading_preview
+                        else R.string.reader_show_reading_preview))
+                }
+            }
+            if (showPreview) ReaderAppearancePreview(
                 appearance = draft,
                 typographyEnabled = true,
                 modifier = Modifier.fillMaxWidth()

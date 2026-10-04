@@ -392,7 +392,7 @@
     <string name="library_header_empty">The shelves are waiting for their first volume.</string>
     <string name="library_header_one">%1$d volume catalogued on this device.</string>
     <string name="library_header_many">%1$d volumes catalogued on this device.</string>
-    <string name="library_search_hint">Search the archive…</string>
+    <string name="library_search_hint">Search archive</string>
     <string name="library_search_clear">Clear</string>
     <string name="library_import_preparing_label">PREPARING PUBLICATION</string>
     <string name="library_import_preparing_body">Inspecting the file and preparing its local archive record.</string>
@@ -1362,4 +1362,8 @@
     <string name="reader_eta_range_description">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</string>
     <string name="reader_theme_specimen">Aa</string>
     <string name="library_all_series">All series</string>
+    <string name="observatory_show_all_connections">Show all %1$s connections</string>
+    <string name="observatory_show_fewer_connections">Show fewer connections</string>
+    <string name="reader_show_reading_preview">Show reading preview</string>
+    <string name="reader_hide_reading_preview">Hide reading preview</string>
 </resources>

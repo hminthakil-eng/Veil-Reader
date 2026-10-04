@@ -180,11 +180,16 @@ fun CastleScreen(
                             style = MaterialTheme.typography.titleLarge,
                             color = VeilPalette.Moon
                         )
+                        if (!com.veilreader.app.ui.theme.condenseRealmApproach(
+                            LocalConfiguration.current.fontScale, with(androidx.compose.ui.platform.LocalDensity.current) {
+                                androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
+                            })) {
                         Text(
                             stringResource(R.string.castle_inner_keep_body),
                             style = MaterialTheme.typography.bodyMedium,
                             color = VeilPalette.Mist
                         )
+                        }
                     }
 
                     CastleWorldMap(

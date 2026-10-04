@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
@@ -549,21 +550,26 @@ internal fun LibraryArchiveContent(
                     bookCount = books.size,
                     isImporting = isImporting,
                     onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
-                    onOpenSettings = onOpenSettings
+                    onOpenSettings = onOpenSettings,
+                    retrievalActive = query.isNotBlank()
                 )
             }
         }
 
         item(key = "library:search", span = { GridItemSpan(maxLineSpan) }) {
+            val searchAccessibilityLabel = stringResource(R.string.library_search_hint)
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
+                textStyle = MaterialTheme.typography.bodyMedium.withVeilContentScript(query),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 placeholder = {
                     Text(
-                        stringResource(R.string.library_search_hint),
+                        searchAccessibilityLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
                     )
                 },
@@ -593,6 +599,7 @@ internal fun LibraryArchiveContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = VeilSpacing.sm)
+                    .semantics { contentDescription = searchAccessibilityLabel }
             )
         }
 
@@ -1824,9 +1831,9 @@ internal fun BookDetailDestination(
                                 artifactMemory = artifactMemory,
                                 modifier = Modifier
                                     .widthIn(max = 440.dp)
-                                    .fillMaxWidth()
+                                    .fillMaxWidth(),
+                                readingAction = { ReadingAction() }
                             )
-                            Box(Modifier.widthIn(max = 440.dp).fillMaxWidth()) { ReadingAction() }
                         }
                     } else {
                         Row(
@@ -1845,9 +1852,9 @@ internal fun BookDetailDestination(
                                 BookDetailIdentity(
                                     book = book,
                                     artifactMemory = artifactMemory,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    readingAction = { ReadingAction() }
                                 )
-                                ReadingAction()
                             }
                         }
                     }
@@ -2375,7 +2382,8 @@ internal fun bookDetailIdentityText(
 private fun BookDetailIdentity(
     book: Book,
     artifactMemory: BookArtifactMemory?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readingAction: @Composable () -> Unit
 ) {
     val formatNumber = rememberVeilNumberFormatter()
     val untitledBook = stringResource(R.string.common_untitled_book)
@@ -2413,6 +2421,8 @@ private fun BookDetailIdentity(
             softWrap = true,
             overflow = TextOverflow.Ellipsis
         )
+
+        readingAction()
 
         identity.seriesName?.let { series ->
             Row(
@@ -2536,7 +2546,8 @@ private fun LibraryHeader(
     bookCount: Int,
     isImporting: Boolean,
     onImport: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    retrievalActive: Boolean = false
 ) {
     BoxWithConstraints(
         Modifier
@@ -2544,7 +2555,104 @@ private fun LibraryHeader(
             .clip(MaterialTheme.shapes.extraSmall)
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 112.dp else 144.dp
+        val condensed = retrievalActive || com.veilreader.app.ui.theme.condenseRealmApproach(
+            LocalDensity.current.fontScale, with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
+        })
+        val headerHeight = if (condensed) 0.dp else if (compact) 112.dp else 144.dp
+        val adjacent = com.veilreader.app.ui.theme.useArchitecturalPair(
+            maxWidth.value - VeilSpacing.md.value * 2f, LocalDensity.current.fontScale)
+        @Composable fun HeaderActions(modifier: Modifier = Modifier) {
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            ) {
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = VeilPalette.Moon.copy(alpha = 0.86f),
+                        containerColor = VeilPalette.Ink.copy(alpha = 0.72f)
+                    ),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.library_header_settings),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Button(
+                    onClick = onImport,
+                    enabled = !isImporting,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilMaterials.ElevatedSurface,
+                        contentColor = VeilPalette.Moon
+                    ),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text(
+                        stringResource(
+                            if (isImporting) R.string.library_header_importing
+                            else R.string.library_header_import
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        @Composable fun HeaderIdentity(modifier: Modifier = Modifier) {
+            Column(
+                modifier = modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+
+                Text(
+                    stringResource(R.string.library_header_title),
+                    style = if (condensed) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
+                    color = VeilPalette.Moon
+                )
+                if (!condensed) {
+                    Text(
+                        stringResource(R.string.library_header_tagline),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Moon.copy(alpha = 0.78f)
+                    )
+                    Box(
+                        Modifier
+                            .padding(vertical = 4.dp)
+                            .width(104.dp)
+                            .height(1.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        VeilPalette.Brass.copy(alpha = 0.92f),
+                                        VeilPalette.Brass.copy(alpha = 0.34f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                    Text(
+                        when (bookCount) {
+                            0 -> stringResource(R.string.library_header_empty)
+                            1 -> stringResource(R.string.library_header_one, bookCount)
+                            else -> stringResource(R.string.library_header_many, bookCount)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Moon.copy(alpha = 0.72f)
+                    )
+                }
+            }
+        }
 
         Box(Modifier.fillMaxWidth().heightIn(min = headerHeight)) {
             Image(
@@ -2581,99 +2689,19 @@ private fun LibraryHeader(
 
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = headerHeight)
-                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
-                verticalArrangement = Arrangement.SpaceBetween
+                Modifier.fillMaxWidth().padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-                ) {
-                    OutlinedButton(
-                        onClick = onOpenSettings,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = VeilPalette.Moon.copy(alpha = 0.86f),
-                            containerColor = VeilPalette.Ink.copy(alpha = 0.72f)
-                        ),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.library_header_settings),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                if (adjacent) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        HeaderIdentity(Modifier.weight(1f))
+                        HeaderActions(Modifier.width((com.veilreader.app.ui.theme.VeilComposition.InstrumentActionsReadableWidthDp *
+                            LocalDensity.current.fontScale.coerceAtLeast(1f)).dp))
                     }
-
-                    Button(
-                        onClick = onImport,
-                        enabled = !isImporting,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VeilMaterials.ElevatedSurface,
-                            contentColor = VeilPalette.Moon
-                        ),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(
-                            stringResource(
-                                if (isImporting) R.string.library_header_importing
-                                else R.string.library_header_import
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(VeilSpacing.xs))
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-
-                    Text(
-                        stringResource(R.string.library_header_title),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = VeilPalette.Moon
-                    )
-                    Text(
-                        stringResource(R.string.library_header_tagline),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.Moon.copy(alpha = 0.78f)
-                    )
-                    Box(
-                        Modifier
-                            .padding(vertical = 4.dp)
-                            .width(104.dp)
-                            .height(1.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        VeilPalette.Brass.copy(alpha = 0.92f),
-                                        VeilPalette.Brass.copy(alpha = 0.34f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                    )
-                    Text(
-                        when (bookCount) {
-                            0 -> stringResource(R.string.library_header_empty)
-                            1 -> stringResource(R.string.library_header_one, bookCount)
-                            else -> stringResource(R.string.library_header_many, bookCount)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = VeilPalette.Moon.copy(alpha = 0.72f)
-                    )
+                } else {
+                    HeaderActions()
+                    HeaderIdentity()
                 }
             }
         }

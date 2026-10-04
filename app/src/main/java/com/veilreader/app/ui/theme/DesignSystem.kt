@@ -99,6 +99,10 @@ object VeilComposition {
     const val ChamberCorridorMinWidthDp = 260f
     const val CastleRecordMinWidthDp = 280f
     const val FloorRegistrationWidthDp = 84f
+    const val ObservatoryVisibleConnections = 6
+    const val ApproachCondenseFontScale = 1.3f
+    const val ApproachShortHeightDp = 500
+    const val InstrumentActionsReadableWidthDp = 300f
 }
 
 /** Semantic shape families: archive plates stay sharp; architectural surfaces can breathe. */
@@ -353,4 +357,16 @@ object VeilProportion {
     const val WorldPrimary = 0.60f
     const val CastleMapPrimary = 0.68f
     const val ThresholdPrimary = 0.44f
+}
+
+/** The selected relationship is an instrument reading; other links remain quiet context. */
+object VeilObservation {
+    const val SelectedEdgeAlpha = 0.36f
+    const val SelectedStrengthAlpha = 0.018f
+    const val ContextEdgeAlpha = 0.035f
+    const val ContextStrengthAlpha = 0.0015f
+    const val UnfocusedEdgeAlpha = 0.08f
+    const val UnfocusedStrengthAlpha = 0.004f
+    const val ContextStrokeDp = 0.45f
+    const val SelectedStrokeDp = 1f
 }

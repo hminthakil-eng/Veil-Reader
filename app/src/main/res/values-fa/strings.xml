@@ -392,7 +392,7 @@
     <string name="library_header_empty">قفسه‌ها در انتظار نخستین کتاب‌اند.</string>
     <string name="library_header_one">%1$d کتاب در این دستگاه ثبت شده است.</string>
     <string name="library_header_many">%1$d کتاب در این دستگاه ثبت شده‌اند.</string>
-    <string name="library_search_hint">جست‌وجو در آرشیو…</string>
+    <string name="library_search_hint">جست‌وجوی بایگانی</string>
     <string name="library_search_clear">پاک کردن</string>
     <string name="library_import_preparing_label">آماده‌سازی کتاب</string>
     <string name="library_import_preparing_body">فایل بررسی و رکورد محلی آن آماده می‌شود.</string>
@@ -1362,4 +1362,8 @@
     <string name="reader_eta_range_description">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</string>
     <string name="reader_theme_specimen">کتاب</string>
     <string name="library_all_series">همهٔ مجموعه‌های دنباله‌دار</string>
+    <string name="observatory_show_all_connections">نمایش همهٔ %1$s ارتباط</string>
+    <string name="observatory_show_fewer_connections">نمایش ارتباط‌های کمتر</string>
+    <string name="reader_show_reading_preview">نمایش پیش‌نمایش مطالعه</string>
+    <string name="reader_hide_reading_preview">پنهان کردن پیش‌نمایش</string>
 </resources>

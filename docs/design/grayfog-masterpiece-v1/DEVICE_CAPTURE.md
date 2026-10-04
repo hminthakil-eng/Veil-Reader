@@ -9,7 +9,7 @@ The existing test stack renders actual production Composables with Robolectric A
 ```
 
 Images: `app/build/outputs/grayfog-cloud/<configuration>/<surface>.png`.
-Eleven configurations × thirty-one surfaces = 341 native frames. All use Reduced Motion. `GrayfogCloudRenderTest` defines the exact configurations; `GrayfogReviewSurface` defines the surface names. Dialogs use their actual separate Compose root. Native frame hashes/dimensions and the review contact sheet are recorded with the final V3 verification evidence. These are cloud layout evidence, not device screenshots or golden approval.
+Fifteen configurations × thirty-one surfaces = 465 native frames. The additional cases combine 200% text with 320dp compact, Persian landscape, foldable-width and tablet-width layouts. The debug Compose preview catalog has eleven configurations (341 instances). All use Reduced Motion. `GrayfogCloudRenderTest` defines the exact configurations; `GrayfogReviewSurface` defines the surface names. Dialogs use their actual separate Compose root. Native frame hashes/dimensions and the review contact sheet are recorded with the final V3 verification evidence. These are cloud layout evidence, not device screenshots or golden approval.
 
 ## Fictional device specimens
 
@@ -55,3 +55,9 @@ Using authorized EPUB/PDF files and the normal app, capture these deterministic 
 Capture with `adb exec-out screencap -p > <name>.png` once the stated state is visible. Mid-drag requires a held gesture rather than a settled swipe. Log actual locale, text scale, high contrast, Reduced Motion, orientation, OS theme and hinge posture beside each group. Cover Persian 100/130/150/200%, high contrast, normal/reduced motion, landscape, tablet and real foldable posture. Check TalkBack/touch exploration and focus order manually; screenshots cannot establish them.
 
 Verify real selection, atomic note saves/exact return, Lookup, TTS/Focus Guide, keyboard/hardware input, ETA uncertainty, PDF gestures/links, progress flush, close/reopen and process recreation with the retained instrumentation/Reader checks. Mark each result independently. No device is attached in the current cloud session, so this entire actual-publication/device matrix remains pending.
+
+## Expanded instruments and selected records
+
+After capturing the default specimens, expand Observatory’s “Show all connections” and Appearance’s “Show reading preview” in constrained layouts. Save `observatory-connections-expanded.png` and `appearance-preview-expanded.png` alongside the same device/configuration record. Collapse and change the selected book to verify disclosure resets; activate Enter Volume to verify exact source return. Native tests cover these callback/state contracts, while actual touch exploration and live publication settlement remain pending.
+
+At 200% landscape, native reachability assertions intentionally scroll to controls. The saved matrix PNG is the initial viewport, captured before assertions; it does not pretend all controls fit in 420dp height.

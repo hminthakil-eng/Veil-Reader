@@ -11,6 +11,10 @@ import androidx.compose.ui.tooling.preview.Preview
 @Preview(name = "Foldable", widthDp = 720, heightDp = 720)
 @Preview(name = "Landscape", widthDp = 900, heightDp = 420)
 @Preview(name = "Tablet", widthDp = 1280, heightDp = 900)
+@Preview(name = "Compact 200%", widthDp = 320, heightDp = 720, fontScale = 2f)
+@Preview(name = "Persian landscape 200%", widthDp = 900, heightDp = 420, locale = "fa", fontScale = 2f)
+@Preview(name = "Persian foldable 200%", widthDp = 720, heightDp = 720, locale = "fa", fontScale = 2f)
+@Preview(name = "Persian tablet 200%", widthDp = 1280, heightDp = 900, locale = "fa", fontScale = 2f)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
 private annotation class GrayfogReviewSizes
 

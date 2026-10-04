@@ -14,6 +14,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -302,14 +303,17 @@ private fun ObservatoryAtlasPanel(
                 drawLine(
                     color = VeilPalette.Brass.copy(
                         alpha = if (selectedEdge) {
-                            0.32f + edge.strength * 0.025f
+                            com.veilreader.app.ui.theme.VeilObservation.SelectedEdgeAlpha + edge.strength * com.veilreader.app.ui.theme.VeilObservation.SelectedStrengthAlpha
                         } else {
-                            0.09f + edge.strength * 0.008f
+                            if (selectedBookId == null) com.veilreader.app.ui.theme.VeilObservation.UnfocusedEdgeAlpha +
+                                edge.strength * com.veilreader.app.ui.theme.VeilObservation.UnfocusedStrengthAlpha
+                            else com.veilreader.app.ui.theme.VeilObservation.ContextEdgeAlpha + edge.strength * com.veilreader.app.ui.theme.VeilObservation.ContextStrengthAlpha
                         }
                     ),
                     start = points[fromIndex],
                     end = points[toIndex],
-                    strokeWidth = if (selectedEdge) 1.dp.toPx() else 0.65.dp.toPx(),
+                    strokeWidth = if (selectedEdge) com.veilreader.app.ui.theme.VeilObservation.SelectedStrokeDp.dp.toPx()
+                        else com.veilreader.app.ui.theme.VeilObservation.ContextStrokeDp.dp.toPx(),
                     cap = StrokeCap.Round
                 )
             }
@@ -385,12 +389,14 @@ private fun ObservatoryAtlasPanel(
 }
 
 @Composable
-private fun ObservatorySelection(
+internal fun ObservatorySelection(
     node: com.veilreader.app.domain.MemoryAtlasNode,
     connections: List<MemoryAtlasEdge>,
     booksById: Map<String, com.veilreader.app.domain.MemoryAtlasNode>,
     onOpenBook: (Book) -> Unit
 ) {
+    var expanded by remember(node.book.id) { mutableStateOf(false) }
+    val formatNumber = rememberVeilNumberFormatter()
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -443,21 +449,6 @@ private fun ObservatorySelection(
                 }
             }
 
-            if (connections.isEmpty()) {
-                Text(
-                    stringResource(R.string.observatory_standalone_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilMaterials.TextSecondary
-                )
-            } else {
-                connections.take(6).forEach { edge ->
-                    val otherId =
-                        if (edge.fromBookId == node.book.id) edge.toBookId else edge.fromBookId
-                    val other = booksById[otherId]?.book ?: return@forEach
-                    ObservatoryConnectionRow(edge, other)
-                }
-            }
-
             Button(
                 onClick = { onOpenBook(node.book) },
                 enabled = node.book.isImported,
@@ -477,6 +468,33 @@ private fun ObservatorySelection(
                     )
                 )
             }
+
+            if (connections.isEmpty()) {
+                Text(
+                    stringResource(R.string.observatory_standalone_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilMaterials.TextSecondary
+                )
+            } else {
+                (if (expanded) connections else connections.take(com.veilreader.app.ui.theme.VeilComposition.ObservatoryVisibleConnections)).forEach { edge ->
+                    val otherId =
+                        if (edge.fromBookId == node.book.id) edge.toBookId else edge.fromBookId
+                    val other = booksById[otherId]?.book ?: return@forEach
+                    ObservatoryConnectionRow(edge, other)
+                }
+            }
+
+            if (connections.size > com.veilreader.app.ui.theme.VeilComposition.ObservatoryVisibleConnections) {
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(if (expanded) stringResource(R.string.observatory_show_fewer_connections)
+                        else stringResource(R.string.observatory_show_all_connections, formatNumber(connections.size)))
+                }
+            }
+
+
         }
     }
 }

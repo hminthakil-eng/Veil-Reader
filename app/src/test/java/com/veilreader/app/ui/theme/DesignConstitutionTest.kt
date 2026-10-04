@@ -207,4 +207,13 @@ class DesignConstitutionTest {
         }
     }
 
+    @Test
+    fun `approach prose yields to short windows and large text without depending on script`() {
+        assertFalse(condenseRealmApproach(1f, 800))
+        assertFalse(condenseRealmApproach(1.29f, 500))
+        assertTrue(condenseRealmApproach(1.3f, 800))
+        assertTrue(condenseRealmApproach(1f, 499))
+        assertTrue(condenseRealmApproach(2f, 1400))
+        assertFalse(condenseRealmApproach(Float.NaN, 0))
+    }
 }
