@@ -241,6 +241,13 @@ class PerformanceBudgetTest(unittest.TestCase):
         self.assertEqual([], passes)
         self.assertEqual(1, len(failures))
 
+    def test_repository_physical_budget_accepts_complete_paper_evidence_sample(self):
+        config = budget.load_json(Path(__file__).parents[1] / "performance" / "budgets.json")
+        checks = config["modes"]["physical"]
+        passes, failures = budget.evaluate(SAMPLE["benchmarks"], checks)
+        self.assertEqual(len(checks), len(passes))
+        self.assertEqual([], failures)
+
     def test_budget_violation_fails(self):
         checks = [
             {
