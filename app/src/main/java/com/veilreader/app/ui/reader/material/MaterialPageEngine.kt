@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.veilreader.app.BuildConfig
@@ -118,7 +119,8 @@ internal class MaterialPageEngineState(
     private var density = 1f
     private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
     private var snapshotBufferCursor = -1
-    private var snapshotSourceRevision = 1L
+    var snapshotSourceRevision: Long by mutableLongStateOf(1L)
+        private set
     private var preparedSnapshot: MaterialPagePreparedSnapshot? = null
     private var preparedSnapshotBufferSlot = -1
     private var liftCueEmitted = false
@@ -256,7 +258,8 @@ internal class MaterialPageEngineState(
                 prepared = prepared,
                 expectedRevision = snapshotSourceRevision,
                 expectedWidth = view.width,
-                expectedHeight = view.height
+                expectedHeight = view.height,
+                nowElapsedNanos = SystemClock.elapsedRealtimeNanos()
             ) &&
                 preparedSnapshotBufferSlot in snapshotBuffers.indices &&
                 prepared != null &&
