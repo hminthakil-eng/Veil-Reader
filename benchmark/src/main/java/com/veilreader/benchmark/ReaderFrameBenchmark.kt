@@ -27,12 +27,12 @@ class ReaderFrameBenchmark {
             TraceSectionMetric(
                 sectionName = "paper.gpu.draw",
                 mode = TraceSectionMetric.Mode.Max,
-                label = "paperGpuDrawMax"
+                label = "paperGpuDraw"
             ),
             TraceSectionMetric(
                 sectionName = "paper.gpu.texture_upload",
                 mode = TraceSectionMetric.Mode.Max,
-                label = "paperTextureUploadMax"
+                label = "paperTextureUpload"
             )
         ),
         compilationMode = CompilationMode.Partial(
