@@ -9,7 +9,7 @@ The existing test stack renders actual production Composables with Robolectric A
 ```
 
 Images: `app/build/outputs/grayfog-cloud/<configuration>/<surface>.png`.
-Eleven configurations × thirty surfaces = 330 native frames. All use Reduced Motion. `GrayfogCloudRenderTest` defines the exact configurations; `GrayfogReviewSurface` defines the surface names. Dialogs use their actual separate Compose root. Native frame hashes/dimensions and the review contact sheet are recorded with the final V3 verification evidence. These are cloud layout evidence, not device screenshots or golden approval.
+Eleven configurations × thirty-one surfaces = 341 native frames. All use Reduced Motion. `GrayfogCloudRenderTest` defines the exact configurations; `GrayfogReviewSurface` defines the surface names. Dialogs use their actual separate Compose root. Native frame hashes/dimensions and the review contact sheet are recorded with the final V3 verification evidence. These are cloud layout evidence, not device screenshots or golden approval.
 
 ## Fictional device specimens
 
@@ -21,7 +21,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ADB=adb tools/grayfog-capture.sh grayfog-device-captures
 ```
 
-The script launches the independent review task, verifies successful launch and saves PNGs plus launch records. Names are `<surface>-<en|fa>-<1.0|1.3|1.5|2.0>-<standard|contrast>.png`. It captures 30 surfaces × eight language/scale pairs, plus 30 Persian 200% contrast cases (270 files). All are Reduced Motion specimens. The loop uses finite settlement delays, not automatic visual approval. Run separately on phone, tablet, landscape and actual foldable devices, each into a distinct directory; retain `device.txt`. It neither rotates/resizes a connected device nor claims to model its hinge.
+The script launches the independent review task, verifies successful launch and saves PNGs plus launch records. Names are `<surface>-<en|fa>-<1.0|1.3|1.5|2.0>-<standard|contrast>.png`. It captures 31 surfaces × eight language/scale pairs, plus 31 Persian 200% contrast cases (279 files). All are Reduced Motion specimens. The loop uses finite settlement delays, not automatic visual approval. Run separately on phone, tablet, landscape and actual foldable devices, each into a distinct directory; retain `device.txt`. It neither rotates/resizes a connected device nor claims to model its hinge.
 
 For one focused specimen:
 

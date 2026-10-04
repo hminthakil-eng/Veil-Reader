@@ -566,7 +566,7 @@ private fun ContinueReadingHero(
                     )
                     Text(
                         heroProgressLabel(current, progress),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelMedium.withVeilContentScript(heroProgressLabel(current, progress)),
                         color = VeilPalette.LightMist,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -596,9 +596,9 @@ private fun ContinueReadingHero(
                 HeroDetails(
                     current = current,
                     ink = VeilPalette.LightInk,
-                    secondaryInk = VeilPalette.LightMist
+                    secondaryInk = VeilPalette.LightMist,
+                    readingAction = { ResumeAction() }
                 )
-                ResumeAction()
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
@@ -742,7 +742,8 @@ private fun HeroDetails(
     current: Book,
     ink: Color,
     secondaryInk: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readingAction: (@Composable () -> Unit)? = null
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
@@ -752,6 +753,7 @@ private fun HeroDetails(
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
+        readingAction?.invoke()
         Text(
             current.author.ifBlank { stringResource(R.string.common_unknown_author) },
             style = MaterialTheme.typography.bodyMedium.withVeilContentScript(current.author.ifBlank { stringResource(R.string.common_unknown_author) }),

@@ -133,3 +133,7 @@ private fun SanctumPopulatedReview() = GrayfogReviewContent(GrayfogReviewSurface
 @GrayfogReviewSizes
 @Composable
 private fun ProfileReview() = GrayfogReviewContent(GrayfogReviewSurface.PROFILE)
+
+@GrayfogReviewSizes
+@Composable
+private fun ThresholdPersianLongReview() = GrayfogReviewContent(GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG)

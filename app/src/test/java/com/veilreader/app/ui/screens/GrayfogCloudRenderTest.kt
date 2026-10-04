@@ -41,7 +41,7 @@ class GrayfogCloudRenderTest {
         for (surface in GrayfogReviewSurface.entries) {
             compose.runOnIdle { current.value = surface }
             compose.waitForIdle()
-            if (surface == GrayfogReviewSurface.THRESHOLD_ACTIVE) {
+            if (surface == GrayfogReviewSurface.THRESHOLD_ACTIVE || surface == GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG) {
                 compose.onNodeWithText(RuntimeEnvironment.getApplication().getString(R.string.threshold_return_volume))
                     .assertIsDisplayed().assertHasClickAction()
             }

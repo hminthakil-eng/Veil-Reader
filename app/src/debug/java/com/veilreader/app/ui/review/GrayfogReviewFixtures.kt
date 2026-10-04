@@ -66,7 +66,7 @@ object GrayfogReviewFixtures {
 
 /** Each entry invokes production composition. A specimen never simulates publication content. */
 enum class GrayfogReviewSurface {
-    THRESHOLD_ACTIVE, THRESHOLD_EMPTY, LIBRARY_GALLERY, LIBRARY_SHELVES, LIBRARY_INDEX,
+    THRESHOLD_ACTIVE, THRESHOLD_PERSIAN_LONG, THRESHOLD_EMPTY, LIBRARY_GALLERY, LIBRARY_SHELVES, LIBRARY_INDEX,
     LIBRARY_SEARCH, LIBRARY_NO_RESULTS, LIBRARY_EMPTY, LIBRARY_MANY, BOOK_DETAIL,
     BOOK_DETAIL_PERSIAN, BOOK_DETAIL_MISSING, APPEARANCE_QUICK, APPEARANCE_ADVANCED,
     SETTINGS, NOTES, NOTES_EMPTY, HIGHLIGHTS, BOOKMARKS, OBSERVATORY_ISOLATED, OBSERVATORY_DENSE,
@@ -83,8 +83,14 @@ fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = 
             VeilWorldBackdrop {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     when (surface) {
-                        GrayfogReviewSurface.THRESHOLD_ACTIVE, GrayfogReviewSurface.THRESHOLD_EMPTY ->
-                            ReadingNowScreen(if (surface == GrayfogReviewSurface.THRESHOLD_EMPTY) emptyList() else books,
+                        GrayfogReviewSurface.THRESHOLD_ACTIVE, GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG, GrayfogReviewSurface.THRESHOLD_EMPTY ->
+                            ReadingNowScreen(when (surface) {
+                                GrayfogReviewSurface.THRESHOLD_EMPTY -> emptyList()
+                                GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG -> listOf(books[1].copy(
+                                    lastOpenedAtEpochMs = 1_700_000_000_001L,
+                                    seriesName = "دفترهای پژوهش‌های رصدخانه و نگهبانان بایگانی فراموش‌شده"))
+                                else -> books
+                            },
                                 profile, emptyList(), onOpenBook = {}, onOpenPassage = { _, _ -> }, onOpenLibrary = {}, onOpenCastle = {})
                         GrayfogReviewSurface.LIBRARY_GALLERY, GrayfogReviewSurface.LIBRARY_SHELVES,
                         GrayfogReviewSurface.LIBRARY_INDEX, GrayfogReviewSurface.LIBRARY_SEARCH,
