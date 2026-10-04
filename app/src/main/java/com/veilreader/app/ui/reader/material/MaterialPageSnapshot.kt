@@ -101,20 +101,34 @@ internal data class MaterialPagePreparedSnapshot(
     val provider: String
 )
 
+internal const val MATERIAL_PAGE_PREPARED_SNAPSHOT_MAX_AGE_NANOS =
+    3_000_000_000L
+
 internal fun materialPagePreparedSnapshotIsCurrent(
     prepared: MaterialPagePreparedSnapshot?,
     expectedRevision: Long,
     expectedWidth: Int,
-    expectedHeight: Int
-): Boolean =
-    prepared != null &&
-        !prepared.bitmap.isRecycled &&
-        prepared.sourceRevision > 0L &&
-        prepared.sourceRevision == expectedRevision &&
-        prepared.width == expectedWidth &&
-        prepared.height == expectedHeight &&
-        prepared.bitmap.width == expectedWidth &&
-        prepared.bitmap.height == expectedHeight
+    expectedHeight: Int,
+    nowElapsedNanos: Long = prepared?.capturedAtElapsedNanos ?: 0L,
+    maxAgeNanos: Long = MATERIAL_PAGE_PREPARED_SNAPSHOT_MAX_AGE_NANOS
+): Boolean {
+    if (
+        prepared == null ||
+        prepared.bitmap.isRecycled ||
+        prepared.sourceRevision <= 0L ||
+        prepared.sourceRevision != expectedRevision ||
+        prepared.width != expectedWidth ||
+        prepared.height != expectedHeight ||
+        prepared.bitmap.width != expectedWidth ||
+        prepared.bitmap.height != expectedHeight
+    ) {
+        return false
+    }
+    val age =
+        nowElapsedNanos - prepared.capturedAtElapsedNanos
+    return age >= 0L &&
+        age <= maxAgeNanos.coerceAtLeast(0L)
+}
 
 internal sealed interface MaterialPageSnapshotCapture {
     data class Ready(
