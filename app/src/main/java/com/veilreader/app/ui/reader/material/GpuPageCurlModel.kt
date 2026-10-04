@@ -38,6 +38,9 @@ internal fun gpuPageMeshVertexCount(quality: GpuPageMeshQuality): Int =
 internal fun gpuPageMeshIndexCount(quality: GpuPageMeshQuality): Int =
     quality.columns * quality.rows * 6
 
+internal fun gpuPageShadowLayerCount(lowMemoryDevice: Boolean): Int =
+    if (lowMemoryDevice) 2 else 3
+
 internal fun nextMaterialPageBufferSlot(cursor: Int): Int =
     (cursor + 1) and 1
 
