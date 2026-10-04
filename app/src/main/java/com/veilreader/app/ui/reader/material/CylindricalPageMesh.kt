@@ -29,8 +29,13 @@ internal class MaterialPageGeometry(val columns: Int = 80, val rows: Int = 24) {
         fold = width - p * (width + radius * 1.03f)
         val origin = finiteUnit(originY)
         val pullTilt = (tilt.takeIf { it.isFinite() } ?: 0f) - (origin - .5f) * .32f
-        val slope = pullTilt.coerceIn(-.22f, .22f) * sin(PI.toFloat() * p)
         val anchor = origin * height
+        val requestedSlope = pullTilt.coerceIn(-.22f, .22f) * sin(PI.toFloat() * p)
+        // On tall/narrow pages, a diagonal crease must not detach the opposite binding corner.
+        // This bound follows from distance(0,y) <= 0 at the farthest binding endpoint.
+        val bindingReach = if (requestedSlope >= 0f) anchor else height - anchor
+        val bindingLimit = fold.coerceAtLeast(0f) / bindingReach.coerceAtLeast(1f)
+        val slope = requestedSlope.coerceIn(-bindingLimit, bindingLimit)
         // Rotate the fold coordinate system so slope changes cannot stretch the surface.
         val scale = 1f / kotlin.math.sqrt(1f + slope * slope)
         val nx = scale

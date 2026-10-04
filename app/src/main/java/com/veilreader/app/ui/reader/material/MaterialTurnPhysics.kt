@@ -35,14 +35,16 @@ internal fun materialShouldComplete(
  * No integrator instability on dropped frames. Endpoints are reached once and never crossed.
  */
 internal class MaterialRelease(
-    private val start: Float,
-    val target: Float,
+    start: Float,
+    target: Float,
     velocityPagesPerSecond: Float,
     material: PageMaterialProfile
 ) {
+    private val start = finiteUnit(start)
+    val target = finiteUnit(target)
     private val omega = 19f * sqrt(material.stiffness / material.mass)
-    private val delta = finiteUnit(start) - finiteUnit(target)
-    private val toward = if (target > start) 1f else -1f
+    private val delta = this.start - this.target
+    private val toward = if (this.target > this.start) 1f else -1f
     private val launch = (velocityPagesPerSecond.takeIf { it.isFinite() } ?: 0f)
         .let { if (it * toward > 0f) it else 0f }
         .coerceIn(-abs(delta) * omega, abs(delta) * omega)

@@ -10,10 +10,10 @@ and test suites were retained; no force-push or main merge is required.
 
 | Gate | Exact result |
 | --- | --- |
-| Full unit suite | 764 tests, 133 suites, 0 failures, 0 errors, 0 skips |
-| Reader-related regression subset | 375 tests, 55 suites, 0 failures/errors/skips |
-| New cylindrical mesh suites | 29 tests, 5 suites, all passed |
-| Lint Debug | Passed: 0 errors, 183 warnings, no lint checks disabled |
+| Full unit suite | 774 tests, 134 suites, 0 failures, 0 errors, 0 skips |
+| Reader-related regression subset | 385 tests, 56 suites, 0 failures/errors/skips |
+| New cylindrical mesh suites | 39 tests, 6 suites, all passed |
+| Lint Debug | Passed: 0 errors, 181 warnings, no lint checks disabled |
 | assembleDebug | Passed |
 | assembleDebugAndroidTest | Passed |
 | git diff --check | Passed |
@@ -27,10 +27,11 @@ the full suite. No tests were excluded to obtain the green result. Lint warnings
 include dependency-update suggestions, existing durable SharedPreferences commit
 advice, and Android KTX convenience suggestions; warnings are not hidden.
 
-The final Gradle invocation completed successfully in **2m 21s**, with 95 actionable
-tasks (6 executed, 89 up-to-date). Prior full combined verification also completed
-all four tasks successfully; the final rerun includes the additional three-backend
-cancel/locator contract.
+The final source-comparison Gradle invocation completed successfully in **5m 46s**,
+with 95 actionable tasks (20 executed, 75 up-to-date). The previous full baseline
+had 764 passing tests; this refinement adds ten tests and retains all baseline suites.
+The independently compiled upstream StPageFlip geometry accepted **1,188 finite
+cases**; these are separate from the Android test totals.
 
 Evidence: [Gradle log](gradle-verification.log), [machine-readable totals](results.json),
 [review gallery](review/gallery.html). XML/HTML unit reports remain under
@@ -72,6 +73,26 @@ versions and toolchain were not downgraded to make tests pass.
   that property for every material.
 - Earlier debug review continuously forced Paper after choosing Slide/Scroll/Paged.
   Review activation now enters Paper once and leaves subsequent mode choices alone.
+
+## Source-comparison refinements verified
+
+- A temporary native probe reproduced the previous mesh's RTL front-ink leak
+  (`0xFFFF0000` RED where the back-facing source was BLUE). The intentionally
+  failing baseline is [recorded](evidence/legacy-rtl-leak.txt); the temporary probe
+  was removed before this successful full run. Final LTR/RTL ownership tests pass.
+- Source-face partitioning conserves full texture area over 984 material/direction/
+  corner/progress combinations, with reusable arrays and coherent shared seams.
+- Tall/narrow corner pulls preserve the binding until the fold reaches it.
+- Reduced/no-capture material is frozen across preference updates; cancel cues
+  arrive at release onset; resize rejects an obsolete capture without new persistence.
+- Official API hardware support was checked: new triangles use API 29+; API 26–28
+  receives live-edge without a snapshot/preview or expensive CPU rendering path.
+- Exact idle and terminal pixels plus non-finite metrics/endpoints are protected.
+- Final 27 PNG / 8 MP4 / 8 WAV review assets were regenerated and
+  [hashed](evidence/review-assets.json). No device instrumentation was claimed.
+
+See [the code comparison](reference-comparison.md) and
+[current Arena review](arena-comparison-review.md) for evidence and implementation decisions.
 
 ## What remains uncertain
 

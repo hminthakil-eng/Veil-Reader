@@ -27,6 +27,8 @@ import com.veilreader.app.ui.theme.VeilMotion
 import kotlinx.coroutines.delay
 import kotlin.math.max
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.toArgb
@@ -37,7 +39,7 @@ internal enum class PaperTurnDirection { FORWARD, BACKWARD }
 
 @Stable
 internal class PaperCurlState {
-    var materialConfiguration: MaterialTurnConfiguration = MaterialTurnConfiguration()
+    var materialConfiguration: MaterialTurnConfiguration by mutableStateOf(MaterialTurnConfiguration())
     var capturedMaterial: MaterialTurnConfiguration by mutableStateOf(MaterialTurnConfiguration())
         private set
     var materialProgress by mutableFloatStateOf(0f)
@@ -98,6 +100,11 @@ internal class PaperCurlState {
     private var width = 0f
     private var height = 0f
     private var snapshotBuffer: Bitmap? = null
+
+    internal fun matchesCapturedViewport(viewportWidth: Float, viewportHeight: Float): Boolean =
+        active && viewportWidth.isFinite() && viewportHeight.isFinite() &&
+            kotlin.math.abs(viewportWidth - width) <= 1f &&
+            kotlin.math.abs(viewportHeight - height) <= 1f
 
     fun begin(
         view: View,
@@ -446,8 +453,17 @@ internal fun PaperCurlOverlay(
     config: PaperCurlVisualConfig,
     modifier: Modifier = Modifier,
     patina: Float = .35f,
-    tone: MaterialPageTone = MaterialPageTone.LIGHT
+    tone: MaterialPageTone = MaterialPageTone.LIGHT,
+    reducedMotion: Boolean = false
 ) {
+    // Prepare bounded vertex storage before a gesture, then retain it across repeated turns.
+    // Legacy, strip and the live-edge path never allocate the cylindrical face buffers.
+    val meshRenderer = if (!reducedMotion &&
+        (state.materialConfiguration.enabled || (state.active && state.capturedMaterial.enabled))) {
+        remember { MaterialPageRenderer() }.also { renderer ->
+            DisposableEffect(renderer) { onDispose { renderer.dispose() } }
+        }
+    } else null
     LaunchedEffect(state, patina, tone) {
         state.materialEngine.configurePatina(patina)
         state.materialEngine.configureTone(tone)
@@ -460,9 +476,11 @@ internal fun PaperCurlOverlay(
     if (!state.active || bitmap.isRecycled) return
 
     if (state.capturedMaterial.enabled) {
+        if (reducedMotion) return
         MaterialPageSurface(bitmap, { state.materialProgress }, { state.materialOriginY },
             { state.materialTilt }, state.side == PaperCurlSide.LEFT, state.capturedMaterial,
-            config.backPageColor.toArgb(), config.edgeHighlight.toArgb(), modifier)
+            config.backPageColor.toArgb(), config.edgeHighlight.toArgb(), modifier,
+            viewportMatches = state::matchesCapturedViewport, preparedRenderer = meshRenderer)
         return
     }
     val mirror = state.side == PaperCurlSide.LEFT

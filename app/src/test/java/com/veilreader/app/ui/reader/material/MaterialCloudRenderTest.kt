@@ -21,6 +21,48 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class MaterialCloudRenderTest {
+    @Test fun occludedFrontInkNeverLeaksIntoBackFaceInEitherDirection() {
+        val renderer = MaterialPageRenderer()
+        val source = Bitmap.createBitmap(400, 800, Bitmap.Config.ARGB_8888)
+        val output = Bitmap.createBitmap(400, 800, Bitmap.Config.ARGB_8888)
+        val paint = android.graphics.Paint().apply { color = Color.BLUE }
+        try {
+            for (mirror in listOf(false, true)) {
+                source.eraseColor(Color.RED)
+                Canvas(source).drawRect(if (mirror) 0f else 225f, 0f,
+                    if (mirror) 175f else 400f, 800f, paint)
+                output.eraseColor(Color.GREEN)
+                renderer.draw(Canvas(output), source, 400f, 800f, .5f, .5f, 0f, mirror,
+                    MaterialTurnConfiguration(true, PageMaterials.matte.copy(translucency = 1f, grain = 0f)),
+                    Color.WHITE, Color.WHITE, 1f)
+                val pixel = output.getPixel(if (mirror) 250 else 150, 400)
+                assertTrue("Occluded front leaked through the backside: mirror=$mirror pixel=$pixel",
+                    Color.blue(pixel) > Color.red(pixel) + 100)
+            }
+        } finally { renderer.dispose(); source.recycle(); output.recycle() }
+    }
+
+    @Test fun exactIdleAndCompleteFramesPreserveTheirPublicationAndInvalidMetricsAreInert() {
+        val renderer = MaterialPageRenderer()
+        val source = Bitmap.createBitmap(400, 800, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
+        val output = Bitmap.createBitmap(400, 800, Bitmap.Config.ARGB_8888)
+        try {
+            for (mirror in listOf(false, true)) {
+                output.eraseColor(Color.GREEN)
+                renderer.draw(Canvas(output), source, 400f, 800f, 0f, .8f, .2f, mirror,
+                    MaterialTurnConfiguration(true, PageMaterials.glossy), Color.WHITE, Color.WHITE, 1f)
+                assertEquals(Color.RED, output.getPixel(200, 400))
+                output.eraseColor(Color.GREEN)
+                renderer.draw(Canvas(output), source, 400f, 800f, 1f, .8f, .2f, mirror,
+                    MaterialTurnConfiguration(true, PageMaterials.glossy), Color.WHITE, Color.WHITE, 1f)
+                assertEquals(Color.GREEN, output.getPixel(200, 400))
+            }
+            renderer.draw(Canvas(output), source, Float.NaN, 800f, .5f, .5f, 0f, false,
+                MaterialTurnConfiguration(true), Color.WHITE, Color.WHITE, Float.NaN)
+            assertEquals(Color.GREEN, output.getPixel(200, 400))
+        } finally { renderer.dispose(); source.recycle(); output.recycle() }
+    }
+
     @Test fun renderProductionMaterialReviewMatrix() {
         val renderer = MaterialPageRenderer()
         try {

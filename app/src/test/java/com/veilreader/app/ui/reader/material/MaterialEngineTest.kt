@@ -10,6 +10,44 @@ import org.junit.Test
 import kotlin.math.abs
 
 class MaterialEngineTest {
+    @Test fun `older hardware uses the live material equivalent and preserves mode separation`() {
+        for (sdk in 26..28) {
+            assertEquals(MaterialMotionPath.LIVE_EDGE, materialMotionPath(true, BookFormat.EPUB,
+                false, false, PageTurnStyle.PAPER, false, sdk))
+            assertEquals(MaterialMotionPath.LEGACY, materialMotionPath(true, BookFormat.PDF,
+                false, false, PageTurnStyle.PAPER, false, sdk))
+            assertEquals(MaterialMotionPath.LEGACY, materialMotionPath(true, BookFormat.EPUB,
+                false, false, PageTurnStyle.SLIDE, false, sdk))
+        }
+        assertEquals(MaterialMotionPath.DEFORMED_SHEET, materialMotionPath(true, BookFormat.EPUB,
+            false, false, PageTurnStyle.PAPER, false, 29))
+    }
+
+    @Test fun `diagonal corner pulls cannot detach binding on tall narrow viewports`() {
+        val mesh = MaterialPageGeometry()
+        for (height in listOf(600f, 1800f, 3000f)) for (origin in listOf(0f, .02f, .98f, 1f)) {
+            for (tilt in listOf(-.22f, .22f)) for (mirror in listOf(false, true)) for (step in 1..80) {
+                mesh.update(360f, height, step / 100f, origin, tilt, PageMaterials.matte, mirror)
+                if (mesh.fold < 0f) continue
+                val column = if (mirror) mesh.columns else 0
+                for (row in 0..mesh.rows) {
+                    val i = row * (mesh.columns + 1) + column
+                    assertEquals(0f, mesh.heights[i], .001f)
+                    assertEquals(if (mirror) 360f else 0f, mesh.vertices[i * 2], .001f)
+                }
+            }
+        }
+    }
+    @Test fun `invalid release endpoints never produce an unbounded animation`() {
+        for (start in listOf(Float.NaN, Float.POSITIVE_INFINITY, -1f, 2f)) {
+            for (target in listOf(Float.NaN, Float.NEGATIVE_INFINITY, -1f, 2f)) {
+                val release = MaterialRelease(start, target, Float.NaN, PageMaterials.matte)
+                assertTrue(release.position(0f) in 0f..1f)
+                assertTrue(release.position(.1f).isFinite())
+                assertEquals(release.target, release.position(1f), 0f)
+            }
+        }
+    }
     @Test fun `all materials have independent mechanics optics and acoustics`() {
         val profiles = PageMaterial.entries.map { PageMaterials.forId(it) }
         assertEquals(4, profiles.map { it.mass }.distinct().size)

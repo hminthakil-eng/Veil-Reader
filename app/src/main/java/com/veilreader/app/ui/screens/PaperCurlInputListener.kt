@@ -47,6 +47,7 @@ internal class PaperCurlInputListener(
     private val onMaterialFeedback: (MaterialSensoryCue) -> Unit = {}
 ) : InputListener {
     private var thresholdEmitted = false
+    private var transactionMaterial: MaterialTurnConfiguration? = null
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
     private var navigationJob: Job? = null
@@ -106,6 +107,7 @@ internal class PaperCurlInputListener(
     }
 
     private fun performDiscreteTurn(spec: TurnSpec) {
+        transactionMaterial = state.materialConfiguration
         state.configureReducedMotion(isReducedMotion())
         val visualReady =
             shouldCapturePaperTurnSnapshot(isReducedMotion(), state.materialConfiguration.enabled) &&
@@ -217,7 +219,7 @@ internal class PaperCurlInputListener(
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
         val inward = inwardDistance(spec, event)
-        val material = if (state.active) state.capturedMaterial else state.materialConfiguration
+        val material = activeMaterial()
         val commit = if (material.enabled) materialShouldComplete(
             inward, width, density,
             if (state.active) state.dragProgress() else materialDragProgress(inward / width.coerceAtLeast(1f), material.material),
@@ -262,6 +264,7 @@ internal class PaperCurlInputListener(
 
                 previewNavigationSucceeded -> {
                     restoreDragStart(spec)
+                    emitMaterial(MaterialSensoryMoment.CANCEL)
                     if (shouldAnimatePaperVisual()) {
                         if (!isReducedMotion()) delay(VeilMotion.PAGE_REVEAL_MS)
                         state.animateCancel(
@@ -269,7 +272,6 @@ internal class PaperCurlInputListener(
                                 releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
                         )
                     }
-                    emitMaterial(MaterialSensoryMoment.CANCEL)
                 }
 
                 commit -> {
@@ -295,13 +297,13 @@ internal class PaperCurlInputListener(
                 }
 
                 else -> {
+                    emitMaterial(MaterialSensoryMoment.CANCEL)
                     if (state.active && shouldAnimatePaperVisual()) {
                         state.animateCancel(
                             releaseVelocityDpPerSec =
                                 releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
                         )
                     }
-                    emitMaterial(MaterialSensoryMoment.CANCEL)
                 }
             }
 
@@ -403,6 +405,7 @@ internal class PaperCurlInputListener(
 
         val spec = resolveDragTurn(event) ?: return false
         activeDrag = spec
+        transactionMaterial = state.materialConfiguration
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
         lastDragSampleAtMillis = SystemClock.uptimeMillis()
@@ -573,7 +576,7 @@ internal class PaperCurlInputListener(
         }
 
     private fun emitThresholdIfReady(spec: TurnSpec, event: DragEvent) {
-        val config = if (state.active) state.capturedMaterial else state.materialConfiguration
+        val config = activeMaterial()
         if (!config.enabled || thresholdEmitted) return
         val progress = if (state.active) state.dragProgress() else materialDragProgress(
             inwardDistance(spec, event) / navigator.publicationView.width.toFloat().coerceAtLeast(1f), config.material)
@@ -584,12 +587,16 @@ internal class PaperCurlInputListener(
     }
 
     private fun emitMaterial(moment: MaterialSensoryMoment) {
-        val config = if (state.active) state.capturedMaterial else state.materialConfiguration
+        val config = activeMaterial()
         if (config.enabled) onMaterialFeedback(MaterialSensoryCue(config.material.id, moment,
             releaseVelocityPxPerSec / navigator.publicationView.resources.displayMetrics.density.coerceAtLeast(.1f)))
     }
 
+    private fun activeMaterial(): MaterialTurnConfiguration =
+        if (state.active) state.capturedMaterial else transactionMaterial ?: state.materialConfiguration
+
     private fun resetDrag() {
+        transactionMaterial = null
         thresholdEmitted = false
         activeDrag = null
         dragReserved = false

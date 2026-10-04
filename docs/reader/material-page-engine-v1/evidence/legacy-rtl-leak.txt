@@ -1,0 +1,10 @@
+Baseline: previous Veil MaterialPageRenderer at commit 2c2cb2f10d980e34c66bc0ca9c6c854193732395
+Runner: Robolectric native Skia, Android API 35
+Fixture: RED occluded front ink, BLUE back-facing ink, translucency=1 only for detection
+Case: 400x800, p=0.5, originY=0.5, tilt=0, mirror=true
+Observed backside pixel at (250,400): -65536 (0xFFFF0000, pure RED)
+Expected: BLUE > RED + 100
+Result: AssertionError; 1 test completed, 1 failed (deliberate defect reproduction).
+
+The same both-direction assertion passes in the final production renderer tests.
+The temporary old-renderer copy and failing probe are not part of the final test suite.

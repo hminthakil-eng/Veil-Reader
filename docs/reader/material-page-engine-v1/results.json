@@ -1,29 +1,34 @@
 {
-  "suites": 133,
+  "suites": 134,
   "all": {
-    "tests": 764,
+    "tests": 774,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
-  "reader_suites": 55,
+  "reader_suites": 56,
   "reader": {
-    "tests": 375,
+    "tests": 385,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
-  "new_mesh_suites": 5,
+  "new_mesh_suites": 6,
   "new_mesh": {
-    "tests": 29,
+    "tests": 39,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
   "lint": {
     "Error": 0,
-    "Warning": 183,
+    "Warning": 181,
     "Information": 0
   },
-  "three_backend_test": "8"
+  "reference_geometry": {
+    "cases": 1188,
+    "accepted": 1188,
+    "rejected": 0,
+    "non_finite": 0
+  }
 }

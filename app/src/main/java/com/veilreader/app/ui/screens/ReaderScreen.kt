@@ -354,6 +354,9 @@ fun ReaderScreen(
     }
 
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
+    val paperReducedMotion = reducedMotion ||
+        (presentedReaderAppearance.materialEngineEnabled && android.os.Build.VERSION.SDK_INT < 29)
+    val latestPaperReducedMotion = rememberUpdatedState(paperReducedMotion)
     val selectionHighlightLabel =
         stringResource(R.string.reader_selection_highlight)
     val selectionNoteLabel =
@@ -579,7 +582,8 @@ fun ReaderScreen(
         paperCurlState.materialConfiguration = MaterialTurnConfiguration(
             enabled = materialMotionPath(presentedReaderAppearance.materialEngineEnabled,
                 opened.format, fixedLayoutPublication, presentedReaderAppearance.scroll,
-                presentedReaderAppearance.pageTurnStyle, reducedMotion) != MaterialMotionPath.LEGACY,
+                presentedReaderAppearance.pageTurnStyle, reducedMotion,
+                android.os.Build.VERSION.SDK_INT) != MaterialMotionPath.LEGACY,
             material = PageMaterials.forId(presentedReaderAppearance.pageMaterial),
             age = presentedReaderAppearance.paperPatina.toFloat()
         )
@@ -588,6 +592,7 @@ fun ReaderScreen(
         navigator,
         readerSessionReady,
         presentedReaderAppearance.navigationMode,
+        presentedReaderAppearance.materialEngineEnabled,
         reducedMotion,
         readerSessionInstanceId
     ) {
@@ -595,7 +600,7 @@ fun ReaderScreen(
             !readerSessionReady ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
-            !shouldCapturePaperTurnSnapshot(reducedMotion, presentedReaderAppearance.materialEngineEnabled)
+            !shouldCapturePaperTurnSnapshot(paperReducedMotion, presentedReaderAppearance.materialEngineEnabled)
         ) {
             paperCurlState.releaseBufferIfIdle()
             return@LaunchedEffect
@@ -1733,7 +1738,7 @@ fun ReaderScreen(
                             )
                     },
                     scope = scope,
-                    isReducedMotion = { latestReducedMotion.value },
+                    isReducedMotion = { latestPaperReducedMotion.value },
                     onMaterialFeedback = { latestMaterialFeedback.value(it) },
                     onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
@@ -2426,7 +2431,8 @@ fun ReaderScreen(
         ) {
             if (materialMotionPath(presentedReaderAppearance.materialEngineEnabled, opened.format,
                     fixedLayoutPublication, presentedReaderAppearance.scroll,
-                    presentedReaderAppearance.pageTurnStyle, reducedMotion) == MaterialMotionPath.LIVE_EDGE) {
+                    presentedReaderAppearance.pageTurnStyle, reducedMotion,
+                    android.os.Build.VERSION.SDK_INT) == MaterialMotionPath.LIVE_EDGE) {
                 val materialOverflow = (navigator as? OverflowableNavigator)?.overflow?.collectAsStateWithLifecycle()
                 MaterialReducedMotionSurface(
                     MaterialTurnConfiguration(true, PageMaterials.forId(presentedReaderAppearance.pageMaterial),
@@ -2437,6 +2443,7 @@ fun ReaderScreen(
             }
             PaperCurlOverlay(
                 state = paperCurlState,
+                reducedMotion = paperReducedMotion,
                 config = paperCurlConfig,
                 patina = presentedReaderAppearance.paperPatina.toFloat(),
                 tone = when (presentedReaderAppearance.theme) {

@@ -30,6 +30,50 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "mdpi")
 class MaterialNavigationContractTest {
+    @Test fun resizeRejectsStaleSnapshotWithoutMutatingNavigation() = runTest {
+        val session = Session(CoroutineScope(coroutineContext + FrameClock()))
+        session.drag(DragEvent.Type.Start, 0f)
+        session.drag(DragEvent.Type.Move, 60f)
+        advanceUntilIdle()
+        assertTrue(session.state.matchesCapturedViewport(400f, 800f))
+        assertFalse(session.state.matchesCapturedViewport(800f, 400f))
+        assertFalse(session.state.matchesCapturedViewport(400f, 600f))
+        assertFalse(session.state.matchesCapturedViewport(Float.NaN, 800f))
+        assertEquals(0, session.commits)
+        session.listener.forceCancelPendingTurn()
+        assertEquals(session.navigator.source, session.navigator.currentLocator.value)
+        session.state.dispose()
+    }
+
+    @Test fun cancellationCueArrivesAtReleaseBeforeSettling() = runTest {
+        val session = Session(CoroutineScope(coroutineContext + FrameClock()))
+        session.drag(DragEvent.Type.Start, 0f)
+        session.drag(DragEvent.Type.Move, 60f)
+        advanceUntilIdle()
+        session.drag(DragEvent.Type.End, 60f)
+        runCurrent()
+        assertTrue(session.state.active)
+        assertEquals(1, session.cues.count { it.moment == MaterialSensoryMoment.CANCEL })
+        assertEquals(session.navigator.source, session.navigator.currentLocator.value)
+        advanceUntilIdle()
+        assertEquals(1, session.cues.count { it.moment == MaterialSensoryMoment.CANCEL })
+        assertEquals(0, session.commits)
+        session.state.dispose()
+    }
+
+    @Test fun reducedMotionFreezesMaterialEvenWithoutSnapshot() = runTest {
+        val session = Session(CoroutineScope(coroutineContext + FrameClock()), reduced = true)
+        session.drag(DragEvent.Type.Start, 0f)
+        session.drag(DragEvent.Type.Move, 220f)
+        runCurrent()
+        session.state.materialConfiguration = MaterialTurnConfiguration(true, PageMaterials.glossy)
+        session.drag(DragEvent.Type.End, 220f)
+        advanceUntilIdle()
+        assertEquals(1, session.commits)
+        assertTrue(session.cues.all { it.material == PageMaterial.PARCHMENT })
+        assertEquals(1, session.cues.count { it.moment == MaterialSensoryMoment.COMPLETE })
+        session.state.dispose()
+    }
     private class FrameClock : MonotonicFrameClock {
         private var nanos = 0L
         override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {

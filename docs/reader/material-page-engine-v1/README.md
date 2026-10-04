@@ -171,11 +171,18 @@ a physical device; see the device review checklist.
 A reused snapshot is capped at 2 million pixels and an 1800-pixel long edge for
 the opt-in material engine (under 8 MB ARGB storage). Existing legacy capture is
 unchanged. Mesh resolution is 80 by 24, with reused vertex/normal/height/color
-arrays, four reused paths and paints, and a 256-entry material lighting table.
-The backdrop mesh bitmap is 2 by 2 pixels. There is no per-frame bitmap generation,
+arrays, two silhouette/edge paths and paints, and a 256-entry material lighting table.
+Front/back triangles are partitioned before projection drawing, with reused source
+coordinates and colors. Their maximum reserved storage is about 0.88 MiB and is
+prepared when the material Paper overlay becomes available, retained across turns,
+and disposed on mode exit. There is no extra backdrop bitmap or per-frame bitmap generation,
 blur filter, random generator, simulation allocation or PCM work. Animation values
 are read in the Canvas draw phase. Slide reads animation state in its layer/draw
-phases. The normal/partition approximation must still be profiled on GPU drivers.
+phases. The normal-horizon interpolation and vertex draws must still be profiled on GPU drivers.
+Android API 26–28 uses the live-edge equivalent, because hardware-accelerated
+`Canvas.drawVertices` starts at API 29; no full-frame software fallback is forced.
+High Contrast reduces grain, ghost ink and shading while retaining edge structure.
+Idle pixels preserve the original publication, and resized captures are not stretched.
 
 ## Review and verification
 
@@ -183,3 +190,8 @@ Open [the inspectable gallery](review/gallery.html). See [review.md](review.md) 
 criteria, and [verification.md](verification.md) for exact commands, totals and
 limitations. Native Skia review captures use the production renderer/Slide overlay,
 with deterministic publication text fixtures, not an alternate demo Reader UI.
+
+The [source comparison](reference-comparison.md) pins three open-source references,
+records the reproduced RTL rendering defect and explains the resulting fixes.
+The [current Arena review](arena-comparison-review.md) supersedes the earlier
+strip-only source review for this refinement.
