@@ -4,6 +4,9 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.sin
 
+internal const val GPU_PAGE_MIN_ASPECT = 0.5f
+internal const val GPU_PAGE_MAX_ASPECT = 4.0f
+
 /**
  * Pure, renderer-independent frame description for the GPU Material Page Engine.
  *
@@ -138,7 +141,10 @@ internal fun gpuPageCurlFrame(
     val edge =
         edgeTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: p
     val aspect =
-        pageAspect.takeIf { it.isFinite() }?.coerceIn(0.5f, 4f) ?: 1f
+        pageAspect
+            .takeIf { it.isFinite() }
+            ?.coerceIn(GPU_PAGE_MIN_ASPECT, GPU_PAGE_MAX_ASPECT)
+            ?: 1f
 
     val physics = profile.physics
     val optics = profile.optics
