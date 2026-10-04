@@ -19,6 +19,17 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `ping pong bitmap slots alternate without prewarm reset`() {
+        var cursor = -1
+        cursor = nextMaterialPageBufferSlot(cursor)
+        assertEquals(0, cursor)
+        cursor = nextMaterialPageBufferSlot(cursor)
+        assertEquals(1, cursor)
+        cursor = nextMaterialPageBufferSlot(cursor)
+        assertEquals(0, cursor)
+    }
+
+    @Test
     fun `dual back texture is gated by low ram and memory class`() {
         assertTrue(
             shouldCaptureMaterialBackSnapshot(
