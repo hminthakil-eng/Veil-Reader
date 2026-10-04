@@ -124,6 +124,11 @@ import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.reader.material.MaterialPageSensoryAction
+import com.veilreader.app.ui.reader.material.MaterialPageSensorySink
+import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.reader.material.toVeilSensoryCue
+import com.veilreader.app.ui.sensory.VeilMaterialPageSensoryCue
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.reader.material.*
 import androidx.compose.runtime.SideEffect
@@ -205,6 +210,7 @@ fun ReaderScreen(
     initialReturnLocatorJson: String? = null,
     onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
     onMaterialSensoryCue: (MaterialSensoryCue) -> Unit = {},
+    onMaterialPageSensoryCue: (VeilMaterialPageSensoryCue) -> Unit = {},
     onClose: () -> Unit,
     onLocatorCheckpoint: (String) -> Unit = {}
 ) {
@@ -387,6 +393,21 @@ fun ReaderScreen(
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
+    val latestMaterialPageSensoryCue =
+        rememberUpdatedState(onMaterialPageSensoryCue)
+    DisposableEffect(paperCurlState) {
+        val sink = MaterialPageSensorySink { cue ->
+            // Reader already owns the generic terminal-boundary feedback path.
+            // Suppress only that duplicate; lift/cancel/complete stay material-specific.
+            if (cue.action != MaterialPageSensoryAction.BOUNDARY) {
+                latestMaterialPageSensoryCue.value(cue.toVeilSensoryCue())
+            }
+        }
+        paperCurlState.materialEngine.setSensorySink(sink)
+        onDispose {
+            paperCurlState.materialEngine.setSensorySink(null)
+        }
+    }
     var paperInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlInputListener?>(null)
     }
@@ -562,6 +583,33 @@ fun ReaderScreen(
             material = PageMaterials.forId(presentedReaderAppearance.pageMaterial),
             age = presentedReaderAppearance.paperPatina.toFloat()
         )
+    }
+    LaunchedEffect(
+        navigator,
+        readerSessionReady,
+        presentedReaderAppearance.navigationMode,
+        reducedMotion,
+        readerSessionInstanceId
+    ) {
+        if (
+            !readerSessionReady ||
+            opened.format != BookFormat.EPUB ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
+            !shouldCapturePaperTurnSnapshot(reducedMotion, presentedReaderAppearance.materialEngineEnabled)
+        ) {
+            paperCurlState.releaseBufferIfIdle()
+            return@LaunchedEffect
+        }
+        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        delay(VeilMotion.FRAME_SETTLE_MS)
+        if (
+            readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            )
+        ) {
+            paperCurlState.prepareBuffer(nav.publicationView)
+        }
     }
     val latestTapGrid = rememberUpdatedState(readerTapGrid)
     val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
@@ -1689,11 +1737,11 @@ fun ReaderScreen(
                     onMaterialFeedback = { latestMaterialFeedback.value(it) },
                     onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
-                        if (!(if (paperCurlState.active) paperCurlState.capturedMaterial else paperCurlState.materialConfiguration).enabled) {
+                        if (!paperCurlState.usingMaterialEngine() &&
+                            !(if (paperCurlState.active) paperCurlState.capturedMaterial else paperCurlState.materialConfiguration).enabled) {
                             onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         }
                         val locator = nav.currentLocator.value
-                        val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
                     onBoundaryHit = { side ->
@@ -2390,6 +2438,13 @@ fun ReaderScreen(
             PaperCurlOverlay(
                 state = paperCurlState,
                 config = paperCurlConfig,
+                patina = presentedReaderAppearance.paperPatina.toFloat(),
+                tone = when (presentedReaderAppearance.theme) {
+                    ReaderTheme.PAPER -> MaterialPageTone.LIGHT
+                    ReaderTheme.SEPIA -> MaterialPageTone.SEPIA
+                    ReaderTheme.DUSK,
+                    ReaderTheme.OLED -> MaterialPageTone.DARK
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }

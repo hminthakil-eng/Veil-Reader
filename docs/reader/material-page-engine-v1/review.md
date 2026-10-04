@@ -1,5 +1,8 @@
 # Review states and phone acceptance
 
+Open [the review gallery](review/gallery.html) for 27 frames, eight release clips
+and eight production sound samples. Assets are checked into this branch.
+
 `MaterialReviewStates.paper` describes 21 named states. Native rendering tests use
 `MaterialPageRenderer` directly for 20; the reduced-motion frame uses
 `MaterialReducedMotionSurface`. Six Slide frames use the actual `SlidePageOverlay`.

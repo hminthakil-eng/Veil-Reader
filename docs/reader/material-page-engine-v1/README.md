@@ -1,14 +1,21 @@
 # Material Page Engine v1
 
-Status: opt-in production path; **legacy Paper remains the default**. Base:
+Status: opt-in cylindrical mesh; **legacy Paper remains the release default**. Base:
 `design/codex-grayfog-masterpiece-v1` at `77be8b473d79f80deb79c0eb141dfd8c802f8099`.
-Implementation branch: `reader/material-page-engine-v1`. No merge or force-push.
+Implementation branch: `reader/material-page-engine-v1`. The requested branch already
+existed at `686b1688871f34c03535b1b287fee8ecae818e93`; its earlier material renderer,
+previews, tests and history are retained through a non-destructive branch merge.
+No main-branch merge or force-push.
 
 Enable **Material paper · Preview** in Settings or Reader Appearance under Paper.
-Choose Glossy, Matte Book Paper, Parchment, or Papyrus. The gate, preset and patina
+Choose Glossy, Matte Book Paper, Parchment, or Papyrus. This persistent switch
+selects the new cylindrical mesh. When it is off, release uses legacy Paper;
+debug builds retain the earlier strip renderer's existing debug default. To A/B
+against legacy in debug, also turn off the earlier Material Engine review switch.
+The old debug presets (including Manuscript) and preview collection remain intact. The gate, preset and patina
 also round-trip through the existing local backup; older backups default to legacy
 Paper and Matte. Disable the switch to return
-to the retained engine. The switch and material survive SettingsStore recreation.
+to the retained branch path. The switch and material survive SettingsStore recreation.
 PAGED, PAPER CURL, SLIDE and SCROLL remain independent navigation modes. This
 release does not promote the new Paper renderer to default without phone review.
 
@@ -29,12 +36,14 @@ No Paper coefficients, fibres, backside, geometry or audio enter Slide.
 
 ## Boundaries and ownership
 
-`ui/reader/material/` contains the new engine. It has no Room, Notes, TTS,
+`ui/reader/material/` contains the new mesh and the retained strip engine. It has no Room, Notes, TTS,
 publication parser or persistence dependency.
 
 - `PageMaterialProfile`: canonical dimensionless mechanics, optics and sensory data.
 - `MaterialTurnPhysics`: monotonic resistance and deterministic release/commit policy.
-- `MaterialPageGeometry`: inextensible cylindrical bend, surface normals and lift.
+- `CylindricalPageMesh`: inextensible cylindrical bend, surface normals and lift.
+- Earlier `MaterialPageEngine`, `MaterialPageGeometry`, `MaterialPagePhysics`,
+  `MaterialPageProfiles` and `MaterialPageSensory`: retained strip implementation.
 - `MaterialPageRenderer`: reusable mesh, front/back clipping, lighting and edges.
 - `MaterialMotionPolicy`: eligibility and reduced-motion routing.
 - `MaterialReducedMotionSurface`: still live publication and a fine settling edge.
@@ -43,17 +52,18 @@ publication parser or persistence dependency.
 
 `PaperCurlState` is a compatibility adapter for the existing Reader, not another
 Reader architecture. It freezes the engine/material/age at snapshot capture and
-routes manipulation/release/rendering to the chosen implementation. The legacy
-methods still execute when the gate is off. A preference edit cannot morph a
+routes manipulation/release/rendering to the chosen implementation. The previous
+branch renderer selection still executes when the mesh gate is off. A preference edit cannot morph a
 lifted sheet halfway through its transaction.
 
 `PaperCurlInputListener` still participates in Readium's own input pipeline.
 Neither renderer intercepts touch or owns semantic navigation. Existing hardware
 and accessibility page actions use the same listener and its busy guard.
 
-Reflowable EPUB alone is eligible. Fixed-layout EPUB retains legacy behavior;
+Reflowable EPUB alone is eligible. Fixed-layout EPUB retains its previous branch behavior;
 Pdfium and PDF are unaffected. SCROLL, PAGED and SLIDE cannot enter the engine.
-Snapshot failure is recoverable: navigation can commit on release without visuals.
+Debug review enters Paper only on explicit switch activation, rather than
+continuously overriding other mode choices. Snapshot failure is recoverable: navigation can commit on release without visuals.
 
 ## Mechanics and geometry
 
@@ -102,9 +112,10 @@ come from the actual Reader's Paper/sepia/dark/OLED palettes. Dark theme warmth,
 patina and show-through are attenuated. The live publication remains text-first;
 idle content is not covered with a new full-page texture layer.
 
-Leather/manuscript is intentionally deferred: a tasteful leather surface is not
+Leather/manuscript is intentionally deferred in the new cylindrical model: a tasteful leather surface is not
 well represented by an ordinary thin-sheet cylinder. Four canonical materials are
-implemented rather than giving a fifth preset a misleading identity.
+implemented rather than giving a fifth mesh preset a misleading identity. The
+earlier strip renderer retains its existing Manuscript preset for comparison.
 
 ## Sensory implementation
 
@@ -168,7 +179,7 @@ phases. The normal/partition approximation must still be profiled on GPU drivers
 
 ## Review and verification
 
-See [review.md](review.md) for the 27-state render matrix and hands-on acceptance
+Open [the inspectable gallery](review/gallery.html). See [review.md](review.md) for the 27-state render matrix and hands-on acceptance
 criteria, and [verification.md](verification.md) for exact commands, totals and
 limitations. Native Skia review captures use the production renderer/Slide overlay,
 with deterministic publication text fixtures, not an alternate demo Reader UI.

@@ -148,6 +148,43 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun `release velocity smooths short samples but reacts quickly to reversal`() {
+        val stable = nextPaperReleaseVelocity(
+            previousVelocityPxPerSec = 1_000f,
+            distanceDeltaPx = 10f,
+            elapsedMillis = 10L,
+            sinceLastMotionMillis = 0L
+        )
+        val spike = nextPaperReleaseVelocity(
+            previousVelocityPxPerSec = stable,
+            distanceDeltaPx = 30f,
+            elapsedMillis = 10L,
+            sinceLastMotionMillis = 0L
+        )
+        val reversed = nextPaperReleaseVelocity(
+            previousVelocityPxPerSec = 1_800f,
+            distanceDeltaPx = -20f,
+            elapsedMillis = 20L,
+            sinceLastMotionMillis = 0L
+        )
+
+        assertEquals(1_000f, stable, 0.01f)
+        assertTrue(spike > stable)
+        assertTrue(spike < 3_000f)
+        assertTrue(reversed < 0f)
+        assertEquals(
+            0f,
+            nextPaperReleaseVelocity(
+                previousVelocityPxPerSec = Float.NaN,
+                distanceDeltaPx = Float.NaN,
+                elapsedMillis = 16L,
+                sinceLastMotionMillis = 200L
+            ),
+            0.0001f
+        )
+    }
+
+    @Test
     fun stationaryBodyDragDoesNotPreCurlOrCommit() {
         for (startX in listOf(100f, 250f, 500f, 750f, 980f)) {
             val start = Offset(startX, 500f)
@@ -440,9 +477,9 @@ class PaperCurlGeometryTest {
     }
 
     @Test
-    fun `reduced motion disables paper snapshot and boundary animation ownership`() {
-        assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = false))
-        assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
+    fun `reduced motion uses live mesh edge even with retained debug preview enabled`() {
+        assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = false, liveMaterialEdge = true))
+        assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true, liveMaterialEdge = true))
     }
 
     @Test

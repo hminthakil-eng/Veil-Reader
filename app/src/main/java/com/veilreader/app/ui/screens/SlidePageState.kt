@@ -95,8 +95,8 @@ internal class SlidePageState {
     suspend fun animateBoundaryBounce(directionSign: Float) {
         if (!active || width <= 0f) return
         val anim = Animatable(offsetPx)
-        val peek = width * 0.055f * directionSign.coerceIn(-1f, 1f)
-        anim.animateTo(peek, tween(95)) { offsetPx = value }
+        val peek = width * 0.035f * directionSign.coerceIn(-1f, 1f)
+        anim.animateTo(peek, tween(64)) { offsetPx = value }
         anim.animateTo(
             0f,
             tween(130)
@@ -124,6 +124,14 @@ internal class SlidePageState {
         width = 0f
         if (keepInputLock) delay(VeilMotion.FRAME_SETTLE_MS)
         active = false
+    }
+
+    /** Retained debug/test hook: publication overlay and review use the same renderer. */
+    internal fun installInspectableFrame(bitmap: Bitmap, offsetFraction: Float) {
+        snapshot = bitmap
+        width = bitmap.width.toFloat()
+        offsetPx = width * offsetFraction.coerceIn(-1f, 1f)
+        active = true
     }
 
     fun releaseBufferIfIdle() {
@@ -265,12 +273,12 @@ internal fun slideCompletionDurationMillis(
     val remaining = 1f - progress.coerceIn(0f, 1f)
     val speed = abs(velocityDpPerSec)
     val fullTravelMillis = when {
-        speed >= 1_800f -> 140f
-        speed >= 900f -> 175f
-        else -> 220f
+        speed >= 1_800f -> 112f
+        speed >= 900f -> 136f
+        else -> 168f
     }
     // Even a nearly completed gesture needs a perceptible settle frame, but it must not crawl.
     return (88f + (fullTravelMillis - 88f) * remaining)
         .roundToInt()
-        .coerceIn(88, 220)
+        .coerceIn(88, 168)
 }

@@ -71,6 +71,12 @@ jobs:
       - name: Unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
 
+      - name: Source diff hygiene
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          git diff --check "origin/${{ github.base_ref }}...HEAD"
+
       - name: Verify committed Room schema
         run: |
           schema_status="$(git status --porcelain --untracked-files=all -- app/schemas/)"
@@ -85,6 +91,9 @@ jobs:
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
+
+      - name: Compile debug Android tests
+        run: gradle :app:assembleDebugAndroidTest --stacktrace
 
       - name: Build optimized release artifacts
         run: gradle :app:assembleRelease :app:bundleRelease --stacktrace

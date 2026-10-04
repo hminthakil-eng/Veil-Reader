@@ -8,6 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.MaterialPageReleaseDecision
+import com.veilreader.app.ui.reader.material.materialPageReleaseDecision
 import com.veilreader.app.ui.theme.VeilMotion
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
@@ -27,9 +30,9 @@ import org.readium.r2.shared.publication.Locator
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal fun shouldCapturePaperTurnSnapshot(
-    reducedMotion: Boolean
-): Boolean =
-    !reducedMotion
+    reducedMotion: Boolean,
+    liveMaterialEdge: Boolean = false
+): Boolean = !reducedMotion || (!liveMaterialEdge && MaterialPageEngineRollout.isEnabled())
 
 @OptIn(ExperimentalReadiumApi::class)
 internal class PaperCurlInputListener(
@@ -103,8 +106,9 @@ internal class PaperCurlInputListener(
     }
 
     private fun performDiscreteTurn(spec: TurnSpec) {
+        state.configureReducedMotion(isReducedMotion())
         val visualReady =
-            shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
+            shouldCapturePaperTurnSnapshot(isReducedMotion(), state.materialConfiguration.enabled) &&
                 state.begin(
                     view = navigator.publicationView,
                     side = spec.side,
@@ -132,7 +136,9 @@ internal class PaperCurlInputListener(
         onCommittedTurn()
         if (visualReady) {
             completionJob = scope.launch {
-                delay(VeilMotion.PAGE_REVEAL_MS)
+                if (!isReducedMotion()) {
+                    delay(VeilMotion.PAGE_REVEAL_MS)
+                }
                 state.animateTapTurn()
                 state.clear()
                 resetDrag()
@@ -216,13 +222,23 @@ internal class PaperCurlInputListener(
             inward, width, density,
             if (state.active) state.dragProgress() else materialDragProgress(inward / width.coerceAtLeast(1f), material.material),
             releaseVelocityPxPerSec, material.material
-        ) else shouldCommitPaperTurn(
-            inwardDistance = inward,
-            width = width,
-            density = density,
-            curlProgress = state.dragProgress(),
-            releaseVelocityPxPerSec = releaseVelocityPxPerSec
-        )
+        ) else if (state.usingMaterialEngine()) {
+            inward > 0f &&
+                materialPageReleaseDecision(
+                    progress = state.dragProgress(),
+                    inwardVelocityDpPerSec =
+                        releaseVelocityPxPerSec / density.coerceAtLeast(0.1f),
+                    profile = state.materialEngine.profile
+                ) == MaterialPageReleaseDecision.COMPLETE
+        } else {
+            shouldCommitPaperTurn(
+                inwardDistance = inward,
+                width = width,
+                density = density,
+                curlProgress = state.dragProgress(),
+                releaseVelocityPxPerSec = releaseVelocityPxPerSec
+            )
+        }
         completionJob = scope.launch {
             navigationJob?.join()
 
@@ -236,7 +252,7 @@ internal class PaperCurlInputListener(
                     turnCommitted = true
                     emitMaterial(MaterialSensoryMoment.COMPLETE)
                     onCommittedTurn()
-                    if (!isReducedMotion()) {
+                    if (shouldAnimatePaperVisual()) {
                         state.animateComplete(
                             releaseVelocityDpPerSec =
                                 releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -246,11 +262,14 @@ internal class PaperCurlInputListener(
 
                 previewNavigationSucceeded -> {
                     restoreDragStart(spec)
-                    if (!isReducedMotion()) {
-                        delay(VeilMotion.PAGE_REVEAL_MS)
-                        state.animateCancel()
-                        emitMaterial(MaterialSensoryMoment.CANCEL)
+                    if (shouldAnimatePaperVisual()) {
+                        if (!isReducedMotion()) delay(VeilMotion.PAGE_REVEAL_MS)
+                        state.animateCancel(
+                            releaseVelocityDpPerSec =
+                                releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                        )
                     }
+                    emitMaterial(MaterialSensoryMoment.CANCEL)
                 }
 
                 commit -> {
@@ -261,7 +280,7 @@ internal class PaperCurlInputListener(
                         turnCommitted = true
                         emitMaterial(MaterialSensoryMoment.COMPLETE)
                         onCommittedTurn()
-                        if (state.active && !isReducedMotion()) {
+                        if (state.active && shouldAnimatePaperVisual()) {
                             state.animateComplete(
                                 releaseVelocityDpPerSec =
                                     releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -269,14 +288,19 @@ internal class PaperCurlInputListener(
                         }
                     } else {
                         onBoundaryHit(spec.side)
-                        if (state.active && !isReducedMotion()) {
+                        if (state.active && shouldAnimatePaperVisual()) {
                             state.animateBoundaryBounce()
                         }
                     }
                 }
 
                 else -> {
-                    if (state.active && !isReducedMotion()) state.animateCancel()
+                    if (state.active && shouldAnimatePaperVisual()) {
+                        state.animateCancel(
+                            releaseVelocityDpPerSec =
+                                releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                        )
+                    }
                     emitMaterial(MaterialSensoryMoment.CANCEL)
                 }
             }
@@ -288,13 +312,26 @@ internal class PaperCurlInputListener(
     }
 
     /**
-     * Called when the Reader pauses or exits PAPER mode. The preview navigator may
-     * already be on the next page, so let that navigation finish before restoring
-     * the exact locator captured at drag start. A committed turn stays committed.
+     * Called when the Reader pauses or exits PAPER mode. An uncommitted preview is
+     * restored to its exact start locator; a committed turn keeps its navigation
+     * result but any remaining Paper visual coroutine is cancelled and cleared.
      */
     fun cancelPendingTurn(): Boolean {
-        if (!dragReserved && activeDrag == null) return false
-        if (turnCommitted) return false
+        if (!dragReserved && activeDrag == null) {
+            if (completionJob != null && state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
         cancellationRequested = true
         val spec = activeDrag
         if (spec == null) {
@@ -317,9 +354,10 @@ internal class PaperCurlInputListener(
      * Use this before taking a durable locator snapshot.
      */
     suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val existingCompletion = completionJob
         val requested = cancelPendingTurn()
         if (!requested) return false
-        completionJob?.join()
+        (existingCompletion ?: completionJob)?.join()
         return true
     }
 
@@ -328,15 +366,30 @@ internal class PaperCurlInputListener(
      * cancelled before an asynchronous restoration job can run.
      */
     fun forceCancelPendingTurn(): Boolean {
-        if (!dragReserved && activeDrag == null) return false
-        if (turnCommitted) return false
+        if (!dragReserved && activeDrag == null) {
+            if (completionJob != null || state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
 
         cancellationRequested = true
         navigationJob?.cancel()
         completionJob?.cancel()
 
         val spec = activeDrag
-        if (spec != null && previewNavigationSucceeded) {
+        if (spec != null && dragStartLocator != null) {
+            // Restore the exact origin even if cancellation races the navigation job
+            // before previewNavigationSucceeded becomes observable.
             restoreDragStart(spec)
         }
         state.clearImmediately()
@@ -358,7 +411,7 @@ internal class PaperCurlInputListener(
         releaseVelocityPxPerSec = 0f
 
         val visualReady =
-            shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
+            shouldCapturePaperTurnSnapshot(isReducedMotion(), state.materialConfiguration.enabled) &&
                 state.begin(
                     navigator.publicationView,
                     spec.side,
@@ -469,6 +522,9 @@ internal class PaperCurlInputListener(
 
     private fun paperModeEnabled(): Boolean =
         !navigator.overflow.value.scroll && isEnabled()
+
+    private fun shouldAnimatePaperVisual(): Boolean =
+        state.usingMaterialEngine() || !isReducedMotion()
 
     private fun isMostlyHorizontal(event: DragEvent): Boolean {
         val view = navigator.publicationView
@@ -649,16 +705,44 @@ internal fun nextPaperReleaseVelocity(
     elapsedMillis: Long,
     sinceLastMotionMillis: Long
 ): Float {
-    if (abs(distanceDeltaPx) >= 1f) {
+    val previous =
+        previousVelocityPxPerSec
+            .takeIf { it.isFinite() }
+            ?.coerceIn(-12_000f, 12_000f)
+            ?: 0f
+    val delta = distanceDeltaPx.takeIf { it.isFinite() } ?: 0f
+
+    if (abs(delta) >= 1f) {
         if (elapsedMillis in 1L..120L) {
-            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
-                .coerceIn(-12_000f, 12_000f)
+            val instantaneous =
+                (delta * 1000f / elapsedMillis.toFloat())
+                    .coerceIn(-12_000f, 12_000f)
+            val sampleTrust = when {
+                elapsedMillis <= 12L -> 0.42f
+                elapsedMillis <= 28L -> 0.58f
+                elapsedMillis <= 60L -> 0.72f
+                else -> 0.82f
+            }
+            val sameDirection =
+                previous == 0f ||
+                    kotlin.math.sign(previous) ==
+                    kotlin.math.sign(instantaneous)
+            val trust =
+                if (sameDirection) {
+                    sampleTrust
+                } else {
+                    kotlin.math.max(sampleTrust, 0.76f)
+                }
+            return (
+                previous * (1f - trust) +
+                    instantaneous * trust
+                ).coerceIn(-12_000f, 12_000f)
         }
         return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
-            previousVelocityPxPerSec
+            previous
         } else {
             0f
         }
     }
-    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
+    return if (sinceLastMotionMillis <= 100L) previous else 0f
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import com.veilreader.app.ui.theme.VeilMotion
 import kotlinx.coroutines.delay
 import kotlin.math.max
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.graphics.toArgb
@@ -48,6 +49,21 @@ internal class PaperCurlState {
     var materialPhase by mutableStateOf(MaterialTurnPhase.IDLE)
         private set
     private var density = 1f
+    internal val materialEngine = MaterialPageEngineState(MaterialPageEngineRollout.selectedProfile())
+    private var stripEngineActive = false
+    internal fun usingMaterialEngine(): Boolean = stripEngineActive
+    fun configureReducedMotion(value: Boolean) { materialEngine.configureReducedMotion(value) }
+    fun prepareBuffer(view: View): Boolean {
+        if (active || view.width <= 0 || view.height <= 0) return false
+        return if (!materialConfiguration.enabled && MaterialPageEngineRollout.isEnabled()) {
+            releaseBufferIfIdle()
+            materialEngine.prepareBuffer(view)
+        } else {
+            materialEngine.releaseBufferIfIdle()
+            capture(view) != null
+        }
+    }
+
 
     private suspend fun releaseMaterial(target: Float, velocityDpPerSecond: Float = 0f) {
         materialPhase = if (target == 1f) MaterialTurnPhase.COMPLETING else MaterialTurnPhase.CANCELLING
@@ -89,6 +105,21 @@ internal class PaperCurlState {
         direction: PaperTurnDirection
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
+        if (!materialConfiguration.enabled && MaterialPageEngineRollout.isEnabled()) {
+            releaseBufferIfIdle()
+            materialEngine.configureProfile(MaterialPageEngineRollout.selectedProfile())
+            val started = materialEngine.begin(view, if (side == PaperCurlSide.LEFT) MaterialPageSide.LEFT else MaterialPageSide.RIGHT)
+            if (started) {
+                this.side = side
+                this.direction = direction
+                capturedMaterial = MaterialTurnConfiguration()
+                stripEngineActive = true
+                active = true
+            }
+            return started
+        }
+        materialEngine.releaseBufferIfIdle()
+        stripEngineActive = false
         val bitmap = capture(view) ?: return false
 
         width = view.width.toFloat()
@@ -107,7 +138,9 @@ internal class PaperCurlState {
         return true
     }
     fun updateDrag(start: PointF, offset: PointF) {
-        if (!active || width <= 0f || height <= 0f) return
+        if (!active) return
+        if (stripEngineActive) { materialEngine.updateDrag(start, offset); return }
+        if (width <= 0f || height <= 0f) return
 
         val actualStart = Offset(start.x, start.y)
         val actualCurrent = Offset(
@@ -155,7 +188,9 @@ internal class PaperCurlState {
     }
 
     fun dragProgress(): Float {
-        if (!active || width <= 0f) return 0f
+        if (!active) return 0f
+        if (stripEngineActive) return materialEngine.dragProgress()
+        if (width <= 0f) return 0f
         if (capturedMaterial.enabled) return materialProgress
         val centerX = (edge.top.x + edge.bottom.x) * 0.5f
         return (1f - centerX / width).coerceIn(0f, 1f)
@@ -163,6 +198,7 @@ internal class PaperCurlState {
 
     suspend fun animateTapTurn() {
         if (!active) return
+        if (stripEngineActive) { materialEngine.animateTapTurn(); return }
         if (capturedMaterial.enabled) { releaseMaterial(1f); return }
         val anim = Animatable(
             edge,
@@ -191,6 +227,7 @@ internal class PaperCurlState {
 
     suspend fun animateComplete(releaseVelocityDpPerSec: Float = 0f) {
         if (!active) return
+        if (stripEngineActive) { materialEngine.animateComplete(releaseVelocityDpPerSec); return }
         if (capturedMaterial.enabled) { releaseMaterial(1f, releaseVelocityDpPerSec); return }
         val profile = paperReleaseProfile(releaseVelocityDpPerSec)
         if (profile.regime == PaperReleaseRegime.FLING) {
@@ -226,9 +263,10 @@ internal class PaperCurlState {
         }
     }
 
-    suspend fun animateCancel() {
+    suspend fun animateCancel(releaseVelocityDpPerSec: Float = 0f) {
         if (!active) return
-        if (capturedMaterial.enabled) { releaseMaterial(0f); return }
+        if (stripEngineActive) { materialEngine.animateCancel(releaseVelocityDpPerSec); return }
+        if (capturedMaterial.enabled) { releaseMaterial(0f, releaseVelocityDpPerSec); return }
         animateTo(
             target = rightEdge(),
             dampingRatio = 0.96f,
@@ -238,6 +276,7 @@ internal class PaperCurlState {
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
+        if (stripEngineActive) { materialEngine.animateBoundaryBounce(); return }
         if (capturedMaterial.enabled) { materialProgress = .025f; releaseMaterial(0f); return }
         val anim = Animatable(
             edge,
@@ -263,6 +302,13 @@ internal class PaperCurlState {
     }
 
     suspend fun clear() {
+        if (stripEngineActive) {
+            materialEngine.clear()
+            stripEngineActive = false
+            resetVisual()
+            active = false
+            return
+        }
         resetVisual()
         // Keep one frame of input lock so Compose fully drops the overlay
         // before the reusable bitmap can be drawn into again.
@@ -275,6 +321,8 @@ internal class PaperCurlState {
      * a cancelled preview cannot survive a configuration change or a reader teardown.
      */
     fun clearImmediately() {
+        if (stripEngineActive) materialEngine.clearImmediately()
+        stripEngineActive = false
         resetVisual()
         active = false
     }
@@ -289,12 +337,14 @@ internal class PaperCurlState {
     }
 
     fun releaseBufferIfIdle() {
+        materialEngine.releaseBufferIfIdle()
         if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
     }
 
     fun dispose() {
+        materialEngine.dispose()
         clearImmediately()
         releaseBufferIfIdle()
     }
@@ -394,8 +444,18 @@ internal fun paperCurlPageEdge(
 internal fun PaperCurlOverlay(
     state: PaperCurlState,
     config: PaperCurlVisualConfig,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    patina: Float = .35f,
+    tone: MaterialPageTone = MaterialPageTone.LIGHT
 ) {
+    LaunchedEffect(state, patina, tone) {
+        state.materialEngine.configurePatina(patina)
+        state.materialEngine.configureTone(tone)
+    }
+    if (state.usingMaterialEngine()) {
+        MaterialPageOverlay(state.materialEngine, modifier)
+        return
+    }
     val bitmap = state.snapshot ?: return
     if (!state.active || bitmap.isRecycled) return
 

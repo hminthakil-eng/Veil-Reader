@@ -108,6 +108,29 @@ class MaterialNavigationContractTest {
         session.state.dispose()
     }
 
+    @Test fun allThreeRendererPathsRemainAvailableAndCancelWithoutPersistence() = runTest {
+        try {
+            for (backend in listOf("legacy", "strip", "mesh")) {
+                MaterialPageEngineRollout.setDebugOverride(backend == "strip")
+                val session = Session(CoroutineScope(coroutineContext + FrameClock()))
+                if (backend != "mesh") session.state.materialConfiguration = MaterialTurnConfiguration()
+                session.drag(DragEvent.Type.Start, 0f)
+                session.drag(DragEvent.Type.Move, 80f)
+                advanceUntilIdle()
+                assertTrue(session.state.active)
+                assertEquals(backend == "strip", session.state.usingMaterialEngine())
+                assertEquals(backend == "mesh", session.state.capturedMaterial.enabled)
+                assertEquals(0, session.commits)
+                assertTrue(session.listener.forceCancelPendingTurn())
+                assertEquals(session.navigator.source, session.navigator.currentLocator.value)
+                assertEquals(1, session.navigator.restores)
+                assertEquals(0, session.commits)
+                assertFalse(session.state.active)
+                session.state.dispose()
+            }
+        } finally { MaterialPageEngineRollout.setDebugOverride(null) }
+    }
+
     @Test fun completedMaterialTurnCommitsOnceInLtrAndRtl() = runTest {
         for (rtl in listOf(false, true)) {
             val session = Session(CoroutineScope(coroutineContext + FrameClock()), rtl)
