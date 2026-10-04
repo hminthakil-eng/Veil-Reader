@@ -88,10 +88,11 @@ internal class PaperCurlState {
             rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ||
             rendererStatus == GpuMaterialPageRendererStatus.FAILED ||
             rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ||
-            active ||
-            view.width <= 0 ||
-            view.height <= 0
+            active
         ) {
+            return false
+        }
+        if (view.width <= 0 || view.height <= 0) {
             lastBeginFailed = true
             return false
         }
