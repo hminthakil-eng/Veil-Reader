@@ -884,6 +884,7 @@ internal class GpuMaterialPageCurlView(
             uniform float uVisualAlpha;
             uniform float uShadowPass;
             uniform vec2 uTexelSize;
+            uniform float uSideSign;
 
             varying vec2 vTexCoord;
             varying vec3 vNormal;
