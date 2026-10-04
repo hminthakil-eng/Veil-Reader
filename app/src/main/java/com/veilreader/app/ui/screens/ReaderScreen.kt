@@ -110,6 +110,7 @@ import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.readerFocusGuideBand
 import com.veilreader.app.ui.reader.ReaderHardwareKeyController
+import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
 import com.veilreader.app.ui.reader.readerHardwareAccessibilityActive
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
@@ -2129,24 +2130,38 @@ fun ReaderScreen(
                         direction,
                         nav.overflow.value.readingProgression
                     )
-                    val moved = when (direction) {
+                    val origin = nav.currentLocator.value
+                    val accepted = when (direction) {
                         PaperTurnDirection.FORWARD ->
                             nav.goForward(animated = false)
                         PaperTurnDirection.BACKWARD ->
                             nav.goBackward(animated = false)
                     }
-                    if (moved) {
-                        onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
-                        if (opened.format == BookFormat.EPUB) {
-                            nav.currentLocator.value.let { locator ->
-                                recordLocator(
-                                    locator,
-                                    ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                    if (!accepted) {
+                        emitBoundaryFeedback(side)
+                        return true
+                    }
+
+                    if (opened.format == BookFormat.EPUB) {
+                        // Readium accepts the command before currentLocator reflects
+                        // the new viewport. Let the authoritative locator collector
+                        // persist/count the destination instead of writing the origin.
+                        scope.launch {
+                            val moved =
+                                awaitReaderVisualNavigationDeparture(
+                                    currentLocator = nav.currentLocator,
+                                    origin = origin
                                 )
+                            if (moved) {
+                                onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
+                            } else {
+                                nav.go(origin, animated = false)
+                                emitBoundaryFeedback(side)
                             }
                         }
                     } else {
-                        emitBoundaryFeedback(side)
+                        // PDF has its own page-settlement/durability plumbing.
+                        onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
                     }
                     return true
                 }
