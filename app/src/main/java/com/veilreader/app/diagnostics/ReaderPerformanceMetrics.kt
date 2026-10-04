@@ -10,6 +10,7 @@ import androidx.metrics.performance.PerformanceMetricsState
 object ReaderPerformanceMetrics {
     const val READER_MODE_KEY = "VeilReaderMode"
     const val PAPER_PHASE_KEY = "VeilPaperPhase"
+    const val PAPER_GPU_KEY = "VeilPaperGpu"
     const val PAPER_WORK_KEY = "VeilPaperWork"
 
     fun putState(root: View, key: String, value: String) {
