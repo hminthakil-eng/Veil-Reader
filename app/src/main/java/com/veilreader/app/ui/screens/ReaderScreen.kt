@@ -81,6 +81,7 @@ import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
+import com.veilreader.app.diagnostics.ReaderPerformanceMetrics
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
@@ -400,6 +401,42 @@ fun ReaderScreen(
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
+    val performanceRootView = activity.window.decorView
+    LaunchedEffect(
+        performanceRootView,
+        presentedReaderAppearance.navigationMode,
+        paperCurlState.performancePhase
+    ) {
+        ReaderPerformanceMetrics.putState(
+            root = performanceRootView,
+            key = ReaderPerformanceMetrics.READER_MODE_KEY,
+            value = presentedReaderAppearance.navigationMode.name
+        )
+        if (presentedReaderAppearance.navigationMode == ReaderNavigationMode.PAPER_CURL) {
+            ReaderPerformanceMetrics.putState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_PHASE_KEY,
+                value = paperCurlState.performancePhase.name
+            )
+        } else {
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_PHASE_KEY
+            )
+        }
+    }
+    DisposableEffect(performanceRootView, readerSessionInstanceId) {
+        onDispose {
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.READER_MODE_KEY
+            )
+            ReaderPerformanceMetrics.removeState(
+                root = performanceRootView,
+                key = ReaderPerformanceMetrics.PAPER_PHASE_KEY
+            )
+        }
+    }
     val latestMaterialPageSensoryCue =
         rememberUpdatedState(onMaterialPageSensoryCue)
     DisposableEffect(paperCurlState) {
