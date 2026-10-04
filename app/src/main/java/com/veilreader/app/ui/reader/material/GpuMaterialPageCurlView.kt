@@ -762,7 +762,7 @@ internal class GpuMaterialPageCurlView(
                     position(0)
                 }
 
-        private const val VERTEX_SHADER = """
+        internal const val VERTEX_SHADER = """
             precision highp float;
 
             attribute vec2 aPosition;
@@ -862,7 +862,7 @@ internal class GpuMaterialPageCurlView(
             }
         """
 
-        private const val FRAGMENT_SHADER = """
+        internal const val FRAGMENT_SHADER = """
             precision mediump float;
 
             uniform sampler2D uFrontTexture;
