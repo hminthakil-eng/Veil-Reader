@@ -171,6 +171,31 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `gl error drain reports first failure and clears remaining queue`() {
+        val queue = ArrayDeque(
+            listOf(
+                android.opengl.GLES20.GL_INVALID_VALUE,
+                android.opengl.GLES20.GL_INVALID_OPERATION,
+                android.opengl.GLES20.GL_NO_ERROR
+            )
+        )
+        val first = consumeGpuPageGlErrors {
+            if (queue.isEmpty()) {
+                android.opengl.GLES20.GL_NO_ERROR
+            } else {
+                queue.removeFirst()
+            }
+        }
+
+        assertEquals(android.opengl.GLES20.GL_INVALID_VALUE, first)
+        assertTrue(queue.isEmpty())
+        assertEquals(
+            android.opengl.GLES20.GL_NO_ERROR,
+            consumeGpuPageGlErrors { android.opengl.GLES20.GL_NO_ERROR }
+        )
+    }
+
+    @Test
     fun `gpu texture prewarm accepts only valid viewport within hardware limit`() {
         assertTrue(shouldPreallocateGpuPageTexture(1080, 2400, 4096))
         assertTrue(!shouldPreallocateGpuPageTexture(0, 2400, 4096))
