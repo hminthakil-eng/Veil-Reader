@@ -163,6 +163,7 @@ internal class MaterialPageEngineState(
         val revision = snapshotSourceRevision
         val widthAtRequest = view.width
         val heightAtRequest = view.height
+        val visualWaitStarted = SystemClock.elapsedRealtimeNanos()
         if (
             !awaitMaterialPageSourceVisualReady(
                 root = view,
@@ -175,6 +176,9 @@ internal class MaterialPageEngineState(
             )
             return false
         }
+        val visualWaitNanos =
+            (SystemClock.elapsedRealtimeNanos() - visualWaitStarted)
+                .coerceAtLeast(0L)
         if (
             active ||
             revision != snapshotSourceRevision ||
@@ -233,6 +237,7 @@ internal class MaterialPageEngineState(
             details =
                 "provider=${ready.provider} revision=${ready.sourceRevision} " +
                     "width=${ready.bitmap.width} height=${ready.bitmap.height} " +
+                    "visualWaitUs=${visualWaitNanos / 1_000L} " +
                     "captureUs=${ready.elapsedNanos / 1_000L} " +
                     "totalUs=${totalNanos / 1_000L}"
         )
@@ -253,7 +258,9 @@ internal class MaterialPageEngineState(
                 expectedWidth = view.width,
                 expectedHeight = view.height
             ) &&
-                preparedSnapshotBufferSlot in snapshotBuffers.indices
+                preparedSnapshotBufferSlot in snapshotBuffers.indices &&
+                prepared != null &&
+                snapshotBuffers[preparedSnapshotBufferSlot] === prepared.bitmap
         val capture =
             if (usePrepared && prepared != null) {
                 snapshotBufferCursor = preparedSnapshotBufferSlot
