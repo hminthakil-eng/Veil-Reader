@@ -30,10 +30,11 @@ internal enum class PaperTurnDirection { FORWARD, BACKWARD }
 
 internal enum class PaperPerformancePhase {
     IDLE,
-    CAPTURE,
+    LIFT,
     DRAG,
     RELEASE,
     CANCEL,
+    BOUNDARY,
     GL_RECREATE
 }
 
@@ -113,14 +114,7 @@ internal class PaperCurlState {
 
     suspend fun prepareSnapshot(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        performancePhase = PaperPerformancePhase.CAPTURE
-        return try {
-            materialEngine.prepareSnapshot(view)
-        } finally {
-            if (!active) {
-                performancePhase = PaperPerformancePhase.IDLE
-            }
-        }
+        return materialEngine.prepareSnapshot(view)
     }
 
     fun invalidateSnapshotSource() {
@@ -146,7 +140,6 @@ internal class PaperCurlState {
             return false
         }
 
-        performancePhase = PaperPerformancePhase.CAPTURE
         materialEngine.configureProfile(MaterialPageEngineRollout.selectedProfile())
         val started = materialEngine.begin(
             view = view,
@@ -169,6 +162,7 @@ internal class PaperCurlState {
 
     fun prepareMaterialTapGrip() {
         if (active) {
+            performancePhase = PaperPerformancePhase.LIFT
             materialEngine.prepareTapGrip()
         }
     }
@@ -206,7 +200,7 @@ internal class PaperCurlState {
 
     suspend fun animateBoundaryBounce() {
         if (active) {
-            performancePhase = PaperPerformancePhase.CANCEL
+            performancePhase = PaperPerformancePhase.BOUNDARY
             materialEngine.animateBoundaryBounce()
         }
     }
