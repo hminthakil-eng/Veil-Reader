@@ -2155,9 +2155,40 @@ fun ReaderScreen(
                 epubPreferencesMayRelayout(previousPresented, requested)
 
         // Preference changes must never race a half-committed page gesture.
-        paperInputListener?.forceCancelPendingTurn()
-        slideInputListener?.forceCancelPendingTurn()
+        // This effect is already suspend-capable, so require Readium's currentLocator
+        // to settle back to the preview origin before capturing a handoff or reflowing.
         rendererPreferencesSettling = true
+        val paperHadPendingTurn =
+            paperInputListener?.hasPendingTurn() == true
+        val slideHadPendingTurn =
+            slideInputListener?.hasPendingTurn() == true
+        val paperSettled =
+            !paperHadPendingTurn ||
+                paperInputListener?.cancelPendingTurnAndAwait() == true ||
+                paperInputListener?.hasPendingTurn() != true
+        val slideSettled =
+            !slideHadPendingTurn ||
+                slideInputListener?.cancelPendingTurnAndAwait() == true ||
+                slideInputListener?.hasPendingTurn() != true
+        if (!paperSettled || !slideSettled) {
+            paperInputListener?.forceCancelPendingTurn()
+            slideInputListener?.forceCancelPendingTurn()
+            rendererPreferencesSettling = false
+            readerMessage = appearanceApplyFailedMessage
+            ReaderTrace.event(
+                "appearance_submit_blocked_unsettled_preview",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId
+            )
+            if (requestedSource != previousAccepted) {
+                onReaderAppearanceChange(previousAccepted)
+            }
+            if (requestedSpread != previousPresentedSpread) {
+                activeFixedLayoutSpread = previousPresentedSpread
+                onFixedLayoutSpreadChange(previousPresentedSpread)
+            }
+            return@LaunchedEffect
+        }
 
         val captured = if (captureModeHandoff) {
             (nav as? OverflowableNavigator)
