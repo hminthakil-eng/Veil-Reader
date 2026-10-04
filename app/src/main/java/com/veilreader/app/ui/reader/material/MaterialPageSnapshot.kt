@@ -5,6 +5,11 @@ import android.graphics.Canvas
 import android.os.SystemClock
 import android.os.Trace
 import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * One explicit capture boundary between Readium's publication View and the Paper renderer.
@@ -31,6 +36,60 @@ internal fun interface MaterialPagePreparedSnapshotProvider {
         target: Bitmap,
         sourceRevision: Long
     ): MaterialPageSnapshotCapture
+}
+
+internal fun materialPageVisibleWebView(root: View): WebView? {
+    if (
+        root is WebView &&
+        root.visibility == View.VISIBLE &&
+        root.isShown &&
+        root.isAttachedToWindow &&
+        root.width > 0 &&
+        root.height > 0
+    ) {
+        return root
+    }
+    val group = root as? ViewGroup ?: return null
+    for (index in 0 until group.childCount) {
+        materialPageVisibleWebView(group.getChildAt(index))?.let { return it }
+    }
+    return null
+}
+
+internal suspend fun awaitMaterialPageSourceVisualReady(
+    root: View,
+    requestId: Long,
+    timeoutMillis: Long = 220L
+): Boolean {
+    if (!root.isAttachedToWindow || root.width <= 0 || root.height <= 0) {
+        return false
+    }
+    val webView = materialPageVisibleWebView(root) ?: return true
+    return withTimeoutOrNull(timeoutMillis.coerceAtLeast(1L)) {
+        suspendCancellableCoroutine { continuation ->
+            webView.post {
+                if (
+                    !continuation.isActive ||
+                    !webView.isAttachedToWindow ||
+                    webView.width <= 0 ||
+                    webView.height <= 0
+                ) {
+                    if (continuation.isActive) continuation.resume(false)
+                    return@post
+                }
+                webView.postVisualStateCallback(
+                    requestId.coerceAtLeast(0L),
+                    object : WebView.VisualStateCallback() {
+                        override fun onComplete(requestId: Long) {
+                            if (continuation.isActive) {
+                                continuation.resume(true)
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    } ?: false
 }
 
 internal data class MaterialPagePreparedSnapshot(
@@ -85,7 +144,7 @@ internal enum class MaterialPageSnapshotFailureReason {
     DRAW_FAILED
 }
 
-internal object ViewDrawMaterialPageImmediateSnapshotProvider : MaterialPageImmediateSnapshotProvider {
+internal object ViewDrawImmediateMaterialPageSnapshotProvider : MaterialPageImmediateSnapshotProvider {
     override fun capture(
         view: View,
         target: Bitmap,
