@@ -62,6 +62,11 @@ internal object MaterialPageEngineRollout {
     }
 }
 
+internal data class MaterialPageGpuUploadLease(
+    val bitmap: Bitmap,
+    val rendererGeneration: Long
+)
+
 @Stable
 internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
@@ -123,7 +128,7 @@ internal class MaterialPageEngineState(
         private set
     private var preparedSnapshot: MaterialPagePreparedSnapshot? = null
     private var preparedSnapshotBufferSlot = -1
-    private val gpuUploadLeases = mutableListOf<Bitmap>()
+    private val gpuUploadLeases = mutableListOf<MaterialPageGpuUploadLease>()
     private var releaseBuffersWhenUploadsSettle = false
     private var liftCueEmitted = false
 
@@ -147,10 +152,21 @@ internal class MaterialPageEngineState(
      * Identity semantics are intentional: two bitmaps with identical pixels are
      * still independent CPU storage and must have independent upload leases.
      */
-    fun markSnapshotSubmittedForGpu(bitmap: Bitmap) {
-        if (bitmap.isRecycled) return
-        if (gpuUploadLeases.none { it === bitmap }) {
-            gpuUploadLeases += bitmap
+    fun markSnapshotSubmittedForGpu(
+        bitmap: Bitmap,
+        rendererGeneration: Long
+    ) {
+        if (bitmap.isRecycled || rendererGeneration <= 0L) return
+        if (
+            gpuUploadLeases.none {
+                it.bitmap === bitmap &&
+                    it.rendererGeneration == rendererGeneration
+            }
+        ) {
+            gpuUploadLeases += MaterialPageGpuUploadLease(
+                bitmap = bitmap,
+                rendererGeneration = rendererGeneration
+            )
         }
     }
 
@@ -158,17 +174,27 @@ internal class MaterialPageEngineState(
      * GL calls this only after texImage2D/texSubImage2D returned without a GL error.
      * Until this acknowledgement, capture code is forbidden from overwriting the bitmap.
      */
-    fun acknowledgeSnapshotUploaded(bitmap: Bitmap) {
-        gpuUploadLeases.removeAll { it === bitmap }
+    fun acknowledgeSnapshotUploaded(
+        bitmap: Bitmap,
+        rendererGeneration: Long
+    ) {
+        gpuUploadLeases.removeAll {
+            it.bitmap === bitmap &&
+                it.rendererGeneration == rendererGeneration
+        }
         releaseDeferredBuffersIfPossible()
     }
 
     /**
-     * Called only after the GL renderer has proven that the previous context/frame
-     * ownership is gone (context recreation or terminal renderer failure).
+     * Releases only leases owned by the GL generation which has definitively died.
+     * A newer context may already have leased the same bitmap by the time this
+     * callback reaches the UI thread.
      */
-    fun abandonGpuUploadLeases() {
-        gpuUploadLeases.clear()
+    fun abandonGpuUploadLeases(rendererGeneration: Long) {
+        if (rendererGeneration <= 0L) return
+        gpuUploadLeases.removeAll {
+            it.rendererGeneration == rendererGeneration
+        }
         releaseDeferredBuffersIfPossible()
     }
 
@@ -187,10 +213,8 @@ internal class MaterialPageEngineState(
     }
 
     internal fun snapshotHasPendingGpuUpload(bitmap: Bitmap?): Boolean =
-        materialPageIdentityLeaseContains(
-            leases = gpuUploadLeases,
-            candidate = bitmap
-        )
+        bitmap != null &&
+            gpuUploadLeases.any { it.bitmap === bitmap }
 
     fun configureReducedMotion(value: Boolean) {
         reducedMotion = value
