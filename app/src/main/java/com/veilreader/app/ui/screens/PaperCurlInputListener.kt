@@ -190,6 +190,9 @@ internal class PaperCurlInputListener(
             return true
         }
 
+        if (!state.active && navigationJob == null) {
+            tryStartReservedVisual(spec, event)
+        }
         if (state.active) {
             state.updateDrag(event.start, event.offset)
         }
@@ -207,6 +210,9 @@ internal class PaperCurlInputListener(
             return true
         }
 
+        if (!state.active && navigationJob == null) {
+            tryStartReservedVisual(spec, event)
+        }
         if (state.active) {
             state.updateDrag(event.start, event.offset)
         }
@@ -400,27 +406,39 @@ internal class PaperCurlInputListener(
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
 
-        val visualReady =
-            shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
-                state.begin(
-                    navigator.publicationView,
-                    spec.side,
-                    spec.direction
-                )
-        if (visualReady) {
-            state.updateDrag(event.start, event.offset)
-        }
+        tryStartReservedVisual(spec, event)
         onInteraction()
+        return true
+    }
 
-        // Preview only when the captured sheet exists. Without a snapshot we keep the gesture
-        // reserved and perform the real navigation at release if the turn commits.
-        if (visualReady) {
-            navigationJob = scope.launch {
-                delay(VeilMotion.FRAME_SETTLE_MS)
+    /**
+     * A PAPER drag is reserved before GL readiness is guaranteed. If the first
+     * deliberate Move arrives while the renderer is INITIALIZING, keep the same
+     * transaction and retry on later Move/End events instead of sacrificing the
+     * whole first turn. Native/Slide never receives the reserved gesture.
+     */
+    private fun tryStartReservedVisual(
+        spec: TurnSpec,
+        event: DragEvent
+    ): Boolean {
+        if (state.active) return true
+        if (!shouldCapturePaperTurnSnapshot(isReducedMotion())) return false
+
+        val visualReady = state.begin(
+            navigator.publicationView,
+            spec.side,
+            spec.direction
+        )
+        if (!visualReady) return false
+
+        state.updateDrag(event.start, event.offset)
+        navigationJob = scope.launch {
+            delay(VeilMotion.FRAME_SETTLE_MS)
+            if (!cancellationRequested) {
                 previewNavigationSucceeded = navigate(spec.direction)
-                // Keep the previewed destination underneath the curl. The reverse
-                // face remains source-derived until a true opposite-leaf provider exists.
             }
+            // Keep the previewed destination underneath the curl. The reverse
+            // face remains source-derived until a true opposite-leaf provider exists.
         }
         return true
     }
