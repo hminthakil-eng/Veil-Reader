@@ -1794,7 +1794,13 @@ fun ReaderScreen(
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
                         )
                 },
-                isEnabled = { latestReaderSessionReady.value },
+                isEnabled = {
+                    latestReaderSessionReady.value &&
+                        (
+                            opened.format != BookFormat.EPUB ||
+                                !latestAppearance.value.scroll
+                            )
+                },
                 isTapNavigationEnabled = {
                     shouldUseDirectionalTapNavigation(
                         format = opened.format,
