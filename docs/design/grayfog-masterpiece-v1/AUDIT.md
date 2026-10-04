@@ -128,3 +128,18 @@ Re-reviewed actual production frames at compact 320dp/200%, Persian 900×420 lan
 Changes use the references' cool architecture / warm object contrast, quiet utility typography, structural brass and negative space. No copyrighted text, symbols or assets were copied. Gallery, Shelves and Index retain distinct existing grammar; no card-per-row redesign. Reader navigation, Paper Curl geometry and domain history remain untouched.
 
 Lint review also identified new configuration-height queries. These were replaced with actual window-size measurement in the Library, Appearance and Castle refinements, improving edge-to-edge/resizing behavior without suppression. An intermediate rerun was cancelled before source correction; only the subsequent complete frozen-source run is final evidence.
+
+## Detail continuation — 2026-10-04
+
+Continues `438a967a074484aec373a8edc15eeca467ffaa13`. Re-read the literary/V2 mission and current handoff, Grayfog/Arena and canonical convergence contracts; inspect actual shared components and native frames before changing them.
+
+| Intent / reference principle | Source/rendered defect | Severity | Correction / unresolved optical question |
+|---|---|---|---|
+| Cover identity before optional registration | Absolute centered ornament overlapped long missing-cover captions | High | Registration occupies only spare measured space above identity, otherwise disappears. Captions need readable width AND height after text scaling. Actual artwork remains untouched; small physical-cover optical balance pending. |
+| First-class Persian, including English shell | Generated captions and Arabic archival labels could inherit Latin family/leading | High | Reuse existing content-script typography helper for fallback title/author, micro-labels and shared subtitle/eyebrow. No publication typography override. Physical shaping/hinting pending. |
+| Clear retrieval identity | Whitespace titles displayed blank captions and incomplete action labels | High | Localized display-only Untitled fallback in all Archive modes, recent/resume objects and selected Observatory record. Stored title, search index, IDs, source URIs and callbacks untouched. |
+| Truthful archival provenance | Zero annotation timestamps rendered January 1970 | High | Explicit localized Date unknown for nonpositive timestamps; positive timestamps use active UI locale and system zone. Preserve timestamp/history data. Native regressions reject fabricated epoch dates in English/Persian. |
+| Accessible editorial hierarchy | Major title text lacked heading semantics; tests exposed Notes/Settings gaps | High | Shared header plus Threshold, Archive, Book Detail, Appearance, Settings and selected Observatory landmarks become navigable headings. Do not mark every cover/card as a heading. Real TalkBack traversal remains pending. |
+| Adaptive approach belongs to actual window | Threshold still used configuration height rather than the shared window policy | Medium | Use same shared approach rule with actual window height. Existing scale thresholds and immediate return semantics preserved. Physical resize/hinge evidence pending. |
+
+Native review inspected normal tablet Gallery and Persian metadata in the English Book Detail shell. The cover mark now sits above the title instead of crossing it. These frames establish cloud layout evidence, not device acceptance. Heading tests exposed and corrected Notes/Settings gaps. Missing-metadata mode tests were corrected to expect the fixture’s legitimate three shelf registers (completed plus two collections), rather than erroneously requiring one appearance across every mode. No production grouping changed to satisfy a test.

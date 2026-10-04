@@ -67,7 +67,7 @@ object GrayfogReviewFixtures {
 /** Each entry invokes production composition. A specimen never simulates publication content. */
 enum class GrayfogReviewSurface {
     THRESHOLD_ACTIVE, THRESHOLD_PERSIAN_LONG, THRESHOLD_EMPTY, LIBRARY_GALLERY, LIBRARY_SHELVES, LIBRARY_INDEX,
-    LIBRARY_SEARCH, LIBRARY_NO_RESULTS, LIBRARY_EMPTY, LIBRARY_MANY, BOOK_DETAIL,
+    LIBRARY_SEARCH, LIBRARY_NO_RESULTS, LIBRARY_EMPTY, LIBRARY_MANY, LIBRARY_MISSING_METADATA, BOOK_DETAIL,
     BOOK_DETAIL_PERSIAN, BOOK_DETAIL_MISSING, APPEARANCE_QUICK, APPEARANCE_ADVANCED,
     SETTINGS, NOTES, NOTES_EMPTY, HIGHLIGHTS, BOOKMARKS, OBSERVATORY_ISOLATED, OBSERVATORY_DENSE,
     CASTLE_LOW, CASTLE_ADVANCED, PATH, RITUAL, LOADING, ERROR, SANCTUM_LOCKED, SANCTUM_POPULATED, PROFILE
@@ -95,10 +95,11 @@ fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = 
                         GrayfogReviewSurface.LIBRARY_GALLERY, GrayfogReviewSurface.LIBRARY_SHELVES,
                         GrayfogReviewSurface.LIBRARY_INDEX, GrayfogReviewSurface.LIBRARY_SEARCH,
                         GrayfogReviewSurface.LIBRARY_NO_RESULTS, GrayfogReviewSurface.LIBRARY_EMPTY,
-                        GrayfogReviewSurface.LIBRARY_MANY -> LibraryArchiveContent(
+                        GrayfogReviewSurface.LIBRARY_MANY, GrayfogReviewSurface.LIBRARY_MISSING_METADATA -> LibraryArchiveContent(
                             books = when (surface) {
                                 GrayfogReviewSurface.LIBRARY_EMPTY -> emptyList()
                                 GrayfogReviewSurface.LIBRARY_MANY -> GrayfogReviewFixtures.manyBooks
+                                GrayfogReviewSurface.LIBRARY_MISSING_METADATA -> listOf(books[3].copy(title = "   ", author = ""))
                                 else -> books
                             }, isImporting = false, onImportUri = {}, onOpenBook = {}, onFavorite = {},
                             onEditMetadata = {}, onDeleteBook = {}, onOpenSettings = {},

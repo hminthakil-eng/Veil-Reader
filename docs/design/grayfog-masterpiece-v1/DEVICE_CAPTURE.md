@@ -8,8 +8,8 @@ The existing test stack renders actual production Composables with Robolectric A
 ./gradlew :app:testDebugUnitTest --tests '*GrayfogCloud*Test*' --tests '*GrayfogSystemBarsTest*'
 ```
 
-Images: `app/build/outputs/grayfog-cloud/<configuration>/<surface>.png`.
-Fifteen configurations × thirty-one surfaces = 465 native frames. The additional cases combine 200% text with 320dp compact, Persian landscape, foldable-width and tablet-width layouts. The debug Compose preview catalog has eleven configurations (341 instances). All use Reduced Motion. `GrayfogCloudRenderTest` defines the exact configurations; `GrayfogReviewSurface` defines the surface names. Dialogs use their actual separate Compose root. Native frame hashes/dimensions and the review contact sheet are recorded with the final V3 verification evidence. These are cloud layout evidence, not device screenshots or golden approval.
+Images: `app/build/outputs/grayfog-cloud/<configuration>/<surface>.png`. Eight focused scrolled detail captures are also produced under `app/build/outputs/grayfog-detail/<en|fa>/`; their names distinguish Gallery, Index, Shelves and unknown-date context.
+Fifteen configurations × thirty-two surfaces = 480 native frames. The additional cases combine 200% text with 320dp compact, Persian landscape, foldable-width and tablet-width layouts. The debug Compose preview catalog has eleven configurations (352 instances). All use Reduced Motion. `GrayfogCloudRenderTest` defines the exact configurations; `GrayfogReviewSurface` defines the surface names. Dialogs use their actual separate Compose root. Native frame hashes/dimensions and the review contact sheet are recorded with the final V3 verification evidence. These are cloud layout evidence, not device screenshots or golden approval.
 
 ## Fictional device specimens
 
@@ -21,7 +21,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ADB=adb tools/grayfog-capture.sh grayfog-device-captures
 ```
 
-The script launches the independent review task, verifies successful launch and saves PNGs plus launch records. Names are `<surface>-<en|fa>-<1.0|1.3|1.5|2.0>-<standard|contrast>.png`. It captures 31 surfaces × eight language/scale pairs, plus 31 Persian 200% contrast cases (279 files). All are Reduced Motion specimens. The loop uses finite settlement delays, not automatic visual approval. Run separately on phone, tablet, landscape and actual foldable devices, each into a distinct directory; retain `device.txt`. It neither rotates/resizes a connected device nor claims to model its hinge.
+The script launches the independent review task, verifies successful launch and saves PNGs plus launch records. Names are `<surface>-<en|fa>-<1.0|1.3|1.5|2.0>-<standard|contrast>.png`. It captures 32 surfaces × eight language/scale pairs, plus 32 Persian 200% contrast cases (288 files). All are Reduced Motion specimens. The loop uses finite settlement delays, not automatic visual approval. Run separately on phone, tablet, landscape and actual foldable devices, each into a distinct directory; retain `device.txt`. It neither rotates/resizes a connected device nor claims to model its hinge.
 
 For one focused specimen:
 
@@ -61,3 +61,9 @@ Verify real selection, atomic note saves/exact return, Lookup, TTS/Focus Guide, 
 After capturing the default specimens, expand Observatory’s “Show all connections” and Appearance’s “Show reading preview” in constrained layouts. Save `observatory-connections-expanded.png` and `appearance-preview-expanded.png` alongside the same device/configuration record. Collapse and change the selected book to verify disclosure resets; activate Enter Volume to verify exact source return. Native tests cover these callback/state contracts, while actual touch exploration and live publication settlement remain pending.
 
 At 200% landscape, native reachability assertions intentionally scroll to controls. The saved matrix PNG is the initial viewport, captured before assertions; it does not pretend all controls fit in 420dp height.
+
+## Missing metadata and provenance
+
+Capture `library_missing_metadata` in the registry, then switch to Index and Shelves; save `library-missing-metadata-index.png` and `library-missing-metadata-shelves.png`. The single completed fixture belongs to two collections, so its three shelf-register appearances are deliberate. Verify localized Untitled/Unknown author, complete action labels, grouping and reachable records.
+
+In real Book Detail, inspect uncertain/imported annotation dates and positive known dates. Preserve `book-detail-date-unknown.png` and `book-detail-date-known.png` with locale/time-zone metadata. Date unknown must never appear as a manufactured January 1970 record. Use TalkBack heading navigation on Threshold, Archive, Book Detail, Appearance, Notes, Settings and world surfaces; a semantic JVM heading check is not a TalkBack execution result.

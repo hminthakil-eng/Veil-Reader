@@ -94,6 +94,7 @@ object VeilComposition {
     const val DossierTwoColumnsMinWidthDp = 240f
     const val DossierThreeColumnsMinWidthDp = 360f
     const val ArtifactCaptionMinWidthDp = 120f
+    const val ArtifactCaptionMinHeightDp = 180f
     const val CompactArtifactCaptionWidthDp = 140f
     const val ChamberBridgeMinWidthDp = 440f
     const val ChamberCorridorMinWidthDp = 260f
@@ -103,6 +104,11 @@ object VeilComposition {
     const val ApproachCondenseFontScale = 1.3f
     const val ApproachShortHeightDp = 500
     const val InstrumentActionsReadableWidthDp = 300f
+}
+
+/** Missing-cover registration is subordinate to a readable identity field. */
+object VeilArtifact {
+    val RegistrationSize = 42.dp
 }
 
 /** Semantic shape families: archive plates stay sharp; architectural surfaces can breathe. */

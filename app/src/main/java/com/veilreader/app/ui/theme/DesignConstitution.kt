@@ -393,3 +393,10 @@ fun condenseRealmApproach(fontScale: Float, heightDp: Int): Boolean {
     return scale >= VeilComposition.ApproachCondenseFontScale ||
         heightDp in 1 until VeilComposition.ApproachShortHeightDp
 }
+
+/** Cover captions are optional duplicates: omit them before physical dimensions crowd identity. */
+fun artifactCaptionFits(widthDp: Float, heightDp: Float, fontScale: Float): Boolean {
+    val scale = if (fontScale.isFinite() && fontScale > 0f) fontScale.coerceAtLeast(1f) else 1f
+    return widthDp / scale >= VeilComposition.ArtifactCaptionMinWidthDp &&
+        heightDp / scale >= VeilComposition.ArtifactCaptionMinHeightDp
+}

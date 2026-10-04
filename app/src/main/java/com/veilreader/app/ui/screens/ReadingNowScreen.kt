@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -236,8 +239,10 @@ private fun ThresholdHeader(
     headerHeightDp: Float
 ) {
     val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
-    val abbreviatedEntry = hasCurrentBook && (LocalDensity.current.fontScale >= 1.3f ||
-        androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 500)
+    val abbreviatedEntry = hasCurrentBook && com.veilreader.app.ui.theme.condenseRealmApproach(
+        LocalDensity.current.fontScale, with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
+        })
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -303,6 +308,7 @@ private fun ThresholdHeader(
                     }
                 ),
                 style = if (abbreviatedEntry) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.semantics { heading() },
                 color = VeilPalette.Moon,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
@@ -745,10 +751,11 @@ private fun HeroDetails(
     modifier: Modifier = Modifier,
     readingAction: (@Composable () -> Unit)? = null
 ) {
+    val displayTitle = bookDisplayTitle(current.title)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
-            current.title,
-            style = MaterialTheme.typography.titleLarge.withVeilContentScript(current.title),
+            displayTitle,
+            style = MaterialTheme.typography.titleLarge.withVeilContentScript(displayTitle),
             color = ink,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
@@ -850,6 +857,7 @@ private fun RecentBookCard(
     coverHeightDp: Float,
     onOpenBook: (Book) -> Unit
 ) {
+    val displayTitle = bookDisplayTitle(book.title)
     Surface(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(itemWidthDp.dp),
@@ -869,7 +877,7 @@ private fun RecentBookCard(
                 contentAlignment = Alignment.Center
             ) {
                 BookCover(
-                    title = book.title,
+                    title = displayTitle,
                     subtitle = book.author,
                     imagePath = book.coverCachePath,
                     artifact = bookArtifactState(
@@ -902,8 +910,8 @@ private fun RecentBookCard(
             }
 
             Text(
-                book.title,
-                style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
+                displayTitle,
+                style = MaterialTheme.typography.titleSmall.withVeilContentScript(displayTitle),
                 color = VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

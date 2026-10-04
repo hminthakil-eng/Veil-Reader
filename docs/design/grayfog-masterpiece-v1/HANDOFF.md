@@ -153,3 +153,17 @@ Continues the existing design branch from `77be8b473d79f80deb79c0eb141dfd8c802f8
 Source review and native rendering are evidence of layout/interaction, not device acceptance. Remaining optical questions: Library first-cover balance at 320dp/200%; long Persian Book Detail cover/title/action balance; Observatory dense context contrast and physical node targeting; Castle architectural depth and room ordering on actual hinges; preview disclosure discoverability and live-publication behavior. Reproduce the documented matrix, then inspect real Readium/Pdfium, paper/slide mid-drag, RTL publication progression, TalkBack, IME/system bars and long-session paper comfort. No blanket visual completion is claimed.
 
 Published candidate GitHub Actions are infrastructure/account-blocked before execution: all three jobs have zero steps and no logs. See VERIFICATION.md and allout-github-ci.json; no CI-GREEN is claimed. Cloud source hashes and completed checks remain unchanged.
+
+## Detail continuation — 2026-10-04
+
+This pass addresses small details with concrete consequences: overlapping fallback-cover ornament, mixed-script typography, empty archival identity, missing heading navigation and invented epoch provenance. It continues the existing Draft PR, rather than creating a parallel product.
+
+Generated covers use their actual spare space for registration and require readable width/height for duplicate captions. Existing cached publication artwork, cover decoder/cache, fade/reduced-motion behavior, cover semantics and artifact history layers remain. Persian title/author receive the licensed Persian family and appropriate leading even in English UI; shared labels/subtitles gain the same protection.
+
+The shared Untitled display fallback trims presentation text without writing metadata. Gallery, Shelves and Index, recent/resume objects and Observatory selected records share it; callbacks keep the original Book/ID/URI. Known and unknown provenance remain distinct: zero timestamps now explicitly say Date unknown, while real positive dates follow the active UI locale and time zone. No annotation timestamp, schema or history is rewritten.
+
+Heading semantics make editorial hierarchy available across eleven tested surfaces, including the separately composed Notes and Settings headers. ReaderScreen changes only import heading semantics and mark the Appearance title; publication/navigation/TTS owners, page geometry and draft settlement remain unchanged. Threshold now measures actual window height for the existing shared approach rule.
+
+Review registry adds LIBRARY_MISSING_METADATA: one fictional whitespace-title/missing-author completed volume in two collections. Native mode switching checks Gallery, Index and all three legitimate shelf registers at English and Persian 200%. Registry: 32 surfaces, 480 native frames, 352 Compose previews and 288 future scripted device captures. Fixtures never persist or become production history.
+
+Remaining optical questions include actual missing-cover proportions on small displays, font hinting/shaping, real TalkBack heading traversal, artwork crop/contrast, landscape/hinge behavior, live publication controls and paper/slide physics/comfort. Do not mark these complete from cloud results. Existing device matrix and Draft status remain mandatory.

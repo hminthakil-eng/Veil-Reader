@@ -47,6 +47,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -271,6 +272,7 @@ fun SettingsScreen(
             )
             Text(
                 stringResource(R.string.settings_heading),
+                    modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.headlineLarge
             )
             BrassRule(Modifier.width(92.dp), strong = true)

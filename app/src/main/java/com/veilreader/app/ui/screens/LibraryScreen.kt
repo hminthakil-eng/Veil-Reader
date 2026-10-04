@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -2404,7 +2405,7 @@ private fun BookDetailIdentity(
     ) {
         Text(
             identity.title,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().semantics { heading() },
             style = MaterialTheme.typography.headlineLarge.withVeilContentScript(identity.title),
             color = VeilPalette.Moon,
             maxLines = 4,
@@ -2617,6 +2618,7 @@ private fun LibraryHeader(
 
                 Text(
                     stringResource(R.string.library_header_title),
+                    modifier = Modifier.semantics { heading() },
                     style = if (condensed) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
                     color = VeilPalette.Moon
                 )
@@ -2885,7 +2887,8 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
                 text = eyebrow,
                 strong = true
             )
-            Text(title, style = MaterialTheme.typography.titleLarge.withVeilContentScript(title))
+            Text(title, style = MaterialTheme.typography.titleLarge.withVeilContentScript(title),
+                modifier = Modifier.semantics { heading() })
         }
         trailing?.let {
             Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -2899,11 +2902,12 @@ private fun RecentReadingBook(
     artifactMemory: BookArtifactMemory?,
     onOpen: () -> Unit
 ) {
+    val displayTitle = bookDisplayTitle(book.title)
     val formatPercent = rememberVeilPercentFormatter()
     Surface(
         modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
-            onClickLabel = stringResource(R.string.library_continue_book_semantics, book.title),
+            onClickLabel = stringResource(R.string.library_continue_book_semantics, displayTitle),
             onClick = onOpen
         ),
         shape = MaterialTheme.shapes.small,
@@ -2916,7 +2920,7 @@ private fun RecentReadingBook(
             verticalAlignment = Alignment.CenterVertically
         ) {
             BookCover(
-                title = book.title,
+                title = displayTitle,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
                 artifact = bookArtifactState(book, memory = artifactMemory),
@@ -2925,8 +2929,8 @@ private fun RecentReadingBook(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.library_continue_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
-                    book.title,
-                    style = MaterialTheme.typography.titleMedium.withVeilContentScript(book.title),
+                    displayTitle,
+                    style = MaterialTheme.typography.titleMedium.withVeilContentScript(displayTitle),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3411,10 +3415,16 @@ private fun MemoryTraceGlyph(
     }
 }
 
-private fun formatArchiveRecordDate(epochMs: Long): String =
-    DateFormat.getDateInstance(DateFormat.MEDIUM)
-        .format(Date(epochMs))
-        .uppercase(Locale.getDefault())
+@Composable
+private fun formatArchiveRecordDate(epochMs: Long): String {
+    if (epochMs <= 0L) return stringResource(R.string.capsule_date_unknown)
+    val locale = LocalConfiguration.current.locales[0]
+    val timeZone = java.util.TimeZone.getDefault()
+    return remember(epochMs, locale, timeZone.id) {
+        DateFormat.getDateInstance(DateFormat.MEDIUM, locale).apply { this.timeZone = timeZone }
+            .format(Date(epochMs)).uppercase(locale)
+    }
+}
 
 @Composable
 private fun archiveDepthRecord(memory: BookArchiveMemory): String {
@@ -3456,16 +3466,17 @@ internal fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val displayTitle = bookDisplayTitle(book.title)
     val largeText = LocalDensity.current.fontScale >= 1.3f
     val formatPercent = rememberVeilPercentFormatter()
     val artifact = bookArtifactState(book, memory = artifactMemory)
-    val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
+    val readLabel = stringResource(R.string.library_read_book_semantics, displayTitle)
     val favoriteLabel = stringResource(
         if (book.favorite) R.string.library_remove_favorite_semantics
         else R.string.library_add_favorite_semantics,
-        book.title
+        displayTitle
     )
-    val detailsLabel = stringResource(R.string.library_book_details_semantics, book.title)
+    val detailsLabel = stringResource(R.string.library_book_details_semantics, displayTitle)
     val registrationColor = when {
         artifact.finished -> VeilPalette.Brass
         artifact.recentlyOpened -> VeilPalette.Spirit
@@ -3493,7 +3504,7 @@ internal fun BookLibraryTile(
                     .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.sm)
             ) {
                 BookCover(
-                    title = book.title,
+                    title = displayTitle,
                     subtitle = book.author,
                     imagePath = book.coverCachePath,
                     artifact = artifact,
@@ -3529,8 +3540,8 @@ internal fun BookLibraryTile(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    book.title,
-                    style = MaterialTheme.typography.titleMedium.withVeilContentScript(book.title),
+                    displayTitle,
+                    style = MaterialTheme.typography.titleMedium.withVeilContentScript(displayTitle),
                     color = VeilPalette.Moon,
                     minLines = if (largeText) 3 else 2,
                     maxLines = if (largeText) 3 else 2,
@@ -3643,16 +3654,17 @@ internal fun BookLibraryRow(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val displayTitle = bookDisplayTitle(book.title)
     val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
     val artifact = bookArtifactState(book, memory = artifactMemory)
-    val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
+    val readLabel = stringResource(R.string.library_read_book_semantics, displayTitle)
     val favoriteLabel = stringResource(
         if (book.favorite) R.string.library_remove_favorite_semantics
         else R.string.library_add_favorite_semantics,
-        book.title
+        displayTitle
     )
-    val recordLabel = stringResource(R.string.library_archive_record_semantics, book.title)
+    val recordLabel = stringResource(R.string.library_archive_record_semantics, displayTitle)
     val unknownAuthor = stringResource(R.string.common_unknown_author)
     val registrationColor = when {
         book.finished -> VeilPalette.Brass
@@ -3731,8 +3743,8 @@ internal fun BookLibraryRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    book.title,
-                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
+                    displayTitle,
+                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(displayTitle),
                     color = VeilPalette.Moon,
                     maxLines = if (LocalDensity.current.fontScale >= 1.3f) 3 else 2,
                     overflow = TextOverflow.Ellipsis
@@ -4060,7 +4072,8 @@ internal fun LibraryShelvesView(
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                     ) {
                         lazyRowItems(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
-                            val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
+                            val displayTitle = bookDisplayTitle(book.title)
+                            val readLabel = stringResource(R.string.library_read_book_semantics, displayTitle)
                             Column(
                                 modifier = Modifier
                                     .width(galleryCellMeasureDp(itemWidthDp, LocalDensity.current.fontScale).dp)
@@ -4072,7 +4085,7 @@ internal fun LibraryShelvesView(
                             ) {
                                 Box(Modifier.fillMaxWidth().height((coverHeightDp + 16f).dp)) {
                                     BookCover(
-                                        title = book.title,
+                                        title = displayTitle,
                                         subtitle = book.author,
                                         imagePath = book.coverCachePath,
                                         artifact = bookArtifactState(
@@ -4086,8 +4099,8 @@ internal fun LibraryShelvesView(
 
                                 }
                                 Text(
-                                    book.title,
-                                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
+                                    displayTitle,
+                                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(displayTitle),
                                     color = VeilPalette.Moon,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
