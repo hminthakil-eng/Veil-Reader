@@ -70,6 +70,45 @@ class ReaderLocatorPolicyTest {
     }
 
     @Test
+    fun slidePreviewIsObservationUntilSettledCommitOwnsTheTurn() {
+        val preview = readerObservedLocatorEvent(
+            programmaticNavigationSettled = false,
+            viewportRelayoutPending = false,
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false,
+            isSlidePreviewActive = true
+        )
+        assertFalse(preview.commitsLocator)
+        assertFalse(preview.countsPageTurn)
+
+        val settled = readerObservedLocatorEvent(
+            programmaticNavigationSettled = false,
+            viewportRelayoutPending = false,
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false,
+            isSlidePreviewActive = false
+        )
+        assertTrue(settled.commitsLocator)
+        assertTrue(settled.countsPageTurn)
+    }
+
+    @Test
+    fun programmaticSettlementStillOutranksSlidePreviewClassification() {
+        val jump = readerObservedLocatorEvent(
+            programmaticNavigationSettled = true,
+            viewportRelayoutPending = false,
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false,
+            isSlidePreviewActive = true
+        )
+        assertTrue(jump.commitsLocator)
+        assertFalse(jump.countsPageTurn)
+    }
+
+    @Test
     fun viewportRelayout_isCheckpointWithoutPageTurnCredit() {
         val relayout = readerObservedLocatorEvent(
             programmaticNavigationSettled = false,
