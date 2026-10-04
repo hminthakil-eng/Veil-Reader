@@ -7,6 +7,7 @@ import android.os.Trace
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
+import com.veilreader.app.diagnostics.ReaderPerformanceMetrics
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -194,6 +195,11 @@ internal object ViewDrawImmediateMaterialPageSnapshotProvider : MaterialPageImme
         val started = SystemClock.elapsedRealtimeNanos()
         Trace.beginSection(TRACE_SECTION)
         return try {
+            ReaderPerformanceMetrics.putSingleFrameState(
+                root = view,
+                key = ReaderPerformanceMetrics.PAPER_WORK_KEY,
+                value = "CAPTURE"
+            )
             target.eraseColor(android.graphics.Color.TRANSPARENT)
             view.draw(Canvas(target))
             MaterialPageSnapshotCapture.Ready(
