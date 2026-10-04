@@ -97,6 +97,8 @@ class GpuPageShaderContractTest {
             gpuMaterialFrameIsCurrent(
                 frameGeneration = 4L,
                 rendererGeneration = 4L,
+                frameViewportGeneration = 3L,
+                rendererViewportGeneration = 3L,
                 frameSequence = 12L,
                 latestSequence = 12L
             )
@@ -105,6 +107,8 @@ class GpuPageShaderContractTest {
             !gpuMaterialFrameIsCurrent(
                 frameGeneration = 4L,
                 rendererGeneration = 4L,
+                frameViewportGeneration = 3L,
+                rendererViewportGeneration = 3L,
                 frameSequence = 11L,
                 latestSequence = 12L
             )
@@ -113,6 +117,8 @@ class GpuPageShaderContractTest {
             !gpuMaterialFrameIsCurrent(
                 frameGeneration = 3L,
                 rendererGeneration = 4L,
+                frameViewportGeneration = 3L,
+                rendererViewportGeneration = 3L,
                 frameSequence = 12L,
                 latestSequence = 12L
             )
@@ -121,8 +127,23 @@ class GpuPageShaderContractTest {
             !gpuMaterialFrameIsCurrent(
                 frameGeneration = 4L,
                 rendererGeneration = 4L,
+                frameViewportGeneration = 3L,
+                rendererViewportGeneration = 3L,
                 frameSequence = 0L,
                 latestSequence = 0L
+            )
+        )
+
+        assertEquals(4L, nextGpuMaterialViewportGeneration(3L))
+        assertEquals(1L, nextGpuMaterialViewportGeneration(Long.MAX_VALUE))
+        assertTrue(
+            !gpuMaterialFrameIsCurrent(
+                frameGeneration = 4L,
+                rendererGeneration = 4L,
+                frameViewportGeneration = 2L,
+                rendererViewportGeneration = 3L,
+                frameSequence = 12L,
+                latestSequence = 12L
             )
         )
     }
