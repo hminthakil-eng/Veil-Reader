@@ -205,6 +205,8 @@ The old RTL leak was reproduced with deliberately high-contrast source data, the
 
 **FACT:** v2 has a source front texture and an optional separately captured back texture.
 
+**P1 face-ownership gap:** v2 currently chooses front versus back with `gl_FrontFacing`. OpenGL defines that value per rasterized primitive, not per physical sub-region of a triangle. A triangle that straddles the cylindrical normal horizon therefore cannot be split into front/back ownership the way v1's proven `MaterialFaceMesh` does. Dense tessellation can make the error narrow, but it does not make the topology exact. This is the GPU analogue of the class of defect that produced the earlier v1 RTL ink leak and requires a rendered regression, not only a lexical shader-contract test.
+
 **P1 semantic defect/risk:** the optional back texture is captured *after Readium preview navigation*. That means it represents the destination page currently visible underneath the lifted source page. Rendering the same destination capture on the lifted backside can show the destination simultaneously on the back of the turning leaf and underneath it.
 
 This is not a locator bug; it is a physical page-semantic bug.
@@ -522,37 +524,38 @@ Current Veil sensory policy includes foreground/attachment checks and generation
 
 ### P1 serious
 
-2. binding/corner constraint model is weaker than the v1 proven invariant and mature reference engines.
-3. destination capture is used as lifted back-face texture, risking duplicate/incorrect physical page semantics.
-4. back-face texture orientation is not pixel-proven for both sides and RTL/LTR.
-5. synchronous full-resolution `View.draw` capture can block the UI/input path.
-6. full GPU texture upload cost is unmeasured and may dominate first-frame latency.
-7. memory policy budgets CPU page buffers but not GPU texture memory.
-8. TextureView context recreation/pause/resume/rotation lifecycle is unproven on hardware.
-9. resize/aspect rejection can produce an invisible visual during an otherwise active transaction unless cancellation/recapture is tightly coupled.
-10. current shader-contract tests are lexical contracts, not GLSL compiler/driver tests.
-11. manipulation physics are still parameterized/kinematic; apparent mass/friction are not yet fully conveyed through time-domain drag behavior.
+2. front/back ownership is primitive-wide through `gl_FrontFacing`; triangles crossing the physical normal horizon are not explicitly split, so a narrow front/back leak or wrong-side sampling remains possible.
+3. binding/corner constraint model is weaker than the v1 proven invariant and mature reference engines.
+4. destination capture is used as lifted back-face texture, risking duplicate/incorrect physical page semantics.
+5. back-face texture orientation is not pixel-proven for both sides and RTL/LTR.
+6. synchronous full-resolution `View.draw` capture can block the UI/input path.
+7. full GPU texture upload cost is unmeasured and may dominate first-frame latency.
+8. memory policy budgets CPU page buffers but not GPU texture memory.
+9. TextureView context recreation/pause/resume/rotation lifecycle is unproven on hardware.
+10. resize/aspect rejection can produce an invisible visual during an otherwise active transaction unless cancellation/recapture is tightly coupled.
+11. current shader-contract tests are lexical contracts, not GLSL compiler/driver tests and cannot prove front/back pixel ownership.
+12. manipulation physics are still parameterized/kinematic; apparent mass/friction are not yet fully conveyed through time-domain drag behavior.
 
 ### P2 polish
 
-12. layered shadow is approximate rather than explicit geometric base/edge/self-shadow.
-13. no subtle perspective/MVP yet.
-14. procedural fibre/grain still need premium material art-direction.
-15. edge body is shading/tint, not actual geometric sheet thickness.
+13. layered shadow is approximate rather than explicit geometric base/edge/self-shadow.
+14. no subtle perspective/MVP yet.
+15. procedural fibre/grain still need premium material art-direction.
+16. edge body is shading/tint, not actual geometric sheet thickness.
 
 ### DEVICE-REQUIRED
 
-16. real shader compile/link across target GPUs.
-17. source snapshot reliability with Readium WebView.
-18. front/back orientation.
-19. GL context loss/recreation.
-20. first-curl latency.
-21. repeated-turn frame pacing.
-22. memory pressure/GC/compositor interaction.
-23. all five materials on OLED/LCD.
-24. 60/90/120 Hz.
-25. TalkBack/High Contrast/Reduced Motion/TTS/selection/Notes/Focus Guide/hardware keys.
-26. background/process death/close-reopen.
+17. real shader compile/link across target GPUs.
+18. source snapshot reliability with Readium WebView.
+19. front/back orientation and normal-horizon ownership.
+20. GL context loss/recreation.
+21. first-curl latency.
+22. repeated-turn frame pacing.
+23. memory pressure/GC/compositor interaction.
+24. all five materials on OLED/LCD.
+25. 60/90/120 Hz.
+26. TalkBack/High Contrast/Reduced Motion/TTS/selection/Notes/Focus Guide/hardware keys.
+27. background/process death/close-reopen.
 
 ---
 
@@ -699,13 +702,18 @@ Do not back-base the product on v2 and then attempt to reconstruct the latest UI
 
 2. Add a host lifecycle regression test that would fail the current deadlock.
 
-3. Remove destination-as-back-leaf semantics until a true opposite-leaf surface contract exists.
+3. Make front/back ownership physically explicit in the GPU path.
+   - do not rely on primitive-wide `gl_FrontFacing` alone at the normal horizon;
+   - either split crossing primitives before submission or use a two-pass/per-fragment physical-face classification with rendered proof that no wrong-side ink survives;
+   - add the old v1 leak concept as a GPU pixel regression in both directions.
+
+4. Remove destination-as-back-leaf semantics until a true opposite-leaf surface contract exists.
    - use material back tint + mirrored/attenuated source ink for the lifted back face;
    - keep the Readium destination as the page underneath.
 
-4. Port v1 binding invariants into the pure GPU geometry model.
+5. Port v1 binding invariants into the pure GPU geometry model.
 
-5. Add pixel/renderer tests for:
+6. Add pixel/renderer tests for:
    - left/right;
    - forward/backward;
    - LTR/RTL;
@@ -714,17 +722,17 @@ Do not back-base the product on v2 and then attempt to reconstruct the latest UI
    - no front-ink leak;
    - no destination duplication on lifted back face.
 
-6. Add capture/resize transaction contracts:
+7. Add capture/resize transaction contracts:
    - rotate/resize during drag cancels or recaptures deterministically;
    - no invisible active Paper transaction.
 
-7. Add memory budget accounting that includes estimated GPU texture storage, not only Java bitmap storage.
+8. Add memory budget accounting that includes estimated GPU texture storage, not only Java bitmap storage.
 
-8. Keep PDF excluded.
+9. Keep PDF excluded.
 
-9. Keep Slide free of Paper mass/material behavior.
+10. Keep Slide free of Paper mass/material behavior.
 
-10. Keep sound/haptics outside renderer.
+11. Keep sound/haptics outside renderer.
 
 ---
 
