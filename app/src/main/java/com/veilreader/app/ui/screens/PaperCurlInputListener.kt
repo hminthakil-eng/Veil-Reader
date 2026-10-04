@@ -195,9 +195,12 @@ internal class PaperCurlInputListener(
                 return@launch
             }
 
-            val moved = navigate(spec.direction)
+            val accepted = navigate(spec.direction)
+            val moved =
+                accepted &&
+                    awaitNavigationDeparture(originLocator)
             if (!operationIsCurrent(operationToken)) {
-                if (moved) {
+                if (accepted) {
                     navigator.go(originLocator, animated = false)
                 }
                 if (state.active) state.clearImmediately()
@@ -205,6 +208,9 @@ internal class PaperCurlInputListener(
                 return@launch
             }
             if (!moved) {
+                if (accepted) {
+                    navigator.go(originLocator, animated = false)
+                }
                 onBoundaryHit(spec.side)
                 if (visualReady && state.active) {
                     state.animateBoundaryBounce()
@@ -376,14 +382,22 @@ internal class PaperCurlInputListener(
                 commit -> {
                     // This branch is reachable without a visual only for Reduced Motion.
                     // Normal-motion Paper fails closed before a static navigation fallback.
-                    val moved = navigate(spec.direction)
+                    val origin =
+                        dragStartLocator ?: navigator.currentLocator.value
+                    val accepted = navigate(spec.direction)
+                    val moved =
+                        accepted &&
+                            awaitNavigationDeparture(origin)
                     if (!operationIsCurrent(operationToken)) {
-                        if (moved) {
-                            restoreDragStart(spec, forceRequest = true)
+                        if (accepted) {
+                            navigator.go(origin, animated = false)
                         }
                         if (state.active) state.clearImmediately()
                         resetDrag()
                         return@launch
+                    }
+                    if (!moved && accepted) {
+                        navigator.go(origin, animated = false)
                     }
                     if (moved) {
                         turnCommitted = true
@@ -605,11 +619,17 @@ internal class PaperCurlInputListener(
                 !cancellationRequested &&
                 operationIsCurrent(operationToken)
             ) {
-                val moved = navigate(spec.direction)
+                val accepted = navigate(spec.direction)
+                val origin = dragStartLocator
+                val moved =
+                    accepted &&
+                        origin != null &&
+                        awaitNavigationDeparture(origin)
                 if (
-                    moved &&
+                    accepted &&
                     (
-                        cancellationRequested ||
+                        !moved ||
+                            cancellationRequested ||
                             !operationIsCurrent(operationToken)
                         )
                 ) {
@@ -649,6 +669,29 @@ internal class PaperCurlInputListener(
         if (abs(delta) >= 1f) lastMotionAtMillis = now
         lastDragSampleAtMillis = now
         lastInwardDistance = inward
+    }
+
+    private suspend fun awaitNavigationDeparture(
+        origin: Locator
+    ): Boolean {
+        val originIdentity = origin.toReaderNavigationIdentity()
+        if (
+            !readerNavigationIdentityMatchesTarget(
+                observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
+                target = originIdentity
+            )
+        ) {
+            return true
+        }
+        return withTimeoutOrNull(NAVIGATION_SETTLE_TIMEOUT_MS) {
+            navigator.currentLocator.first { locator ->
+                !readerNavigationIdentityMatchesTarget(
+                    observed = locator.toReaderNavigationIdentity(),
+                    target = originIdentity
+                )
+            }
+            true
+        } ?: false
     }
 
     private fun restoreDragStart(
@@ -804,6 +847,7 @@ internal class PaperCurlInputListener(
         const val EDGE_FRACTION = 0.22f
         const val DRAG_DIRECTION_SLOP_PX = 4f
         const val RESTORE_SETTLE_TIMEOUT_MS = 1_500L
+        const val NAVIGATION_SETTLE_TIMEOUT_MS = 1_500L
     }
 }
 
