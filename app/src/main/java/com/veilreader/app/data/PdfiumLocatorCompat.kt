@@ -34,6 +34,12 @@ internal suspend fun Publication.migrateVeilLegacyPdfiumLocator(locator: Locator
         migrateLegacyPdfiumLocator(locator).withCurrentVeilPdfiumVersion()
     }
 
+internal fun resolveMigratedPdfiumLocatorJson(
+    locatorJson: String?,
+    migrations: Map<String, String>
+): String? =
+    locatorJson?.let { migrations[it] ?: it }
+
 internal fun Locator.toVeilPersistedJson(format: BookFormat): String {
     val persisted = if (format == BookFormat.PDF) withCurrentVeilPdfiumVersion() else this
     return persisted.toJSON().toString()
