@@ -196,9 +196,13 @@ internal class SlideNavigationInputListener(
         val spec = activeSpec ?: resolveDragTurn(event)
 
         if (spec == null) {
+            val operationToken = activeOperationGeneration
             completionJob = scope.launch {
                 if (state.active && !isReducedMotion()) state.animateCancel()
                 if (state.active) state.clear()
+                if (operationIsCurrent(operationToken)) {
+                    activeOperationGeneration = 0L
+                }
                 resetDrag()
             }
             return true
