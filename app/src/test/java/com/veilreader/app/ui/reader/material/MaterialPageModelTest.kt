@@ -80,16 +80,48 @@ class MaterialPageModelTest {
     }
 
     @Test
-    fun `gpu upload leases use storage identity not value equality`() {
-        data class Token(val value: Int)
+    fun `gpu upload leases require exact bitmap identity and renderer generation`() {
+        val leasedBitmap = android.graphics.Bitmap.createBitmap(
+            8,
+            8,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val distinctBitmap = android.graphics.Bitmap.createBitmap(
+            8,
+            8,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val lease = MaterialPageGpuUploadLease(
+            bitmap = leasedBitmap,
+            rendererGeneration = 7L
+        )
 
-        val leased = Token(7)
-        val equalButDistinct = Token(7)
-        val leases = listOf(leased)
+        assertTrue(
+            materialPageGpuUploadLeaseMatches(
+                lease = lease,
+                bitmap = leasedBitmap,
+                rendererGeneration = 7L
+            )
+        )
+        assertFalse(
+            materialPageGpuUploadLeaseMatches(
+                lease = lease,
+                bitmap = distinctBitmap,
+                rendererGeneration = 7L
+            )
+        )
+        assertFalse(
+            materialPageGpuUploadLeaseMatches(
+                lease = lease,
+                bitmap = leasedBitmap,
+                rendererGeneration = 8L
+            )
+        )
+        assertTrue(materialPageGpuUploadLeaseOwnsBitmap(lease, leasedBitmap))
+        assertFalse(materialPageGpuUploadLeaseOwnsBitmap(lease, distinctBitmap))
 
-        assertTrue(materialPageIdentityLeaseContains(leases, leased))
-        assertFalse(materialPageIdentityLeaseContains(leases, equalButDistinct))
-        assertFalse(materialPageIdentityLeaseContains(leases, null))
+        leasedBitmap.recycle()
+        distinctBitmap.recycle()
     }
 
     @Test
