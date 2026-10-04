@@ -77,6 +77,10 @@ internal class PaperCurlState {
         return materialEngine.prepareBuffer(view)
     }
 
+    fun invalidateSnapshotSource() {
+        materialEngine.invalidateSnapshotSource()
+    }
+
     fun begin(
         view: View,
         side: PaperCurlSide,
