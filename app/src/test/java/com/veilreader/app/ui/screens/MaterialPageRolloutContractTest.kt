@@ -34,6 +34,12 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `debug review forcing is opt in and releases back to normal availability`() {
+        assertEquals(null, materialPageReviewDebugOverride(enabled = false))
+        assertEquals(true, materialPageReviewDebugOverride(enabled = true))
+    }
+
+    @Test
     fun `normal motion Paper fails closed until GPU visual is actually active`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
