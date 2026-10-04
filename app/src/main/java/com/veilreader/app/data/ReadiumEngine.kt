@@ -8,10 +8,17 @@ import android.util.Size
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.readium.adapter.pdfium.document.PdfiumDocumentFactory
@@ -220,20 +227,58 @@ class ReadiumEngine(context: Context) {
     }
 
     private suspend fun materializeImport(source: Uri): Uri = withContext(Dispatchers.IO) {
-        val importsDir = File(appContext.filesDir, "publications").apply { mkdirs() }
+        val importsDir = File(appContext.filesDir, "publications").apply {
+            check(mkdirs() || isDirectory) {
+                "Could not prepare publication storage."
+            }
+        }
         val extension = bestExtension(source)
-        val target = File(importsDir, "${UUID.randomUUID()}$extension")
+        val id = UUID.randomUUID().toString()
+        val target = File(importsDir, "$id$extension")
+        val temporary = File(importsDir, ".$id.importing")
 
         try {
-            appContext.contentResolver.openInputStream(source)?.use { input ->
-                target.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw ReaderException("Android could not read the selected file.")
-            if (target.length() == 0L) throw ReaderException("The selected publication is empty.")
-        } catch (error: Throwable) {
+            val sourceStream =
+                appContext.contentResolver.openInputStream(source)
+                    ?: throw ReaderException("Android could not read the selected file.")
+
+            sourceStream.buffered().use { input ->
+                FileOutputStream(temporary).use { output ->
+                    val buffer = ByteArray(IMPORT_COPY_BUFFER_BYTES)
+                    var copied = 0L
+                    while (true) {
+                        currentCoroutineContext().ensureActive()
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        if (read == 0) continue
+                        output.write(buffer, 0, read)
+                        copied += read
+                    }
+                    output.flush()
+                    output.fd.sync()
+                    if (copied <= 0L) {
+                        throw ReaderException("The selected publication is empty.")
+                    }
+                }
+            }
+
+            installCompletedImport(
+                temporary = temporary,
+                target = target
+            )
+            check(target.isFile && target.length() > 0L) {
+                "The publication copy was not installed correctly."
+            }
+            Uri.fromFile(target)
+        } catch (cancelled: CancellationException) {
+            temporary.delete()
+            target.delete()
+            throw cancelled
+        } catch (error: Exception) {
+            temporary.delete()
             target.delete()
             throw error
         }
-        Uri.fromFile(target)
     }
 
     private fun bestExtension(uri: Uri): String {
@@ -285,6 +330,35 @@ class ReadiumEngine(context: Context) {
     companion object {
         private val COVER_MAX_SIZE = Size(600, 900)
         private const val COVER_JPEG_QUALITY = 88
+        private const val IMPORT_COPY_BUFFER_BYTES = 64 * 1024
+    }
+}
+
+internal fun installCompletedImport(
+    temporary: File,
+    target: File
+) {
+    require(temporary.parentFile?.canonicalFile == target.parentFile?.canonicalFile) {
+        "Import staging and final file must share one directory."
+    }
+    require(temporary.isFile && temporary.length() > 0L) {
+        "Import staging file is missing or empty."
+    }
+    require(!target.exists()) {
+        "Import target unexpectedly already exists."
+    }
+
+    try {
+        Files.move(
+            temporary.toPath(),
+            target.toPath(),
+            StandardCopyOption.ATOMIC_MOVE
+        )
+    } catch (_: AtomicMoveNotSupportedException) {
+        Files.move(
+            temporary.toPath(),
+            target.toPath()
+        )
     }
 }
 
