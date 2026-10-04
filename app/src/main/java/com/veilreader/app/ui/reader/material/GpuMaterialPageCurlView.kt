@@ -49,7 +49,8 @@ internal class GpuMaterialPageCurlView(
     context: Context,
     private val onRendererReady: (Boolean) -> Unit = {},
     private val onRendererFailure: () -> Unit = {},
-    private val onRendererFramePresented: () -> Unit = {}
+    private val onRendererFramePresented: () -> Unit = {},
+    private val onTextureUploaded: (Bitmap) -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
@@ -325,7 +326,7 @@ internal class GpuMaterialPageCurlView(
         }
 
         GLES20.glUseProgram(program)
-        uploadFrontTextureIfNeeded(
+        val didUpload = uploadFrontTextureIfNeeded(
             frontBitmap = bitmap,
             requiredTextureRevision = frame.textureRevision
         )
@@ -333,6 +334,14 @@ internal class GpuMaterialPageCurlView(
         if (uploadError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page texture upload failed: glError=$uploadError")
             return
+        }
+        if (didUpload) {
+            synchronized(frameLock) {
+                uploadedTextureRevision = frame.textureRevision
+            }
+            // GL has consumed the client bitmap bytes for this texture update.
+            // Acknowledge on the UI thread so the CPU snapshot pool may reuse it.
+            post { onTextureUploaded(bitmap) }
         }
         if (
             !gpuMaterialFrameIsCurrent(
@@ -629,12 +638,12 @@ internal class GpuMaterialPageCurlView(
     private fun uploadFrontTextureIfNeeded(
         frontBitmap: Bitmap,
         requiredTextureRevision: Long
-    ) {
+    ): Boolean {
         val alreadyUploaded = synchronized(frameLock) {
             requiredTextureRevision > 0L &&
                 uploadedTextureRevision == requiredTextureRevision
         }
-        if (alreadyUploaded) return
+        if (alreadyUploaded) return false
 
         Trace.beginSection("paper.gpu.texture_upload")
         try {
@@ -664,9 +673,7 @@ internal class GpuMaterialPageCurlView(
                 frontTextureWidth = frontBitmap.width
                 frontTextureHeight = frontBitmap.height
             }
-            synchronized(frameLock) {
-                uploadedTextureRevision = requiredTextureRevision
-            }
+            return true
         } finally {
             Trace.endSection()
         }
@@ -1388,6 +1395,9 @@ internal fun GpuMaterialPageOverlay(
                     frame.active &&
                     bitmap != null &&
                     !bitmap.isRecycled
+            if (active && bitmap != null) {
+                state.markSnapshotSubmittedForGpu(bitmap)
+            }
             gpuView.submitFrame(
                 bitmap = bitmap,
                 active = active,
@@ -1441,7 +1451,8 @@ internal fun GpuMaterialPageOverlay(
                     // a real frame. READY alone is insufficient because a broken
                     // driver path may fail deterministically on first draw.
                     rendererFailureCount.intValue = 0
-                }
+                },
+                onTextureUploaded = state::acknowledgeSnapshotUploaded
             ).also { created ->
                 viewRef.value = created
                 if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
