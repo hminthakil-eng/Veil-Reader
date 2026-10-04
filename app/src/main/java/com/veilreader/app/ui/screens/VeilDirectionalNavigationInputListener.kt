@@ -1,5 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.KeyEvent
@@ -16,6 +20,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 @OptIn(ExperimentalReadiumApi::class)
 internal class VeilDirectionalNavigationInputListener(
     private val navigator: OverflowableNavigator,
+    private val scope: CoroutineScope,
     private val isAnimated: () -> Boolean,
     private val isEnabled: () -> Boolean = { true },
     private val isTapNavigationEnabled: () -> Boolean = { true },
@@ -23,9 +28,11 @@ internal class VeilDirectionalNavigationInputListener(
     private val onNavigationCommitted: () -> Unit = {},
     private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
+    private var navigationJob: Job? = null
 
     override fun onTap(event: TapEvent): Boolean {
         if (!isEnabled()) return false
+        if (navigationJob != null) return true
         if (!isTapNavigationEnabled()) return false
         val width = navigator.publicationView.width.toFloat()
         if (width <= 0f) return false
@@ -44,6 +51,7 @@ internal class VeilDirectionalNavigationInputListener(
 
     override fun onKey(event: KeyEvent): Boolean {
         if (!isEnabled()) return false
+        if (navigationJob != null) return true
         if (event.type != KeyEvent.Type.Down) return false
 
         val turn = readerKeyTurn(
@@ -85,16 +93,31 @@ internal class VeilDirectionalNavigationInputListener(
                 }
         }
 
-    private inline fun navigate(
+    private fun navigate(
         side: PaperCurlSide,
         block: () -> Boolean
     ): Boolean {
         onInteraction()
-        val committed = block()
-        if (committed) {
-            onNavigationCommitted()
-        } else {
+        val origin = navigator.currentLocator.value
+        val accepted = block()
+        if (!accepted) {
             onBoundaryHit(side)
+            return true
+        }
+
+        navigationJob = scope.launch {
+            val moved =
+                awaitReaderVisualNavigationDeparture(
+                    currentLocator = navigator.currentLocator,
+                    origin = origin
+                )
+            if (moved) {
+                onNavigationCommitted()
+            } else {
+                navigator.go(origin, animated = false)
+                onBoundaryHit(side)
+            }
+            navigationJob = null
         }
 
         // The directional gesture/key was owned even when the navigator hit a publication
