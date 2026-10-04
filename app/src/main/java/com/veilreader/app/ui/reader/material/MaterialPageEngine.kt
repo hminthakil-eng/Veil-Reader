@@ -123,6 +123,7 @@ internal class MaterialPageEngineState(
         private set
     private var preparedSnapshot: MaterialPagePreparedSnapshot? = null
     private var preparedSnapshotBufferSlot = -1
+    private val gpuUploadLeases = mutableListOf<Bitmap>()
     private var liftCueEmitted = false
 
     fun configureProfile(value: MaterialPageProfile) {
@@ -139,6 +140,29 @@ internal class MaterialPageEngineState(
     fun setSensorySink(value: MaterialPageSensorySink?) {
         sensorySink = value
     }
+
+    /**
+     * Called immediately before a snapshot bitmap is handed to the GL renderer.
+     * Identity semantics are intentional: two bitmaps with identical pixels are
+     * still independent CPU storage and must have independent upload leases.
+     */
+    fun markSnapshotSubmittedForGpu(bitmap: Bitmap) {
+        if (bitmap.isRecycled) return
+        if (gpuUploadLeases.none { it === bitmap }) {
+            gpuUploadLeases += bitmap
+        }
+    }
+
+    /**
+     * GL calls this only after texImage2D/texSubImage2D returned without a GL error.
+     * Until this acknowledgement, capture code is forbidden from overwriting the bitmap.
+     */
+    fun acknowledgeSnapshotUploaded(bitmap: Bitmap) {
+        gpuUploadLeases.removeAll { it === bitmap }
+    }
+
+    internal fun snapshotHasPendingGpuUpload(bitmap: Bitmap?): Boolean =
+        bitmap != null && gpuUploadLeases.any { it === bitmap }
 
     fun configureReducedMotion(value: Boolean) {
         reducedMotion = value
@@ -594,8 +618,8 @@ internal class MaterialPageEngineState(
         width = 0f
         height = 0f
         density = 1f
-        // Preserve one frame of input lock so the snapshot cannot be reused while
-        // Compose is still drawing the previous overlay.
+        // Keep the one-frame visual/input settling barrier, but do not rely on time
+        // for memory safety. CPU buffer reuse is protected by explicit GPU upload leases.
         delay(16L)
         active = false
         liftCueEmitted = false
@@ -697,6 +721,9 @@ internal class MaterialPageEngineState(
     fun dispose() {
         clearImmediately()
         releaseBufferIfIdle()
+        // The GL SubmittedFrame keeps its own strong bitmap reference if an upload
+        // is still executing. This engine is disposed and will never reuse storage.
+        gpuUploadLeases.clear()
     }
 
     private fun captureIntoSourceBuffer(
@@ -784,7 +811,8 @@ internal class MaterialPageEngineState(
             val targetWidth = max(1, view.width)
             val targetHeight = max(1, view.height)
             current?.takeIf {
-                !it.isRecycled &&
+                !snapshotHasPendingGpuUpload(it) &&
+                    !it.isRecycled &&
                     it.width == targetWidth &&
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
