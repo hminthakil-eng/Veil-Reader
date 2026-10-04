@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.readerNavigationIdentityHasVisuallyDeparted
 import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
@@ -681,18 +682,18 @@ internal class PaperCurlInputListener(
         // whether to commit or restore the exact origin.
         val originIdentity = origin.toReaderNavigationIdentity()
         if (
-            !readerNavigationIdentityMatchesTarget(
-                observed = navigator.currentLocator.value.toReaderNavigationIdentity(),
-                target = originIdentity
+            readerNavigationIdentityHasVisuallyDeparted(
+                origin = originIdentity,
+                observed = navigator.currentLocator.value.toReaderNavigationIdentity()
             )
         ) {
             return@withContext true
         }
         withTimeoutOrNull(NAVIGATION_SETTLE_TIMEOUT_MS) {
             navigator.currentLocator.first { locator ->
-                !readerNavigationIdentityMatchesTarget(
-                    observed = locator.toReaderNavigationIdentity(),
-                    target = originIdentity
+                readerNavigationIdentityHasVisuallyDeparted(
+                    origin = originIdentity,
+                    observed = locator.toReaderNavigationIdentity()
                 )
             }
             true
