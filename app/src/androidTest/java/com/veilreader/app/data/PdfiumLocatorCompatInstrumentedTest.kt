@@ -43,6 +43,17 @@ class PdfiumLocatorCompatInstrumentedTest {
     }
 
     @Test
+    fun ephemeralLocatorReferences_followTheSameMigrationIdentityAsRoom() {
+        val legacy = """{"href":"document.pdf","type":"application/pdf","locations":{"position":3}}"""
+        val migrated = """{"href":"document.pdf","type":"application/pdf","locations":{"position":2,"veilPdfiumLocatorVersion":1}}"""
+        val migrations = mapOf(legacy to migrated)
+
+        assertEquals(migrated, resolveMigratedPdfiumLocatorJson(legacy, migrations))
+        assertEquals("fresh", resolveMigratedPdfiumLocatorJson("fresh", migrations))
+        assertEquals(null, resolveMigratedPdfiumLocatorJson(null, migrations))
+    }
+
+    @Test
     fun pdfPersistence_stampsMarker_whileEpubPersistenceDoesNot() {
         val original = locator()
 
