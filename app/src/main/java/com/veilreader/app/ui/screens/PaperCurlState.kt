@@ -53,12 +53,19 @@ internal class PaperCurlState {
     var debugBeginAttempts: Int by mutableStateOf(0)
         private set
 
+    var gpuRendererFailed: Boolean by mutableStateOf(false)
+        private set
+
     internal val materialEngine = MaterialPageEngineState(
         initialProfile = MaterialPageEngineRollout.selectedProfile()
     )
 
     fun configureReducedMotion(value: Boolean) {
         materialEngine.configureReducedMotion(value)
+    }
+
+    fun markGpuRendererFailed() {
+        gpuRendererFailed = true
     }
 
     internal fun usingMaterialEngine(): Boolean = active
@@ -178,6 +185,8 @@ internal fun PaperCurlOverlay(
 
         if (BuildConfig.DEBUG) {
             val label = when {
+                state.gpuRendererFailed ->
+                    "PAPER · GPU v2 · GPU FAILED · A${state.debugBeginAttempts}"
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU v2 · DISABLED"
                 rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
