@@ -78,9 +78,9 @@ dependencies {
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.9")
-    implementation("androidx.compose.ui:ui:1.10.5")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
-    implementation("androidx.compose.foundation:foundation:1.10.5")
+    implementation("androidx.compose.ui:ui:1.10.6")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.10.6")
+    implementation("androidx.compose.foundation:foundation:1.10.6")
     implementation("androidx.compose.material3:material3:1.4.0")
     // Stable adaptive window/posture APIs for phone, tablet, desktop-window and foldable layouts.
     implementation("androidx.compose.material3.adaptive:adaptive:1.3.0")
@@ -115,11 +115,11 @@ dependencies {
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
-    debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.5")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.10.6")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.6")
     testImplementation("junit:junit:4.13.2")
     // Reuse the native Compose test stack for cloud rendering; no production dependency.
-    testImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.10.6")
     testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
@@ -129,5 +129,5 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.room:room-testing:2.8.5")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.6")
 }
