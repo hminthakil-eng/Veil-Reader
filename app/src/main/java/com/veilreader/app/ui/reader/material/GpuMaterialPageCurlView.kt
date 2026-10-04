@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
+import android.os.Trace
 import android.util.Log
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -51,6 +52,7 @@ internal class GpuMaterialPageCurlView(
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
+        val generation: Long,
         val bitmap: Bitmap?,
         val active: Boolean,
         val curl: GpuPageCurlFrame,
@@ -74,6 +76,9 @@ internal class GpuMaterialPageCurlView(
     private var lastSubmittedActive = false
     private var frontTextureDirty = true
     private var rendererFailed = false
+
+    @Volatile
+    private var rendererGeneration = 0L
 
     private var program = 0
     private var vertexBufferId = 0
@@ -148,6 +153,7 @@ internal class GpuMaterialPageCurlView(
                 frontTextureDirty = true
             }
             submittedFrame = SubmittedFrame(
+                generation = rendererGeneration,
                 bitmap = usableBitmap,
                 active = active && usableBitmap != null,
                 curl = curl,
@@ -164,7 +170,15 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        rendererGeneration =
+            nextGpuMaterialRendererGeneration(rendererGeneration)
         rendererFailed = false
+        resetGlHandlesForNewGeneration()
+        synchronized(frameLock) {
+            submittedFrame = null
+            lastSubmittedActive = false
+            frontTextureDirty = true
+        }
         post { onRendererReady(false) }
         runCatching {
             program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER)
@@ -219,6 +233,8 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onDrawFrame(gl: GL10?) {
+        Trace.beginSection("paper.gpu.draw")
+        try {
         GLES20.glClear(
             GLES20.GL_COLOR_BUFFER_BIT or
                 GLES20.GL_DEPTH_BUFFER_BIT
@@ -226,6 +242,14 @@ internal class GpuMaterialPageCurlView(
         if (rendererFailed || program == 0) return
 
         val frame = synchronized(frameLock) { submittedFrame } ?: return
+        if (
+            !gpuMaterialFrameMatchesRendererGeneration(
+                frameGeneration = frame.generation,
+                rendererGeneration = rendererGeneration
+            )
+        ) {
+            return
+        }
         val bitmap = frame.bitmap ?: return
         if (!frame.active || bitmap.isRecycled) return
         if (!textureFits(bitmap)) {
@@ -308,6 +332,44 @@ internal class GpuMaterialPageCurlView(
         if (drawError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page draw failed: glError=$drawError")
         }
+        } finally {
+            Trace.endSection()
+        }
+    }
+
+    private fun resetGlHandlesForNewGeneration() {
+        program = 0
+        vertexBufferId = 0
+        indexBufferId = 0
+        frontTextureId = 0
+        frontTextureWidth = 1
+        frontTextureHeight = 1
+        indexCount = 0
+        maxTextureSize = 0
+        aPosition = -1
+        aTexCoord = -1
+        uFrontTexture = -1
+        uCylinderPosition = -1
+        uCylinderTilt = -1
+        uCylinderRadius = -1
+        uPageAspect = -1
+        uTexelSize = -1
+        uSideSign = -1
+        uFrontTint = -1
+        uBackTint = -1
+        uEdgeTint = -1
+        uFrontTintAlpha = -1
+        uGhostAlpha = -1
+        uRoughness = -1
+        uSpecular = -1
+        uTranslucency = -1
+        uGrain = -1
+        uFiber = -1
+        uMaterialPhase = -1
+        uEdgeStrength = -1
+        uShadowStrength = -1
+        uVisualAlpha = -1
+        uShadowPass = -1
     }
 
     private fun textureFits(bitmap: Bitmap): Boolean =
@@ -483,27 +545,32 @@ internal class GpuMaterialPageCurlView(
         }
         if (!uploadFront) return
 
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
-        if (
-            frontTextureWidth == frontBitmap.width &&
-            frontTextureHeight == frontBitmap.height
-        ) {
-            GLUtils.texSubImage2D(
-                GLES20.GL_TEXTURE_2D,
-                0,
-                0,
-                0,
-                frontBitmap
-            )
-        } else {
-            GLUtils.texImage2D(
-                GLES20.GL_TEXTURE_2D,
-                0,
-                frontBitmap,
-                0
-            )
-            frontTextureWidth = frontBitmap.width
-            frontTextureHeight = frontBitmap.height
+        Trace.beginSection("paper.gpu.texture_upload")
+        try {
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
+            if (
+                frontTextureWidth == frontBitmap.width &&
+                frontTextureHeight == frontBitmap.height
+            ) {
+                GLUtils.texSubImage2D(
+                    GLES20.GL_TEXTURE_2D,
+                    0,
+                    0,
+                    0,
+                    frontBitmap
+                )
+            } else {
+                GLUtils.texImage2D(
+                    GLES20.GL_TEXTURE_2D,
+                    0,
+                    frontBitmap,
+                    0
+                )
+                frontTextureWidth = frontBitmap.width
+                frontTextureHeight = frontBitmap.height
+            }
+        } finally {
+            Trace.endSection()
         }
     }
 
@@ -1039,6 +1106,16 @@ internal fun gpuMaterialPageRendererRetryDelayMillis(failureCount: Int): Long =
         1 -> 180L
         else -> 420L
     }
+
+internal fun nextGpuMaterialRendererGeneration(current: Long): Long =
+    if (current == Long.MAX_VALUE) 1L else current + 1L
+
+internal fun gpuMaterialFrameMatchesRendererGeneration(
+    frameGeneration: Long,
+    rendererGeneration: Long
+): Boolean =
+    frameGeneration > 0L &&
+        frameGeneration == rendererGeneration
 
 internal fun shouldPreallocateGpuPageTexture(
     viewportWidth: Int,
