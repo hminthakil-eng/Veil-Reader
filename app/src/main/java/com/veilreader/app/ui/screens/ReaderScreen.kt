@@ -3675,8 +3675,15 @@ internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
     fixedLayout: Boolean
 ): ReaderAppearance =
-    if (fixedLayout && appearance.scroll) {
-        appearance.copy(scroll = false)
+    if (fixedLayout) {
+        // The current Veil Paper/Slide engines own one captured reflowable sheet.
+        // A fixed-layout navigator may present a dual spread, so treating its full
+        // publicationView as one physical leaf produces incorrect geometry and
+        // page ownership. Keep fixed-layout on deterministic paged navigation until
+        // a spread-aware per-leaf capture contract exists.
+        appearance
+            .withReadingMode(ReaderReadingMode.PAGED)
+            .withPageTurnStyle(PageTurnStyle.NONE)
     } else {
         appearance
     }
