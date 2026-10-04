@@ -63,6 +63,29 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `early physical pointer travel keeps curl radius tight before opening`() {
+        val early = gpuPageCurlFrame(
+            progress = 0.08f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            pointerTravel = 0.08f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val opened = gpuPageCurlFrame(
+            progress = 0.08f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            pointerTravel = 0.34f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(early.radius < opened.radius)
+        assertTrue(early.radius > 0f)
+    }
+
+    @Test
     fun `stiffer glossy stock uses broader cylinder than papyrus`() {
         val glossy = gpuPageCurlFrame(
             progress = 0.5f,
