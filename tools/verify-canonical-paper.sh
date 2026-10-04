@@ -52,6 +52,10 @@ grep -q 'gpuCylinderXForFreeEdge' "$model" ||
 grep -q 'gpuMaterialFrameMatchesRendererGeneration' "$gpu" ||
   fail "stale GL-context frame fence is missing"
 
+if grep -q 'rendererFailureCount.intValue = 0' "$gpu"; then
+  fail "GPU recovery counter is reset on READY and can retry forever"
+fi
+
 grep -q 'paper.gpu.texture_upload' "$gpu" ||
   fail "GPU texture upload trace is missing"
 
