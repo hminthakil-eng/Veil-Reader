@@ -86,6 +86,22 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `disabled rollout never leaves hidden Paper navigation ownership`() {
+        MaterialPageEngineRollout.setDebugOverride(false)
+        try {
+            assertFalse(
+                shouldAllowPaperNavigation(
+                    reducedMotion = true,
+                    rendererStatus = GpuMaterialPageRendererStatus.REDUCED_MOTION,
+                    visualActive = false
+                )
+            )
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `disabled GPU Paper degrades to static paged not slide`() {
         val requested = ReaderAppearance(
             scroll = false,
