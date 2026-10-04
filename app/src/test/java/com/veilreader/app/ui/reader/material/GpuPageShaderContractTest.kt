@@ -21,6 +21,22 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `vertex and fragment varyings match exactly`() {
+        val varyingRegex =
+            Regex("""\bvarying\s+(\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
+        fun varyings(shader: String): Map<String, String> =
+            varyingRegex.findAll(shader)
+                .associate { match ->
+                    match.groupValues[2] to match.groupValues[1]
+                }
+
+        assertEquals(
+            varyings(GpuMaterialPageCurlView.VERTEX_SHADER),
+            varyings(GpuMaterialPageCurlView.FRAGMENT_SHADER)
+        )
+    }
+
+    @Test
     fun `renderer critical uniforms stay present`() {
         val source =
             GpuMaterialPageCurlView.VERTEX_SHADER +
