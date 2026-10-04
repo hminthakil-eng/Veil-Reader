@@ -21,10 +21,22 @@ internal fun gpuPageMeshQuality(
     lowMemoryDevice: Boolean
 ): GpuPageMeshQuality =
     if (lowMemoryDevice) {
-        GpuPageMeshQuality(columns = 48, rows = 8)
+        // Diagonal curl needs real vertical tessellation too; an 8-row strip can
+        // visibly facet on tall phones. Keep this conservative while preserving
+        // enough topology for corner pulls on memory-constrained devices.
+        GpuPageMeshQuality(columns = 56, rows = 22)
     } else {
-        GpuPageMeshQuality(columns = 72, rows = 14)
+        // Geometry is cheap compared with full-page texture fill. 80x32 keeps
+        // diagonal cylinders smooth on tall 90/120 Hz displays while remaining
+        // safely inside GLES2 16-bit index limits.
+        GpuPageMeshQuality(columns = 80, rows = 32)
     }
+
+internal fun gpuPageMeshVertexCount(quality: GpuPageMeshQuality): Int =
+    (quality.columns + 1) * (quality.rows + 1)
+
+internal fun gpuPageMeshIndexCount(quality: GpuPageMeshQuality): Int =
+    quality.columns * quality.rows * 6
 
 internal fun nextMaterialPageBufferSlot(cursor: Int): Int =
     (cursor + 1) and 1
