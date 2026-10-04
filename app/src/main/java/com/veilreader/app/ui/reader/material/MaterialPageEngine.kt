@@ -106,8 +106,11 @@ internal class MaterialPageEngineState(
     private var width = 0f
     private var height = 0f
     private var density = 1f
-    private var snapshotBuffer: Bitmap? = null
-    private var backSnapshotBuffer: Bitmap? = null
+    private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
+    private val backSnapshotBuffers = arrayOfNulls<Bitmap>(2)
+    private var snapshotBufferCursor = -1
+    private var backSnapshotBufferCursor = -1
+    private var preparedSnapshot: Bitmap? = null
     private var preparedSnapshotValid = false
     private var backSnapshotAllowed = true
     private var liftCueEmitted = false
@@ -138,6 +141,7 @@ internal class MaterialPageEngineState(
             preparedSnapshotValid = false
             return false
         }
+        preparedSnapshot = bitmap
         preparedSnapshotValid =
             bitmap.width == view.width &&
                 bitmap.height == view.height &&
@@ -151,13 +155,14 @@ internal class MaterialPageEngineState(
         profile: MaterialPageProfile = this.profile
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val prepared = snapshotBuffer?.takeIf {
+        val prepared = preparedSnapshot?.takeIf {
             preparedSnapshotValid &&
                 !it.isRecycled &&
                 it.width == view.width &&
                 it.height == view.height
         }
         val bitmap = prepared ?: captureIntoSourceBuffer(view) ?: return false
+        preparedSnapshot = null
         preparedSnapshotValid = false
 
         width = view.width.toFloat()
@@ -430,6 +435,8 @@ internal class MaterialPageEngineState(
     suspend fun clear() {
         snapshot = null
         backSnapshot = null
+        preparedSnapshot = null
+        preparedSnapshot = null
         preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
@@ -525,8 +532,13 @@ internal class MaterialPageEngineState(
         // Do not manually recycle buffers that may still be referenced by the GL
         // render thread. Dropping ownership lets Android reclaim them once all
         // in-flight frame references are gone.
-        snapshotBuffer = null
-        backSnapshotBuffer = null
+        snapshotBuffers[0] = null
+        snapshotBuffers[1] = null
+        backSnapshotBuffers[0] = null
+        backSnapshotBuffers[1] = null
+        snapshotBufferCursor = -1
+        backSnapshotBufferCursor = -1
+        preparedSnapshot = null
         preparedSnapshotValid = false
     }
 
@@ -544,15 +556,18 @@ internal class MaterialPageEngineState(
             bitmap
         }.getOrNull()
 
-    private fun obtainSnapshotBuffer(view: View): Bitmap? =
-        obtainReusableBuffer(
-            current = snapshotBuffer,
+    private fun obtainSnapshotBuffer(view: View): Bitmap? {
+        snapshotBufferCursor = (snapshotBufferCursor + 1) and 1
+        val slot = snapshotBufferCursor
+        return obtainReusableBuffer(
+            current = snapshotBuffers[slot],
             view = view
         ).also { resolved ->
-            if (resolved != null && resolved !== snapshotBuffer) {
-                snapshotBuffer = resolved
+            if (resolved != null) {
+                snapshotBuffers[slot] = resolved
             }
         }
+    }
 
     private fun captureBackSnapshot(view: View): Bitmap? =
         runCatching {
@@ -563,15 +578,18 @@ internal class MaterialPageEngineState(
             bitmap
         }.getOrNull()
 
-    private fun obtainBackSnapshotBuffer(view: View): Bitmap? =
-        obtainReusableBuffer(
-            current = backSnapshotBuffer,
+    private fun obtainBackSnapshotBuffer(view: View): Bitmap? {
+        backSnapshotBufferCursor = (backSnapshotBufferCursor + 1) and 1
+        val slot = backSnapshotBufferCursor
+        return obtainReusableBuffer(
+            current = backSnapshotBuffers[slot],
             view = view
         ).also { resolved ->
-            if (resolved != null && resolved !== backSnapshotBuffer) {
-                backSnapshotBuffer = resolved
+            if (resolved != null) {
+                backSnapshotBuffers[slot] = resolved
             }
         }
+    }
 
     private fun obtainReusableBuffer(
         current: Bitmap?,
