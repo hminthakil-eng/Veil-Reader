@@ -31,6 +31,55 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `prepared snapshot expires instead of lifting old WebView pixels`() {
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            24,
+            36,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val prepared = MaterialPagePreparedSnapshot(
+            bitmap = bitmap,
+            sourceRevision = 5L,
+            width = 24,
+            height = 36,
+            capturedAtElapsedNanos = 10_000L,
+            provider = "test"
+        )
+
+        assertTrue(
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = 5L,
+                expectedWidth = 24,
+                expectedHeight = 36,
+                nowElapsedNanos = 10_000L + 100L,
+                maxAgeNanos = 200L
+            )
+        )
+        assertFalse(
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = 5L,
+                expectedWidth = 24,
+                expectedHeight = 36,
+                nowElapsedNanos = 10_000L + 201L,
+                maxAgeNanos = 200L
+            )
+        )
+        assertFalse(
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = 5L,
+                expectedWidth = 24,
+                expectedHeight = 36,
+                nowElapsedNanos = 9_999L,
+                maxAgeNanos = 200L
+            )
+        )
+        bitmap.recycle()
+    }
+
+    @Test
     fun `snapshot revisions reject stale captures and survive counter rollover`() {
         assertTrue(materialPageSnapshotCaptureIsCurrent(7L, 7L))
         assertFalse(materialPageSnapshotCaptureIsCurrent(6L, 7L))
