@@ -5,9 +5,11 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import com.veilreader.app.ui.reader.readerNavigationIdentityMatchesTarget
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
@@ -673,7 +675,10 @@ internal class PaperCurlInputListener(
 
     private suspend fun awaitNavigationDeparture(
         origin: Locator
-    ): Boolean {
+    ): Boolean = withContext(NonCancellable) {
+        // Once Readium accepted a navigation request, caller cancellation must not
+        // tear down the settlement handshake before the operation fence can decide
+        // whether to commit or restore the exact origin.
         val originIdentity = origin.toReaderNavigationIdentity()
         if (
             !readerNavigationIdentityMatchesTarget(
@@ -681,9 +686,9 @@ internal class PaperCurlInputListener(
                 target = originIdentity
             )
         ) {
-            return true
+            return@withContext true
         }
-        return withTimeoutOrNull(NAVIGATION_SETTLE_TIMEOUT_MS) {
+        withTimeoutOrNull(NAVIGATION_SETTLE_TIMEOUT_MS) {
             navigator.currentLocator.first { locator ->
                 !readerNavigationIdentityMatchesTarget(
                     observed = locator.toReaderNavigationIdentity(),
