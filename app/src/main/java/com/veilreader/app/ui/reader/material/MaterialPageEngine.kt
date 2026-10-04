@@ -3,6 +3,7 @@ package com.veilreader.app.ui.reader.material
 import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.SystemClock
+import android.os.Trace
 import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -106,6 +107,9 @@ internal class MaterialPageEngineState(
     var active: Boolean by mutableStateOf(false)
         private set
 
+    var lastSnapshotFailureReason: MaterialPageSnapshotFailureReason? by mutableStateOf(null)
+        private set
+
     private var width = 0f
     private var height = 0f
     private var density = 1f
@@ -160,13 +164,25 @@ internal class MaterialPageEngineState(
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
         val capture = captureIntoSourceBuffer(view)
-        val ready = capture as? MaterialPageSnapshotCapture.Ready ?: return false
+        val ready = when (capture) {
+            is MaterialPageSnapshotCapture.Ready -> capture
+            is MaterialPageSnapshotCapture.NotReady -> {
+                lastSnapshotFailureReason = capture.reason
+                return false
+            }
+            is MaterialPageSnapshotCapture.Failed -> {
+                lastSnapshotFailureReason = capture.reason
+                return false
+            }
+        }
         if (
             !materialPageSnapshotCaptureIsCurrent(
                 captureRevision = ready.sourceRevision,
                 expectedRevision = snapshotSourceRevision
             )
         ) {
+            lastSnapshotFailureReason =
+                MaterialPageSnapshotFailureReason.STALE_REVISION
             ReaderTrace.event(
                 name = "paper_snapshot_stale_rejected",
                 details =
@@ -175,6 +191,7 @@ internal class MaterialPageEngineState(
             )
             return false
         }
+        lastSnapshotFailureReason = null
         val bitmap = ready.bitmap
         width = view.width.toFloat()
         height = view.height.toFloat()
@@ -546,19 +563,26 @@ internal class MaterialPageEngineState(
         view: View
     ): MaterialPageSnapshotCapture {
         val revision = snapshotSourceRevision
-        val bitmap = obtainSnapshotBuffer(view)
-            ?: return MaterialPageSnapshotCapture.Failed(
-                sourceRevision = revision,
-                reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
-                errorType = "BitmapAllocation"
-            )
-
         val totalStarted = SystemClock.elapsedRealtimeNanos()
-        val capture = snapshotProvider.capture(
-            view = view,
-            target = bitmap,
-            sourceRevision = revision
-        )
+        Trace.beginSection("paper.capture.total")
+        val capture = try {
+            val bitmap = obtainSnapshotBuffer(view)
+            if (bitmap == null) {
+                MaterialPageSnapshotCapture.Failed(
+                    sourceRevision = revision,
+                    reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
+                    errorType = "BitmapAllocation"
+                )
+            } else {
+                snapshotProvider.capture(
+                    view = view,
+                    target = bitmap,
+                    sourceRevision = revision
+                )
+            }
+        } finally {
+            Trace.endSection()
+        }
         val totalNanos =
             (SystemClock.elapsedRealtimeNanos() - totalStarted)
                 .coerceAtLeast(0L)
@@ -581,7 +605,8 @@ internal class MaterialPageEngineState(
                     name = "paper_snapshot_not_ready",
                     details =
                         "revision=${capture.sourceRevision} " +
-                            "reason=${capture.reason}"
+                            "reason=${capture.reason} " +
+                            "totalUs=${totalNanos / 1_000L}"
                 )
 
             is MaterialPageSnapshotCapture.Failed ->
@@ -590,7 +615,8 @@ internal class MaterialPageEngineState(
                     details =
                         "revision=${capture.sourceRevision} " +
                             "reason=${capture.reason} " +
-                            "errorType=${capture.errorType.orEmpty()}"
+                            "errorType=${capture.errorType.orEmpty()} " +
+                            "totalUs=${totalNanos / 1_000L}"
                 )
         }
         return capture
