@@ -40,6 +40,7 @@ import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.data.resolveMigratedPdfiumLocatorJson
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaLocalChapterMetadata
 import com.veilreader.app.data.manga.MangaLocalChapterSummary
@@ -810,6 +811,18 @@ fun VeilApp(
                 showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING, VeilIssueCategory.PERSISTENCE)
             }
 
+            // Any ephemeral locator that survives past migration must use the same corrected
+            // identity as Room. Otherwise a legacy bookmark override can open correctly but fail
+            // to match its migrated highlight/bookmark when recording revisit or Previous location.
+            activeReturnLocatorJson = resolveMigratedPdfiumLocatorJson(
+                locatorJson = activeReturnLocatorJson,
+                migrations = opened.locatorMigrations
+            )
+            val migratedLocatorOverride = resolveMigratedPdfiumLocatorJson(
+                locatorJson = locatorOverride,
+                migrations = opened.locatorMigrations
+            )
+
             val routeBeforeCommit = routeViewModel.route.value
             if (
                 routeBeforeCommit.activeBookId != targetId ||
@@ -843,10 +856,10 @@ fun VeilApp(
                 }
             }
             library.markOpened(targetId)
-            if (locatorOverride != null) {
+            if (migratedLocatorOverride != null) {
                 library.recordPassageVisitForLocator(
                     bookId = targetId,
-                    locatorJson = locatorOverride
+                    locatorJson = migratedLocatorOverride
                 )
             }
 
