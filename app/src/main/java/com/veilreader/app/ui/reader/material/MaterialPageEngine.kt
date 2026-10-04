@@ -65,8 +65,8 @@ internal object MaterialPageEngineRollout {
 internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
     private var sensorySink: MaterialPageSensorySink? = null,
-    private val snapshotProvider: MaterialPageSnapshotProvider =
-        ViewDrawMaterialPageSnapshotProvider
+    private val snapshotProvider: MaterialPageImmediateSnapshotProvider =
+        ViewDrawMaterialPageImmediateSnapshotProvider
 ) {
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
