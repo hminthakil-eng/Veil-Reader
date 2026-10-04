@@ -114,8 +114,6 @@ internal class MaterialPageEngineState(
     private val backSnapshotBuffers = arrayOfNulls<Bitmap>(2)
     private var snapshotBufferCursor = -1
     private var backSnapshotBufferCursor = -1
-    private var preparedSnapshot: Bitmap? = null
-    private var preparedSnapshotValid = false
     private var backSnapshotAllowed = true
     private var liftCueEmitted = false
 
@@ -141,16 +139,15 @@ internal class MaterialPageEngineState(
 
     fun prepareBuffer(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val bitmap = captureIntoSourceBuffer(view) ?: run {
-            preparedSnapshotValid = false
-            return false
-        }
-        preparedSnapshot = bitmap
-        preparedSnapshotValid =
-            bitmap.width == view.width &&
-                bitmap.height == view.height &&
-                !bitmap.isRecycled
-        return preparedSnapshotValid
+        val warmed = obtainReusableBuffer(
+            current = snapshotBuffers[0],
+            view = view
+        ) ?: return false
+        snapshotBuffers[0] = warmed
+        // The first real turn must still draw fresh Readium content into the
+        // preallocated bitmap. Prewarming memory must never cache page content.
+        snapshotBufferCursor = -1
+        return true
     }
 
     fun begin(
@@ -159,15 +156,7 @@ internal class MaterialPageEngineState(
         profile: MaterialPageProfile = this.profile
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val prepared = preparedSnapshot?.takeIf {
-            preparedSnapshotValid &&
-                !it.isRecycled &&
-                it.width == view.width &&
-                it.height == view.height
-        }
-        val bitmap = prepared ?: captureIntoSourceBuffer(view) ?: return false
-        preparedSnapshot = null
-        preparedSnapshotValid = false
+        val bitmap = captureIntoSourceBuffer(view) ?: return false
 
         width = view.width.toFloat()
         height = view.height.toFloat()
@@ -458,8 +447,6 @@ internal class MaterialPageEngineState(
     suspend fun clear() {
         snapshot = null
         backSnapshot = null
-        preparedSnapshot = null
-        preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -479,8 +466,6 @@ internal class MaterialPageEngineState(
     fun clearImmediately() {
         snapshot = null
         backSnapshot = null
-        preparedSnapshot = null
-        preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -566,8 +551,6 @@ internal class MaterialPageEngineState(
         backSnapshotBuffers[1] = null
         snapshotBufferCursor = -1
         backSnapshotBufferCursor = -1
-        preparedSnapshot = null
-        preparedSnapshotValid = false
     }
 
     fun dispose() {
