@@ -126,5 +126,17 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
     }
 
     private fun viewUriFrom(intent: Intent?): Uri? =
-        intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data
+        intent
+            ?.takeIf { it.action == Intent.ACTION_VIEW }
+            ?.data
+            ?.takeIf { uri ->
+                isSupportedExternalPublicationScheme(uri.scheme)
+            }
+}
+
+internal fun isSupportedExternalPublicationScheme(scheme: String?): Boolean =
+    when (scheme?.lowercase(java.util.Locale.ROOT)) {
+        "content", "file" -> true
+        else -> false
+    }
 }
