@@ -139,14 +139,15 @@ internal class MaterialPageEngineState(
 
     fun prepareBuffer(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
+        val nextSlot = (snapshotBufferCursor + 1) and 1
         val warmed = obtainReusableBuffer(
-            current = snapshotBuffers[0],
+            current = snapshotBuffers[nextSlot],
             view = view
         ) ?: return false
-        snapshotBuffers[0] = warmed
-        // The first real turn must still draw fresh Readium content into the
-        // preallocated bitmap. Prewarming memory must never cache page content.
-        snapshotBufferCursor = -1
+        snapshotBuffers[nextSlot] = warmed
+        // Do not advance/reset the cursor here. begin() claims exactly this next
+        // slot, preserving ping-pong separation from the bitmap the GL thread
+        // may still be uploading from the previous turn.
         return true
     }
 
