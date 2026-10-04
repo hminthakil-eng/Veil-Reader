@@ -86,6 +86,9 @@ internal class MaterialPageEngineState(
     var pointerTravel: Float by mutableFloatStateOf(0f)
         private set
 
+    var edgeTravel: Float by mutableFloatStateOf(0f)
+        private set
+
     var visualAlpha: Float by mutableFloatStateOf(1f)
         private set
 
@@ -207,6 +210,7 @@ internal class MaterialPageEngineState(
         pullOriginY = 0.5f
         diagonalPull = 0f
         pointerTravel = 0f
+        edgeTravel = 0f
         visualAlpha = 1f
         liftCueEmitted = false
         active = true
@@ -253,6 +257,7 @@ internal class MaterialPageEngineState(
                 .takeIf { it.isFinite() }
                 ?.coerceIn(0f, 1.5f)
                 ?: sample.rawProgress
+        edgeTravel = sample.rawProgress
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -278,6 +283,7 @@ internal class MaterialPageEngineState(
     private fun acceptAnimatedProgress(value: Float) {
         progress = value.coerceIn(0f, 1f)
         pointerTravel = progress
+        edgeTravel = progress
     }
 
     fun prepareTapGrip() {
@@ -458,6 +464,7 @@ internal class MaterialPageEngineState(
         pullOriginY = 0.5f
         diagonalPull = 0f
         pointerTravel = 0f
+        edgeTravel = 0f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -475,6 +482,8 @@ internal class MaterialPageEngineState(
         verticalBias = 0f
         pullOriginY = 0.5f
         diagonalPull = 0f
+        pointerTravel = 0f
+        edgeTravel = 0f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -494,6 +503,7 @@ internal class MaterialPageEngineState(
         pullOriginY: Float = 0.5f,
         diagonalPull: Float = 0f,
         pointerTravel: Float = progress,
+        edgeTravel: Float = progress,
         side: MaterialPageSide = MaterialPageSide.RIGHT,
         profile: MaterialPageProfile = this.profile,
         reducedMotion: Boolean = false,
@@ -517,6 +527,9 @@ internal class MaterialPageEngineState(
             diagonalPull.takeIf { it.isFinite() }?.coerceIn(-1f, 1f) ?: 0f
         this.pointerTravel =
             pointerTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1.5f)
+                ?: this.progress
+        this.edgeTravel =
+            edgeTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
                 ?: this.progress
         this.side = side
         this.profile = profile
