@@ -471,6 +471,73 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun closeClassification_acceptsReachedDestination_butRejectsOriginAndIntermediate() {
+        val target = ReaderNavigationIdentity(
+            href = "chapter-04.xhtml",
+            position = 12,
+            cssSelector = null,
+            totalProgression = 0.42
+        )
+        val transaction = ReaderNavigationTransaction(
+            token = 1L,
+            originLocatorJson = "origin",
+            targetIdentity = target,
+            targetHref = null,
+            passageVisitLocatorJson = null,
+            startedAtElapsedMs = 100L
+        )
+
+        assertTrue(
+            transaction.hasReachedObservedDestination(
+                observedLocatorJson = "destination",
+                observedIdentity = target
+            )
+        )
+        assertFalse(
+            transaction.hasReachedObservedDestination(
+                observedLocatorJson = "origin",
+                observedIdentity = target.copy(position = 4)
+            )
+        )
+        assertFalse(
+            transaction.hasReachedObservedDestination(
+                observedLocatorJson = "intermediate",
+                observedIdentity = target.copy(position = 8)
+            )
+        )
+    }
+
+    @Test
+    fun closeClassification_requiresExpectedPdfPage() {
+        val target = ReaderNavigationIdentity("book.pdf", 3, null, null)
+        val transaction = ReaderNavigationTransaction(
+            token = 2L,
+            originLocatorJson = "page1",
+            targetIdentity = target,
+            targetHref = null,
+            passageVisitLocatorJson = null,
+            startedAtElapsedMs = 100L,
+            expectedPdfPage = 3,
+            originPdfPage = 1
+        )
+
+        assertTrue(
+            transaction.hasReachedObservedDestination(
+                observedLocatorJson = "page3",
+                observedIdentity = target,
+                observedPdfPage = 3
+            )
+        )
+        assertFalse(
+            transaction.hasReachedObservedDestination(
+                observedLocatorJson = "page2",
+                observedIdentity = target,
+                observedPdfPage = 2
+            )
+        )
+    }
+
+    @Test
     fun jumpCommit_persistsWithoutPageTurnCredit() {
         assertTrue(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.countsPageTurn)
