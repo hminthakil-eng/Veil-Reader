@@ -13,6 +13,7 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
@@ -33,6 +34,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        MaterialPageEngineRollout.setDebugOverride(true)
 
         val benchmarkReaderSessionId = "benchmark-reader-session-${UUID.randomUUID()}"
 
@@ -63,7 +65,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
 
             setContent {
                 val readerAppearance = remember {
-                    mutableStateOf(ReaderAppearance(pageTurnStyle = PageTurnStyle.SLIDE))
+                    mutableStateOf(ReaderAppearance(pageTurnStyle = PageTurnStyle.PAPER))
                 }
                 VeilTheme {
                     ReaderScreen(
