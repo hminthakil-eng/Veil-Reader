@@ -33,12 +33,12 @@ class PaperWarmupBenchmark {
             TraceSectionMetric(
                 sectionName = "paper.capture.prepare",
                 mode = TraceSectionMetric.Mode.Max,
-                label = "paperPrepareCaptureMax"
+                label = "paperPrepareCapture"
             ),
             TraceSectionMetric(
                 sectionName = "paper.capture.view_draw",
                 mode = TraceSectionMetric.Mode.Max,
-                label = "paperViewDrawCaptureMax"
+                label = "paperViewDrawCapture"
             )
         ),
         compilationMode = CompilationMode.None(),
