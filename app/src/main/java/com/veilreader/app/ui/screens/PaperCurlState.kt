@@ -11,7 +11,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +52,9 @@ internal class PaperCurlState {
     var debugBeginAttempts: Int by mutableStateOf(0)
         private set
 
-    var gpuRendererFailed: Boolean by mutableStateOf(false)
+    var rendererStatus: GpuMaterialPageRendererStatus by mutableStateOf(
+        GpuMaterialPageRendererStatus.READY
+    )
         private set
 
     internal val materialEngine = MaterialPageEngineState(
@@ -64,8 +65,8 @@ internal class PaperCurlState {
         materialEngine.configureReducedMotion(value)
     }
 
-    fun markGpuRendererFailed() {
-        gpuRendererFailed = true
+    fun updateRendererStatus(value: GpuMaterialPageRendererStatus) {
+        rendererStatus = value
     }
 
     internal fun usingMaterialEngine(): Boolean = active
@@ -84,7 +85,8 @@ internal class PaperCurlState {
             debugBeginAttempts += 1
         }
         if (
-            gpuRendererFailed ||
+            state.rendererStatus == GpuMaterialPageRendererStatus.FAILED ||
+            state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ||
             active ||
             view.width <= 0 ||
             view.height <= 0
@@ -177,28 +179,22 @@ internal fun PaperCurlOverlay(
         state.materialEngine.configureTone(tone)
     }
 
-    var rendererStatus by remember {
-        mutableStateOf(GpuMaterialPageRendererStatus.READY)
-    }
-
     Box(modifier = modifier) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
             modifier = Modifier.fillMaxSize(),
-            onRendererStatus = { rendererStatus = it }
+            onRendererStatus = state::updateRendererStatus
         )
 
         if (BuildConfig.DEBUG) {
             val label = when {
-                state.gpuRendererFailed ->
-                    "PAPER · GPU v2 · GPU FAILED · A${state.debugBeginAttempts}"
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU v2 · DISABLED"
-                rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
+                state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
                     "PAPER · GPU v2 · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
-                rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
+                state.rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
                     "PAPER · GPU v2 · GPU FAILED · A${state.debugBeginAttempts}"
-                rendererStatus == GpuMaterialPageRendererStatus.REDUCED_MOTION ->
+                state.rendererStatus == GpuMaterialPageRendererStatus.REDUCED_MOTION ->
                     "PAPER · GPU v2 · REDUCED MOTION · A${state.debugBeginAttempts}"
                 state.lastBeginFailed ->
                     "PAPER · GPU v2 · CAPTURE FAILED · A${state.debugBeginAttempts}"
