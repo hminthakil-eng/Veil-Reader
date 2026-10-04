@@ -112,8 +112,11 @@ fun SettingsScreen(
     var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
     var showAdvancedReadingSettings by rememberSaveable { mutableStateOf(false) }
+    // Debug availability and review forcing are separate concerns.
+    // The GPU engine is available by default in debug, but opening Settings must
+    // never mutate the user's Slide/Paged/Scroll choice.
     var materialPageReviewEnabled by remember {
-        mutableStateOf(MaterialPageEngineRollout.isEnabled())
+        mutableStateOf(false)
     }
     var materialPageReviewPreset by remember {
         mutableStateOf(MaterialPageEngineRollout.selectedPreset())
@@ -854,16 +857,18 @@ fun SettingsScreen(
 
         if (BuildConfig.DEBUG) {
             SettingsSection(
-                title = "GPU Material Page Engine v2",
+                title = "Canonical GPU Material Page Engine",
                 description = "Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification."
             ) {
                 SettingsSwitchRow(
-                    title = "Use GPU Material Page Engine v2",
-                    subtitle = "Forces Paged + Paper and exercises the only Paper renderer included in this build.",
+                    title = "Force canonical GPU Paper review mode",
+                    subtitle = "Temporarily forces Paged + Paper for material review without changing normal debug engine availability.",
                     checked = materialPageReviewEnabled,
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
-                        MaterialPageEngineRollout.setDebugOverride(enabled)
+                        MaterialPageEngineRollout.setDebugOverride(
+                            if (enabled) true else null
+                        )
                         if (enabled) {
                             // Review mode must enter the Paper navigation path; otherwise the
                             // Material engine can be enabled while Slide still owns every gesture.
@@ -899,7 +904,7 @@ fun SettingsScreen(
                         }
                     )
                     Text(
-                        "Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets GPU v2.",
+                        "Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets the canonical GPU renderer.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
