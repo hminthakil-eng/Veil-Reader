@@ -60,6 +60,74 @@ class ReadiumEngineStorageTest {
         }
     }
 
+    @Test
+    fun `orphan reconciliation deletes only old unowned direct files`() {
+        val root = Files.createTempDirectory("veil-orphans").toFile()
+        try {
+            val now = 2_000_000L
+            val grace = 100_000L
+            val owned = File(root, "owned.epub").apply {
+                writeText("owned")
+                setLastModified(now - grace * 2)
+            }
+            val oldOrphan = File(root, "orphan.epub").apply {
+                writeText("orphan")
+                setLastModified(now - grace * 2)
+            }
+            val recentOrphan = File(root, "recent.epub").apply {
+                writeText("recent")
+                setLastModified(now - grace / 2)
+            }
+            val futureOrphan = File(root, "future.epub").apply {
+                writeText("future")
+                setLastModified(now + 1_000L)
+            }
+            val nested = File(root, "nested").apply { mkdirs() }
+            val nestedOrphan = File(nested, "nested.epub").apply {
+                writeText("nested")
+                setLastModified(now - grace * 2)
+            }
+
+            val deleted = reconcileOrphanedArtifactDirectory(
+                root = root,
+                ownedCanonicalPaths = setOf(owned.canonicalPath),
+                nowEpochMs = now,
+                graceMillis = grace
+            )
+
+            assertTrue(deleted == 1)
+            assertTrue(owned.exists())
+            assertFalse(oldOrphan.exists())
+            assertTrue(recentOrphan.exists())
+            assertTrue(futureOrphan.exists())
+            assertTrue(nestedOrphan.exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `artifact ownership rejects paths outside managed root`() {
+        val root = Files.createTempDirectory("veil-owned-root").toFile()
+        val outsideRoot = Files.createTempDirectory("veil-owned-outside").toFile()
+        try {
+            val inside = File(root, "inside.epub").apply { writeText("inside") }
+            val outside = File(outsideRoot, "outside.epub").apply { writeText("outside") }
+
+            assertTrue(
+                canonicalOwnedArtifactPath(inside.absolutePath, root) ==
+                    inside.canonicalPath
+            )
+            assertTrue(
+                canonicalOwnedArtifactPath(outside.absolutePath, root) == null
+            )
+            assertTrue(canonicalOwnedArtifactPath(null, root) == null)
+        } finally {
+            root.deleteRecursively()
+            outsideRoot.deleteRecursively()
+        }
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `empty staging file cannot become a publication`() {
         val root = Files.createTempDirectory("veil-import-empty").toFile()
