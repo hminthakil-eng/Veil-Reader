@@ -595,9 +595,10 @@ fun ReaderScreen(
         if (paperCurlState.active) return@LaunchedEffect
 
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        // Capture the current Readium page after it has painted, not inside the
-        // first drag callback. This mirrors mature curl engines that keep page
-        // textures warm before the pointer begins moving.
+        // Pre-allocate the next CPU bitmap after Readium has painted. Content is
+        // intentionally captured again at gesture start so a stale page can never
+        // be lifted after navigation/reflow; this removes allocation jitter without
+        // trading away visual correctness.
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
             !paperCurlState.active &&
