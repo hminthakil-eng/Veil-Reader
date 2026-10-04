@@ -2,7 +2,7 @@ package com.veilreader.app.ui.reader.material
 
 /**
  * Canonical source-level definition of the physical reading surfaces supported by
- * Material Page Engine v1. Values are deliberately normalized and renderer-agnostic
+ * the canonical GPU Material Page Engine. Values are deliberately normalized and renderer-agnostic
  * so physics, geometry, acoustics and haptics can share one material identity.
  */
 internal enum class MaterialPagePreset {
