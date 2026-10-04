@@ -4582,12 +4582,19 @@ internal fun EpubAppearancePanel(
                     text = stringResource(R.string.settings_page_turn_scroll_hint)
                 )
             } else {
+                val paperTurnAvailable = MaterialPageEngineRollout.isEnabled()
                 ReaderPageTurnSelector(
                     selected = draft.pageTurnStyle,
+                    paperEnabled = paperTurnAvailable,
                     onSelect = { style ->
                         updateDraft(draft.withPageTurnStyle(style))
                     }
                 )
+                if (!paperTurnAvailable) {
+                    ReaderCapabilityNotice(
+                        text = stringResource(R.string.settings_mode_curl_unavailable)
+                    )
+                }
                 Text(
                     localizedPageTurnStyleDescription(draft.pageTurnStyle),
                     style = MaterialTheme.typography.bodySmall,
