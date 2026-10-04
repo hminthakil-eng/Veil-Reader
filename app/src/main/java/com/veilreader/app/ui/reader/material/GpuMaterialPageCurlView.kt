@@ -51,7 +51,8 @@ internal class GpuMaterialPageCurlView(
     private val onRendererFailure: () -> Unit = {},
     private val onRendererFramePresented: () -> Unit = {},
     private val onTextureUploadLeaseRequired: (Bitmap) -> Unit = {},
-    private val onTextureUploaded: (Bitmap) -> Unit = {}
+    private val onTextureUploaded: (Bitmap) -> Unit = {},
+    private val onTextureUploadsInvalidated: () -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
@@ -196,6 +197,9 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        // A new GL context cannot retain a client-memory read from the previous one.
+        // Release any CPU bitmap leases that could never receive an upload ACK.
+        post { onTextureUploadsInvalidated() }
         rendererGeneration =
             nextGpuMaterialRendererGeneration(rendererGeneration)
         rendererFailed = false
@@ -487,7 +491,10 @@ internal class GpuMaterialPageCurlView(
         }
         if (!failureReported) {
             failureReported = true
-            post { onRendererFailure() }
+            post {
+                onTextureUploadsInvalidated()
+                onRendererFailure()
+            }
         }
     }
 
@@ -1457,7 +1464,8 @@ internal fun GpuMaterialPageOverlay(
                     rendererFailureCount.intValue = 0
                 },
                 onTextureUploadLeaseRequired = state::markSnapshotSubmittedForGpu,
-                onTextureUploaded = state::acknowledgeSnapshotUploaded
+                onTextureUploaded = state::acknowledgeSnapshotUploaded,
+                onTextureUploadsInvalidated = state::abandonGpuUploadLeases
             ).also { created ->
                 viewRef.value = created
                 if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
