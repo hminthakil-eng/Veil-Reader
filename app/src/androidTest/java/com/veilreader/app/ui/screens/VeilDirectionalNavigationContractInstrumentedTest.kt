@@ -206,14 +206,29 @@ class VeilDirectionalNavigationContractInstrumentedTest {
     }
 
     @Test
-    fun continuousScroll_doesNotConsumeHorizontalEdgeTaps() {
+    fun continuousScroll_returnsTapAndKeyOwnershipToRenderer() {
         val navigator = fakeNavigator(
             progression = ReadingProgression.RTL,
             scroll = true
         )
-        val listener = listener(navigator)
+        val listener = VeilDirectionalNavigationInputListener(
+            navigator = navigator,
+            isAnimated = { false },
+            isEnabled = { false },
+            isTapNavigationEnabled = { false }
+        )
 
         assertFalse(listener.onTap(TapEvent(PointF(950f, 800f))))
+        assertFalse(
+            listener.onKey(
+                KeyEvent(
+                    type = KeyEvent.Type.Down,
+                    key = Key.ArrowRight,
+                    modifiers = emptySet(),
+                    characters = null
+                )
+            )
+        )
         assertEquals(0, navigator.forwardCalls)
         assertEquals(0, navigator.backwardCalls)
     }
