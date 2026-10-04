@@ -53,7 +53,7 @@ internal class PaperCurlState {
         private set
 
     var rendererStatus: GpuMaterialPageRendererStatus by mutableStateOf(
-        GpuMaterialPageRendererStatus.READY
+        GpuMaterialPageRendererStatus.INITIALIZING
     )
         private set
 
@@ -85,6 +85,7 @@ internal class PaperCurlState {
             debugBeginAttempts += 1
         }
         if (
+            rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ||
             rendererStatus == GpuMaterialPageRendererStatus.FAILED ||
             rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ||
             active ||
@@ -190,6 +191,8 @@ internal fun PaperCurlOverlay(
             val label = when {
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU v2 · DISABLED"
+                state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ->
+                    "PAPER · GPU v2 · INITIALIZING · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
                     "PAPER · GPU v2 · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
