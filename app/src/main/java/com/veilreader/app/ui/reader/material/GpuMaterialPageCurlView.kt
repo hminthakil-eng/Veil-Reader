@@ -883,6 +883,7 @@ internal class GpuMaterialPageCurlView(
             uniform float uShadowStrength;
             uniform float uVisualAlpha;
             uniform float uShadowPass;
+            uniform vec2 uTexelSize;
 
             varying vec2 vTexCoord;
             varying vec3 vNormal;
