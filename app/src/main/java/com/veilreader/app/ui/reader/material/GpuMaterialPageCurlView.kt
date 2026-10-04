@@ -48,7 +48,8 @@ import javax.microedition.khronos.opengles.GL10
 internal class GpuMaterialPageCurlView(
     context: Context,
     private val onRendererReady: (Boolean) -> Unit = {},
-    private val onRendererFailure: () -> Unit = {}
+    private val onRendererFailure: () -> Unit = {},
+    private val onRendererFramePresented: () -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
@@ -100,6 +101,8 @@ internal class GpuMaterialPageCurlView(
     private var maxTextureSize = 0
     private var failureReported = false
     private var rendererPaused = false
+    private var surfaceReadyReported = false
+    private var frameSuccessReportedForGeneration = false
 
     private var aPosition = -1
     private var aTexCoord = -1
@@ -187,6 +190,8 @@ internal class GpuMaterialPageCurlView(
         rendererGeneration =
             nextGpuMaterialRendererGeneration(rendererGeneration)
         rendererFailed = false
+        surfaceReadyReported = false
+        frameSuccessReportedForGeneration = false
         resetGlHandlesForNewGeneration()
         synchronized(frameLock) {
             submittedFrame = null
@@ -223,17 +228,23 @@ internal class GpuMaterialPageCurlView(
                 "GPU page renderer initialization glError=$initError"
             }
             failureReported = false
-            post { onRendererReady(true) }
         }.onFailure { error ->
             failRenderer("GPU page renderer initialization failed", error)
         }
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        viewportGeneration =
-            nextGpuMaterialViewportGeneration(viewportGeneration)
-        viewportWidth = width.coerceAtLeast(1)
-        viewportHeight = height.coerceAtLeast(1)
+        val resolvedWidth = width.coerceAtLeast(1)
+        val resolvedHeight = height.coerceAtLeast(1)
+        if (
+            viewportWidth != resolvedWidth ||
+            viewportHeight != resolvedHeight
+        ) {
+            viewportGeneration =
+                nextGpuMaterialViewportGeneration(viewportGeneration)
+        }
+        viewportWidth = resolvedWidth
+        viewportHeight = resolvedHeight
         GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
 
         // Reserve texture storage while the Reader is idle so the first deliberate
@@ -248,6 +259,19 @@ internal class GpuMaterialPageCurlView(
             )
         ) {
             preallocateFrontTextureStorage(viewportWidth, viewportHeight)
+        }
+
+        // A compiled GL program without a viewport is not render-ready. Waiting
+        // until onSurfaceChanged also ensures the initial viewport generation is
+        // non-zero before Compose is allowed to start a Paper transaction.
+        if (
+            !rendererFailed &&
+            program != 0 &&
+            viewportGeneration > 0L &&
+            !surfaceReadyReported
+        ) {
+            surfaceReadyReported = true
+            post { onRendererReady(true) }
         }
     }
 
@@ -374,6 +398,11 @@ internal class GpuMaterialPageCurlView(
         val drawError = consumeGpuPageGlErrors()
         if (drawError != GLES20.GL_NO_ERROR) {
             failRenderer("GPU page draw failed: glError=$drawError")
+            return
+        }
+        if (!frameSuccessReportedForGeneration) {
+            frameSuccessReportedForGeneration = true
+            post { onRendererFramePresented() }
         }
         } finally {
             Trace.endSection()
@@ -1389,6 +1418,12 @@ internal fun GpuMaterialPageOverlay(
                     rendererReady.value = false
                     rendererFailureCount.intValue += 1
                     rendererFailed.value = true
+                },
+                onRendererFramePresented = {
+                    // Reset only after the renderer proved it can upload and draw
+                    // a real frame. READY alone is insufficient because a broken
+                    // driver path may fail deterministically on first draw.
+                    rendererFailureCount.intValue = 0
                 }
             ).also { created ->
                 viewRef.value = created
