@@ -78,6 +78,59 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `gpu renderer retries are bounded and accessibility aware`() {
+        assertTrue(
+            shouldRetryGpuMaterialPageRenderer(
+                failureCount = 1,
+                supported = true,
+                reducedMotion = false
+            )
+        )
+        assertTrue(
+            shouldRetryGpuMaterialPageRenderer(
+                failureCount = 2,
+                supported = true,
+                reducedMotion = false
+            )
+        )
+        assertTrue(
+            !shouldRetryGpuMaterialPageRenderer(
+                failureCount = 3,
+                supported = true,
+                reducedMotion = false
+            )
+        )
+        assertTrue(
+            !shouldRetryGpuMaterialPageRenderer(
+                failureCount = 1,
+                supported = false,
+                reducedMotion = false
+            )
+        )
+        assertTrue(
+            !shouldRetryGpuMaterialPageRenderer(
+                failureCount = 1,
+                supported = true,
+                reducedMotion = true
+            )
+        )
+        assertTrue(
+            gpuMaterialPageRendererRetryDelayMillis(2) >
+                gpuMaterialPageRendererRetryDelayMillis(1)
+        )
+    }
+
+    @Test
+    fun `gpu texture prewarm accepts only valid viewport within hardware limit`() {
+        assertTrue(shouldPreallocateGpuPageTexture(1080, 2400, 4096))
+        assertTrue(!shouldPreallocateGpuPageTexture(0, 2400, 4096))
+        assertTrue(!shouldPreallocateGpuPageTexture(1080, 0, 4096))
+        assertTrue(!shouldPreallocateGpuPageTexture(1080, 2400, 0))
+        assertTrue(!shouldPreallocateGpuPageTexture(5000, 2400, 4096))
+        assertTrue(!shouldPreallocateGpuPageTexture(1080, 5000, 4096))
+    }
+
+    @Test
     fun `reverse face stays source derived and cannot duplicate destination content`() {
         val source = GpuMaterialPageCurlView.FRAGMENT_SHADER
         assertTrue(source.contains("mirroredFrontInk"))
