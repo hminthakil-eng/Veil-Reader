@@ -33,14 +33,14 @@ Policy:
 
 The license list is a product-policy guard, not legal advice. Any exception requires an explicit documented review.
 
-### CycloneDX
-Uses `org.cyclonedx.bom 3.4.1` from a CI-only Gradle init script.
+### SBOM generation
+Uses the pinned `anchore/sbom-action v0.24.3` commit with `Syft v1.54.0`.
 
-The plugin is not added to Veil's normal build plugin graph and adds no runtime code to the Android application.
+Syft produces both:
+- CycloneDX JSON: `build/reports/sbom/veil-reader.cdx.json`
+- CycloneDX XML: `build/reports/sbom/veil-reader.cdx.xml`
 
-Artifacts:
-- `build/reports/cyclonedx/bom.json`
-- `build/reports/cyclonedx/bom.xml`
+This tooling is CI-only and adds no runtime code to the Android application.
 
 ## Dependency admission rule
 
@@ -93,3 +93,16 @@ The CycloneDX plugin remains the current 3.4.1 release, so Veil's CI-only init
 script now pins the aligned Bouncy Castle `bcprov/bcpkix/bcutil` family to 1.85,
 the patched line. This does not add Bouncy Castle to the Android application
 runtime; it hardens the SBOM-generation toolchain itself.
+
+
+## Second remediation — remove the vulnerable toolchain from the dependency graph
+
+Pinning Bouncy Castle inside the old CycloneDX Gradle init script protected the
+SBOM task execution, but GitHub's Gradle dependency submission still resolved and
+reported the plugin's original `bcprov-jdk18on 1.80.2` tool dependency. The
+Dependency Review correctly remained RED.
+
+The Gradle CycloneDX plugin has therefore been removed entirely from this PR.
+SBOM generation now uses the pinned Anchore action + Syft CLI, which is independent
+of Veil's Gradle dependency graph. This preserves the security gate instead of
+weakening or excluding build-time vulnerabilities from review.
