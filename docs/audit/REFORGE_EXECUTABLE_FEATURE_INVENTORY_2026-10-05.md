@@ -295,7 +295,7 @@ A feature is not product-GREEN until it also satisfies the Reforge Definition of
 | OLED/LCD optical matrix | PLANNED/DEVICE-GATE | not CI-provable | physical QA |
 | Battery audit | PARTIAL | no release evidence bundle | R12.13 |
 | Leak/StrictMode gate | PARTIAL | some prior targeted fixes; no universal debug contract | R0.09/R12.12 |
-| Android 17 compatibility | PARTIAL | compile/target API 37 but platform remains preview-era | separate compatibility lane |
+| Android 17 compatibility | WORKS-AUTO / DEVICE-GATE | compile/target API 37 matches the final Android 17 SDK; current automation is green, while QPR beta/device behavior still needs an isolated compatibility matrix | keep API 37 production baseline; test QPR betas separately |
 
 ---
 
@@ -371,3 +371,15 @@ The dominant problem is now quantified:
 - no feature may be promoted to product-GREEN purely from current CI.
 
 Next canonical task: **R0.03 — install the universal GREEN contract into repository governance and PR review so this distinction cannot be lost again.**
+
+
+## R0.04 correction — current platform truth
+
+Fresh official verification on 2026-10-05 confirms Android 17 was released as a final platform on 2026-06-16. The earlier planning note that treated API 37 as preview-era was stale and is superseded.
+
+Decision:
+- keep `compileSdk = 37`;
+- keep `targetSdk = 37`;
+- do not lower the production target to API 36 merely because Google Play's minimum submission requirement is API 36;
+- use a separate compatibility lane for Android 17 QPR beta/minor-SDK images and behavior;
+- pay particular attention to Android 17 target-gated large-screen adaptivity, memory behavior, background audio restrictions, and native dynamic-code-loading requirements.
