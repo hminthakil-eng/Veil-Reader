@@ -275,4 +275,52 @@ class DesignConstitutionTest {
             )
         )
     }
+
+    @Test
+    fun `populated archive condenses header`() {
+        assertTrue(
+            shouldCondenseArchiveHeader(
+                bookCount = 1,
+                retrievalActive = false,
+                fontScale = 1f,
+                heightDp = 900
+            )
+        )
+    }
+
+    @Test
+    fun `empty archive keeps authored entrance when space permits`() {
+        assertFalse(
+            shouldCondenseArchiveHeader(
+                bookCount = 0,
+                retrievalActive = false,
+                fontScale = 1f,
+                heightDp = 900
+            )
+        )
+    }
+
+    @Test
+    fun `compact normal text may keep archive actions inline`() {
+        assertTrue(
+            shouldInlineCondensedArchiveActions(
+                adjacentLayout = false,
+                condensed = true,
+                compactLayout = true,
+                fontScale = 1f
+            )
+        )
+    }
+
+    @Test
+    fun `compact large text moves archive actions below instead of shrinking labels`() {
+        assertFalse(
+            shouldInlineCondensedArchiveActions(
+                adjacentLayout = false,
+                condensed = true,
+                compactLayout = true,
+                fontScale = 2f
+            )
+        )
+    }
 }
