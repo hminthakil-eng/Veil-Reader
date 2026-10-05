@@ -101,8 +101,7 @@ jobs:
       - name: Compile performance harness
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
-      - name: Upload APK for manual runs only
-        if: github.event_name == 'workflow_dispatch'
+      - name: Upload APK for current canonical test build
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-debug-apk
