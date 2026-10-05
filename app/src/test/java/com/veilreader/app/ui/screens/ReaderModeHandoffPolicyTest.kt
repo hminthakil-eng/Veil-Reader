@@ -82,6 +82,43 @@ class ReaderModeHandoffPolicyTest {
     }
 
     @Test
+    fun `initial navigator attach does not resubmit identical preferences`() {
+        val appearance = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+        assertFalse(
+            readerPreferencesNeedSubmission(
+                previousPresented = appearance,
+                previousAccepted = appearance,
+                previousSpread = com.veilreader.app.domain.ReaderFixedLayoutSpread.AUTO,
+                requestedPresented = appearance,
+                requestedSource = appearance,
+                requestedSpread = com.veilreader.app.domain.ReaderFixedLayoutSpread.AUTO
+            )
+        )
+    }
+
+    @Test
+    fun `real appearance or spread changes still submit preferences`() {
+        val before = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.PAGED
+        )
+        val after = before.copy(pageTurnStyle = PageTurnStyle.SLIDE)
+        assertTrue(
+            readerPreferencesNeedSubmission(
+                previousPresented = before,
+                previousAccepted = before,
+                previousSpread = com.veilreader.app.domain.ReaderFixedLayoutSpread.AUTO,
+                requestedPresented = after,
+                requestedSource = after,
+                requestedSpread = com.veilreader.app.domain.ReaderFixedLayoutSpread.AUTO
+            )
+        )
+    }
+
+    @Test
     fun `mode changes receive an extra renderer settle frame`() {
         assertEquals(
             2,
