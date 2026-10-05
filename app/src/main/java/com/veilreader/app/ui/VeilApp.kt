@@ -143,13 +143,18 @@ fun VeilApp(
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     val shellTabs = visibleVeilTabs(appSettings.gameVisible)
-    val selectedShellTab = route.selectedTab.takeIf { it in shellTabs } ?: VeilTab.READING
+    val selectedShellTab = selectedVisibleShellTab(
+        selectedTab = route.selectedTab,
+        visibleTabs = shellTabs
+    )
     LaunchedEffect(appSettings.gameVisible, route.selectedTab, route.activeChamber) {
-        val hiddenWorldRoute =
-            route.selectedTab == VeilTab.CASTLE ||
-                route.selectedTab == VeilTab.PATH ||
-                route.activeChamber in setOf("observatory", "treasury", "sanctum")
-        if (!appSettings.gameVisible && hiddenWorldRoute) {
+        if (
+            shouldReturnToReadingWhenGameHidden(
+                gameVisible = appSettings.gameVisible,
+                selectedTab = route.selectedTab,
+                activeChamber = route.activeChamber
+            )
+        ) {
             routeViewModel.selectTab(VeilTab.READING)
         }
     }
@@ -1448,17 +1453,3 @@ private data class VeilNotice(
     val kind: VeilNoticeKind,
     val category: VeilIssueCategory = VeilIssueCategory.GENERAL
 )
-
-internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
-    windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
-        windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
-
-internal fun contentMaxWidthDp(windowSizeClass: WindowSizeClass): Int =
-    if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)) {
-        1280
-    } else {
-        1040
-    }
-
-
-
