@@ -103,7 +103,7 @@ class ReaderModeHandoffPolicyTest {
     fun `real appearance or spread changes still submit preferences`() {
         val before = ReaderAppearance(
             scroll = false,
-            pageTurnStyle = PageTurnStyle.PAGED
+            pageTurnStyle = PageTurnStyle.NONE
         )
         val after = before.copy(pageTurnStyle = PageTurnStyle.SLIDE)
         assertTrue(
