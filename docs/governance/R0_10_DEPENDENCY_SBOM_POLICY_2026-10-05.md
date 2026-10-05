@@ -79,3 +79,17 @@ Every dependency update must still pass:
 - subsystem-specific Reforge gates
 
 "Latest" is never an auto-merge reason.
+
+
+## First gate finding and remediation
+
+The first Dependency Review correctly rejected the CI SBOM toolchain because
+CycloneDX Gradle Plugin 3.4.1 resolved Bouncy Castle `bcprov-jdk18on 1.80.2`,
+which is affected by:
+- CVE-2026-8763 / GHSA-9pwp-9qqc-pr26 (Critical)
+- GHSA-qp49-qgx5-5m26 (High)
+
+The CycloneDX plugin remains the current 3.4.1 release, so Veil's CI-only init
+script now pins the aligned Bouncy Castle `bcprov/bcpkix/bcutil` family to 1.85,
+the patched line. This does not add Bouncy Castle to the Android application
+runtime; it hardens the SBOM-generation toolchain itself.
