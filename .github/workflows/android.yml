@@ -113,3 +113,14 @@ jobs:
           path: app/build/reports/
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Preserve exact unit and lint evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-source-verification
+          path: |
+            app/build/test-results/testDebugUnitTest/TEST-*.xml
+            app/build/reports/lint-results-debug.xml
+          if-no-files-found: ignore
+          retention-days: 7

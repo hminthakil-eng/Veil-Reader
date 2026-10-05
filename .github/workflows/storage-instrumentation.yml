@@ -72,6 +72,7 @@ jobs:
           path: |
             build/reports/grayfog-review.tar
             build/reports/veil-grayfog-review/
+            app/build/outputs/androidTest-results/connected/debug/TEST-*.xml
           if-no-files-found: ignore
           retention-days: 7
 

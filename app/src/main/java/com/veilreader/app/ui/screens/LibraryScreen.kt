@@ -648,10 +648,14 @@ internal fun LibraryArchiveContent(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.library_filtered_volume_count, filtered.size),
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
+                    // The reading-state disclosure already gives its exact count.
+                    // Report a second count only when retrieval further narrows that set.
+                    if (trimmedQuery.isNotBlank() || collection.isNotEmpty() || seriesFilter.isNotEmpty()) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.library_filtered_volume_count, filtered.size),
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                    }
 
                     if (collections.isNotEmpty()) {
                         Box {
@@ -3513,7 +3517,7 @@ internal fun BookLibraryTile(
                     displayTitle,
                     style = MaterialTheme.typography.titleMedium.withVeilContentScript(displayTitle),
                     color = VeilPalette.Moon,
-                    minLines = if (largeText) 3 else 2,
+                    minLines = if (largeText) 1 else 2,
                     maxLines = if (largeText) 3 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3522,7 +3526,7 @@ internal fun BookLibraryTile(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     color = VeilMaterials.TextSecondary,
                     style = MaterialTheme.typography.labelMedium.withVeilContentScript(book.author.ifBlank { stringResource(R.string.common_unknown_author) }),
-                    minLines = 2,
+                    minLines = if (largeText) 1 else 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3543,7 +3547,7 @@ internal fun BookLibraryTile(
                         },
                         color = VeilMaterials.TextSecondary,
                         style = MaterialTheme.typography.labelMedium,
-                        minLines = if (largeText) 2 else 1,
+                        minLines = 1,
                         modifier = Modifier.weight(1f)
                     )
 
