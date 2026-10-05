@@ -90,6 +90,7 @@ object VeilComposition {
     const val ArchitecturalPairMinWidthDp = 640f
     const val ArchitecturalPairReadableWidthDp = 600f
     const val ResumeIdentityMinWidthDp = 150f
+    const val ThresholdCoverMinObjectWidthDp = 84f
     const val FactPairMinWidthDp = 220f
     const val DossierTwoColumnsMinWidthDp = 240f
     const val DossierThreeColumnsMinWidthDp = 360f

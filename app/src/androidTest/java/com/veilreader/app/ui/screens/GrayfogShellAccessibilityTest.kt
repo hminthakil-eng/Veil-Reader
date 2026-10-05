@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -74,7 +75,10 @@ class GrayfogShellAccessibilityTest(
         val localized = localizedContext()
         compose.setContent {
             val density = LocalDensity.current
+            // Keep the real host's launcher ownership while localizing its resources.
+            val activityResults = checkNotNull(LocalActivityResultRegistryOwner.current)
             CompositionLocalProvider(
+                LocalActivityResultRegistryOwner provides activityResults,
                 LocalContext provides localized,
                 LocalResources provides localized.resources,
                 LocalConfiguration provides localized.resources.configuration,

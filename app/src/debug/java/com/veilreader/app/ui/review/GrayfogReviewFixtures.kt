@@ -107,16 +107,9 @@ enum class GrayfogReviewSurface {
 }
 
 @Composable
-fun GrayfogReviewContent(
-    surface: GrayfogReviewSurface,
-    highContrast: Boolean = false,
-    includeOriginalCover: Boolean = true
-) {
+fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = false) {
     val context = LocalContext.current
-    val books = remember(context, includeOriginalCover) {
-        if (includeOriginalCover) GrayfogReviewFixtures.booksWithOriginalCover(context)
-        else GrayfogReviewFixtures.books
-    }
+    val books = remember(context) { GrayfogReviewFixtures.booksWithOriginalCover(context) }
     val notes = GrayfogReviewFixtures.notes
     val profile = GrayfogReviewFixtures.advancedProfile
     VeilTheme(themeMode = AppThemeMode.DARK, highContrastEnabled = highContrast) {

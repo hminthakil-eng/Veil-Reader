@@ -41,15 +41,7 @@ class GrayfogCloudRenderTest {
         }
         for (surface in GrayfogReviewSurface.entries) {
             compose.runOnIdle { current.value = surface }
-            compose.waitForIdle()
-            // Compose idle does not include IO. Wait for the real artwork rather than
-            // accepting a generated placeholder after an arbitrary delay.
-            compose.waitUntil(timeoutMillis = 20_000) {
-                compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
-                    .fetchSemanticsNodes().all { it.config[BookCoverArtworkReady] }
-            }
-            compose.mainClock.advanceTimeBy(200)
-            compose.waitForIdle()
+            compose.awaitGrayfogArtwork()
             val roots = compose.onAllNodes(isRoot())
             val root = if (surface.name.startsWith("BOOK_DETAIL") || surface == GrayfogReviewSurface.RITUAL || surface == GrayfogReviewSurface.ERROR) compose.onNode(isDialog())
                 else roots[roots.fetchSemanticsNodes().lastIndex]

@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.Book
@@ -192,10 +193,6 @@ fun CastleScreen(
             primary = {
                 Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
                     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        VeilMicroLabel(
-                            text = stringResource(R.string.castle_inner_keep_eyebrow),
-                            strong = true
-                        )
                         Text(
                             stringResource(R.string.castle_awakened_chambers_title),
                             style = MaterialTheme.typography.titleLarge,
@@ -981,7 +978,8 @@ private fun CastleFloor(
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val usableWidth = maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f)
                 if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
-                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp) {
+                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp &&
+                        id != "library" && id != "observatory") {
                         // A narrow stair datum remains spatial without taking half the reading width.
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
@@ -1198,82 +1196,45 @@ private fun CastleChamberNode(
                 enabled = unlocked,
                 role = Role.Button
             ) { onOpenRoom(id) }
-            .padding(horizontal = 14.dp, vertical = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(start = 18.dp, end = 18.dp, top = 30.dp, bottom = 18.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Box(
-            Modifier
-                .width(50.dp)
-                .height(44.dp)
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 3.dp, bottomEnd = 3.dp))
-                .background(
-                    if (unlocked) VeilPalette.DeepBrass.copy(alpha = 0.38f)
-                    else VeilPalette.Ink.copy(alpha = 0.74f)
-                )
-                .border(
-                    BorderStroke(
-                        1.dp,
-                        if (unlocked) VeilPalette.Brass.copy(alpha = 0.46f)
-                        else VeilPalette.BorderDark
-                    ),
-                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 3.dp, bottomEnd = 3.dp)
-                ),
-            contentAlignment = Alignment.Center
+        // A room is an entrance into the shared keep, not a centered reward tile.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CastleRoomIcon(
-                id = id,
-                unlocked = unlocked,
-                modifier = Modifier.size(24.dp)
+            CastleRoomIcon(id = id, unlocked = unlocked, modifier = Modifier.size(24.dp))
+            Text(
+                name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium.withVeilContentScript(name),
+                textAlign = TextAlign.Start,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
+                color = if (unlocked) VeilPalette.Moon else VeilMaterials.TextSecondary
             )
         }
-
-        Spacer(Modifier.height(7.dp))
-
-        if (unlocked && safeResonance > 0.01f) {
-            Box(
-                Modifier
-                    .width((26f + safeResonance * 34f).dp)
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                VeilPalette.Brass.copy(
-                                    alpha = 0.24f + safeResonance * 0.46f
-                                ),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-            Spacer(Modifier.height(5.dp))
-        }
-
+        val chamberBody = if (unlocked) purpose else sealedBody
         Text(
-            name,
-            style = MaterialTheme.typography.titleSmall,
-            textAlign = TextAlign.Center,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis,
-            color = if (unlocked) VeilPalette.Moon else VeilMaterials.TextSecondary
-        )
-
-        Text(
-            if (unlocked) purpose else sealedBody,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
+            chamberBody,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.bodySmall.withVeilContentScript(chamberBody),
+            textAlign = TextAlign.Start,
             maxLines = 4,
             overflow = TextOverflow.Ellipsis,
             color = VeilMaterials.TextSecondary
         )
-
-        Spacer(Modifier.height(5.dp))
-
-        VeilMicroLabel(
-            text = actionLabel,
-            color = if (unlocked) VeilPalette.Brass else VeilMaterials.TextSecondary
-        )
+        if (unlocked) {
+            // Resonance marks the actual room's memory, quietly, on its threshold.
+            Box(
+                Modifier.width((32f + safeResonance * 36f).dp).height(1.dp)
+                    .background(VeilPalette.Brass.copy(alpha = 0.20f + safeResonance * 0.26f))
+            )
+            VeilMicroLabel(text = actionLabel, color = VeilPalette.Brass)
+        }
     }
 }
 

@@ -494,8 +494,14 @@ private fun ContinueReadingHero(
                 shellShape
             )
     ) {
-        // Reserve a readable identity measure instead of squeezing it beside the artifact.
-        val stacked = (maxWidth.value - 36f - coverWidthDp - 16f) /
+        // Keep the physical book beside its identity at normal compact widths;
+        // large text still owns a full column rather than being squeezed.
+        val coverBudget = maxWidth.value - 36f - 16f -
+            com.veilreader.app.ui.theme.VeilComposition.ResumeIdentityMinWidthDp * fontScale.coerceAtLeast(1f)
+        val objectWidth = if (coverBudget >= com.veilreader.app.ui.theme.VeilComposition.ThresholdCoverMinObjectWidthDp)
+            coverWidthDp.coerceAtMost(coverBudget) else coverWidthDp
+        val objectHeight = coverHeightDp * objectWidth / coverWidthDp
+        val stacked = (maxWidth.value - 36f - objectWidth - 16f) /
             fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ResumeIdentityMinWidthDp
 
         ThresholdParchmentTexture(
@@ -564,41 +570,6 @@ private fun ContinueReadingHero(
             ),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.library_continue_reading),
-                        color = VeilPalette.LightBrass,
-                        strong = true
-                    )
-
-                }
-
-            }
-
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                VeilPalette.LightBrass.copy(alpha = 0.58f),
-                                VeilPalette.LightBrass.copy(alpha = 0.82f),
-                                VeilPalette.LightBrass.copy(alpha = 0.58f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
             if (stacked) {
                 HeroDetails(
                     current = current,
@@ -614,8 +585,8 @@ private fun ContinueReadingHero(
                     HeroCover(
                         current,
                         artifactMemory,
-                        coverWidthDp,
-                        coverHeightDp
+                        objectWidth,
+                        objectHeight
                     )
                 }
                 HeroMetadata(current, VeilPalette.LightMist)
@@ -629,13 +600,14 @@ private fun ContinueReadingHero(
                     HeroCover(
                         current,
                         artifactMemory,
-                        coverWidthDp,
-                        coverHeightDp
+                        objectWidth,
+                        objectHeight
                     )
                     HeroDetails(
                         current = current,
                         ink = VeilPalette.LightInk,
                         secondaryInk = VeilPalette.LightMist,
+                        maxTitleLines = 4,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -761,7 +733,8 @@ private fun HeroDetails(
     secondaryInk: Color,
     modifier: Modifier = Modifier,
     readingAction: (@Composable () -> Unit)? = null,
-    includeMetadata: Boolean = true
+    includeMetadata: Boolean = true,
+    maxTitleLines: Int = 3
 ) {
     val displayTitle = bookDisplayTitle(current.title)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
@@ -769,7 +742,7 @@ private fun HeroDetails(
             displayTitle,
             style = MaterialTheme.typography.titleLarge.withVeilContentScript(displayTitle),
             color = ink,
-            maxLines = 3,
+            maxLines = maxTitleLines,
             overflow = TextOverflow.Ellipsis
         )
         readingAction?.invoke()

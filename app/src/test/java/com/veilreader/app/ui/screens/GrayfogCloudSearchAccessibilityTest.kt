@@ -37,42 +37,23 @@ class GrayfogCloudSearchAccessibilityTest {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 VeilTheme(AppThemeMode.DARK) {
-                    // Search semantics use the real missing-art path here. Live bitmap
-                    // decoding plus filtering is covered on actual Android native runtime
-                    // by GrayfogShellAccessibilityTest, across all 16 review configurations.
-                    GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY, includeOriginalCover = false)
+                    GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY)
                 }
             }
         }
         // Compose idle does not include IO. Await real artwork before filtering disposes
         // a cover, and before Robolectric tears down the native rendering sandbox.
-        compose.waitForIdle()
-        awaitCoverArtwork()
-        compose.mainClock.advanceTimeBy(200)
-        compose.waitForIdle()
+        compose.awaitGrayfogArtwork()
         val label = context.getString(R.string.library_search_hint)
         val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
         search.performScrollTo().assertHeightIsAtLeast(48.dp)
         // Scrolling can compose/re-size a prefetched cover and start another IO decode.
         // Settle that actual artwork before typing removes the book from the result set.
-        compose.waitForIdle()
-        awaitCoverArtwork()
-        compose.mainClock.advanceTimeBy(200)
-        compose.waitForIdle()
+        compose.awaitGrayfogArtwork()
         search.performTextInput("Still")
         search.assertTextContains("Still")
         search.assertIsDisplayed()
-        compose.waitForIdle()
-        awaitCoverArtwork()
-        compose.mainClock.advanceTimeBy(200)
-        compose.waitForIdle()
-    }
-
-    private fun awaitCoverArtwork() {
-        compose.waitUntil(timeoutMillis = 20_000) {
-            compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
-                .fetchSemanticsNodes().all { it.config[BookCoverArtworkReady] }
-        }
+        compose.awaitGrayfogArtwork()
     }
 
     @Test @Config(qualifiers = "en-w320dp-h720dp-mdpi")

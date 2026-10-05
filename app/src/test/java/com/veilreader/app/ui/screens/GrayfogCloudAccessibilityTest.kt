@@ -63,13 +63,6 @@ class GrayfogCloudAccessibilityTest {
 
     @Test @Config(qualifiers = "fa-rIR-w360dp-h900dp-mdpi")
     fun persianLargeGalleryUtilities() = checkGallery(2f, 224)
-    private fun awaitCoverArtwork() {
-        compose.waitUntil(timeoutMillis = 20_000) {
-            compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
-                .fetchSemanticsNodes().all { it.config[BookCoverArtworkReady] }
-        }
-    }
-
     private fun checkReadingAccess(scale: Float) {
         val context = RuntimeEnvironment.getApplication()
         var menus = 0
@@ -134,9 +127,7 @@ class GrayfogCloudAccessibilityTest {
         compose.onNodeWithText(context.getString(R.string.castle_floor, "۰۶"))
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.castle_floor, "06")).assertDoesNotExist()
-        awaitCoverArtwork()
-        compose.mainClock.advanceTimeBy(200)
-        compose.waitForIdle()
+        compose.awaitGrayfogArtwork()
     }
 
 }

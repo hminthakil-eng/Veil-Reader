@@ -37,7 +37,7 @@ class GrayfogCloudDetailTest {
     @get:Rule val compose = createComposeRule()
 
     private fun captureDetail(name: String, dialog: Boolean = false) {
-        compose.waitForIdle()
+        compose.awaitGrayfogArtwork()
         val roots = compose.onAllNodes(isRoot())
         val root = if (dialog) compose.onNode(isDialog()) else roots[roots.fetchSemanticsNodes().lastIndex]
         val bitmap = root.captureToImage().asAndroidBitmap()
@@ -62,6 +62,7 @@ class GrayfogCloudDetailTest {
             GrayfogReviewSurface.OBSERVATORY_DENSE, GrayfogReviewSurface.PATH,
             GrayfogReviewSurface.SANCTUM_POPULATED, GrayfogReviewSurface.PROFILE)) {
             compose.runOnIdle { surface.value = target }
+            compose.awaitGrayfogArtwork()
             assertTrue("Missing navigable heading: $target", compose.onAllNodes(isHeading()).fetchSemanticsNodes().isNotEmpty())
         }
     }
@@ -125,6 +126,7 @@ class GrayfogCloudDetailTest {
 
     private fun checkUnknownDate() {
         compose.setContent { GrayfogReviewContent(GrayfogReviewSurface.BOOK_DETAIL) }
+        compose.awaitGrayfogArtwork()
         val context = RuntimeEnvironment.getApplication()
         val unknown = context.getString(R.string.capsule_date_unknown)
         assertTrue("Unknown history must remain explicit", compose.onAllNodesWithText(unknown, ignoreCase = true)
