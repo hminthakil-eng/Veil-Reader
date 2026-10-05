@@ -47,7 +47,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
@@ -104,7 +109,8 @@ fun SettingsScreen(
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
     onExportNotes: (Uri) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onSetReaderChromeAutoHideEnabled: (Boolean) -> Unit = {}
 ) {
     var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
@@ -309,6 +315,12 @@ fun SettingsScreen(
             title = stringResource(R.string.settings_reading_title),
             description = stringResource(R.string.settings_reading_description)
         ) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.reader_menu_auto_hide),
+                subtitle = stringResource(R.string.reader_menu_auto_hide_description),
+                checked = settings.readerChromeAutoHideEnabled,
+                onCheckedChange = onSetReaderChromeAutoHideEnabled
+            )
             SettingsReadingDisclosureToggle(
                 advanced = showAdvancedReadingSettings,
                 onChange = { showAdvancedReadingSettings = it }
@@ -1141,7 +1153,7 @@ private fun SettingsSection(
                 title,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).semantics { heading() }
             )
         }
 
@@ -1174,39 +1186,32 @@ private fun <T> ChoiceRow(
     @Composable
     fun Choice(entry: T, modifier: Modifier = Modifier) {
         val active = entry == selected
-        Surface(
+        Row(
             modifier = modifier
                 .heightIn(min = 48.dp)
-                .selectable(
-                    selected = active,
-                    role = Role.RadioButton
-                ) { onSelected(entry) },
-            shape = MaterialTheme.shapes.extraSmall,
-            color = if (active) {
-                VeilMaterials.ElevatedSurface
-            } else {
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-            },
-            border = BorderStroke(
-                1.dp,
-                if (active) VeilPalette.Brass.copy(alpha = 0.82f)
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-            ),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+                .selectable(selected = active, role = Role.RadioButton) { onSelected(entry) }
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                label(entry),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (active) VeilPalette.Moon
-                else MaterialTheme.colorScheme.onSurfaceVariant
+            RadioButton(
+                selected = active,
+                onClick = null,
+                modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+                colors = RadioButtonDefaults.colors(selectedColor = VeilPalette.Brass,
+                    unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant)
             )
+            Text(label(entry), style = MaterialTheme.typography.labelLarge,
+                color = if (active) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stacked = shouldStackDenseChoices(
+        val stacked = if (entries.all { it is AppThemeMode }) {
+            maxWidth.value / LocalDensity.current.fontScale.coerceAtLeast(1f) <
+                entries.size * com.veilreader.app.ui.theme.VeilComposition.ShellThemeChoiceReadableWidthDp
+        } else shouldStackDenseChoices(
             widthDp = maxWidth.value.toInt(),
             fontScale = LocalDensity.current.fontScale,
             optionCount = entries.size
@@ -1385,7 +1390,8 @@ private fun SettingsSwitchRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1402,8 +1408,8 @@ private fun SettingsSwitchRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.semantics { contentDescription = title },
+            onCheckedChange = null,
+            modifier = Modifier.clearAndSetSemantics { },
             colors = androidx.compose.material3.SwitchDefaults.colors(
                 checkedThumbColor = VeilPalette.Moon,
                 checkedTrackColor = VeilPalette.DeepBrass,

@@ -85,4 +85,70 @@ class GrayfogCloudAccessibilityTest {
 
     @Test @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
     fun persianLargeTextSearchRetainsItsAccessibleLabel() = checkSearchLabel(2f)
+    private fun checkReadingAccess(scale: Float) {
+        val context = RuntimeEnvironment.getApplication()
+        var menus = 0
+        var settings = 0
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                VeilTheme(AppThemeMode.DARK) {
+                    Box(Modifier.width(288.dp)) {
+                        ReaderAccessDock(context.getString(R.string.reader_chrome_appearance),
+                            androidx.compose.ui.graphics.Color.Black,
+                            androidx.compose.ui.graphics.Color.White,
+                            androidx.compose.ui.graphics.Color.Yellow,
+                            onMenu = { menus++ }, onSettings = { settings++ })
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText(context.getString(R.string.reader_reading_menu))
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.reader_chrome_appearance))
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle { assertEquals(1, menus); assertEquals(1, settings) }
+    }
+
+    @Test fun readingMenuAndAppearanceHaveSeparateOrdinaryTapTargets() = checkReadingAccess(1f)
+
+    @Test @Config(qualifiers = "fa-rIR-w320dp-h800dp-mdpi")
+    fun persianLargeReadingMenuRemainsReachable() = checkReadingAccess(2f)
+
+    private fun checkReadingFilter(scale: Float) {
+        var selected: String? = null
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
+                VeilTheme(AppThemeMode.DARK) {
+                    Box(Modifier.width(288.dp)) {
+                        LibraryReadingFilter("All", listOf(
+                            LibraryReadingFilterOption("All", "All volumes", 48),
+                            LibraryReadingFilterOption("Unread", "Unread volumes", 12)),
+                            onSelect = { selected = it })
+                    }
+                }
+            }
+        }
+        compose.onNodeWithText("All volumes").assertIsDisplayed().performClick()
+        compose.onNodeWithText("Unread volumes").assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle { assertEquals("Unread", selected) }
+        compose.onNodeWithText("Unread volumes").assertDoesNotExist()
+    }
+
+    @Test fun readingStateDisclosureSelectsAndDismisses() = checkReadingFilter(1f)
+
+    @Test @Config(qualifiers = "fa-rIR-w320dp-h800dp-mdpi")
+    fun largeTextReadingStateDisclosureRemainsReachable() = checkReadingFilter(2f)
+
+    @Test @Config(qualifiers = "fa-rIR-w360dp-h900dp-mdpi")
+    fun castleFloorRegistrationsUseTheInterfaceNumerals() {
+        val context = RuntimeEnvironment.getApplication()
+        compose.setContent { GrayfogReviewContent(GrayfogReviewSurface.CASTLE_ADVANCED) }
+        compose.onNodeWithText(context.getString(R.string.castle_floor, "۰۶"))
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.castle_floor, "06")).assertDoesNotExist()
+    }
+
 }

@@ -100,6 +100,8 @@ object VeilComposition {
     const val ChamberCorridorMinWidthDp = 260f
     const val CastleRecordMinWidthDp = 280f
     const val FloorRegistrationWidthDp = 84f
+    const val ChamberVaultRadiusDp = 56f
+    const val ShellThemeChoiceReadableWidthDp = 88f
     const val ObservatoryVisibleConnections = 6
     const val ApproachCondenseFontScale = 1.3f
     const val ApproachShortHeightDp = 500

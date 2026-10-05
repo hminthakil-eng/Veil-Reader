@@ -32,6 +32,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { store.setAppThemeMode(mode) }
     }
 
+    fun setReaderChromeAutoHideEnabled(enabled: Boolean) {
+        viewModelScope.launch { store.setReaderChromeAutoHideEnabled(enabled) }
+    }
+
     fun setHighContrastEnabled(enabled: Boolean) {
         viewModelScope.launch { store.setHighContrastEnabled(enabled) }
     }

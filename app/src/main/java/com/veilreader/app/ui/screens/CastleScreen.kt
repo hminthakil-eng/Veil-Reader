@@ -8,6 +8,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -148,6 +152,21 @@ fun CastleScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+    if (!LocalVeilHighContrast.current) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_keep_v3),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize(),
+            alpha = 0.80f
+        )
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(
+            0f to VeilPalette.Ink.copy(alpha = 0.58f),
+            0.32f to VeilPalette.Ink.copy(alpha = 0.52f),
+            0.75f to VeilPalette.Ink.copy(alpha = 0.80f),
+            1f to VeilPalette.Ink.copy(alpha = 0.93f)
+        )))
+    }
     Column(
         modifier = Modifier
             .widthIn(max = castleLayout.contentMaxWidthDp.dp)
@@ -762,10 +781,10 @@ private fun CastleWorldMap(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF090C10),
-                        VeilPalette.Archive.copy(alpha = 0.98f),
-                        Color(0xFF0B1016),
-                        VeilPalette.Ink
+                        VeilPalette.Ink.copy(alpha = 0.78f),
+                        VeilPalette.Archive.copy(alpha = 0.82f),
+                        VeilPalette.Archive.copy(alpha = 0.88f),
+                        VeilPalette.Ink.copy(alpha = 0.96f)
                     )
                 )
             )
@@ -964,6 +983,29 @@ private fun CastleFloor(
         Box(
             modifier = Modifier.fillMaxWidth()
         ) {
+
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val usableWidth = maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f)
+                if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
+                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp) {
+                        // A narrow stair datum remains spatial without taking half the reading width.
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                            val registrationWidth = (com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp *
+                                LocalConfiguration.current.fontScale.coerceAtLeast(1f)).dp
+                            if (!roomOnLeft) FloorInscription(floor, unlocked, Modifier.width(registrationWidth))
+                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
+                                chamberMinHeightDp, onOpenRoom, Modifier.weight(1f))
+                            if (roomOnLeft) FloorInscription(floor, unlocked, Modifier.width(registrationWidth))
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                            FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
+                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
+                                chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth())
+                        }
+                    }
+                } else {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -991,25 +1033,6 @@ private fun CastleFloor(
                     )
             )
 
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val usableWidth = maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f)
-                if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
-                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp) {
-                        // A narrow stair datum remains spatial without taking half the reading width.
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                            FloorInscription(floor, unlocked, Modifier.width((com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp * LocalConfiguration.current.fontScale.coerceAtLeast(1f)).dp))
-                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
-                                chamberMinHeightDp, onOpenRoom, Modifier.weight(1f))
-                        }
-                    } else {
-                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                            FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
-                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
-                                chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth())
-                        }
-                    }
-                } else {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1102,13 +1125,14 @@ private fun FloorInscription(
     unlocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val formatFloor = rememberVeilIntegerFormatter(minimumDigits = 2)
     Column(
         modifier = modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         VeilMicroLabel(
-            text = stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
+            text = stringResource(R.string.castle_floor, formatFloor(floor)),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
             } else {
@@ -1142,6 +1166,11 @@ private fun CastleChamberNode(
     modifier: Modifier = Modifier
 ) {
     val safeResonance = resonance.coerceIn(0f, 1f)
+    val chamberVault = RoundedCornerShape(
+        topStart = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp,
+        topEnd = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp,
+        bottomStart = 2.dp, bottomEnd = 2.dp
+    )
     val chamberDescription = if (unlocked) {
         stringResource(R.string.castle_chamber_open_semantics, name, purpose)
     } else {
@@ -1154,8 +1183,14 @@ private fun CastleChamberNode(
     Column(
         modifier = modifier
             .heightIn(min = chamberMinHeightDp.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilMaterials.Surface)
+            .clip(chamberVault)
+            .background(Brush.verticalGradient(listOf(
+                VeilPalette.Archive.copy(alpha = if (unlocked) 0.92f else 0.60f),
+                VeilPalette.Ink.copy(alpha = 0.86f)
+            )))
+            .border(BorderStroke(0.5.dp,
+                if (unlocked) VeilPalette.Brass.copy(alpha = 0.22f + safeResonance * 0.12f)
+                else VeilPalette.BorderDark), chamberVault)
             .semantics {
                 contentDescription = chamberDescription
             }
@@ -1163,7 +1198,7 @@ private fun CastleChamberNode(
                 enabled = unlocked,
                 role = Role.Button
             ) { onOpenRoom(id) }
-            .padding(horizontal = 10.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

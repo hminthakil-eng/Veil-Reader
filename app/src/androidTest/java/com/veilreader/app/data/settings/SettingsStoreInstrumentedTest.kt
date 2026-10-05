@@ -30,6 +30,23 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SettingsStoreInstrumentedTest {
     @Test
+    fun readingMenuAutoHide_survivesRecreationWithoutChangingPublicationPreferences() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val original = store.settings.first()
+        try {
+            store.setReaderChromeAutoHideEnabled(false)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(false, recreated.readerChromeAutoHideEnabled)
+            assertEquals(original.readerAppearance, recreated.readerAppearance)
+            assertEquals(original.readerTapGrid, recreated.readerTapGrid)
+            assertEquals(original.readerHardwareKeys, recreated.readerHardwareKeys)
+        } finally {
+            store.setReaderChromeAutoHideEnabled(original.readerChromeAutoHideEnabled)
+        }
+    }
+
+    @Test
     fun ttsSettings_surviveSettingsStoreRecreation() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val store = SettingsStore(context)

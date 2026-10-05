@@ -67,3 +67,12 @@ At 200% landscape, native reachability assertions intentionally scroll to contro
 Capture `library_missing_metadata` in the registry, then switch to Index and Shelves; save `library-missing-metadata-index.png` and `library-missing-metadata-shelves.png`. The single completed fixture belongs to two collections, so its three shelf-register appearances are deliberate. Verify localized Untitled/Unknown author, complete action labels, grouping and reachable records.
 
 In real Book Detail, inspect uncertain/imported annotation dates and positive known dates. Preserve `book-detail-date-unknown.png` and `book-detail-date-known.png` with locale/time-zone metadata. Date unknown must never appear as a manufactured January 1970 record. Use TalkBack heading navigation on Threshold, Archive, Book Detail, Appearance, Notes, Settings and world surfaces; a semantic JVM heading check is not a TalkBack execution result.
+
+
+## Material-world continuation — 2026-10-05
+
+The registry now contains 36 production surface/component specimens. `tools/grayfog-capture.sh` covers 9 configurations (324 deterministic review capture names). New component names: `reader_access_paper`, `reader_access_dusk`, `navigation_dock`, `navigation_rail`. These supplement the existing live EPUB/PDF/gesture matrix; an isolated Reader access component does not substitute for a publication capture.
+
+First live interaction checks: ordinary-tap Reading menu opens controls; Appearance remains a separate action; disable automatic hiding in Appearance Quick and Settings, reopen the app and verify it stays disabled; dismiss controls explicitly; repeat with active selection and TalkBack. Capture all four reading modes separately and check no bottom access overlap with actual content. No invented publication or persisted fictional reading history is used.
+
+For Castle capture both standard and High Contrast: the latter intentionally omits the illustration. Record real device density, locale, font scale, window bounds and hinge/cutout configuration. Native cloud captures approximate widths, not actual hinge geometry or GPU frame timing.

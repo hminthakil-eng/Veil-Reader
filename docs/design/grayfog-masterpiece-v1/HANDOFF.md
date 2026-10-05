@@ -167,3 +167,20 @@ Heading semantics make editorial hierarchy available across eleven tested surfac
 Review registry adds LIBRARY_MISSING_METADATA: one fictional whitespace-title/missing-author completed volume in two collections. Native mode switching checks Gallery, Index and all three legitimate shelf registers at English and Persian 200%. Registry: 32 surfaces, 480 native frames, 352 Compose previews and 288 future scripted device captures. Fixtures never persist or become production history.
 
 Remaining optical questions include actual missing-cover proportions on small displays, font hinting/shaping, real TalkBack heading traversal, artwork crop/contrast, landscape/hinge behavior, live publication controls and paper/slide physics/comfort. Do not mark these complete from cloud results. Existing device matrix and Draft status remain mandatory.
+
+
+## Material world and explicit reading access — 2026-10-04
+
+Continue the same Draft PR #371. Latest remote head was fetched before editing and again before publication. No competing UI branch, engine rebuild, main merge or force push.
+
+Threshold now puts chapter/progress after the reading action and brings the cover ahead of secondary metadata in stacked layouts. Library identity precedes quiet utilities; all six reading-state filters are discoverable, and Gallery/Shelves/Index have non-color selection. Settings replaces repeated choice boxes with radio instruments and whole-row switches. Bookmark/highlight book identity gets mixed-script typography and ruled archival composition.
+
+Reader access is an actual production `ReaderAccessDock`: labelled Reading menu and the original Appearance/PDF View icon, separate ordinary taps. Publication tap arbitration and navigation semantics remain intact. `AppSettings.readerChromeAutoHideEnabled` is a separate default-true DataStore preference. Settings and Appearance Quick can disable the existing timer; explicit dismissal and accessibility guards remain. It does not mutate `ReaderAppearance`, input maps, locators or progress. Real DataStore recreation is covered in JVM and prepared device tests.
+
+Castle gains original environmental artwork and alternating vault-shaped chambers around its existing datum; large text still stacks. High Contrast omits the image, Reduced Motion has no new environmental animation. Ranks, unlocks, world projection, memory, routes and reading access remain source-derived. See AUDIT for asset provenance and the precise regression boundary.
+
+Registry: **36 production screen/component specimens**; the existing annotation-based Compose previews remain **32 × 11 = 352 instances**, while all 36 specimens are available through the debug review activity and native matrix. **36 × 15 native configurations = 540 planned matrix frames**; capture script **36 × 9 = 324 deterministic future captures**. Paper/Dusk access specimens and dock/rail specimens are components on empty fields, not fake Reader pages. The live EPUB/PDF/gesture matrix in DEVICE_CAPTURE remains required. Fictional review data never becomes production history.
+
+Inspect the new artwork on actual displays, real imported covers, live Reader dock versus publication content, TalkBack, 100/130/150/200% Persian, High Contrast, real hinges, OS/IME/cutouts, paper/slide mid-drag and long-session material comfort next. Do not infer DEVICE-GREEN or final optical acceptance from these source/native checks.
+
+Final frozen-input combined run passed in 6m: 729 tests / 129 suites, 36 design checks, 39 reading-policy checks, lint zero errors (174 warnings + one hint retained), both APKs assembled, 540 fresh native matrix frames plus eight focused captures. See VERIFICATION and material-world-verification.json. Future live device gates remain unchanged.

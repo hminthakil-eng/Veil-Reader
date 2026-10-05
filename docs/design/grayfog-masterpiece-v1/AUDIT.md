@@ -143,3 +143,37 @@ Continues `438a967a074484aec373a8edc15eeca467ffaa13`. Re-read the literary/V2 mi
 | Adaptive approach belongs to actual window | Threshold still used configuration height rather than the shared window policy | Medium | Use same shared approach rule with actual window height. Existing scale thresholds and immediate return semantics preserved. Physical resize/hinge evidence pending. |
 
 Native review inspected normal tablet Gallery and Persian metadata in the English Book Detail shell. The cover mark now sits above the title instead of crossing it. These frames establish cloud layout evidence, not device acceptance. Heading tests exposed and corrected Notes/Settings gaps. Missing-metadata mode tests were corrected to expect the fixture’s legitimate three shelf registers (completed plus two collections), rather than erroneously requiring one appearance across every mode. No production grouping changed to satisfy a test.
+
+
+## Material world / menu continuation — 2026-10-04
+
+Remote truth first: design head `b3137ee11cc7638afc1d5c9f5bd6e64c726eec98`; canonical base `18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf`. Same branch and Draft PR #371. User steering explicitly prioritizes a magical, literary, mysterious world with advanced usability, rather than cosmetic fixes or a new page engine.
+
+| Observed weakness | Implemented refinement | Principle / ownership |
+| --- | --- | --- |
+| Persian 200% reading-state rail clips choices beyond the viewport | One labelled reading-state disclosure exposes All, Favorites, Reading, Completed, Deep Shelf and Unread with counts | Retrieval before atmosphere; original filter identifiers/derivation unchanged |
+| Library opens with two large boxed utilities; repeated volume count competes with retrieval | Identity leads quiet Settings/Import actions; redundant header count removed; actual filtered count remains | Editorial hierarchy; import/settings callbacks and all three modes preserved |
+| Presentation selection is visually color-dependent | Quiet underline plus explicit tab/selected semantics and selectable group | Non-color state; same mode callbacks |
+| Threshold chapter inscription and secondary identity push the object down at 200% | Progress inscription follows primary reading action; stacked title/action precede cover, then author/series | World → book → reading action → secondary context; current selection/progress untouched |
+| Hidden Reader access is an unlabelled visual icon | Named ordinary-tap Reading menu plus original Appearance/PDF View icon, independent 48dp targets, same visibility guards | Discoverability; existing icon renderer/palette, selection guards and publication arbitration retained |
+| Chrome timer cannot be disabled | Separate DataStore-backed menu-auto-hide preference, exposed in Settings and Appearance Quick after navigation/effects | No layout or locator mutation; default retains existing behavior and TalkBack guard |
+| Settings repeats boxes for ordinary choices; switches require hitting the switch itself | Familiar radio selection, narrow/large-text stacking, compact short shell-theme choices, whole-row switch ownership, section headings | Precision instruments and scanability; existing preferences/callbacks retained |
+| Castle remains a stack of similar rectangles; a center marker bleeds into compact room titles | Vault boundaries, alternating compact chamber positions; junction only at real wide bridge; localized floor digits | Spatial composition; rooms, ranks, resonance, routes and large-text stacking unchanged |
+| Castle lacks the reference's environmental depth | Original static architectural environment, bounded WebP, recessed map and quiet reading regions; image omitted in High Contrast | Moonlit archive / observatory / warm lamps; source-derived progression remains separate from illustration |
+| Bookmark records retain perimeter cards and one-line book titles | Shared ruled ledger, three-line identity and mixed-script book typography for bookmarks/highlights | Archival grammar; exact source locators, Notes atomicity, known/unknown history untouched |
+| Native captures can precede asynchronous cover decoding | Finite bitmap/fade settling before capture; one original fictional cover uses the actual file-decoding BookCover path | Real production components, no fake publication; cache is debug-only, not history |
+| Reader entry and shell navigation were absent from standalone review registry | Paper/Dusk access component and production dock/rail specimens; deterministic capture names | 36 production specimens; live publication/gesture captures remain separate |
+
+References actually inspected and access limitations: [REFERENCE_REVIEW_2026-10-04.md](REFERENCE_REVIEW_2026-10-04.md). Several source/render passes were made; the work did not stop at the first passing compile or acceptable frame. Full general verification was deferred to the end at the user's request; native composition captures continued during design.
+
+### Original environment provenance
+
+`grayfog_keep_v3.webp`: original image generated for this continuation, from a text description of a private archive, vaulted chambers, stairs/bridges and an observatory. No supplied reference pixels or competitor/Pinterest artwork were copied. No logo, proprietary characters, text or imported symbols. Original PNG remains in the cloud workspace. App derivative: 960 × 1440, 172,298 bytes; SHA-256 `837aa4946d42a859cd00074768237a193cb5f5c4c7038863ac527a3203171aae`. Maximum uncompressed RGBA size approximately 5.3 MiB; one static Castle resource, no per-frame decode, no new media dependency. Device memory/frame pacing remains unmeasured.
+
+One fictional debug volume reuses this illustration to exercise real cover loading; it is deliberately illustrative, not a claimed publication cover. The other missing-cover fixtures remain. Review cache files contain artwork only and never create library/history records.
+
+### Remaining optical questions
+
+Physical display contrast and crop of the Castle environment; whether room depth is sufficiently authored on real phones/tablets; real imported-cover balance; Persian hinting and TalkBack traversal; exact bottom-dock overlap with live publication content; IME/cutout/system bars; actual hinge placement; long-session paper texture and real curl/slide gesture frames. Shell/native component captures cannot judge release feel, sound, haptics, real EPUB/PDF correctness or device performance. No engine geometry, gesture threshold, Room schema, publication transaction or TTS owner was changed.
+
+Final micro-review also corrected singular/plural accessibility wording for a one-book filter and removed the two obsolete library-header resources rather than suppressing their lint findings. Final tests and hashes are recorded in VERIFICATION; source-candidate visual critique remains 79/100, separate from device acceptance.

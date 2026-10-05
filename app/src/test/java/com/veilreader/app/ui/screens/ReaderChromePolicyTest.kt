@@ -12,6 +12,15 @@ import org.readium.r2.navigator.preferences.ReadingProgression
 
 class ReaderChromePolicyTest {
     @Test
+    fun `explicitly disabled auto hide keeps ordinary reader menu visible`() {
+        assertFalse(shouldAutoHideReaderChrome(
+            controlsVisible = true, showNotebook = false, showAppearance = false,
+            showPdfZoom = false, selectionModeActive = false, touchExplorationEnabled = false,
+            autoHideEnabled = false
+        ))
+    }
+
+    @Test
     fun `idle visible chrome can auto-hide`() {
         assertTrue(
             shouldAutoHideReaderChrome(

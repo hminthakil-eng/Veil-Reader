@@ -42,6 +42,11 @@ class GrayfogCloudRenderTest {
         for (surface in GrayfogReviewSurface.entries) {
             compose.runOnIdle { current.value = surface }
             compose.waitForIdle()
+            // Real BookCover decodes on Dispatchers.IO. Settle that finite artwork load and its
+            // reduced-motion fade before capture; an idle Compose queue alone is insufficient.
+            Thread.sleep(150)
+            compose.mainClock.advanceTimeBy(200)
+            compose.waitForIdle()
             val roots = compose.onAllNodes(isRoot())
             val root = if (surface.name.startsWith("BOOK_DETAIL") || surface == GrayfogReviewSurface.RITUAL || surface == GrayfogReviewSurface.ERROR) compose.onNode(isDialog())
                 else roots[roots.fetchSemanticsNodes().lastIndex]

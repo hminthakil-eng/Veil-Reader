@@ -806,8 +806,8 @@ private fun NotebookHighlightCard(
                         )
                     )
                     Text(
-                        book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
-                        style = MaterialTheme.typography.titleMedium,
+                        book?.let { bookDisplayTitle(it.title) } ?: stringResource(R.string.common_unknown_book),
+                        style = MaterialTheme.typography.titleMedium.withVeilContentScript(book?.title.orEmpty()),
                         color = VeilPalette.Moon,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
@@ -967,10 +967,9 @@ private fun NotebookBookmarkCard(
     recordNumber: Int
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().veilLedgerRule(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.54f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
+        color = VeilMaterials.Surface,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -993,10 +992,10 @@ private fun NotebookBookmarkCard(
                         )
                     )
                     Text(
-                        book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
-                        style = MaterialTheme.typography.titleMedium,
+                        book?.let { bookDisplayTitle(it.title) } ?: stringResource(R.string.common_unknown_book),
+                        style = MaterialTheme.typography.titleMedium.withVeilContentScript(book?.title.orEmpty()),
                         color = VeilPalette.Moon,
-                        maxLines = 1,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                 }

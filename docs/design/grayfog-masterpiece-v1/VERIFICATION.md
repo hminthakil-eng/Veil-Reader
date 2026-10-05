@@ -156,3 +156,31 @@ Intermediate failures exposed missing Notes/Settings headings and a mistaken one
 ### Detail published-source Actions observation
 
 Source candidate `f0d571e70abb6776764ed5b3429cf0920a2b9c02`: Android CI run `37217491118` / job `111480875315` and Storage Instrumentation run `37217491147` / job `111480875242` failed before execution, with zero steps and no job logs. Performance Benchmarks run `37217491114` / job `111480875324` remained queued at this observation, also with no steps. The failed jobs are infrastructure/account-blocked before code execution; the underlying runner/billing reason is not exposed. The queued job is pending, not passed or classified as a code failure. Exact metadata is retained in [detail-github-ci.json](detail-github-ci.json). This status-only follow-up changes no verified application/test input.
+
+
+## Material world / ordinary-tap Reader access — 2026-10-05
+
+Continuation parent `b3137ee11cc7638afc1d5c9f5bd6e64c726eec98`; same design branch, canonical base `18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf` and Draft PR #371. This record supersedes earlier totals only for this continuation; historical logs and manifests remain intact.
+
+Final combined command: `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest --max-workers=2`, **BUILD SUCCESSFUL in 6m**. JDK/SDK/proxy configuration remains the command documented above. [Frozen-input manifest](material-world-verification.json), [raw Gradle log](material-world-gradle-verification.log), [lint XML](material-world-lint-results-debug.xml) and [reading-policy log](material-world-reading-policy.log) pin exact inputs and outputs.
+
+| Check | Exact result |
+| --- | --- |
+| Full JVM suite | 729 tests / 129 suites; zero failures, errors or skips |
+| Design system / constitution / art direction | 36 checks within the full suite |
+| Reader regression subset | 291 tests / 42 suites within the full run; manifest lists names and selection criterion |
+| Reading policy | 39 passed |
+| Lint | Zero errors/fatal findings; 174 warnings and 1 hint retained, no new suppression/baseline |
+| Debug / instrumentation APK | Both assembled; exact hashes and byte counts in manifest; instrumentation **not device-executed** |
+| Native review | 540 fresh frames (36 production specimens × 15 configurations), plus eight focused detail captures; all matrix file timestamps validated against this run's render-suite start |
+| Compose annotations / future device script | 352 annotation preview instances (32 × 11); all 36 registered specimens available through review activity/native rendering; 324 future deterministic device capture names |
+| Whitespace / capture script | git diff --check and bash -n tools/grayfog-capture.sh passed |
+| Real device | adb lists no attached device; DEVICE-GREEN / physical gesture / visual acceptance remain pending |
+
+The full suite includes persistence of the menu preference across SettingsStore recreation, its independence from publication/input preferences, the explicit auto-hide-off policy, ordinary-tap menu/Appearance ownership and 48dp targets at English 100% and Persian 200%, filter selection/dismissal, and localized Castle floor digits. Existing durable-progress, close, locator, selection/Notes, Readium/Pdfium, TTS and hardware-key regressions remain in the suite. This is source/cloud regression evidence, not a substitute for live publication/device tests.
+
+Intermediate attempts were not accepted: a native Robolectric run aborted during `java/nio/FloatBuffer` JNI initialization; review artwork now initializes/validates its real resource on the UI thread before asynchronous BookCover loading. The exact native classloader root cause is not proven by a passing repeat. Lint then caught drawable-as-raw resource loading; a hidden asset API attempt did not compile and was replaced with public BitmapFactory decoding and PNG cache encoding. A successful complete run then exposed a one-book plural wording defect in the accessibility description; neutral count wording and removal of two unused legacy header resources were followed by this final combined rerun. No test was skipped and no warning was suppressed to manufacture green results.
+
+Native fixtures deliberately use Reduced Motion and fictional inert records. Reader access captures contain only the real component on an empty field, never invented publication pages. Window widths simulate adaptation, not real fold hinges. Complete/cancel/flick frames, Readium/Pdfium integration, sound, haptics, GPU pacing, TalkBack touch exploration, system bars/cutouts/IME and actual imported covers require the live device matrix in [DEVICE_CAPTURE.md](DEVICE_CAPTURE.md).
+
+Selected fresh captures: [Threshold](material-world-threshold.png), [Persian 200% Library](material-world-library-persian200.png), [Castle](material-world-castle.png), [Persian foldable Castle](material-world-castle-persian-foldable200.png), [High Contrast Castle](material-world-castle-high-contrast200.png), [Reader access component](material-world-reader-access.png). Optical questions and the source-candidate comparative critique are recorded in AUDIT and REFERENCE_REVIEW; no final visual acceptance is claimed.

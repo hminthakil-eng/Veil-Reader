@@ -570,13 +570,7 @@ private fun ContinueReadingHero(
                         color = VeilPalette.LightBrass,
                         strong = true
                     )
-                    Text(
-                        heroProgressLabel(current, progress),
-                        style = MaterialTheme.typography.labelMedium.withVeilContentScript(heroProgressLabel(current, progress)),
-                        color = VeilPalette.LightMist,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+
                 }
 
             }
@@ -603,7 +597,8 @@ private fun ContinueReadingHero(
                     current = current,
                     ink = VeilPalette.LightInk,
                     secondaryInk = VeilPalette.LightMist,
-                    readingAction = { ResumeAction() }
+                    readingAction = { ResumeAction() },
+                    includeMetadata = false
                 )
                 Row(
                     Modifier.fillMaxWidth(),
@@ -616,6 +611,7 @@ private fun ContinueReadingHero(
                         coverHeightDp
                     )
                 }
+                HeroMetadata(current, VeilPalette.LightMist)
 
             } else {
                 Row(
@@ -649,6 +645,14 @@ private fun ContinueReadingHero(
             )
 
             if (!stacked) ResumeAction()
+            val progressInscription = heroProgressLabel(current, progress)
+            Text(
+                progressInscription,
+                style = MaterialTheme.typography.labelMedium.withVeilContentScript(progressInscription),
+                color = VeilPalette.LightMist,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
         }
     }
@@ -749,7 +753,8 @@ private fun HeroDetails(
     ink: Color,
     secondaryInk: Color,
     modifier: Modifier = Modifier,
-    readingAction: (@Composable () -> Unit)? = null
+    readingAction: (@Composable () -> Unit)? = null,
+    includeMetadata: Boolean = true
 ) {
     val displayTitle = bookDisplayTitle(current.title)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
@@ -761,6 +766,13 @@ private fun HeroDetails(
             overflow = TextOverflow.Ellipsis
         )
         readingAction?.invoke()
+        if (includeMetadata) HeroMetadata(current, secondaryInk)
+    }
+}
+
+@Composable
+private fun HeroMetadata(current: Book, secondaryInk: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
             current.author.ifBlank { stringResource(R.string.common_unknown_author) },
             style = MaterialTheme.typography.bodyMedium.withVeilContentScript(current.author.ifBlank { stringResource(R.string.common_unknown_author) }),

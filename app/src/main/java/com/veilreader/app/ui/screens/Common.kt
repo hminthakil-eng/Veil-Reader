@@ -102,9 +102,11 @@ internal fun rememberVeilPercentFormatter(): (Float) -> String {
     }
 }
 @Composable
-internal fun rememberVeilIntegerFormatter(): (Number) -> String {
+internal fun rememberVeilIntegerFormatter(minimumDigits: Int = 1): (Number) -> String {
     val locale = LocalConfiguration.current.locales[0]
-    val formatter = remember(locale) { NumberFormat.getIntegerInstance(locale) }
+    val formatter = remember(locale, minimumDigits) {
+        NumberFormat.getIntegerInstance(locale).apply { minimumIntegerDigits = minimumDigits.coerceAtLeast(1) }
+    }
     return remember(formatter) {
         { value -> formatter.format(value) }
     }
