@@ -12,7 +12,7 @@ import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
-import org.readium.r2.shared.publication.ReadingProgression
+import org.readium.r2.navigator.preferences.ReadingProgression
 
 internal fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
     ReaderTheme.PAPER -> Color(0xFFE9DEC5)
