@@ -25,6 +25,8 @@ import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.Url
+import org.readium.r2.shared.util.mediatype.MediaType
 
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalReadiumApi::class)
@@ -73,6 +75,7 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         var boundaryHits = 0
         val listener = VeilDirectionalNavigationInputListener(
             navigator = navigator,
+            scope = CoroutineScope(Dispatchers.Unconfined),
             isAnimated = { true },
             isTapNavigationEnabled = { true },
             onBoundaryHit = { boundaryHits += 1 }
@@ -213,6 +216,7 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         )
         val listener = VeilDirectionalNavigationInputListener(
             navigator = navigator,
+            scope = CoroutineScope(Dispatchers.Unconfined),
             isAnimated = { false },
             isEnabled = { false },
             isTapNavigationEnabled = { false }
@@ -238,6 +242,7 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         val navigator = fakeNavigator(ReadingProgression.LTR)
         val listener = VeilDirectionalNavigationInputListener(
             navigator = navigator,
+            scope = CoroutineScope(Dispatchers.Unconfined),
             isAnimated = { true },
             isEnabled = { false },
             isTapNavigationEnabled = { true }
@@ -253,6 +258,7 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         val navigator = fakeNavigator(ReadingProgression.LTR)
         val listener = VeilDirectionalNavigationInputListener(
             navigator = navigator,
+            scope = CoroutineScope(Dispatchers.Unconfined),
             isAnimated = { true },
             isTapNavigationEnabled = { false }
         )
@@ -267,6 +273,7 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         val navigator = fakeNavigator(ReadingProgression.LTR)
         val listener = VeilDirectionalNavigationInputListener(
             navigator = navigator,
+            scope = CoroutineScope(Dispatchers.Unconfined),
             isAnimated = { false },
             isTapNavigationEnabled = { true }
         )
@@ -279,6 +286,7 @@ class VeilDirectionalNavigationContractInstrumentedTest {
     private fun listener(navigator: FakeNavigator) =
         VeilDirectionalNavigationInputListener(
             navigator = navigator,
+            scope = CoroutineScope(Dispatchers.Unconfined),
             isAnimated = { true },
             isTapNavigationEnabled = { true }
         )
@@ -312,8 +320,11 @@ class VeilDirectionalNavigationContractInstrumentedTest {
                 )
             )
 
-        override val currentLocator: StateFlow<Locator>
-            get() = error("currentLocator is not used by this contract test")
+        private val location = MutableStateFlow(
+            Locator(href = Url("chapter.xhtml")!!, mediaType = MediaType.XHTML,
+                locations = Locator.Locations(position = 10))
+        )
+        override val currentLocator: StateFlow<Locator> = location
 
         var forwardCalls: Int = 0
             private set
@@ -325,12 +336,16 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         override fun goForward(animated: Boolean): Boolean {
             forwardCalls += 1
             lastAnimated = animated
+            if (navigationSucceeds) location.value = location.value.copy(
+                locations = location.value.locations.copy(position = (location.value.locations.position ?: 10) + 1))
             return navigationSucceeds
         }
 
         override fun goBackward(animated: Boolean): Boolean {
             backwardCalls += 1
             lastAnimated = animated
+            if (navigationSucceeds) location.value = location.value.copy(
+                locations = location.value.locations.copy(position = (location.value.locations.position ?: 10) - 1))
             return navigationSucceeds
         }
 

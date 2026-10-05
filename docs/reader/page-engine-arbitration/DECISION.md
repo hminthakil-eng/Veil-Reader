@@ -1,7 +1,7 @@
 # Veil Reader — Page Engine Architecture Arbitration
 
-Date: 2026-10-04  
-Role: Independent principal engineer / architecture review board  
+Date: 2026-10-04
+Role: Independent principal engineer / architecture review board
 Repository: `hminthakil-eng/Veil-Reader`
 
 ## Decision
@@ -481,7 +481,7 @@ Current Veil sensory policy includes foreground/attachment checks and generation
    - legacy Paper curl;
    - retained Material strip path;
    - newer cylindrical Canvas mesh.
-   
+
    This violates the one-canonical-Paper requirement and makes device review ambiguous.
 
 2. **Split-brain mode gate**
@@ -830,4 +830,3 @@ The winning system is therefore:
 PR #372 should become a historical/reference donor after convergence.
 
 PR #373 should not be merged as-is. Its renderer architecture should be transplanted and corrected on the canonical integration branch.
-

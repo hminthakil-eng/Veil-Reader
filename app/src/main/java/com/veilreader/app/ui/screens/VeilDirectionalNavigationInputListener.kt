@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -105,7 +106,7 @@ internal class VeilDirectionalNavigationInputListener(
             return true
         }
 
-        navigationJob = scope.launch {
+        navigationJob = scope.launch(start = CoroutineStart.LAZY) {
             val moved =
                 awaitReaderVisualNavigationDeparture(
                     currentLocator = navigator.currentLocator,
@@ -119,6 +120,7 @@ internal class VeilDirectionalNavigationInputListener(
             }
             navigationJob = null
         }
+        navigationJob?.start()
 
         // The directional gesture/key was owned even when the navigator hit a publication
         // boundary. Returning false here would leak an edge tap into the chrome fallback and make

@@ -7,6 +7,29 @@ import org.junit.Test
 class GpuPageShaderContractTest {
 
     @Test
+    fun `presentation acknowledges only the acquired buffer from the live context and viewport`() {
+        assertTrue(gpuMaterialSheetPresentationMatches(100L, 100L, 2L, 2L, 3L, 3L))
+        assertTrue(!gpuMaterialSheetPresentationMatches(100L, 99L, 2L, 2L, 3L, 3L))
+        assertTrue(!gpuMaterialSheetPresentationMatches(100L, 100L, 1L, 2L, 3L, 3L))
+        assertTrue(!gpuMaterialSheetPresentationMatches(100L, 100L, 2L, 2L, 2L, 3L))
+        assertTrue(!gpuMaterialSheetPresentationMatches(0L, 0L, 2L, 2L, 3L, 3L))
+    }
+
+    @Test
+    fun `replacement renderer hosts never share a generation under concurrent initialization`() {
+        val executor = java.util.concurrent.Executors.newFixedThreadPool(4)
+        try {
+            val generations = executor.invokeAll((1..100).map {
+                java.util.concurrent.Callable { allocateGpuMaterialRendererGeneration() }
+            }).map { it.get() }
+            assertEquals(100, generations.toSet().size)
+            assertTrue(generations.all { it > 0L })
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
     fun `vertex shader has unique and declared uniforms`() {
         assertShaderUniformContract(
             shader = GpuMaterialPageCurlView.VERTEX_SHADER

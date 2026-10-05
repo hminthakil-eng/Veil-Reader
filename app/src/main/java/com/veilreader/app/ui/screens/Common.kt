@@ -70,6 +70,8 @@ import com.veilreader.app.ui.theme.usesArabicScript
 import com.veilreader.app.ui.theme.withVeilTracking
 import java.io.File
 import java.text.NumberFormat
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -599,13 +601,15 @@ fun BookCover(
     ) {
         value = null
         if (coverSize.width <= 0 || coverSize.height <= 0) return@produceState
-        value = withContext(Dispatchers.IO) {
+        val decoded = withBookCoverDecodeLease {
             imagePath
                 ?.takeIf { it.isNotBlank() }
                 ?.let(::File)
                 ?.takeIf { it.isFile && it.length() > 0L }
                 ?.let { file -> decodeBookCover(file, coverSize) }
         }
+        currentCoroutineContext().ensureActive()
+        value = decoded
     }
     val reducedMotion = LocalVeilReducedMotion.current
     val imageAlpha by animateFloatAsState(

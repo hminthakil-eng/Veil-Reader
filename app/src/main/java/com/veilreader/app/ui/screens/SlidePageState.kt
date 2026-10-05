@@ -140,8 +140,11 @@ internal class SlidePageState {
         snapshot = null
         offsetPx = 0f
         width = 0f
-        if (keepInputLock) delay(VeilMotion.FRAME_SETTLE_MS)
-        active = false
+        try {
+            if (keepInputLock) delay(VeilMotion.FRAME_SETTLE_MS)
+        } finally {
+            active = false
+        }
     }
 
     /** Debug/test inspection hook that exercises the real slide overlay. */
@@ -166,24 +169,21 @@ internal class SlidePageState {
         releaseBufferIfIdle()
     }
 
+    private fun obtainReusableBuffer(current: Bitmap?, view: View): Bitmap? = runCatching {
+        val targetWidth = max(1, view.width)
+        val targetHeight = max(1, view.height)
+        current?.takeIf {
+            !it.isRecycled && it.width == targetWidth && it.height == targetHeight &&
+                it.config == Bitmap.Config.ARGB_8888
+        } ?: Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888).also {
+            current?.takeIf { !it.isRecycled }?.recycle()
+        }
+    }.getOrNull()
+
     private fun captureIntoSourceBuffer(view: View): Bitmap? =
         runCatching {
-            val targetWidth = max(1, view.width)
-            val targetHeight = max(1, view.height)
-            val reusable = snapshotBuffer?.takeIf {
-                !it.isRecycled &&
-                    it.width == targetWidth &&
-                    it.height == targetHeight &&
-                    it.config == Bitmap.Config.ARGB_8888
-            }
-            val bitmap = reusable ?: Bitmap.createBitmap(
-                targetWidth,
-                targetHeight,
-                Bitmap.Config.ARGB_8888
-            ).also { created ->
-                snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
-                snapshotBuffer = created
-            }
+            val bitmap = obtainReusableBuffer(snapshotBuffer, view) ?: return@runCatching null
+            snapshotBuffer = bitmap
             bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
             view.draw(AndroidCanvas(bitmap))
             bitmap

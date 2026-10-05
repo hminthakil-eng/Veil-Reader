@@ -357,7 +357,7 @@ class ReaderPreferenceMappingTest {
     }
 
     @Test
-    fun `fixed-layout runtime disables continuous scroll without destroying retained paged style`() {
+    fun `fixed-layout uses static spread navigation while preserving the requested appearance`() {
         PageTurnStyle.entries.forEach { retainedStyle ->
             val requested = ReaderAppearance(
                 scroll = true,
@@ -370,7 +370,9 @@ class ReaderPreferenceMappingTest {
             )
 
             assertFalse(effective.scroll)
-            assertEquals(retainedStyle, effective.pageTurnStyle)
+            assertEquals(PageTurnStyle.NONE, effective.pageTurnStyle)
+            assertEquals(retainedStyle, requested.pageTurnStyle)
+            assertTrue(requested.scroll)
             assertEquals(1.25, effective.fontScale, 0.0001)
         }
     }

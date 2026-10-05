@@ -234,3 +234,22 @@ internal fun materialPageSnapshotCaptureIsCurrent(
 ): Boolean =
     captureRevision > 0L &&
         captureRevision == expectedRevision
+
+/** Reject stretching captured pixels across rotation/reflow while tolerating pixel rounding. */
+internal fun materialPageSnapshotScaleIsSafe(
+    snapshotWidth: Float,
+    snapshotHeight: Float,
+    canvasWidth: Float,
+    canvasHeight: Float
+): Boolean {
+    if (!snapshotWidth.isFinite() || snapshotWidth <= 0f ||
+        !snapshotHeight.isFinite() || snapshotHeight <= 0f ||
+        !canvasWidth.isFinite() || canvasWidth <= 0f ||
+        !canvasHeight.isFinite() || canvasHeight <= 0f) {
+        return false
+    }
+    val widthScale = canvasWidth / snapshotWidth
+    val heightScale = canvasHeight / snapshotHeight
+    return widthScale in 0.96f..1.04f && heightScale in 0.96f..1.04f &&
+        kotlin.math.abs(widthScale / heightScale - 1f) <= 0.02f
+}

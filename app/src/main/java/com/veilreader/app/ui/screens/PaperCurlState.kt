@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -88,6 +89,7 @@ internal class PaperCurlState {
 
     fun updateRendererStatus(value: GpuMaterialPageRendererStatus) {
         rendererStatus = value
+        if (value != GpuMaterialPageRendererStatus.READY) materialEngine.invalidateSheetPresentation()
         when (value) {
             GpuMaterialPageRendererStatus.READY -> {
                 rendererEverReady = true
@@ -207,9 +209,12 @@ internal class PaperCurlState {
 
     suspend fun clear() {
         if (!active) return
-        materialEngine.clear()
-        active = false
-        performancePhase = PaperPerformancePhase.IDLE
+        try {
+            materialEngine.clear()
+        } finally {
+            active = false
+            performancePhase = PaperPerformancePhase.IDLE
+        }
     }
 
     fun clearImmediately() {
@@ -241,6 +246,7 @@ internal fun PaperCurlOverlay(
         state.materialEngine.configureTone(tone)
     }
 
+    val presentedEpoch by state.materialEngine.presentedSheetEpoch.collectAsState()
     Box(modifier = modifier) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
@@ -260,10 +266,14 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · GPU FAILED · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.REDUCED_MOTION ->
                     "PAPER · GPU CANONICAL · REDUCED MOTION · A${state.debugBeginAttempts}"
+                state.materialEngine.presentationTimedOut ->
+                    "PAPER · GPU CANONICAL · PRESENTATION TIMED OUT · A${state.debugBeginAttempts}"
                 state.lastBeginFailed ->
                     "PAPER · GPU CANONICAL · CAPTURE FAILED " +
                         "(${state.materialEngine.lastSnapshotFailureReason ?: "UNKNOWN"}) " +
                         "· A${state.debugBeginAttempts}"
+                state.active && presentedEpoch != state.materialEngine.sheetEpoch ->
+                    "PAPER · GPU CANONICAL · WAITING FOR FRAME · A${state.debugBeginAttempts}"
                 state.active ->
                     "PAPER · GPU CANONICAL · ACTIVE · A${state.debugBeginAttempts}"
                 else ->

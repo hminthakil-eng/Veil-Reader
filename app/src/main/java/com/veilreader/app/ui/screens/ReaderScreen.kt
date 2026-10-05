@@ -116,6 +116,7 @@ import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
 import com.veilreader.app.ui.reader.readerHardwareAccessibilityActive
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationIdentity
+import com.veilreader.app.ui.reader.hasReachedObservedDestination
 import com.veilreader.app.ui.reader.passageVisitAfterSettlement
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -480,6 +481,14 @@ fun ReaderScreen(
     val slidePageState = remember(opened.book.id, readerSessionInstanceId) { SlidePageState() }
     var slideInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<SlideNavigationInputListener?>(null)
+    }
+    LaunchedEffect(paperInputListener, paperCurlState.rendererStatus, paperCurlState.active) {
+        if (paperCurlState.active &&
+            paperCurlState.rendererStatus != com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY) {
+            // Context loss/failure must retire an uncommitted preview before a replacement
+            // renderer or subsequent input can acquire its locator/visual ownership.
+            paperInputListener?.forceCancelPendingTurn()
+        }
     }
     val navigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
         ReaderNavigationTransactionGate()
@@ -1295,21 +1304,18 @@ fun ReaderScreen(
                                 }
                         )
 
-                if (
-                    reachedCancelledNavigation &&
-                    currentLocator != null
-                ) {
+                if (reachedCancelledNavigation) {
                     val json =
                         currentLocator.toVeilPersistedJson(opened.format)
                     previousLocationJson =
-                        cancelledNavigation?.originLocatorJson
+                        cancelledNavigation.originLocatorJson
                             ?.takeIf { it != json }
                     recordLocator(
                         currentLocator,
                         ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
                     )
                     cancelledNavigation
-                        ?.passageVisitAfterSettlement(
+                        .passageVisitAfterSettlement(
                             if (opened.format == BookFormat.PDF) {
                                 pdfPageNumber(currentLocator)
                             } else {
@@ -2061,6 +2067,7 @@ fun ReaderScreen(
 
             val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
+                scope = scope,
                 isAnimated = {
                     !latestReducedMotion.value &&
                         shouldAnimateDirectionalNavigation(
@@ -4128,7 +4135,7 @@ private fun ReaderPageAtmosphere(
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
     val material = sanctuaryPageMaterialFor(navigationMode)
     val surface = sanctuarySurfaceProfileFor(theme, paperPatina)
-    val stack = paperPageStackDepth(progress, progression)
+    val stack = readerPageStackDepth(progress, progression)
     val patina = surface.patina
 
     Canvas(modifier) {

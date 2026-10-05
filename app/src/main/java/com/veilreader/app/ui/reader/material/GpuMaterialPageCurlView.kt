@@ -3,10 +3,16 @@ package com.veilreader.app.ui.reader.material
 import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.SurfaceTexture
+import android.opengl.EGL14
+import android.opengl.EGLExt
+import android.view.TextureView
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
+import android.os.SystemClock
 import android.os.Trace
+import com.veilreader.app.diagnostics.ReaderTrace
 import android.util.Log
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -26,6 +32,7 @@ import com.irurueta.android.glutils.GLTextureView
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import java.util.concurrent.atomic.AtomicLong
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -50,16 +57,20 @@ internal class GpuMaterialPageCurlView(
     private val onRendererReady: (Boolean) -> Unit = {},
     private val onRendererFailure: () -> Unit = {},
     private val onRendererFramePresented: () -> Unit = {},
-    private val onTextureUploadLeaseRequired: (Bitmap, Long) -> Unit = { _, _ -> },
-    private val onTextureUploaded: (Bitmap, Long) -> Unit = { _, _ -> },
+    private val onSheetPresented: (Long) -> Unit = {},
+    private val onTextureUploadLeaseRequired: (Bitmap, Long, Long) -> Unit = { _, _, _ -> },
+    private val onTextureUploaded: (Bitmap, Long, Long) -> Unit = { _, _, _ -> },
     private val onTextureUploadsInvalidated: (Long) -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
+    constructor(context: Context) : this(context, onRendererReady = {})
 
     private data class SubmittedFrame(
         val generation: Long,
         val viewportGeneration: Long,
         val sequence: Long,
         val textureRevision: Long,
+        val sheetEpoch: Long,
+        val submittedAtElapsedNanos: Long,
         val bitmap: Bitmap?,
         val active: Boolean,
         val curl: GpuPageCurlFrame,
@@ -69,6 +80,9 @@ internal class GpuMaterialPageCurlView(
         val visualAlpha: Float,
         val highContrast: Boolean
     )
+
+    private data class PresentedSheet(val timestamp: Long, val generation: Long, val viewport: Long, val epoch: Long)
+    private val completedSheetDraws = ArrayDeque<PresentedSheet>(8)
 
     private val frameLock = Any()
     private val lowMemoryDevice =
@@ -80,9 +94,11 @@ internal class GpuMaterialPageCurlView(
     private val meshRows = meshQuality.rows
     private val shadowLayerCount = gpuPageShadowLayerCount(lowMemoryDevice)
     private var submittedFrame: SubmittedFrame? = null
+    private val pendingUploadLeases = mutableListOf<MaterialPageGpuUploadLease>()
     private var lastSubmittedActive = false
     private var submittedSequence = 0L
     private var textureRevision = 0L
+    private var textureSubmissionStartedAtNanos = 0L
     private var uploadedTextureRevision = 0L
     private var rendererFailed = false
 
@@ -142,6 +158,39 @@ internal class GpuMaterialPageCurlView(
         preserveEGLContextOnPause =
             shouldPreserveGpuPageContextOnPause(lowMemoryDevice)
         setRenderer(this)
+        val surfaceDelegate = surfaceTextureListener
+        // Preserve the GL host's lifecycle listener while acknowledging the actual
+        // acquired buffer, rather than a draw callback or a fixed-delay guess.
+        surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                surfaceDelegate?.onSurfaceTextureAvailable(surface, width, height)
+            }
+            override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
+                surfaceDelegate?.onSurfaceTextureSizeChanged(surface, width, height)
+            }
+            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                synchronized(frameLock) { completedSheetDraws.clear() }
+                return surfaceDelegate?.onSurfaceTextureDestroyed(surface) ?: true
+            }
+            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
+                surfaceDelegate?.onSurfaceTextureUpdated(surface)
+                val acquiredTimestamp = surface.timestamp
+                val presented = synchronized(frameLock) {
+                    completedSheetDraws.firstOrNull { it.timestamp == acquiredTimestamp }.also {
+                        while (completedSheetDraws.isNotEmpty() && completedSheetDraws.first().timestamp <= acquiredTimestamp) {
+                            completedSheetDraws.removeFirst()
+                        }
+                    }
+                } ?: return
+                if (gpuMaterialSheetPresentationMatches(
+                        presented.timestamp, acquiredTimestamp,
+                        presented.generation, rendererGeneration,
+                        presented.viewport, viewportGeneration
+                    )) {
+                    onSheetPresented(presented.epoch)
+                }
+            }
+        }
         renderMode = GLTextureView.RENDER_MODE_WHEN_DIRTY
     }
 
@@ -153,11 +202,14 @@ internal class GpuMaterialPageCurlView(
         patina: Float,
         tone: MaterialPageTone,
         visualAlpha: Float,
-        highContrast: Boolean
+        highContrast: Boolean,
+        sheetEpoch: Long = 0L
     ) {
         val usableBitmap =
             bitmap?.takeIf { !it.isRecycled && it.width > 0 && it.height > 0 }
         var requiresTextureUpload = false
+        var uploadGeneration = 0L
+        var uploadRevision = 0L
         synchronized(frameLock) {
             submittedSequence =
                 nextGpuMaterialFrameSequence(submittedSequence)
@@ -171,12 +223,15 @@ internal class GpuMaterialPageCurlView(
             if (requiresTextureUpload) {
                 textureRevision =
                     nextGpuMaterialTextureRevision(textureRevision)
+                textureSubmissionStartedAtNanos = SystemClock.elapsedRealtimeNanos()
             }
             submittedFrame = SubmittedFrame(
                 generation = rendererGeneration,
                 viewportGeneration = viewportGeneration,
                 sequence = submittedSequence,
                 textureRevision = textureRevision,
+                sheetEpoch = sheetEpoch,
+                submittedAtElapsedNanos = textureSubmissionStartedAtNanos,
                 bitmap = usableBitmap,
                 active = active && usableBitmap != null,
                 curl = curl,
@@ -188,12 +243,18 @@ internal class GpuMaterialPageCurlView(
                 highContrast = highContrast
             )
             lastSubmittedActive = active && usableBitmap != null
+            uploadGeneration = rendererGeneration
+            uploadRevision = textureRevision
+            if (requiresTextureUpload && usableBitmap != null) {
+                pendingUploadLeases += MaterialPageGpuUploadLease(usableBitmap, uploadGeneration, uploadRevision)
+            }
         }
         if (requiresTextureUpload && usableBitmap != null) {
             // Lease synchronously before the GL thread can observe requestRender().
             onTextureUploadLeaseRequired(
                 usableBitmap,
-                rendererGeneration
+                uploadGeneration,
+                uploadRevision
             )
         }
         requestRender()
@@ -203,17 +264,18 @@ internal class GpuMaterialPageCurlView(
         // A new GL context cannot retain a client-memory read from the previous one.
         // Invalidate only the previous generation: UI delivery can race with a
         // newly submitted frame for the fresh context.
+        synchronized(frameLock) { completedSheetDraws.clear() }
         val abandonedGeneration = rendererGeneration
         if (abandonedGeneration > 0L) {
             post { onTextureUploadsInvalidated(abandonedGeneration) }
         }
-        rendererGeneration =
-            nextGpuMaterialRendererGeneration(rendererGeneration)
         rendererFailed = false
         surfaceReadyReported = false
         frameSuccessReportedForGeneration = false
         resetGlHandlesForNewGeneration()
         synchronized(frameLock) {
+            rendererGeneration = allocateGpuMaterialRendererGeneration()
+            pendingUploadLeases.clear()
             submittedFrame = null
             lastSubmittedActive = false
             submittedSequence = 0L
@@ -356,13 +418,17 @@ internal class GpuMaterialPageCurlView(
         if (didUpload) {
             synchronized(frameLock) {
                 uploadedTextureRevision = frame.textureRevision
+                pendingUploadLeases.removeAll {
+                    materialPageGpuUploadLeaseMatches(it, bitmap, frame.generation, frame.textureRevision)
+                }
             }
             // GL has consumed the client bitmap bytes for this texture update.
             // Acknowledge on the UI thread so the CPU snapshot pool may reuse it.
             post {
                 onTextureUploaded(
                     bitmap,
-                    frame.generation
+                    frame.generation,
+                    frame.textureRevision
                 )
             }
         }
@@ -440,6 +506,24 @@ internal class GpuMaterialPageCurlView(
             failRenderer("GPU page draw failed: glError=$drawError")
             return
         }
+        // eglSwapBuffers belongs to GLTextureView. Tag the buffer before that swap;
+        // TextureView reports this exact timestamp only after acquiring it.
+        val presentationTimestamp = System.nanoTime()
+        check(EGLExt.eglPresentationTimeANDROID(
+            EGL14.eglGetCurrentDisplay(), EGL14.eglGetCurrentSurface(EGL14.EGL_DRAW), presentationTimestamp
+        )) { "GPU Paper presentation timestamp is unavailable" }
+        synchronized(frameLock) {
+            if (completedSheetDraws.size == 8) completedSheetDraws.removeFirst()
+            completedSheetDraws.addLast(PresentedSheet(presentationTimestamp, frame.generation, frame.viewportGeneration, frame.sheetEpoch))
+        }
+        if (didUpload && ReaderTrace.isEnabled()) {
+            ReaderTrace.event(
+                name = "paper_gpu_first_draw",
+                details = "generation=${frame.generation} revision=${frame.textureRevision} " +
+                    "submitToDrawUs=${(SystemClock.elapsedRealtimeNanos() - frame.submittedAtElapsedNanos).coerceAtLeast(0L) / 1_000L} " +
+                    "textureBytesEstimate=${frontTextureWidth.toLong() * frontTextureHeight * 4L}"
+            )
+        }
         if (!frameSuccessReportedForGeneration) {
             frameSuccessReportedForGeneration = true
             post { onRendererFramePresented() }
@@ -448,6 +532,22 @@ internal class GpuMaterialPageCurlView(
             failRenderer("GPU page draw threw ${error::class.java.simpleName}", error)
         } finally {
             Trace.endSection()
+            releaseObsoleteUploadLeases()
+        }
+    }
+
+    /** GL has finished its client-memory reads before retiring skipped submissions. */
+    private fun releaseObsoleteUploadLeases(keepCurrent: Boolean = true) {
+        val retired = synchronized(frameLock) {
+            if (pendingUploadLeases.isEmpty()) return@synchronized emptyList<MaterialPageGpuUploadLease>()
+            val current = submittedFrame
+            pendingUploadLeases.filter { lease ->
+                !keepCurrent || current == null || !current.active ||
+                    !materialPageGpuUploadLeaseMatches(lease, current.bitmap, current.generation, current.textureRevision)
+            }.also { pendingUploadLeases.removeAll(it.toSet()) }
+        }
+        if (retired.isNotEmpty()) post {
+            retired.forEach { onTextureUploaded(it.bitmap, it.rendererGeneration, it.textureRevision) }
         }
     }
 
@@ -514,7 +614,16 @@ internal class GpuMaterialPageCurlView(
     fun pauseRenderer() {
         if (rendererPaused) return
         runCatching { onPause() }
-            .onSuccess { rendererPaused = true }
+            .onSuccess {
+                rendererPaused = true
+                // onPause joins the GL pause barrier: no upload can still read CPU storage.
+                synchronized(frameLock) {
+                    submittedFrame = null
+                    lastSubmittedActive = false
+                    uploadedTextureRevision = 0L
+                }
+                releaseObsoleteUploadLeases(keepCurrent = false)
+            }
     }
 
     fun resumeRenderer() {
@@ -534,9 +643,9 @@ internal class GpuMaterialPageCurlView(
         )
         GLES20.glUniform1f(uCylinderTilt, curl.cylinderTilt)
         GLES20.glUniform1f(uCylinderRadius, curl.radius)
-        val bitmap = frame.bitmap
+        val bitmap = frame.bitmap ?: return
         val pageAspect =
-            if (bitmap != null && bitmap.width > 0) {
+            if (bitmap.width > 0) {
                 bitmap.height.toFloat() / bitmap.width.toFloat()
             } else {
                 1f
@@ -883,22 +992,28 @@ internal class GpuMaterialPageCurlView(
 
     private fun buildProgram(vertexSource: String, fragmentSource: String): Int {
         val vertex = compileShader(GLES20.GL_VERTEX_SHADER, vertexSource)
-        val fragment = compileShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource)
-        val result = GLES20.glCreateProgram()
-        GLES20.glAttachShader(result, vertex)
-        GLES20.glAttachShader(result, fragment)
-        GLES20.glLinkProgram(result)
-
-        val status = IntArray(1)
-        GLES20.glGetProgramiv(result, GLES20.GL_LINK_STATUS, status, 0)
-        GLES20.glDeleteShader(vertex)
-        GLES20.glDeleteShader(fragment)
-        if (status[0] == 0) {
-            val log = GLES20.glGetProgramInfoLog(result)
-            GLES20.glDeleteProgram(result)
-            error("GPU page program link failed: $log")
+        var fragment = 0
+        var result = 0
+        var linked = false
+        try {
+            fragment = compileShader(GLES20.GL_FRAGMENT_SHADER, fragmentSource)
+            result = GLES20.glCreateProgram()
+            check(result != 0) { "GPU page program allocation failed" }
+            GLES20.glAttachShader(result, vertex)
+            GLES20.glAttachShader(result, fragment)
+            GLES20.glLinkProgram(result)
+            val status = IntArray(1)
+            GLES20.glGetProgramiv(result, GLES20.GL_LINK_STATUS, status, 0)
+            check(status[0] != 0) {
+                "GPU page program link failed: ${GLES20.glGetProgramInfoLog(result)}"
+            }
+            linked = true
+            return result
+        } finally {
+            GLES20.glDeleteShader(vertex)
+            if (fragment != 0) GLES20.glDeleteShader(fragment)
+            if (!linked && result != 0) GLES20.glDeleteProgram(result)
         }
-        return result
     }
 
     private fun compileShader(type: Int, source: String): Int {
@@ -1239,6 +1354,11 @@ internal fun gpuMaterialPageRendererRetryDelayMillis(failureCount: Int): Long =
         else -> 420L
     }
 
+// Replacement hosts share the allocator, so a late old-host callback cannot retire a new lease.
+private val gpuMaterialRendererGenerations = AtomicLong(0L)
+internal fun allocateGpuMaterialRendererGeneration(): Long =
+    gpuMaterialRendererGenerations.updateAndGet(::nextGpuMaterialRendererGeneration)
+
 internal fun nextGpuMaterialRendererGeneration(current: Long): Long =
     if (current == Long.MAX_VALUE) 1L else current + 1L
 
@@ -1315,7 +1435,8 @@ private data class GpuOverlaySnapshot(
     val patina: Float,
     val tone: MaterialPageTone,
     val visualAlpha: Float,
-    val side: MaterialPageSide
+    val side: MaterialPageSide,
+    val sheetEpoch: Long
 )
 
 @Composable
@@ -1413,7 +1534,8 @@ internal fun GpuMaterialPageOverlay(
                 patina = state.patina,
                 tone = state.tone,
                 visualAlpha = state.visualAlpha,
-                side = state.side
+                side = state.side,
+                sheetEpoch = state.sheetEpoch
             )
         }.collect { frame ->
             val bitmap = frame.bitmap
@@ -1445,7 +1567,8 @@ internal fun GpuMaterialPageOverlay(
                 patina = frame.patina,
                 tone = frame.tone,
                 visualAlpha = frame.visualAlpha,
-                highContrast = highContrast
+                highContrast = highContrast,
+                sheetEpoch = frame.sheetEpoch
             )
         }
     }
@@ -1476,6 +1599,7 @@ internal fun GpuMaterialPageOverlay(
                     // driver path may fail deterministically on first draw.
                     rendererFailureCount.intValue = 0
                 },
+                onSheetPresented = state::acknowledgeSheetPresented,
                 onTextureUploadLeaseRequired = state::markSnapshotSubmittedForGpu,
                 onTextureUploaded = state::acknowledgeSnapshotUploaded,
                 onTextureUploadsInvalidated = state::abandonGpuUploadLeases
@@ -1490,3 +1614,15 @@ internal fun GpuMaterialPageOverlay(
         update = { }
     )
 }
+
+/** Exact acquired-buffer acknowledgement, fenced against old contexts and resized viewports. */
+internal fun gpuMaterialSheetPresentationMatches(
+    drawTimestamp: Long,
+    acquiredTimestamp: Long,
+    drawGeneration: Long,
+    rendererGeneration: Long,
+    drawViewport: Long,
+    viewportGeneration: Long
+): Boolean = drawTimestamp > 0L && drawTimestamp == acquiredTimestamp &&
+    gpuMaterialFrameMatchesRendererGeneration(drawGeneration, rendererGeneration) &&
+    drawViewport > 0L && drawViewport == viewportGeneration

@@ -239,7 +239,7 @@ Wrote HTML report to file:///workspace/Veil-Reader/app/build/reports/lint-result
 Wrote SARIF report to file:///workspace/Veil-Reader/app/build/reports/lint-results-debug.sarif
 
 > Task :app:lintDebug
-w: Detected multiple Kotlin daemon sessions at 
+w: Detected multiple Kotlin daemon sessions at
 
 BUILD SUCCESSFUL in 13m 19s
 92 actionable tasks: 20 executed, 72 up-to-date

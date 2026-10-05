@@ -24,14 +24,11 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Full-scene search uses its own native sandbox process, independent of chamber fixtures. */
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35], qualifiers = "en-w320dp-h900dp-mdpi")
-@GraphicsMode(GraphicsMode.Mode.NATIVE)
-class GrayfogCloudSearchAccessibilityTest {
+/** Shared assertions; each locale has its own worker and native sandbox. */
+abstract class GrayfogCloudSearchFixture {
     @get:Rule val compose = createComposeRule()
 
-    private fun checkSearchLabel(scale: Float) {
+    protected fun checkSearchLabel(scale: Float) {
         val context = RuntimeEnvironment.getApplication()
         compose.setContent {
             val density = LocalDensity.current
@@ -56,9 +53,20 @@ class GrayfogCloudSearchAccessibilityTest {
         compose.awaitGrayfogArtwork()
     }
 
-    @Test @Config(qualifiers = "en-w320dp-h720dp-mdpi")
-    fun searchPurposeSurvivesEnteredText() = checkSearchLabel(1f)
+}
 
-    @Test @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "en-w320dp-h720dp-mdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class GrayfogCloudSearchAccessibilityTest : GrayfogCloudSearchFixture() {
+    @Test
+    fun searchPurposeSurvivesEnteredText() = checkSearchLabel(1f)
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class GrayfogCloudPersianSearchAccessibilityTest : GrayfogCloudSearchFixture() {
+    @Test
     fun persianLargeTextSearchRetainsItsAccessibleLabel() = checkSearchLabel(2f)
 }

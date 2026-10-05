@@ -1,8 +1,11 @@
+@file:OptIn(org.readium.r2.shared.ExperimentalReadiumApi::class)
+
 package com.veilreader.app.ui.screens
 
 import android.os.SystemClock
 import kotlin.math.abs
 import kotlin.math.max
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -53,8 +56,10 @@ internal class SlideNavigationInputListener(
     private var releaseVelocityPxPerSec = 0f
     private var operationGeneration = 0L
     private var activeOperationGeneration = 0L
+    private var cancelledOperationAwaitingCleanup = 0L
 
     private fun beginOperation(): Long {
+        cancelledOperationAwaitingCleanup = 0L
         operationGeneration =
             nextSlideTurnOperationGeneration(operationGeneration)
         activeOperationGeneration = operationGeneration
@@ -62,6 +67,7 @@ internal class SlideNavigationInputListener(
     }
 
     private fun invalidateOperation() {
+        cancelledOperationAwaitingCleanup = activeOperationGeneration
         operationGeneration =
             nextSlideTurnOperationGeneration(operationGeneration)
         activeOperationGeneration = 0L
@@ -72,6 +78,10 @@ internal class SlideNavigationInputListener(
             operationToken = token,
             activeOperationToken = activeOperationGeneration
         )
+
+    private fun mayCleanCancelledOperation(token: Long): Boolean =
+        cancelledOperationAwaitingCleanup == token &&
+            readerTurnMayCleanCancelledOperation(token, operationGeneration, activeOperationGeneration)
 
     override fun onTap(event: TapEvent): Boolean {
         if (!slideModeEnabled()) return cancelPendingTurn()
@@ -153,7 +163,7 @@ internal class SlideNavigationInputListener(
             if (state.active) {
                 val operationToken = activeOperationGeneration
                 val origin = dragStartLocator
-                navigationJob = scope.launch {
+                navigationJob = scope.launch(start = CoroutineStart.LAZY) {
                     delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
                     if (
                         origin != null &&
@@ -167,6 +177,9 @@ internal class SlideNavigationInputListener(
                                     currentLocator = navigator.currentLocator,
                                     origin = origin
                                 )
+                        if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
+                            return@launch
+                        }
                         if (
                             accepted &&
                             (
@@ -181,6 +194,7 @@ internal class SlideNavigationInputListener(
                         }
                     }
                 }
+                navigationJob?.start()
             }
         }
 
@@ -197,7 +211,7 @@ internal class SlideNavigationInputListener(
 
         if (spec == null) {
             val operationToken = activeOperationGeneration
-            completionJob = scope.launch {
+            completionJob = scope.launch(start = CoroutineStart.LAZY) {
                 if (state.active && !isReducedMotion()) state.animateCancel()
                 if (state.active) state.clear()
                 if (operationIsCurrent(operationToken)) {
@@ -205,6 +219,7 @@ internal class SlideNavigationInputListener(
                 }
                 resetDrag()
             }
+            completionJob?.start()
             return true
         }
 
@@ -223,10 +238,11 @@ internal class SlideNavigationInputListener(
         )
 
         val operationToken = activeOperationGeneration
-        completionJob = scope.launch {
+        completionJob = scope.launch(start = CoroutineStart.LAZY) {
             navigationJob?.join()
 
             if (!operationIsCurrent(operationToken)) {
+                if (!mayCleanCancelledOperation(operationToken)) return@launch
                 if (previewNavigationSucceeded) {
                     restoreDragStart(spec, forceRequest = true)
                 }
@@ -273,6 +289,7 @@ internal class SlideNavigationInputListener(
                                     origin = origin
                                 )
                         if (!operationIsCurrent(operationToken)) {
+                            if (!mayCleanCancelledOperation(operationToken)) return@launch
                             if (accepted) {
                                 navigator.go(origin, animated = false)
                             }
@@ -316,6 +333,7 @@ internal class SlideNavigationInputListener(
                             origin = origin
                         )
                 if (!operationIsCurrent(operationToken)) {
+                    if (!mayCleanCancelledOperation(operationToken)) return@launch
                     if (accepted) {
                         navigator.go(origin, animated = false)
                     }
@@ -344,6 +362,7 @@ internal class SlideNavigationInputListener(
             }
             resetDrag()
         }
+        completionJob?.start()
         return true
     }
 
@@ -375,20 +394,22 @@ internal class SlideNavigationInputListener(
         cancellationRequested = true
         val spec = activeSpec
         if (spec == null) {
-            completionJob = scope.launch {
+            completionJob = scope.launch(start = CoroutineStart.LAZY) {
                 if (state.active) state.clear()
                 resetDrag()
             }
+            completionJob?.start()
             return true
         }
 
         if (completionJob == null) {
-            completionJob = scope.launch {
+            completionJob = scope.launch(start = CoroutineStart.LAZY) {
                 navigationJob?.join()
                 if (previewNavigationSucceeded) restoreDragStart(spec)
                 if (state.active) state.clear()
                 resetDrag()
             }
+            completionJob?.start()
         }
         return true
     }
@@ -480,11 +501,14 @@ internal class SlideNavigationInputListener(
     private fun performDiscreteTurn(spec: TurnSpec) {
         val operationToken = beginOperation()
         val originLocator = navigator.currentLocator.value
+        activeSpec = spec
+        dragStartLocator = originLocator
+        previewNavigationSucceeded = false
         val reducedMotion = isReducedMotion()
         val visualReady = !reducedMotion && state.begin(navigator.publicationView)
         onInteraction()
 
-        completionJob = scope.launch {
+        completionJob = scope.launch(start = CoroutineStart.LAZY) {
             if (visualReady) {
                 delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
             }
@@ -495,6 +519,7 @@ internal class SlideNavigationInputListener(
             }
 
             val accepted = navigate(spec.direction)
+            previewNavigationSucceeded = accepted
             val moved =
                 accepted &&
                     awaitReaderVisualNavigationDeparture(
@@ -502,6 +527,7 @@ internal class SlideNavigationInputListener(
                         origin = originLocator
                     )
             if (!operationIsCurrent(operationToken)) {
+                if (!mayCleanCancelledOperation(operationToken)) return@launch
                 if (accepted) {
                     navigator.go(originLocator, animated = false)
                 }
@@ -534,6 +560,7 @@ internal class SlideNavigationInputListener(
             }
             resetDrag()
         }
+        completionJob?.start()
     }
 
     private fun resolveDragTurn(event: DragEvent): TurnSpec? {
@@ -658,6 +685,7 @@ internal class SlideNavigationInputListener(
         isEnabled()
 
     private fun resetDrag() {
+        cancelledOperationAwaitingCleanup = 0L
         reserved = false
         activeSpec = null
         navigationJob = null

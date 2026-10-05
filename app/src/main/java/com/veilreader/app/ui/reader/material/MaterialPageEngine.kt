@@ -18,6 +18,10 @@ import androidx.compose.runtime.setValue
 import com.veilreader.app.BuildConfig
 import com.veilreader.app.diagnostics.ReaderTrace
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -64,17 +68,20 @@ internal object MaterialPageEngineRollout {
 
 internal data class MaterialPageGpuUploadLease(
     val bitmap: Bitmap,
-    val rendererGeneration: Long
+    val rendererGeneration: Long,
+    val textureRevision: Long = 0L
 )
 
 internal fun materialPageGpuUploadLeaseMatches(
     lease: MaterialPageGpuUploadLease,
     bitmap: Bitmap?,
-    rendererGeneration: Long
+    rendererGeneration: Long,
+    textureRevision: Long? = null
 ): Boolean =
     bitmap != null &&
         lease.bitmap === bitmap &&
-        lease.rendererGeneration == rendererGeneration
+        lease.rendererGeneration == rendererGeneration &&
+        (textureRevision == null || lease.textureRevision == textureRevision)
 
 internal fun materialPageGpuUploadLeaseOwnsBitmap(
     lease: MaterialPageGpuUploadLease,
@@ -135,6 +142,38 @@ internal class MaterialPageEngineState(
     var lastSnapshotFailureReason: MaterialPageSnapshotFailureReason? by mutableStateOf(null)
         private set
 
+    var sheetEpoch: Long by mutableLongStateOf(0L)
+        private set
+    var presentationTimedOut: Boolean by mutableStateOf(false)
+        private set
+    private var sheetBeganAtElapsedNanos = 0L
+    private val presentationSignal = MutableStateFlow(0L)
+    internal val presentedSheetEpoch: StateFlow<Long> = presentationSignal
+
+    fun invalidateSheetPresentation() {
+        if (active) presentationSignal.value = 0L
+    }
+
+    fun acknowledgeSheetPresented(epoch: Long) {
+        if (active && epoch > 0L && epoch == sheetEpoch && presentationSignal.value != epoch) {
+            presentationSignal.value = epoch
+            if (ReaderTrace.isEnabled()) ReaderTrace.event(
+                name = "paper_source_presented",
+                details = "epoch=$epoch beginToAcquiredBufferUs=${(SystemClock.elapsedRealtimeNanos() - sheetBeganAtElapsedNanos).coerceAtLeast(0L) / 1_000L}"
+            )
+        }
+    }
+
+    suspend fun awaitSheetPresented(timeoutMillis: Long = 500L): Boolean {
+        val expected = sheetEpoch
+        if (!active || expected <= 0L) return false
+        val result = withTimeoutOrNull(timeoutMillis.coerceAtLeast(1L)) {
+            presentationSignal.first { it != 0L } == expected && active && sheetEpoch == expected
+        }
+        if (result == null && active && sheetEpoch == expected) presentationTimedOut = true
+        return result ?: false
+    }
+
     private var width = 0f
     private var height = 0f
     private var density = 1f
@@ -170,7 +209,8 @@ internal class MaterialPageEngineState(
      */
     fun markSnapshotSubmittedForGpu(
         bitmap: Bitmap,
-        rendererGeneration: Long
+        rendererGeneration: Long,
+        textureRevision: Long = 0L
     ) {
         if (bitmap.isRecycled || rendererGeneration <= 0L) return
         if (
@@ -178,30 +218,35 @@ internal class MaterialPageEngineState(
                 materialPageGpuUploadLeaseMatches(
                     lease = it,
                     bitmap = bitmap,
-                    rendererGeneration = rendererGeneration
+                    rendererGeneration = rendererGeneration,
+                    textureRevision = textureRevision
                 )
             }
         ) {
             gpuUploadLeases += MaterialPageGpuUploadLease(
                 bitmap = bitmap,
-                rendererGeneration = rendererGeneration
+                rendererGeneration = rendererGeneration,
+                textureRevision = textureRevision
             )
         }
     }
 
     /**
-     * GL calls this only after texImage2D/texSubImage2D returned without a GL error.
-     * Until this acknowledgement, capture code is forbidden from overwriting the bitmap.
+     * GL calls this after consuming the pixels or retiring a superseded submission
+     * once all client-memory reads have ended. Revision fencing prevents a late
+     * acknowledgement from releasing a newer upload of the same CPU bitmap.
      */
     fun acknowledgeSnapshotUploaded(
         bitmap: Bitmap,
-        rendererGeneration: Long
+        rendererGeneration: Long,
+        textureRevision: Long = 0L
     ) {
         gpuUploadLeases.removeAll {
             materialPageGpuUploadLeaseMatches(
                 lease = it,
                 bitmap = bitmap,
-                rendererGeneration = rendererGeneration
+                rendererGeneration = rendererGeneration,
+                textureRevision = textureRevision
             )
         }
         releaseDeferredBuffersIfPossible()
@@ -356,6 +401,7 @@ internal class MaterialPageEngineState(
         profile: MaterialPageProfile = this.profile
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
+        val beginStartedNanos = SystemClock.elapsedRealtimeNanos()
         releaseBuffersWhenUploadsSettle = false
         val prepared = preparedSnapshot
         val usePrepared =
@@ -443,7 +489,19 @@ internal class MaterialPageEngineState(
         edgeTravel = 0f
         visualAlpha = 1f
         liftCueEmitted = false
+        sheetEpoch = nextMaterialPageSnapshotRevision(sheetEpoch)
+        sheetBeganAtElapsedNanos = beginStartedNanos
+        presentationTimedOut = false
+        presentationSignal.value = 0L
         active = true
+        if (ReaderTrace.isEnabled()) {
+            ReaderTrace.event(
+                name = "paper_snapshot_memory",
+                details = "bitmapBytes=${bitmap.allocationByteCount} " +
+                    "poolBytes=${snapshotBuffers.filterNotNull().filter { !it.isRecycled }.sumOf { it.allocationByteCount.toLong() }} " +
+                    "pendingUploads=${gpuUploadLeases.size}"
+            )
+        }
         return true
     }
 
@@ -510,10 +568,14 @@ internal class MaterialPageEngineState(
 
     fun dragProgress(): Float = progress.coerceIn(0f, 1f)
 
-    private fun acceptAnimatedProgress(value: Float) {
+    private fun acceptAnimatedProgress(
+        value: Float,
+        releaseProgress: Float = progress,
+        releaseEdgeTravel: Float = edgeTravel
+    ) {
         progress = value.coerceIn(0f, 1f)
-        pointerTravel = progress
-        edgeTravel = progress
+        edgeTravel = materialPageSettledEdgeTravel(value, releaseProgress, releaseEdgeTravel)
+        pointerTravel = edgeTravel
     }
 
     fun prepareTapGrip() {
@@ -528,6 +590,8 @@ internal class MaterialPageEngineState(
 
     suspend fun animateTapTurn() {
         if (!active) return
+        val releaseProgress = progress
+        val releaseEdgeTravel = edgeTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -552,7 +616,7 @@ internal class MaterialPageEngineState(
                         easing = FastOutSlowInEasing
                     )
                 ) {
-                    acceptAnimatedProgress(value)
+                    acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
                 }
             }
 
@@ -574,7 +638,7 @@ internal class MaterialPageEngineState(
                 ),
                 initialVelocity = launchVelocity
             ) {
-                acceptAnimatedProgress(value)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
             }
         }
 
@@ -584,6 +648,8 @@ internal class MaterialPageEngineState(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        val releaseProgress = progress
+        val releaseEdgeTravel = edgeTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -612,7 +678,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-1f, 5f)
             ) {
-                acceptAnimatedProgress(value)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
             }
         }
 
@@ -622,6 +688,8 @@ internal class MaterialPageEngineState(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        val releaseProgress = progress
+        val releaseEdgeTravel = edgeTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -649,7 +717,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-5f, 3f)
             ) {
-                acceptAnimatedProgress(value)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
             }
         }
 
@@ -657,6 +725,8 @@ internal class MaterialPageEngineState(
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
+        val releaseProgress = progress
+        val releaseEdgeTravel = edgeTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -671,7 +741,7 @@ internal class MaterialPageEngineState(
         } else {
             val anim = Animatable(progress)
             anim.animateTo(0.045f, tween(72)) {
-                acceptAnimatedProgress(value)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
             }
             anim.animateTo(
                 targetValue = 0f,
@@ -681,13 +751,14 @@ internal class MaterialPageEngineState(
                     visibilityThreshold = 0.001f
                 )
             ) {
-                acceptAnimatedProgress(value)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
             }
         }
 
     }
 
     suspend fun clear() {
+        presentationSignal.value = -sheetEpoch
         snapshot = null
         progress = 0f
         verticalBias = 0f
@@ -701,12 +772,16 @@ internal class MaterialPageEngineState(
         density = 1f
         // Keep the one-frame visual/input settling barrier, but do not rely on time
         // for memory safety. CPU buffer reuse is protected by explicit GPU upload leases.
-        delay(16L)
-        active = false
-        liftCueEmitted = false
+        try {
+            delay(16L)
+        } finally {
+            active = false
+            liftCueEmitted = false
+        }
     }
 
     fun clearImmediately() {
+        presentationSignal.value = -sheetEpoch
         snapshot = null
         progress = 0f
         verticalBias = 0f
@@ -774,6 +849,10 @@ internal class MaterialPageEngineState(
         } else {
             1f
         }
+        sheetEpoch = nextMaterialPageSnapshotRevision(sheetEpoch)
+        sheetBeganAtElapsedNanos = SystemClock.elapsedRealtimeNanos()
+        presentationTimedOut = false
+        presentationSignal.value = 0L
         active = true
     }
 

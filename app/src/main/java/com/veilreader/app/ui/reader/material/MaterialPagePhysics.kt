@@ -285,3 +285,19 @@ internal fun materialPageReducedMotionAlpha(
         (0.94f + (1f - p) * 0.06f).coerceIn(0.94f, 1f)
     }
 }
+
+/** Continue the free edge from the last finger position, preserving both endpoints. */
+internal fun materialPageSettledEdgeTravel(
+    progress: Float,
+    releaseProgress: Float,
+    releaseEdgeTravel: Float
+): Float {
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+    val origin = releaseProgress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: p
+    val edge = releaseEdgeTravel.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: origin
+    return if (p <= origin) {
+        if (origin <= 0f) 0f else edge * (p / origin)
+    } else {
+        if (origin >= 1f) 1f else edge + (1f - edge) * ((p - origin) / (1f - origin))
+    }.coerceIn(0f, 1f)
+}

@@ -9,7 +9,8 @@ internal fun ComposeContentTestRule.awaitGrayfogArtwork() {
         waitForIdle()
         waitUntil(timeoutMillis = 20_000) {
             onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
-                .fetchSemanticsNodes().all { it.config[BookCoverArtworkReady] }
+                .fetchSemanticsNodes().all { it.config[BookCoverArtworkReady] } &&
+                bookCoverDecodesInFlight() == 0
         }
     }
     awaitDecodedCovers()

@@ -1,8 +1,8 @@
 # Veil Reader — Grayfog UI/UX Arena Review and Next-Step Ruling
 
-Date: 2026-10-04  
-Reviewed product/UI head: `438a967a074484aec373a8edc15eeca467ffaa13`  
-PR: #371 — `design/codex-grayfog-masterpiece-v1`  
+Date: 2026-10-04
+Reviewed product/UI head: `438a967a074484aec373a8edc15eeca467ffaa13`
+PR: #371 — `design/codex-grayfog-masterpiece-v1`
 Canonical convergence branch: `integration/page-engine-canonical-v1`
 
 ## Arena ruling

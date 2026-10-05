@@ -140,4 +140,3 @@ internal fun isSupportedExternalPublicationScheme(scheme: String?): Boolean =
         "content", "file" -> true
         else -> false
     }
-}

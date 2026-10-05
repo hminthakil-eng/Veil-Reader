@@ -5,8 +5,112 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [37])
 class MaterialPageModelTest {
+
+    @Test
+    fun `source presentation requires exact active sheet and releases a canceled waiter`() = kotlinx.coroutines.test.runTest {
+        val bitmap = android.graphics.Bitmap.createBitmap(32, 48, android.graphics.Bitmap.Config.ARGB_8888)
+        val engine = MaterialPageEngineState()
+        engine.installInspectableFrame(bitmap, progress = 0f)
+        val epoch = engine.sheetEpoch
+        val firstFrame = async { engine.awaitSheetPresented() }
+        runCurrent()
+        assertFalse(firstFrame.isCompleted)
+        engine.acknowledgeSheetPresented(epoch + 1L)
+        runCurrent()
+        assertFalse(firstFrame.isCompleted)
+        engine.acknowledgeSheetPresented(epoch)
+        assertTrue(firstFrame.await())
+        engine.clearImmediately()
+        engine.installInspectableFrame(bitmap, progress = 0f)
+        val nextFrame = async { engine.awaitSheetPresented() }
+        runCurrent()
+        engine.acknowledgeSheetPresented(epoch)
+        runCurrent()
+        assertFalse(nextFrame.isCompleted)
+        engine.clearImmediately()
+        assertFalse(nextFrame.await())
+        engine.dispose()
+        bitmap.recycle()
+    }
+
+    @Test
+    fun `unpresented source times out without claiming a visible frame`() = kotlinx.coroutines.test.runTest {
+        val bitmap = android.graphics.Bitmap.createBitmap(32, 48, android.graphics.Bitmap.Config.ARGB_8888)
+        val engine = MaterialPageEngineState()
+        engine.installInspectableFrame(bitmap, progress = 0f)
+        assertFalse(engine.awaitSheetPresented(timeoutMillis = 25L))
+        engine.dispose()
+        bitmap.recycle()
+    }
+
+    @Test
+    fun `old upload acknowledgement cannot retire a newer submission of the same bitmap`() {
+        val bitmap = android.graphics.Bitmap.createBitmap(32, 48, android.graphics.Bitmap.Config.ARGB_8888)
+        val engine = MaterialPageEngineState()
+        engine.markSnapshotSubmittedForGpu(bitmap, 3L, 7L)
+        engine.markSnapshotSubmittedForGpu(bitmap, 3L, 8L)
+        engine.acknowledgeSnapshotUploaded(bitmap, 3L, 7L)
+        assertTrue(engine.snapshotHasPendingGpuUpload(bitmap))
+        engine.acknowledgeSnapshotUploaded(bitmap, 2L, 8L)
+        assertTrue(engine.snapshotHasPendingGpuUpload(bitmap))
+        engine.acknowledgeSnapshotUploaded(bitmap, 3L, 8L)
+        assertFalse(engine.snapshotHasPendingGpuUpload(bitmap))
+        engine.dispose()
+        bitmap.recycle()
+    }
+
+    @Test
+    fun `cancel during the clear barrier releases engine ownership`() = kotlinx.coroutines.test.runTest {
+        val bitmap = android.graphics.Bitmap.createBitmap(32, 48, android.graphics.Bitmap.Config.ARGB_8888)
+        val engine = MaterialPageEngineState()
+        engine.installInspectableFrame(bitmap, progress = 0.4f)
+        val job = launch { engine.clear() }
+        runCurrent()
+        job.cancel()
+        job.join()
+        assertFalse(engine.active)
+        assertEquals(null, engine.snapshot)
+        engine.dispose()
+        bitmap.recycle()
+    }
+
+    @Test
+    fun `release preserves finger edge at every material and cancel depth`() {
+        MaterialPagePreset.entries.forEach { preset ->
+            val profile = MaterialPageProfiles.canonical(preset)
+            listOf(0.1f, 0.3f, 0.5f, 0.8f).forEach { travel ->
+                val sample = materialPageDragSample(travel * 1000f, 0f, 1000f, 1400f, profile)
+                assertEquals(travel, materialPageSettledEdgeTravel(sample.progress, sample.progress, travel), 0.00001f)
+                assertEquals(0f, materialPageSettledEdgeTravel(0f, sample.progress, travel), 0.00001f)
+                assertEquals(1f, materialPageSettledEdgeTravel(1f, sample.progress, travel), 0.00001f)
+                val before = materialPageSettledEdgeTravel(sample.progress - 0.0001f, sample.progress, travel)
+                val after = materialPageSettledEdgeTravel(sample.progress + 0.0001f, sample.progress, travel)
+                assertTrue(before <= travel && after >= travel)
+                assertTrue(after - before < 0.002f)
+            }
+        }
+    }
+
+    @Test
+    fun `settled edge remains monotonic and finite at degenerate release endpoints`() {
+        listOf(0f, 0.01f, 0.5f, 0.99f, 1f).forEach { origin ->
+            var previous = -1f
+            for (step in 0..100) {
+                val edge = materialPageSettledEdgeTravel(step / 100f, origin, origin)
+                assertTrue(edge.isFinite() && edge in 0f..1f && edge >= previous)
+                previous = edge
+            }
+        }
+        assertEquals(0f, materialPageSettledEdgeTravel(Float.NaN, Float.NaN, Float.NaN), 0f)
+    }
 
     @Test
     fun `prepared snapshot requires exact revision viewport and live bitmap`() {
