@@ -216,31 +216,44 @@ fun VeilApp(
         )
     }
 
-    // Existing libraries and restored backups may have no cached covers. Process one book at a time
-    // so each Room update naturally advances this effect to the next pending publication.
+    // Existing libraries and restored backups may have no cached covers. Process one book at a time.
+    // A broken publication must not starve the rest of the backfill queue: skip failures only for
+    // this composition lifetime, while leaving the durable null in place so a later app run retries.
+    var skippedCoverBackfillIds by remember { mutableStateOf(emptySet<String>()) }
     val nextCoverBook = books.firstOrNull {
         it.isImported &&
             it.coverCachePath == null &&
-            it.format != BookFormat.COMIC
+            it.format != BookFormat.COMIC &&
+            it.id !in skippedCoverBackfillIds
     }
     LaunchedEffect(nextCoverBook?.id) {
         val book = nextCoverBook ?: return@LaunchedEffect
-        readerEngine.extractAndCacheCover(book)
-            .getOrNull()
-            ?.let { cachedPath ->
-                library.updateCoverCachePath(book.id, cachedPath)
-            }
+        val result = readerEngine.extractAndCacheCover(book)
+        result.getOrNull()?.let { cachedPath ->
+            library.updateCoverCachePath(book.id, cachedPath)
+        }
+        if (result.isFailure) {
+            skippedCoverBackfillIds = skippedCoverBackfillIds + book.id
+        }
     }
 
-    // Fingerprints are derived cache metadata too. Backfill old/restored books incrementally so
-    // importing the same file later resolves to the existing record instead of making a duplicate.
-    val nextFingerprintBook = books.firstOrNull { it.isImported && it.contentFingerprint.isNullOrBlank() }
+    // Fingerprints are derived cache metadata too. Keep one unreadable publication from blocking
+    // duplicate-detection backfill for every later book in the current app session.
+    var skippedFingerprintBackfillIds by remember { mutableStateOf(emptySet<String>()) }
+    val nextFingerprintBook = books.firstOrNull {
+        it.isImported &&
+            it.contentFingerprint.isNullOrBlank() &&
+            it.id !in skippedFingerprintBackfillIds
+    }
     LaunchedEffect(nextFingerprintBook?.id, nextFingerprintBook?.sourceUri) {
         val book = nextFingerprintBook ?: return@LaunchedEffect
-        readerEngine.computeContentFingerprint(book)
-            .getOrNull()
+        val result = readerEngine.computeContentFingerprint(book)
+        result.getOrNull()
             ?.takeIf { it.isNotBlank() }
             ?.let { library.updateContentFingerprint(book.id, it) }
+        if (result.isFailure) {
+            skippedFingerprintBackfillIds = skippedFingerprintBackfillIds + book.id
+        }
     }
 
     val profileState = if (!readerSurfaceActive) {
