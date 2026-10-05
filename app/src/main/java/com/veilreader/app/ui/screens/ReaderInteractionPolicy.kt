@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.ui.unit.IntSize
 import com.veilreader.app.domain.BookFormat
 
 /**
@@ -85,3 +86,14 @@ internal fun shouldAutoHideReaderChrome(
         !showPdfZoom &&
         !selectionModeActive &&
         !touchExplorationEnabled
+
+
+internal fun shouldCancelReaderPreviewForViewportChange(
+    previousSize: IntSize,
+    newSize: IntSize,
+    paperPreviewActive: Boolean,
+    slidePreviewActive: Boolean
+): Boolean =
+    previousSize != IntSize.Zero &&
+        newSize != previousSize &&
+        (paperPreviewActive || slidePreviewActive)
