@@ -39,9 +39,11 @@ class ReaderPdfReliabilityInstrumentedTest {
                 try {
                     val directory = instrumentation.targetContext.filesDir.resolve("grayfog-review").apply { mkdirs() }
                     val name = description.methodName.replace(Regex("[^A-Za-z0-9_-]"), "_")
-                    directory.resolve("pdf-failure-$name.png").outputStream().use {
+                    val file = directory.resolve("pdf-failure-$name.png")
+                    file.outputStream().use {
                         check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it))
                     }
+                    exportGrayfogCapture(file)
                 } finally {
                     bitmap.recycle()
                 }
@@ -124,7 +126,10 @@ class ReaderPdfReliabilityInstrumentedTest {
         // Exercise the renderer's manual fit path while the real PDFView is attached.
         waitForTextWithScroll(appString(R.string.pdf_fit_width))
         clickTextWithScroll(appString(R.string.pdf_fit_width))
-        pressAndroidBack()
+        // An expanded Material sheet may consume Back by moving to partial expansion.
+        // Use its actual return action so the link tap cannot land on a modal scrim.
+        clickTextWithScroll(appString(R.string.reader_back_to_reading))
+        uiAutomation.waitForIdle(500, 5_000)
 
         // A layout preference may replace the native renderer. Exercise the attached owner,
         // rather than waiting for page changes on the pre-layout PDFView reference.
@@ -469,11 +474,6 @@ class ReaderPdfReliabilityInstrumentedTest {
         values.put(MediaStore.MediaColumns.IS_PENDING, 0)
         resolver.update(uri, values, null, null)
         SystemClock.sleep(1_000)
-    }
-
-    private fun pressAndroidBack() {
-        uiAutomation.executeShellCommand("input keyevent KEYCODE_BACK").close()
-        SystemClock.sleep(750)
     }
 
     private fun revealReaderChrome(view: PDFView) {

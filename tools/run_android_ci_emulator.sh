@@ -39,6 +39,9 @@ flock -n 9 || { echo "$SERIAL is already owned by another process." >&2; exit 1;
 cleanup() {
   status=$?
   set +e
+  if [[ "$MODE" == "storage" ]]; then
+    "$ADB" -s "$SERIAL" pull /data/local/tmp/veil-grayfog-review build/reports/ >/dev/null 2>&1
+  fi
   # Only the inert Compose review directory; never export publication/history files.
   # Preserve the original test exit code even when optional capture collection fails.
   if [[ "$MODE" == "storage" ]] &&
@@ -149,6 +152,7 @@ run_gradle() {
 
 case "$MODE" in
   storage)
+    "$ADB" -s "$SERIAL" shell rm -rf /data/local/tmp/veil-grayfog-review
     run_gradle :app:connectedDebugAndroidTest --stacktrace
     ;;
   performance)

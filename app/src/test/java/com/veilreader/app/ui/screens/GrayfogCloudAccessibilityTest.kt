@@ -73,11 +73,28 @@ class GrayfogCloudAccessibilityTest {
                 }
             }
         }
+        // Compose idle does not include IO. Await real artwork before filtering disposes
+        // a cover, and before Robolectric tears down the native rendering sandbox.
+        compose.waitForIdle()
+        awaitCoverArtwork()
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
         val label = context.getString(R.string.library_search_hint)
         val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
         search.performScrollTo().assertHeightIsAtLeast(48.dp).performTextInput("Still")
         search.assertTextContains("Still")
         search.assertIsDisplayed()
+        compose.waitForIdle()
+        awaitCoverArtwork()
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
+    }
+
+    private fun awaitCoverArtwork() {
+        compose.waitUntil(timeoutMillis = 20_000) {
+            compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
+                .fetchSemanticsNodes().all { it.config[BookCoverArtworkReady] }
+        }
     }
 
     @Test @Config(qualifiers = "en-w320dp-h720dp-mdpi")

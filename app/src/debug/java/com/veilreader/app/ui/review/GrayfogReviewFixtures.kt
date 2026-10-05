@@ -63,20 +63,20 @@ object GrayfogReviewFixtures {
     /** A fictional review cover from our original environment art, decoded by the real BookCover path. */
     fun booksWithOriginalCover(context: Context): List<Book> {
         // Validate the real resource before handing its cache file to asynchronous BookCover.
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeResource(context.resources, R.drawable.grayfog_keep_v3, bounds)
-        check(bounds.outWidth > 0 && bounds.outHeight > 0) { "Original review artwork could not be decoded" }
         val directory = context.cacheDir.resolve("grayfog-review-art").apply { mkdirs() }
         val cover = directory.resolve("original-keep-v3.png")
-        if (!cover.exists()) {
-            val bitmap = checkNotNull(BitmapFactory.decodeResource(context.resources, R.drawable.grayfog_keep_v3))
-            try {
+        // Decode the actual pixels, not only bounds: cached files must not bypass full native
+        // artwork initialization in a fresh review sandbox. Production still decodes off-thread.
+        val bitmap = checkNotNull(BitmapFactory.decodeResource(context.resources, R.drawable.grayfog_keep_v3))
+        try {
+            check(bitmap.width > 0 && bitmap.height > 0)
+            if (!cover.exists()) {
                 cover.outputStream().use { output ->
                     check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
                 }
-            } finally {
-                bitmap.recycle()
             }
+        } finally {
+            bitmap.recycle()
         }
         return books.mapIndexed { index, book ->
             if (index == 0) book.copy(coverCachePath = cover.absolutePath) else book

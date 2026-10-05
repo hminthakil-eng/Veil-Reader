@@ -69,7 +69,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-grayfog-shell-review
-          path: build/reports/grayfog-review.tar
+          path: |
+            build/reports/grayfog-review.tar
+            build/reports/veil-grayfog-review/
           if-no-files-found: ignore
           retention-days: 7
 

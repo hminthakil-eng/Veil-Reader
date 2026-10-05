@@ -103,8 +103,15 @@ class GrayfogShellAccessibilityTest(
             )
         }
         val title = compose.onNodeWithText(localized.getString(R.string.threshold_title_first_volume)).fetchSemanticsNode()
-        val body = compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume)).fetchSemanticsNode()
-        assertTrue("Editorial copy must occupy separate vertical space", title.boundsInRoot.bottom <= body.boundsInRoot.top)
+        val body = compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume))
+        // Optional approach copy yields to the current book at large text. The reading action
+        // remains mandatory in every case; requiring omitted copy would reject that adaptation.
+        if (scale >= com.veilreader.app.ui.theme.VeilComposition.ApproachCondenseFontScale) {
+            body.assertDoesNotExist()
+        } else {
+            val bodyBounds = body.fetchSemanticsNode().boundsInRoot
+            assertTrue("Editorial copy must occupy separate vertical space", title.boundsInRoot.bottom <= bodyBounds.top)
+        }
         capture("threshold-entrance")
         compose.onNodeWithText(localized.getString(R.string.threshold_return_volume))
             .performScrollTo().assertIsDisplayed().assertHasClickAction()
@@ -197,8 +204,10 @@ class GrayfogShellAccessibilityTest(
         val context = ApplicationProvider.getApplicationContext<Context>()
         val directory = File(context.filesDir, "grayfog-review").apply { mkdirs() }
         val name = "$surface-$language-${(scale * 100).toInt()}-${if (highContrast) "contrast" else "standard"}.png"
-        File(directory, name).outputStream().use { output ->
-            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
+        val file = File(directory, name)
+        file.outputStream().use { output ->
+            check(compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
         }
+        com.veilreader.app.exportGrayfogCapture(file)
     }
 }

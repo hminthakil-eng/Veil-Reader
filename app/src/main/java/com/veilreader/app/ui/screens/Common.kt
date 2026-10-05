@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -472,6 +473,9 @@ internal fun bookCoverSampleSize(
     return sample
 }
 
+/** Render-review readiness only; decorative cover artwork stays unannounced by TalkBack. */
+internal val BookCoverArtworkReady = SemanticsPropertyKey<Boolean>("BookCoverArtworkReady")
+
 private fun decodeBookCover(file: File, target: IntSize): CachedCoverVisual? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeFile(file.absolutePath, bounds)
@@ -621,7 +625,9 @@ fun BookCover(
             )
             // Every current cover placement already presents the book title beside the artwork.
             // Keep the image layers decorative so TalkBack does not announce the same title twice.
-            .clearAndSetSemantics { }
+            .clearAndSetSemantics {
+                this[BookCoverArtworkReady] = imagePath.isNullOrBlank() || cachedCover != null
+            }
     ) {
         GeneratedBookCover(title = displayTitle, subtitle = subtitle)
         cachedCover?.let { cover ->
@@ -728,9 +734,32 @@ internal fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
                 }
             }
         } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                GeneratedCoverRegistration()
-            }
+            GeneratedCoverMonogram(title)
+        }
+    }
+}
+
+@Composable
+private fun GeneratedCoverMonogram(title: String) {
+    val initial = remember(title) {
+        title.codePoints().filter { Character.isLetter(it) }.findFirst().let { letter ->
+            if (letter.isPresent) String(Character.toChars(Character.toUpperCase(letter.asInt))) else null
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        if (initial == null || maxWidth < 48.dp || maxHeight < 64.dp) {
+            GeneratedCoverRegistration()
+        } else {
+            // This is a decorative edition mark, sized like artwork. The readable title next
+            // to the cover still follows user font scale; it remains the accessible identity.
+            val markSize = (maxWidth.value * 0.42f / LocalDensity.current.fontScale).sp
+            Text(
+                initial,
+                color = VeilPalette.Moon.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = markSize, lineHeight = markSize * 1.25f
+                ).withVeilContentScript(initial)
+            )
         }
     }
 }

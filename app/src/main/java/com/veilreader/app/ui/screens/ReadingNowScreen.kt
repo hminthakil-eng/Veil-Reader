@@ -243,6 +243,13 @@ private fun ThresholdHeader(
         LocalDensity.current.fontScale, with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
         })
+    val windowWidthDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value
+    }
+    val approachHeightDp = if (hasCurrentBook && windowWidthDp <
+        com.veilreader.app.ui.theme.VeilComposition.ArchitecturalPairMinWidthDp) {
+        headerHeightDp.coerceAtMost(com.veilreader.app.ui.theme.VeilComposition.ThresholdActiveApproachMaxHeightDp)
+    } else headerHeightDp
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -272,7 +279,7 @@ private fun ThresholdHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = if (abbreviatedEntry) 0.dp else headerHeightDp.dp)
+                .heightIn(min = if (abbreviatedEntry) 0.dp else approachHeightDp.dp)
                 .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             horizontalAlignment = Alignment.CenterHorizontally
