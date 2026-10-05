@@ -181,4 +181,17 @@ class DesignSystemTest {
         }
         assertTrue(contrast(VeilMaterials.Ink, VeilMaterials.Parchment) >= 4.5f)
     }
+
+    @Test
+    fun `semantic spacing aliases preserve canonical rhythm`() {
+        assertEquals(VeilSpacing.xxs, VeilSpacing.Micro)
+        assertEquals(VeilSpacing.xs, VeilSpacing.Inline)
+        assertEquals(VeilSpacing.sm, VeilSpacing.Cluster)
+        assertEquals(VeilSpacing.md, VeilSpacing.Content)
+        assertEquals(VeilSpacing.xl, VeilSpacing.Section)
+        assertEquals(VeilSpacing.xxl, VeilSpacing.Realm)
+        assertEquals(VeilSpacing.md, VeilSpacing.ScreenCompact)
+        assertEquals(VeilSpacing.xl, VeilSpacing.ScreenWide)
+        assertEquals(VeilSpacing.xxl, VeilSpacing.ScreenLarge)
+    }
 }
