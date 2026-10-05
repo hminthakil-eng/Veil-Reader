@@ -47,6 +47,7 @@ import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
+import com.veilreader.app.ui.theme.shouldAbbreviateThresholdEntry
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -241,15 +242,14 @@ private fun ThresholdHeader(
     val compactReturningEntry =
         hasCurrentBook &&
             windowSize.width < com.veilreader.app.ui.theme.VeilComposition.ArchitecturalPairMinWidthDp
-    val accessibilityCondensedEntry =
-        hasCurrentBook &&
-            com.veilreader.app.ui.theme.condenseRealmApproach(
-                LocalDensity.current.fontScale,
-                windowSize.height
-            )
     // Returning phone users came here to resume reading. Preserve the doorway,
     // but do not make them re-read the cinematic prologue on every visit.
-    val abbreviatedEntry = compactReturningEntry || accessibilityCondensedEntry
+    val abbreviatedEntry = shouldAbbreviateThresholdEntry(
+        hasCurrentBook = hasCurrentBook,
+        widthDp = windowSize.width,
+        heightDp = windowSize.height,
+        fontScale = LocalDensity.current.fontScale
+    )
     val approachHeightDp = if (compactReturningEntry) {
         headerHeightDp.coerceAtMost(
             com.veilreader.app.ui.theme.VeilComposition.ThresholdActiveApproachMaxHeightDp
