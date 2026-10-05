@@ -1970,17 +1970,30 @@ fun ReaderScreen(
                 null
             }
 
+            fun paperModeSelected(): Boolean =
+                shouldUsePaperCurlNavigation(
+                    format = opened.format,
+                    scroll = latestAppearance.value.scroll,
+                    pageTurnStyle = latestAppearance.value.pageTurnStyle
+                )
+
+            fun paperRendererOwnsNavigationInput(): Boolean =
+                paperModeSelected() &&
+                    paperRendererCanOwnNavigationInput(
+                        reducedMotion = latestReducedMotion.value,
+                        rendererStatus = paperCurlState.rendererStatus
+                    )
+
+            fun paperNeedsStaticFallback(): Boolean =
+                paperModeSelected() && !paperRendererOwnsNavigationInput()
+
             val paperListener = if (navigator is EpubNavigatorFragment) {
                 PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
                     isEnabled = {
                         latestReaderSessionReady.value &&
-                            shouldUsePaperCurlNavigation(
-                                format = opened.format,
-                                scroll = latestAppearance.value.scroll,
-                                pageTurnStyle = latestAppearance.value.pageTurnStyle
-                            )
+                            paperRendererOwnsNavigationInput()
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
@@ -2039,11 +2052,14 @@ fun ReaderScreen(
                     navigator = nav,
                     isEnabled = {
                         latestReaderSessionReady.value &&
-                            shouldUseStaticPagedDragNavigation(
-                                format = opened.format,
-                                scroll = latestAppearance.value.scroll,
-                                pageTurnStyle = latestAppearance.value.pageTurnStyle
-                            )
+                            (
+                                shouldUseStaticPagedDragNavigation(
+                                    format = opened.format,
+                                    scroll = latestAppearance.value.scroll,
+                                    pageTurnStyle = latestAppearance.value.pageTurnStyle
+                                ) ||
+                                    paperNeedsStaticFallback()
+                                )
                     },
                     scope = scope,
                     onInteraction = ::markReaderNavigationInteraction,
@@ -2096,7 +2112,11 @@ fun ReaderScreen(
                             nav.overflow.value.scroll
                         },
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
-                    )
+                    ) ||
+                        (
+                            opened.format == BookFormat.EPUB &&
+                                paperNeedsStaticFallback()
+                            )
                 },
                 onInteraction = ::markReaderNavigationInteraction,
                 onNavigationCommitted = {
@@ -2182,7 +2202,11 @@ fun ReaderScreen(
                     BookFormat.EPUB ->
                         when (latestAppearance.value.navigationMode) {
                             ReaderNavigationMode.PAPER_CURL ->
-                                paperListener?.performDiscreteTurn(direction) == true
+                                if (paperRendererOwnsNavigationInput()) {
+                                    paperListener?.performDiscreteTurn(direction) == true
+                                } else {
+                                    performDirectPagedTurn()
+                                }
 
                             ReaderNavigationMode.SLIDE ->
                                 slideListener?.performDiscreteTurn(direction) == true
