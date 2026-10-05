@@ -88,9 +88,7 @@ fun MangaHubScreen(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val context = LocalContext.current
-    val adaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val adaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val compactLayout = adaptiveClass == VeilAdaptiveClass.COMPACT
     val mangaBooks = remember(books) {
         books
