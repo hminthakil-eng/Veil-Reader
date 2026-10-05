@@ -9,7 +9,6 @@ on:
       - "settings.gradle.kts"
       - "gradle.properties"
       - "gradle/**"
-      - "tools/cyclonedx-init.gradle.kts"
       - ".github/dependency-review-config.yml"
       - ".github/workflows/dependency-governance.yml"
   push:
@@ -54,24 +53,32 @@ jobs:
           dependency-graph: generate-and-submit
           cache-provider: basic
 
-      - name: Generate CycloneDX aggregate SBOM
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          gradle-version: "9.6.0"
-          cache-provider: basic
+      - name: Prepare SBOM output
+        run: mkdir -p build/reports/sbom
 
-      - name: Produce CycloneDX JSON/XML
-        run: gradle cyclonedxBom --init-script tools/cyclonedx-init.gradle.kts --stacktrace
-
-      - name: Upload SBOM
-        uses: actions/upload-artifact@v7
+      # Pinned v0.24.3 action commit. Syft is independently pinned to the
+      # current 1.54.0 release so SBOM generation is reproducible.
+      - name: Generate CycloneDX JSON SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
         with:
-          name: veil-reader-sbom-${{ github.sha }}
-          path: |
-            build/reports/cyclonedx/bom.json
-            build/reports/cyclonedx/bom.xml
-          if-no-files-found: error
-          retention-days: 14
+          path: .
+          format: cyclonedx-json
+          output-file: build/reports/sbom/veil-reader.cdx.json
+          artifact-name: veil-reader-cyclonedx-json-${{ github.sha }}
+          syft-version: v1.54.0
+          upload-artifact-retention: 14
+          upload-release-assets: false
+
+      - name: Generate CycloneDX XML SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
+        with:
+          path: .
+          format: cyclonedx-xml
+          output-file: build/reports/sbom/veil-reader.cdx.xml
+          artifact-name: veil-reader-cyclonedx-xml-${{ github.sha }}
+          syft-version: v1.54.0
+          upload-artifact-retention: 14
+          upload-release-assets: false
 
   dependency-review:
     name: dependency-review
