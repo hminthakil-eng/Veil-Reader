@@ -49,6 +49,76 @@ jobs:
 
       - name: Generate and submit Gradle dependency graph
         uses: gradle/actions/dependency-submission@v6
+        env:
+          # gradle/actions currently submits dependencies without reliable runtime/development
+          # scoping unless the underlying Gradle plugin is told which configurations are runtime.
+          # Keep GitHub's runtime vulnerability gate tied to actual Android runtime classpaths.
+          DEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS: '^(debug|release|benchmark)RuntimeClasspath
+      - name: Trace Bouncy Castle runtime dependency
+        shell: bash
+        run: |
+          ./gradlew :app:dependencyInsight \
+            --configuration debugRuntimeClasspath \
+            --dependency org.bouncycastle:bcprov-jdk18on \
+            --stacktrace
+          ./gradlew :app:dependencyInsight \
+            --configuration releaseRuntimeClasspath \
+            --dependency org.bouncycastle:bcprov-jdk18on \
+            --stacktrace
+
+      - name: Trace buildscript Bouncy Castle owner
+        shell: bash
+        run: |
+          mkdir -p build/reports/security
+          ./gradlew buildEnvironment --console=plain \
+            | tee build/reports/security/build-environment.txt
+          grep -n -B 12 -A 12 "bcprov-jdk18on\|bcpkix-jdk18on" \
+            build/reports/security/build-environment.txt || true
+
+      - name: Prepare SBOM output
+        run: mkdir -p build/reports/sbom
+
+      # Pinned v0.24.3 action commit. Syft is independently pinned to the
+      # current 1.54.0 release so SBOM generation is reproducible.
+      - name: Generate CycloneDX JSON SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: build/reports/sbom/veil-reader.cdx.json
+          artifact-name: veil-reader-cyclonedx-json-${{ github.sha }}
+          syft-version: v1.54.0
+          upload-artifact-retention: 14
+          upload-release-assets: false
+
+      - name: Generate CycloneDX XML SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
+        with:
+          path: .
+          format: cyclonedx-xml
+          output-file: build/reports/sbom/veil-reader.cdx.xml
+          artifact-name: veil-reader-cyclonedx-xml-${{ github.sha }}
+          syft-version: v1.54.0
+          upload-artifact-retention: 14
+          upload-release-assets: false
+
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    needs: dependency-graph
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Review dependency delta
+        uses: actions/dependency-review-action@v5
+        with:
+          config-file: ./.github/dependency-review-config.yml
+
         with:
           dependency-graph: generate-and-submit
           cache-provider: basic
