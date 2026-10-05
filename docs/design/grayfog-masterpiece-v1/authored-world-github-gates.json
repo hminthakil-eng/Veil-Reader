@@ -1,0 +1,38 @@
+{
+  "source_head": "3686fb77b5adb760b43bd51115ec68e50efc9c63",
+  "runs": {
+    "android": {
+      "id": 37290421616,
+      "conclusion": "success"
+    },
+    "storage": {
+      "id": 37290421691,
+      "conclusion": "success"
+    },
+    "performance": {
+      "id": 37290421672,
+      "conclusion": "success"
+    }
+  },
+  "physical_device_green": false,
+  "publication_scope": "Documentation and captured review frames only; tested executable sources/workflows are unchanged.",
+  "performance_scope": {
+    "api": 35,
+    "renderer": "lavapipe",
+    "absolute_smoke_budgets": "passed",
+    "normalized_metrics": 4,
+    "relative_main_delta_gate": "skipped because no persisted main baseline exists",
+    "profiled_release_apk_bytes": 24405233,
+    "profiled_release_aab_bytes": 21418324,
+    "baseline_profile_bytes": 13806,
+    "metrics": {
+      "startup_ttid_median": 750.571,
+      "reader_gfx_frame_p95": 200.0,
+      "reader_gfx_frame_p99": 200.0,
+      "reader_gfx_frame_count": 69.0
+    }
+  },
+  "tested_merge_sha": "94bcbdb64ec56c0d7bef27b3236be1d6047bad84",
+  "tested_tree": "2cc85102b5300290d3ef0f57a5f82f1cdca0d0d0",
+  "merge_and_source_trees_equal": true
+}

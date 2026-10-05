@@ -1,5 +1,8 @@
 # Grayfog Masterpiece v1 — living design handoff
 
+> Latest artistic wave: physical-book-led Threshold, calmer object-led Archive retrieval, and Castle with principal halls, side chambers and opposing tablet wings. Tested executable source: **3686fb77b5adb760b43bd51115ec68e50efc9c63**. All three GitHub gates succeeded; raw CI independently confirms **729/130**, zero failures/errors/skips, lint **175 warnings + 1 hint**, zero errors. Local policy **39**; native review **540 + 8** fresh images. **Draft PR #371; not 100/100 or physical DEVICE-GREEN.** Scroll to the authored-world sections for selected actual renders and exact limitations. Earlier evidence below is historical.
+
+
 Working branch: `design/codex-grayfog-masterpiece-v1`.
 Base: `integration/arena-reader-canonical-convergence-v1` at `18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf`.
 This is a reversible design candidate, not a main promotion or release.
@@ -261,3 +264,44 @@ Principle: an atmospheric archive introduces the world briefly, then gives its o
 ### Android search assertion correction
 
 Storage run 37288831351 at 751c042 executed 148 cases: 16 failures, zero errors/skips. All 132 established cases passed. The actual host registry correction worked: the new cases reached live retrieval successfully. Their remaining failure was an ambiguous test selector matching both the editable query Still and the matching publication record Still. The assertion now excludes editable controls explicitly, retaining exact result-presence and original-art-result-removal checks across all 16 configurations. This is not an app retrieval failure and no production search code is changed. Original artwork remains enabled. The fresh Android run is required before declaring this correction verified.
+
+### Final local proof for the authored-world source candidate
+
+Source head: `3686fb77b5adb760b43bd51115ec68e50efc9c63`; canonical base remains `18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf`. `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` completed successfully in 11m56s. After the Android-only selector correction, the same four tasks completed again in 24s, retaining the successful JVM outputs and rebuilding the actual instrumentation APK. No executable-source changes occurred after that confirmation.
+
+Exact retained results: **729 JVM cases / 130 suites; zero failures, errors or skipped cases**. This includes **36 design checks** and the explicitly defined **291 Reader regression cases / 42 suites**. Reading-policy checks: **39 passed**. Lint: **zero errors, 175 warnings, one hint**; warnings are not suppressed. The additional unused-resource warning is the retained Castle inner-keep label after removing its redundant visible eyebrow; it does not indicate a rendering or navigation failure. Build outputs include the debug APK and debug AndroidTest APK with SHA-256/size in `authored-world-verification.json`. `git diff --check` passed.
+
+The native production-component matrix regenerated **540 images** across 15 configurations and 36 real review surfaces, plus **eight focused detail captures**. Capture freshness is checked against the actual render-suite timestamp. Selected inspected frames are linked below. High Contrast keeps full chamber contrast; ordinary Castle exposes original architecture. Gallery's first object arrives 24dp earlier after duplicate insets are removed. Normal 320dp Threshold retains a physical cover beside its complete four-line title; the 48dp View all action remains single-line while the secondary heading wraps naturally.
+
+- [Threshold, 320dp](authored-world-threshold-active-en-100-320.png)
+- [Gallery, 412dp](authored-world-library-gallery-en-100-412.png)
+- [Gallery, Persian 200%](authored-world-library-gallery-fa-200-360.png)
+- [Castle halls, 412dp](authored-world-castle-advanced-en-100-412.png)
+- [Castle opposing wings, tablet](authored-world-castle-advanced-en-100-1280-tablet.png)
+- [Castle, Persian 200% High Contrast](authored-world-castle-advanced-fa-200-360-contrast.png)
+
+Exact failed-head Android evidence is retained separately in `authored-halls-android-failure-evidence.json`: head 751c042, run 37288831351, 148 cases / 16 ambiguous new-selector failures, 80 actual Android captures. This evidence is not relabeled as final-source success. The final-source runs are Android CI 37290421616, Storage 37290421691 and Performance 37290421672; results must be recorded when those jobs complete.
+
+Remaining optical/device questions: original publication covers on both OLED and LCD; subtle parchment grain and age at normal reading distance; room/environment separation without crushed blacks; mixed-script publication-title proportions inside Persian chrome; whole-screen navigation-shell composition and insets; tactile Paper Curl vs Slide, gesture release feel and real frame pacing; actual hinge/rotation behavior. Native preview or emulator acceptance cannot resolve these completely. Reader modes, navigation/progression, persistence, exact locators, TTS, PDF, annotation ownership and source-grounded world state remain preserved. This candidate is neither 100/100 nor physical DEVICE-GREEN.
+
+### Final-source Android instrumentation result
+
+Storage run **37290421691 succeeded** at exact source head **3686fb77b5adb760b43bd51115ec68e50efc9c63**. Its log records `BUILD SUCCESSFUL in 9m27s`. Original artwork, all 16 newly added localized live-search cases, and the existing case matrix remain enabled. The unchanged matrix contains 148 expected cases and 96 expected capture names; these are source expectations, not independently re-counted current JUnit/image totals.
+
+Artifact **11337010835** is **49,773,780 bytes**, digest `sha256:68463694b70bdab7481ca18f36f51e32d3df42ff271163e523ffa777d7991a5c`. The executor rejects transfers above 32 MiB, and the authorized direct file URL returns HTTP 403. Therefore the final-source Android archive is not claimed downloaded, extracted, or optically inspected. Its complete downloadable artifact remains available through the successful GitHub run. `authored-world-android-run.json` records this evidence boundary. The 540 fresh local native images and eight focused detail images are independently checked and selected frames are retained. This limitation is evidence-transfer infrastructure, not an app or test regression.
+
+### Completed GitHub gates for the exact executable source
+
+All three runs succeeded at executable source head **3686fb77b5adb760b43bd51115ec68e50efc9c63**:
+
+- [Android CI 37290421616](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37290421616): unit tests, Room schema verification, lint, debug build, optimized release artifacts/archive verification and performance-harness compilation.
+- [Storage Instrumentation 37290421691](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37290421691): actual Android emulator instrumentation, including original-art live-search cases.
+- [Performance 37290421672](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37290421672): profile generation, benchmark smoke, profiled release packaging and configured emulator checks. This is emulator evidence, not physical-phone performance acceptance.
+
+The Android CI artifact **11337072716** was downloaded and independently parsed: **729 cases / 130 suites; zero failures, errors or skips; lint 175 warnings / one hint / zero errors**. Its complete suite attributes and archive digest are retained in `authored-world-ci-verification.json`; they agree with the local run. Storage's larger archive transfer limitation remains explicitly recorded; neither its image count nor its current raw JUnit total is falsely claimed independently re-counted.
+
+The following publication contains documentation/verification images only. Executable sources and workflows are unchanged from this tested head; the retained SHA-256 source manifest makes that equivalence reviewable. No new engine, branch, merge to main, force push, production fake history or regression ownership change is introduced. PR #371 remains Draft. Optical and tactile acceptance still requires physical-device evidence.
+
+Performance scope: API35/lavapipe absolute smoke budgets passed and four metrics were normalized. The relative delta gate was explicitly skipped because no persisted main baseline exists; this is not claimed as a measured main-branch improvement. Profiled release verification reported APK 24,405,233 bytes, AAB 21,418,324 bytes, and packaged baseline profile 13,806 bytes. Physical-phone frame pacing remains unverified.
+
+The tested PR merge `94bcbdb64ec56c0d7bef27b3236be1d6047bad84` and executable source head have the exact same Git tree `2cc85102b5300290d3ef0f57a5f82f1cdca0d0d0`, verified by fetching the real merge ref.
