@@ -35,3 +35,17 @@ Existing tests continue to reference the same package-level symbols.
 The first decomposition slice should reduce ReaderScreen responsibility without
 changing the state machine. Pure policy is the lowest-risk boundary and provides a
 template for later ownership-based extraction.
+
+
+## Slice 2 — pure interaction policy
+
+Also extracted into `ReaderInteractionPolicy.kt`:
+- boundary-feedback rate policy;
+- locator suppression while Paper/Slide preview owns the visual;
+- final navigator snapshot policy;
+- context-control selection (Appearance vs PDF View);
+- back disposition;
+- Reader chrome auto-hide policy.
+
+This slice also owns no side effects. The actual cancellation, close, navigation,
+gesture and persistence operations remain in ReaderScreen / their existing owners.
