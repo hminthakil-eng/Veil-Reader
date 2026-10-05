@@ -53,6 +53,18 @@ jobs:
           dependency-graph: generate-and-submit
           cache-provider: basic
 
+      - name: Trace Bouncy Castle runtime dependency
+        shell: bash
+        run: |
+          ./gradlew :app:dependencyInsight \
+            --configuration debugRuntimeClasspath \
+            --dependency org.bouncycastle:bcprov-jdk18on \
+            --stacktrace
+          ./gradlew :app:dependencyInsight \
+            --configuration releaseRuntimeClasspath \
+            --dependency org.bouncycastle:bcprov-jdk18on \
+            --stacktrace
+
       - name: Prepare SBOM output
         run: mkdir -p build/reports/sbom
 
