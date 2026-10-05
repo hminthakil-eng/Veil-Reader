@@ -92,6 +92,8 @@ import com.veilreader.app.ui.theme.archiveTimePhaseForHour
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
+import com.veilreader.app.ui.theme.shouldInlineCondensedArchiveActions
+import com.veilreader.app.ui.theme.shouldCondenseArchiveHeader
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -2549,18 +2551,29 @@ private fun LibraryHeader(
             .clip(MaterialTheme.shapes.extraSmall)
     ) {
         val compact = maxWidth < 560.dp
-        val condensed = bookCount > 0 || retrievalActive ||
-            com.veilreader.app.ui.theme.condenseRealmApproach(
-                LocalDensity.current.fontScale,
-                with(LocalDensity.current) {
-                    LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
-                }
-            )
+        val fontScale = LocalDensity.current.fontScale
+        val windowHeightDp = with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
+        }
+        val condensed = shouldCondenseArchiveHeader(
+            bookCount = bookCount,
+            retrievalActive = retrievalActive,
+            fontScale = fontScale,
+            heightDp = windowHeightDp
+        )
         // Populated Archive is a retrieval surface. Full cinematic height is reserved
         // for the empty/first-use state; returning users should reach books quickly.
         val headerHeight = if (condensed) 0.dp else if (compact) 112.dp else 144.dp
         val adjacent = com.veilreader.app.ui.theme.useArchitecturalPair(
-            maxWidth.value - VeilSpacing.md.value * 2f, LocalDensity.current.fontScale)
+            maxWidth.value - VeilSpacing.Content.value * 2f,
+            fontScale
+        )
+        val inlineActions = shouldInlineCondensedArchiveActions(
+            adjacentLayout = adjacent,
+            condensed = condensed,
+            compactLayout = compact,
+            fontScale = fontScale
+        )
         @Composable fun HeaderActions(modifier: Modifier = Modifier) {
             FlowRow(
                 modifier = modifier,
@@ -2670,7 +2683,7 @@ private fun LibraryHeader(
                     ),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
             ) {
-                if (adjacent || condensed) {
+                if (inlineActions) {
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Content),
