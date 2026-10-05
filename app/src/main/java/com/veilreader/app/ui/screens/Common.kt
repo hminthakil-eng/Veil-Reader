@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import android.annotation.SuppressLint
+
 import android.graphics.BitmapFactory
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -104,6 +106,7 @@ internal fun resolveVeilWindowSizeDp(
  * desktop resizing and fold/unfold changes. Configuration is only a bootstrap/test
  * fallback while the window host has not reported a positive container size yet.
  */
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 internal fun currentVeilWindowSizeDp(): VeilWindowSizeDp {
     val window = LocalWindowInfo.current.containerDpSize

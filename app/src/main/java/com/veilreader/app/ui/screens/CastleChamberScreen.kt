@@ -20,7 +20,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -197,9 +196,7 @@ fun TreasuryScreen(
     val equipped = equippedSigil?.let(sigils::get)
     val awakenedRelics = readingRelics.count { it.awakened(profile) }
     val awakenedBookplates = bookplates.count { it.awakened(profile) }
-    val treasuryAdaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val treasuryAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val treasuryLayout = castleLayoutPolicyFor(treasuryAdaptiveClass)
     val relicRows = if (treasuryAdaptiveClass == VeilAdaptiveClass.COMPACT) {
         readingRelics.map { listOf(it) }
@@ -653,9 +650,7 @@ fun SanctumScreen(
     val rankProgress = if (finalRank == 0) 1f else profile.rankIndex.toFloat() / finalRank.toFloat()
     val sigilProgress = profile.earnedSigils.size.coerceAtMost(5) / 5f
     val sovereignReady = profile.rankIndex >= finalRank && profile.earnedSigils.size >= 5
-    val sanctumAdaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val sanctumAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val sanctumLayout = castleLayoutPolicyFor(sanctumAdaptiveClass)
 
     Box(
