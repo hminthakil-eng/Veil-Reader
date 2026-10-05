@@ -3,7 +3,6 @@ package com.veilreader.app.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -138,9 +137,10 @@ internal fun ArchiveRecordContent(
         )
     }
     val cleanQuery = query.trim()
+    // Notes are a view of highlight records, not a second underlying record.
+    // Count each stored/derived archive record once for composition policy.
     val totalArchiveRecords =
-        highlights.count { it.note.isNotBlank() } +
-            highlights.size +
+        highlights.size +
             bookmarks.size +
             echoes.size +
             capsules.size
