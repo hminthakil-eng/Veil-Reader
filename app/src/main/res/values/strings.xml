@@ -189,6 +189,9 @@
     <string name="reader_zoom">Zoom</string>
     <string name="reader_chrome_notebook">Notebook</string>
     <string name="reader_chrome_bookmark">Bookmark</string>
+    <string name="reader_menu_auto_hide">Automatically hide reading menu</string>
+    <string name="reader_menu_auto_hide_description">Hide controls after a pause. Turn off to keep the reading menu visible until you dismiss it.</string>
+    <string name="reader_reading_menu">Reading menu</string>
     <string name="reader_chrome_appearance">Appearance</string>
     <string name="reader_chrome_pdf_view">PDF view</string>
     <string name="reader_return">RETURN</string>
@@ -391,8 +394,6 @@
     <string name="library_header_title">Grayfog Archive</string>
     <string name="library_header_tagline">Fragments · Records · Truths</string>
     <string name="library_header_empty">The shelves are waiting for their first volume.</string>
-    <string name="library_header_one">%1$d volume catalogued on this device.</string>
-    <string name="library_header_many">%1$d volumes catalogued on this device.</string>
     <string name="library_search_hint">Search archive</string>
     <string name="library_search_clear">Clear</string>
     <string name="library_import_preparing_label">PREPARING PUBLICATION</string>
@@ -1367,4 +1368,7 @@
     <string name="observatory_show_fewer_connections">Show fewer connections</string>
     <string name="reader_show_reading_preview">Show reading preview</string>
     <string name="reader_hide_reading_preview">Hide reading preview</string>
+    <string name="library_reading_filter">READING STATE</string>
+    <string name="library_shelf_all">All volumes</string>
+    <string name="library_reading_filter_selection">Reading state: %1$s. Count: %2$d.</string>
 </resources>

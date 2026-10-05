@@ -30,6 +30,27 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReaderPdfReliabilityInstrumentedTest {
+    @get:org.junit.Rule
+    val failureCapture = object : org.junit.rules.TestWatcher() {
+        override fun failed(error: Throwable, description: org.junit.runner.Description) {
+            // Preserve the failure; this optional diagnostic captures the real clean-room PDF UI.
+            runCatching {
+                val bitmap = uiAutomation.takeScreenshot() ?: return@runCatching
+                try {
+                    val directory = instrumentation.targetContext.filesDir.resolve("grayfog-review").apply { mkdirs() }
+                    val name = description.methodName.replace(Regex("[^A-Za-z0-9_-]"), "_")
+                    val file = directory.resolve("pdf-failure-$name.png")
+                    file.outputStream().use {
+                        check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it))
+                    }
+                    exportGrayfogCapture(file)
+                } finally {
+                    bitmap.recycle()
+                }
+            }.onFailure { android.util.Log.w("VeilPdfQa", "Optional failure capture unavailable", it) }
+        }
+    }
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation: UiAutomation
         get() = instrumentation.uiAutomation
@@ -77,7 +98,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForPackage(target.packageName)
         SystemClock.sleep(2_000)
 
-        val pdfView = waitForPdfView(activity)
+        var pdfView = waitForPdfView(activity)
 
         // Reveal chrome before synthetic native PDF gestures. Multi-pointer dispatch is renderer-level
         // coverage and must not be allowed to poison the Readium tap-arbiter state used by this gate.
@@ -105,8 +126,14 @@ class ReaderPdfReliabilityInstrumentedTest {
         // Exercise the renderer's manual fit path while the real PDFView is attached.
         waitForTextWithScroll(appString(R.string.pdf_fit_width))
         clickTextWithScroll(appString(R.string.pdf_fit_width))
-        pressAndroidBack()
+        // An expanded Material sheet may consume Back by moving to partial expansion.
+        // Use its actual return action so the link tap cannot land on a modal scrim.
+        clickTextWithScroll(appString(R.string.reader_back_to_reading))
+        uiAutomation.waitForIdle(500, 5_000)
 
+        // A layout preference may replace the native renderer. Exercise the attached owner,
+        // rather than waiting for page changes on the pre-layout PDFView reference.
+        pdfView = waitForPdfView(activity)
         exerciseNativeInternalLinkAndReturn(pdfView)
         instrumentation.runOnMainSync { pdfView.jumpTo(1, false) }
         waitForPdfPage(pdfView, 1)
@@ -449,11 +476,6 @@ class ReaderPdfReliabilityInstrumentedTest {
         SystemClock.sleep(1_000)
     }
 
-    private fun pressAndroidBack() {
-        uiAutomation.executeShellCommand("input keyevent KEYCODE_BACK").close()
-        SystemClock.sleep(750)
-    }
-
     private fun revealReaderChrome(view: PDFView) {
         val pdfViewLabel = appString(R.string.reader_chrome_pdf_view)
         findClickableNode { it.text?.toString() == pdfViewLabel }?.let {
@@ -735,16 +757,40 @@ class ReaderPdfReliabilityInstrumentedTest {
         SystemClock.sleep(750) // Let Readium's debounced source locator become the return origin.
         val tap = IntArray(2)
         instrumentation.runOnMainSync {
+            check(view.isAttachedToWindow) { "PDF link gate must use the attached native renderer" }
             val link = view.getLinks(0).single()
             assertEquals(2, link.destPageIdx)
-            val pageSize = view.getPageSize(0)
+            // Use the same native page mapping as hit-testing. Hand scaling misses the
+            // secondary page offset and can tap outside a link after fit/layout changes.
+            val pdfFile = PDFView::class.java.getDeclaredField("pdfFile").apply {
+                isAccessible = true
+            }.get(view)
+            val nativeFileClass = pdfFile.javaClass
+            val intType = Int::class.javaPrimitiveType!!
+            val floatType = Float::class.javaPrimitiveType!!
+            val pageSize = nativeFileClass.getDeclaredMethod("getScaledPageSize", intType, floatType)
+                .apply { isAccessible = true }.invoke(pdfFile, 0, view.zoom) as com.shockwave.pdfium.util.SizeF
+            fun offset(method: String): Int = (nativeFileClass.getDeclaredMethod(method, intType, floatType)
+                .apply { isAccessible = true }.invoke(pdfFile, 0, view.zoom) as Number).toInt()
+            val primary = offset("getPageOffset")
+            val secondary = offset("getSecondaryPageOffset")
+            val mapped = nativeFileClass.getDeclaredMethod("mapRectToDevice",
+                intType, intType, intType, intType, intType, android.graphics.RectF::class.java)
+                .apply { isAccessible = true }
+                .invoke(pdfFile, 0, if (view.isSwipeVertical) secondary else primary,
+                    if (view.isSwipeVertical) primary else secondary,
+                    pageSize.width.toInt(), pageSize.height.toInt(), link.bounds) as android.graphics.RectF
+            mapped.sort()
+            val localX = view.currentXOffset + mapped.centerX()
+            val localY = view.currentYOffset + mapped.centerY()
+            check(localX in 0f..view.width.toFloat() && localY in 0f..view.height.toFloat()) {
+                "Native PDF link is outside the visible viewport: bounds=$mapped local=($localX,$localY)"
+            }
             val location = IntArray(2)
             view.getLocationOnScreen(location)
-            // This fixture has equal, unrotated 612x792 pages. No production geometry shortcut.
-            tap[0] = (location[0] + view.currentXOffset +
-                link.bounds.centerX() / 612f * pageSize.width * view.zoom).toInt()
-            tap[1] = (location[1] + view.currentYOffset +
-                (792f - link.bounds.centerY()) / 792f * pageSize.height * view.zoom).toInt()
+            tap[0] = (location[0] + localX).toInt()
+            tap[1] = (location[1] + localY).toInt()
+            android.util.Log.i("VeilPdfQa", "Native link bounds=$mapped tap=(${tap[0]},${tap[1]}) zoom=${view.zoom}")
         }
         uiAutomation.executeShellCommand("input tap ${tap[0]} ${tap[1]}").close()
         waitForPdfPage(view, 2)

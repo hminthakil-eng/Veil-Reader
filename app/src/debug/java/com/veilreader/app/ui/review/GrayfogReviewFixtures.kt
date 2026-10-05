@@ -1,7 +1,13 @@
 package com.veilreader.app.ui.review
 
+import android.content.Context
+import android.graphics.BitmapFactory
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.widthIn
@@ -13,6 +19,9 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.*
 import com.veilreader.app.R
 import androidx.compose.ui.res.stringResource
+import com.veilreader.app.ui.VeilBottomDock
+import com.veilreader.app.ui.VeilNavigationRail
+import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.VeilNoticeDialog
 import com.veilreader.app.ui.VeilNoticeKind
 import com.veilreader.app.ui.VeilLoadingState
@@ -51,6 +60,29 @@ object GrayfogReviewFixtures {
         if (index % 2 == 0) "Fictional review note: compare the instrument with the western record." else "",
         createdAtEpochMs = 0L
     ) } }
+    /** A fictional review cover from our original environment art, decoded by the real BookCover path. */
+    fun booksWithOriginalCover(context: Context): List<Book> {
+        // Validate the real resource before handing its cache file to asynchronous BookCover.
+        val directory = context.cacheDir.resolve("grayfog-review-art").apply { mkdirs() }
+        val cover = directory.resolve("original-keep-v3.png")
+        // Decode the actual pixels, not only bounds: cached files must not bypass full native
+        // artwork initialization in a fresh review sandbox. Production still decodes off-thread.
+        val bitmap = checkNotNull(BitmapFactory.decodeResource(context.resources, R.drawable.grayfog_keep_v3))
+        try {
+            check(bitmap.width > 0 && bitmap.height > 0)
+            if (!cover.exists()) {
+                cover.outputStream().use { output ->
+                    check(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output))
+                }
+            }
+        } finally {
+            bitmap.recycle()
+        }
+        return books.mapIndexed { index, book ->
+            if (index == 0) book.copy(coverCachePath = cover.absolutePath) else book
+        }
+    }
+
     val lowProfile = SampleData.profile.copy(level = 1, xp = 0, streakDays = 0,
         pagesRead = 0, minutesRead = 0, booksFinished = 0, rankIndex = 0, ritualProgress = 0)
     val ritualProfile = lowProfile.copy(
@@ -67,15 +99,17 @@ object GrayfogReviewFixtures {
 /** Each entry invokes production composition. A specimen never simulates publication content. */
 enum class GrayfogReviewSurface {
     THRESHOLD_ACTIVE, THRESHOLD_PERSIAN_LONG, THRESHOLD_EMPTY, LIBRARY_GALLERY, LIBRARY_SHELVES, LIBRARY_INDEX,
-    LIBRARY_SEARCH, LIBRARY_NO_RESULTS, LIBRARY_EMPTY, LIBRARY_MANY, BOOK_DETAIL,
+    LIBRARY_SEARCH, LIBRARY_NO_RESULTS, LIBRARY_EMPTY, LIBRARY_MANY, LIBRARY_MISSING_METADATA, BOOK_DETAIL,
     BOOK_DETAIL_PERSIAN, BOOK_DETAIL_MISSING, APPEARANCE_QUICK, APPEARANCE_ADVANCED,
     SETTINGS, NOTES, NOTES_EMPTY, HIGHLIGHTS, BOOKMARKS, OBSERVATORY_ISOLATED, OBSERVATORY_DENSE,
-    CASTLE_LOW, CASTLE_ADVANCED, PATH, RITUAL, LOADING, ERROR, SANCTUM_LOCKED, SANCTUM_POPULATED, PROFILE
+    CASTLE_LOW, CASTLE_ADVANCED, PATH, RITUAL, LOADING, ERROR, SANCTUM_LOCKED, SANCTUM_POPULATED, PROFILE,
+    READER_ACCESS_PAPER, READER_ACCESS_DUSK, NAVIGATION_DOCK, NAVIGATION_RAIL
 }
 
 @Composable
 fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = false) {
-    val books = GrayfogReviewFixtures.books
+    val context = LocalContext.current
+    val books = remember(context) { GrayfogReviewFixtures.booksWithOriginalCover(context) }
     val notes = GrayfogReviewFixtures.notes
     val profile = GrayfogReviewFixtures.advancedProfile
     VeilTheme(themeMode = AppThemeMode.DARK, highContrastEnabled = highContrast) {
@@ -95,10 +129,11 @@ fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = 
                         GrayfogReviewSurface.LIBRARY_GALLERY, GrayfogReviewSurface.LIBRARY_SHELVES,
                         GrayfogReviewSurface.LIBRARY_INDEX, GrayfogReviewSurface.LIBRARY_SEARCH,
                         GrayfogReviewSurface.LIBRARY_NO_RESULTS, GrayfogReviewSurface.LIBRARY_EMPTY,
-                        GrayfogReviewSurface.LIBRARY_MANY -> LibraryArchiveContent(
+                        GrayfogReviewSurface.LIBRARY_MANY, GrayfogReviewSurface.LIBRARY_MISSING_METADATA -> LibraryArchiveContent(
                             books = when (surface) {
                                 GrayfogReviewSurface.LIBRARY_EMPTY -> emptyList()
                                 GrayfogReviewSurface.LIBRARY_MANY -> GrayfogReviewFixtures.manyBooks
+                                GrayfogReviewSurface.LIBRARY_MISSING_METADATA -> listOf(books[3].copy(title = "   ", author = ""))
                                 else -> books
                             }, isImporting = false, onImportUri = {}, onOpenBook = {}, onFavorite = {},
                             onEditMetadata = {}, onDeleteBook = {}, onOpenSettings = {},
@@ -161,6 +196,26 @@ fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = 
                         GrayfogReviewSurface.ERROR -> VeilNoticeDialog(VeilNoticeKind.ERROR,
                             stringResource(R.string.notice_category_persistence), stringResource(R.string.notice_error_title),
                             stringResource(R.string.notice_note_save_failed), stringResource(R.string.notice_return), onDismiss = {})
+                        GrayfogReviewSurface.READER_ACCESS_PAPER, GrayfogReviewSurface.READER_ACCESS_DUSK -> {
+                            val theme = if (surface == GrayfogReviewSurface.READER_ACCESS_PAPER) ReaderTheme.PAPER else ReaderTheme.DUSK
+                            val colors = readerAccessColors(theme)
+                            // Access component only: this intentionally contains no simulated publication.
+                            Box(Modifier.fillMaxSize().background(readerCanvasColor(theme))) {
+                                Box(Modifier.align(Alignment.BottomCenter).padding(12.dp)) {
+                                    ReaderAccessDock(
+                                        settingsLabel = stringResource(R.string.reader_chrome_appearance),
+                                        background = colors.background,
+                                        foreground = colors.foreground,
+                                        accent = colors.accent,
+                                        onMenu = {}, onSettings = {}
+                                    )
+                                }
+                            }
+                        }
+                        GrayfogReviewSurface.NAVIGATION_DOCK -> Box(Modifier.align(Alignment.BottomCenter)) {
+                            VeilBottomDock(selected = VeilTab.LIBRARY, onSelect = {})
+                        }
+                        GrayfogReviewSurface.NAVIGATION_RAIL -> VeilNavigationRail(selected = VeilTab.LIBRARY, onSelect = {})
                         GrayfogReviewSurface.PROFILE -> ProfileScreen(profile, notes.size, 20, "The Quiet Archive", null,
                             books = books, onSetDailyGoal = {}, onOpenArchive = {}, onOpenSettings = {})
                     }

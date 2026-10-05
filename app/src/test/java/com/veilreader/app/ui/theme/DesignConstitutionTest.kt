@@ -216,4 +216,15 @@ class DesignConstitutionTest {
         assertTrue(condenseRealmApproach(2f, 1400))
         assertFalse(condenseRealmApproach(Float.NaN, 0))
     }
+    @Test
+    fun `missing cover captions need readable width and height together`() {
+        assertTrue(artifactCaptionFits(120f, 180f, 1f))
+        assertFalse(artifactCaptionFits(119f, 300f, 1f))
+        assertFalse(artifactCaptionFits(200f, 179f, 1f))
+        assertTrue(artifactCaptionFits(240f, 360f, 2f))
+        assertFalse(artifactCaptionFits(240f, 359f, 2f))
+        assertFalse(artifactCaptionFits(Float.NaN, 300f, 1f))
+        assertTrue(artifactCaptionFits(120f, 180f, Float.NaN))
+    }
+
 }

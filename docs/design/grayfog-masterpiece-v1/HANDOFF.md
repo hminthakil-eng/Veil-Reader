@@ -1,5 +1,8 @@
 # Grayfog Masterpiece v1 — living design handoff
 
+> Latest artistic wave: physical-book-led Threshold, calmer object-led Archive retrieval, and Castle with principal halls, side chambers and opposing tablet wings. Tested executable source: **3686fb77b5adb760b43bd51115ec68e50efc9c63**. All three GitHub gates succeeded; raw CI independently confirms **729/130**, zero failures/errors/skips, lint **175 warnings + 1 hint**, zero errors. Local policy **39**; native review **540 + 8** fresh images. **Draft PR #371; not 100/100 or physical DEVICE-GREEN.** Scroll to the authored-world sections for selected actual renders and exact limitations. Earlier evidence below is historical.
+
+
 Working branch: `design/codex-grayfog-masterpiece-v1`.
 Base: `integration/arena-reader-canonical-convergence-v1` at `18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf`.
 This is a reversible design candidate, not a main promotion or release.
@@ -153,3 +156,152 @@ Continues the existing design branch from `77be8b473d79f80deb79c0eb141dfd8c802f8
 Source review and native rendering are evidence of layout/interaction, not device acceptance. Remaining optical questions: Library first-cover balance at 320dp/200%; long Persian Book Detail cover/title/action balance; Observatory dense context contrast and physical node targeting; Castle architectural depth and room ordering on actual hinges; preview disclosure discoverability and live-publication behavior. Reproduce the documented matrix, then inspect real Readium/Pdfium, paper/slide mid-drag, RTL publication progression, TalkBack, IME/system bars and long-session paper comfort. No blanket visual completion is claimed.
 
 Published candidate GitHub Actions are infrastructure/account-blocked before execution: all three jobs have zero steps and no logs. See VERIFICATION.md and allout-github-ci.json; no CI-GREEN is claimed. Cloud source hashes and completed checks remain unchanged.
+
+## Detail continuation — 2026-10-04
+
+This pass addresses small details with concrete consequences: overlapping fallback-cover ornament, mixed-script typography, empty archival identity, missing heading navigation and invented epoch provenance. It continues the existing Draft PR, rather than creating a parallel product.
+
+Generated covers use their actual spare space for registration and require readable width/height for duplicate captions. Existing cached publication artwork, cover decoder/cache, fade/reduced-motion behavior, cover semantics and artifact history layers remain. Persian title/author receive the licensed Persian family and appropriate leading even in English UI; shared labels/subtitles gain the same protection.
+
+The shared Untitled display fallback trims presentation text without writing metadata. Gallery, Shelves and Index, recent/resume objects and Observatory selected records share it; callbacks keep the original Book/ID/URI. Known and unknown provenance remain distinct: zero timestamps now explicitly say Date unknown, while real positive dates follow the active UI locale and time zone. No annotation timestamp, schema or history is rewritten.
+
+Heading semantics make editorial hierarchy available across eleven tested surfaces, including the separately composed Notes and Settings headers. ReaderScreen changes only import heading semantics and mark the Appearance title; publication/navigation/TTS owners, page geometry and draft settlement remain unchanged. Threshold now measures actual window height for the existing shared approach rule.
+
+Review registry adds LIBRARY_MISSING_METADATA: one fictional whitespace-title/missing-author completed volume in two collections. Native mode switching checks Gallery, Index and all three legitimate shelf registers at English and Persian 200%. Registry: 32 surfaces, 480 native frames, 352 Compose previews and 288 future scripted device captures. Fixtures never persist or become production history.
+
+Remaining optical questions include actual missing-cover proportions on small displays, font hinting/shaping, real TalkBack heading traversal, artwork crop/contrast, landscape/hinge behavior, live publication controls and paper/slide physics/comfort. Do not mark these complete from cloud results. Existing device matrix and Draft status remain mandatory.
+
+
+## Material world and explicit reading access — 2026-10-04
+
+Continue the same Draft PR #371. Latest remote head was fetched before editing and again before publication. No competing UI branch, engine rebuild, main merge or force push.
+
+Threshold now puts chapter/progress after the reading action and brings the cover ahead of secondary metadata in stacked layouts. Library identity precedes quiet utilities; all six reading-state filters are discoverable, and Gallery/Shelves/Index have non-color selection. Settings replaces repeated choice boxes with radio instruments and whole-row switches. Bookmark/highlight book identity gets mixed-script typography and ruled archival composition.
+
+Reader access is an actual production `ReaderAccessDock`: labelled Reading menu and the original Appearance/PDF View icon, separate ordinary taps. Publication tap arbitration and navigation semantics remain intact. `AppSettings.readerChromeAutoHideEnabled` is a separate default-true DataStore preference. Settings and Appearance Quick can disable the existing timer; explicit dismissal and accessibility guards remain. It does not mutate `ReaderAppearance`, input maps, locators or progress. Real DataStore recreation is covered in JVM and prepared device tests.
+
+Castle gains original environmental artwork and alternating vault-shaped chambers around its existing datum; large text still stacks. High Contrast omits the image, Reduced Motion has no new environmental animation. Ranks, unlocks, world projection, memory, routes and reading access remain source-derived. See AUDIT for asset provenance and the precise regression boundary.
+
+Registry: **36 production screen/component specimens**; the existing annotation-based Compose previews remain **32 × 11 = 352 instances**, while all 36 specimens are available through the debug review activity and native matrix. **36 × 15 native configurations = 540 planned matrix frames**; capture script **36 × 9 = 324 deterministic future captures**. Paper/Dusk access specimens and dock/rail specimens are components on empty fields, not fake Reader pages. The live EPUB/PDF/gesture matrix in DEVICE_CAPTURE remains required. Fictional review data never becomes production history.
+
+Inspect the new artwork on actual displays, real imported covers, live Reader dock versus publication content, TalkBack, 100/130/150/200% Persian, High Contrast, real hinges, OS/IME/cutouts, paper/slide mid-drag and long-session material comfort next. Do not infer DEVICE-GREEN or final optical acceptance from these source/native checks.
+
+Final frozen-input combined run passed in 6m: 729 tests / 129 suites, 36 design checks, 39 reading-policy checks, lint zero errors (174 warnings + one hint retained), both APKs assembled, 540 fresh native matrix frames plus eight focused captures. See VERIFICATION and material-world-verification.json. Future live device gates remain unchanged.
+
+
+### Follow-up after real GitHub runner allocation
+
+Continue from the latest remote design head. The published `d9d3e52f` run was not CI-green: native JVM abort and 17/132 Android instrumentation failures. Process-isolated local rerun passed 729/129 without skips; final packaging/lint passed after test-only fixture/PDF probe changes. See the isolated verification manifest and published CI JSON. No production main source or page engine changed in this repair. Verify the next GitHub Android and Storage runs before considering source verification complete.
+
+Storage CI exports `veil-reader-grayfog-shell-review` (seven-day retention): 80 expected production Compose fixture frames plus optional PDF failure capture. Extract the tar and inspect English/Persian 100/130/150/200%, high contrast, target separation and publication failure state. Physical device/TalkBack/hinge/GPU/material-feel gates remain mandatory. Prior performance smoke succeeded on an emulator; relative delta lacked a main baseline.
+
+## New zero baseline continuation — 2026-10-05
+
+Remote branch truth was fetched before this wave; remote and local head were both `73781d63922ac7c6939f22b682dc6e524265aa7a`. Continue this Draft PR, without a competing branch. The user's new zero baseline requires further authorial refinement; previous scores are not an acceptance gate.
+
+This wave reduces active-phone Threshold empty foreground, corrects the instrumentation assertion for intentionally omitted large-text introduction, and preserves mandatory resume click/48dp checks in all 16 configurations. Native search checks now settle the finite real cover load/fade before and after filtering, matching the existing rendering harness. This is a synchronization refinement, not a verified fix for the remote JNI abort.
+
+Capture export survives runner uninstall using `/data/local/tmp/veil-grayfog-review`; CI uploads `build/reports/veil-grayfog-review/` alongside the legacy tar when present. Fresh-emulator startup clears only that fixed inert QA directory. PDF failure screenshots use the same exporter; the PDF link test remains strict and unchanged in its destination/return requirements.
+
+Open next: verify fresh CI JNI behavior; inspect exported real Android PDF failure images and resolve the genuine link-tap failure; inspect/refine the new native Threshold frames; rework Castle's remaining repeated panel grammar. Do not declare source-final or DEVICE-GREEN.
+
+Artwork follow-up: keep the new actual-readiness wait, not the previous fixed 150ms shortcut. Full reference decoding in debug fixture preparation repaired the locally reproduced native accessibility abort in the 9-case rerun; remote confirmation remains mandatory. Missing-art compact covers now use the first Unicode letter of the actual title as a decorative edition mark. Reading labels/targets/font scaling remain independent.
+
+PDF gate follow-up: reviewed the actual Compose Material3 1.4.0 source (`commonMain/androidx/compose/material3/ModalBottomSheet.kt`, official Google Maven sources). Expanded sheets with a partial state respond to dismissal/Back by `partialExpand()`. The instrumentation test previously assumed one Back removed the PDF controls. It now clicks the production Back-to-reading action (`onDone` clears `showPdfZoom`) and waits for UI idle before the native link tap. This is a source-backed test correction; remote destination/return success remains unverified. The strict page 2 → previous-location → page 0 assertions, viewport mapping and failure screenshot export remain. No production Pdfium/Readium navigation or gesture change.
+
+Final local zero-baseline wave: full `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` succeeded in **13m19s**. **729 tests / 129 suites / 0 failures / 0 errors / 0 skips**; design subset **36**, Reader regression subset **291 / 42 suites**, reading policy **39**. Lint: **0 errors, 174 warnings, 1 hint**, with no suppression. Native review: **540 freshly generated frames**, plus **8 focused detail frames**. A subsequent packaging/lint check succeeded in **6m47s**, with unit tests UP-TO-DATE, and rebuilt the final instrumentation APK after the explicit PDF return-action correction. Raw logs, lint XML, source/APK/frame SHA-256 and suite totals are under `zero-baseline-*`; shell syntax and `git diff --check` passed.
+
+Selected new images are `zero-baseline-threshold.png`, `zero-baseline-threshold-persian200.png`, `zero-baseline-library.png`, and `zero-baseline-library-persian200.png`. Actual artwork is present; the former fixed-delay fallback is no longer accepted as a real-cover capture. These are native Skia review images, not physical Android acceptance.
+
+Remaining source/design work: Castle still repeats chamber panels; Gallery retrieval controls consume much of the narrow 200% viewport; parchment/action object proportions and cross-screen spatial grammar need further rendered refinement. The current work is a new starting baseline, **not source-final, not 100/100 and not DEVICE-GREEN**. New remote CI JNI/PDF/capture-export results remain required. Preserve the draft PR and all reading owners; do not merge.
+
+## Renewed zero baseline / open-world work in progress — 2026-10-05
+
+Continue Draft PR #371 on the existing design branch. Preserve the canonical engine and all Reader mode/locator/durability ownership. Do not treat prior scores as acceptance. This wave changes Gallery object scale and quiet utility presentation, exposes Castle depth through open portal/landing composition, and repairs the QA-only capture exporter. The previous source head's actual Cloud failures are documented in AUDIT; no DEVICE-GREEN claim applies.
+
+Native nine-case accessibility verification and instrumentation assembly passed after waiting for Castle artwork at teardown. A fresh full unit/lint/APK/native-render wave is running; final totals and source hashes must be recorded from its actual output before publishing this wave. Remote reruns must specifically prove shell-owned screenshot export and native JNI stability, not merely APK compilation.
+
+Follow-up: the first full wave reproduced FloatBuffer despite Castle readiness; it was interrupted after the native abort, so no full-green result is claimed. Search production-screen cases are now a separate native test class under existing per-class process isolation; all nine cases (seven component/chamber cases and two full-screen search cases) passed together in 40 seconds. No native test, assertion or coverage was removed. A fresh complete verification wave is required; prior totals remain historical.
+
+The open-world source candidate `d40117310067f1dc6fc36c401f073a5a237e16d8` completed the full local wave in 12m45s: 729 tests / 130 suites / zero failures, errors or skips; 36 design checks; 291 Reader regression cases / 42 suites; 39 reading-policy checks; lint 174 warnings + 1 hint / zero errors, with no suppressions; both APK assemblies succeeded. All 540 native frames were freshly produced, plus 8 detail frames. Exact source/APK/frame hashes and raw logs are in `open-world-verification.json`, `open-world-gradle-verification.log`, `open-world-reading-policy.log`, and `open-world-lint-results-debug.xml`.
+
+Android CI 37280887283 and Storage Instrumentation 37280887310 both succeeded at this exact tree. The tested PR merge tree `8f63a12e12668285819e64b8eefd211e839147c0` was fetched and verified equal to source tree `96a4ad13d167679cf46879c59c20da585ca0ab40`. Storage produced an actual 80-PNG artifact (11332492252; 33,423,297 bytes), downloaded and inspected. This proves the shell-owned capture export works on API35 lavapipe. Success-run XML was not retained by the historical workflows, so exact per-case remote totals are not independently claimed from missing XML. This continuation retains successful raw unit/lint and instrumentation XML for future exact accounting.
+
+Actual emulator Gallery inspection exposed forced blank title/author/state lines in large-text mode; those are now removed without lowering maximum wrapping lines or touch targets. Full-screen native Library inspection exposed duplicate counts making retrieval utilities wrap: the extra count now appears only when search/collection/series further narrows the reading-state set. A fresh final retrieval wave is in progress. No physical-device acceptance or 100/100 claim follows from the successful emulator/source gates.
+
+### Native search coverage ownership correction
+
+The first retrieval verification reproduced the intermittent JNI DoubleBuffer abort in the first full-screen search case even after separating its class. It reported 728 cases / 130 suites, with one unfinished case represented as skipped after SIGABRT; it was not a green result. The native render matrix itself completed all 15 cases and regenerated 540 images; the Persian 200% Gallery now places all three utilities in one row and exposes the first publication title earlier.
+
+An isolated `-Xcheck:jni` diagnostic completed but recorded unchecked JNI-exception warnings specifically in Robolectric's native BitmapFactory.decodeFileDescriptor binding reached by BookCover's IO coroutine. There is no evidence of a physical-Android missing FloatBuffer/DoubleBuffer or Reader-core failure. Do not change production dispatchers or graphics ownership to satisfy this shim.
+
+Search-label assertions now use the real production missing-art path in their native JVM fixture. The actual original-art decode/filter lifecycle has an explicit new Android instrumentation test across all 16 language/font-scale/high-contrast configurations. It validates the real cached PNG, awaits actual artwork after scrolling, types into the production search field, verifies the original volume leaves the results, preserves the search label/48dp target, and captures the result. This preserves the search assertions and strengthens asynchronous cover coverage on actual Android native runtime rather than discarding it. The existing 540 native render matrix still includes original artwork. The 16 new cases must actually run remotely before this strategy is considered verified.
+
+The debug review entry point gains only an artwork-fixture switch, defaulting to original art; no duplicate production tree, release fixture, fake history, new image dependency or production decoder change is introduced. A fresh full verification is running.
+
+## Authored halls and physical resume composition — 2026-10-05
+
+The user's latest instruction explicitly prioritizes aggressive artistic improvement. Actual production-component render review drove this wave: Castle's identical centered icon badges and dark chamber panels still read as reward tiles, while the compact Threshold stacked the physical book below its reading action.
+
+Castle now gives Grand Library and Observatory full hall spans on compact layouts; smaller chambers remain beside the corridor. Wide layouts preserve their meaningful opposing wings and central stair. Room identities become left/start-aligned entrance inscriptions with unboxed instrument glyphs, natural title/body grouping, and a quiet memory mark on the threshold. The material exposes more of the original architecture; High Contrast remains opaque. A repeated Inner Keep eyebrow and redundant sealed footer are removed; actual floor state, unlock-rank body and complete TalkBack room description remain. No rank, route, relationship or progression is invented or changed.
+
+Threshold now budgets a physical cover down to a semantic 84dp minimum before opting into the existing full-width large-text path. At normal 320dp, the book stays beside its title. A repeated Continue Reading label and divider are removed so publication identity starts the parchment directly. Side-by-side identities may wrap to four lines; stacked large-text retains its previous three-line measure and early reading action. Metadata, truthful progress, actual reading callback and minimum action size are preserved. Render inspection covers actual compact 320, phone 412, Persian 200% and tablet production compositions.
+
+The broader native failure was reproduced in GrayfogCloudDetailTest, not the search class. That test captured or replaced a scene before actual asynchronous cover readiness. A shared test-only artwork await now covers IO completion, fade/layout advancement and a second readiness check before capture or scene replacement. The actual original-cover JVM search fixture is restored; the temporary debug artwork switch is removed. Detail and original-art search together passed all 10 targeted cases in 56s. Original-art renderer coverage and the 16 added Android search cases remain. This is a systematic fixture lifecycle correction, not a production dispatcher/decoder workaround. Full verification at the latest source is still required.
+
+At published head 22b9074, Android CI 37284325323 and Performance 37284325278 passed; Storage 37284325152 ran 148 cases with 16 failures / zero errors or skips. All 16 were new search-fixture ActivityResultRegistryOwner failures after overriding LocalContext for language; all 132 established cases passed. The real host registry is now explicitly retained before localization. The artifact's raw JUnit XML provides exact totals. This is test-host wiring, not a Reader navigation change; the 16 cases must run again.
+
+Not 100/100, not physical DEVICE-GREEN. Remaining optical questions include actual publication-cover contrast, room/environment separation on OLED and LCD, whole-screen spatial harmony, large-text scroll rhythm, and finger-driven reading material/frame pacing. Source proofs and future capture gates do not substitute for those judgments.
+
+### Compact composition correction after rendered review
+
+The 320dp Threshold capture exposed a secondary-heading defect: an unconstrained recent-books title consumed the action's width, making View all wrap awkwardly. The heading now receives the remaining weighted measure, while the real 48dp action keeps its natural width. Both title and action may grow vertically; no truncation or font-size reduction is introduced.
+
+The Gallery capture also exposed duplicated spacing: lazy-grid row separation plus an extra top inset on both Search and Reading State. Removing the two redundant insets brings book objects forward while preserving the grid's shared rhythm, actual text-field size, filter target, and all direct retrieval controls. This is composition refinement, not hidden functionality or reduced touch geometry.
+
+Principle: an atmospheric archive introduces the world briefly, then gives its objects and retrieval instruments clear ownership. The latest source needs its final full verification and fresh render inspection; previous-head evidence must not be relabeled as current proof.
+
+### Android search assertion correction
+
+Storage run 37288831351 at 751c042 executed 148 cases: 16 failures, zero errors/skips. All 132 established cases passed. The actual host registry correction worked: the new cases reached live retrieval successfully. Their remaining failure was an ambiguous test selector matching both the editable query Still and the matching publication record Still. The assertion now excludes editable controls explicitly, retaining exact result-presence and original-art-result-removal checks across all 16 configurations. This is not an app retrieval failure and no production search code is changed. Original artwork remains enabled. The fresh Android run is required before declaring this correction verified.
+
+### Final local proof for the authored-world source candidate
+
+Source head: `3686fb77b5adb760b43bd51115ec68e50efc9c63`; canonical base remains `18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf`. `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest` completed successfully in 11m56s. After the Android-only selector correction, the same four tasks completed again in 24s, retaining the successful JVM outputs and rebuilding the actual instrumentation APK. No executable-source changes occurred after that confirmation.
+
+Exact retained results: **729 JVM cases / 130 suites; zero failures, errors or skipped cases**. This includes **36 design checks** and the explicitly defined **291 Reader regression cases / 42 suites**. Reading-policy checks: **39 passed**. Lint: **zero errors, 175 warnings, one hint**; warnings are not suppressed. The additional unused-resource warning is the retained Castle inner-keep label after removing its redundant visible eyebrow; it does not indicate a rendering or navigation failure. Build outputs include the debug APK and debug AndroidTest APK with SHA-256/size in `authored-world-verification.json`. `git diff --check` passed.
+
+The native production-component matrix regenerated **540 images** across 15 configurations and 36 real review surfaces, plus **eight focused detail captures**. Capture freshness is checked against the actual render-suite timestamp. Selected inspected frames are linked below. High Contrast keeps full chamber contrast; ordinary Castle exposes original architecture. Gallery's first object arrives 24dp earlier after duplicate insets are removed. Normal 320dp Threshold retains a physical cover beside its complete four-line title; the 48dp View all action remains single-line while the secondary heading wraps naturally.
+
+- [Threshold, 320dp](authored-world-threshold-active-en-100-320.png)
+- [Gallery, 412dp](authored-world-library-gallery-en-100-412.png)
+- [Gallery, Persian 200%](authored-world-library-gallery-fa-200-360.png)
+- [Castle halls, 412dp](authored-world-castle-advanced-en-100-412.png)
+- [Castle opposing wings, tablet](authored-world-castle-advanced-en-100-1280-tablet.png)
+- [Castle, Persian 200% High Contrast](authored-world-castle-advanced-fa-200-360-contrast.png)
+
+Exact failed-head Android evidence is retained separately in `authored-halls-android-failure-evidence.json`: head 751c042, run 37288831351, 148 cases / 16 ambiguous new-selector failures, 80 actual Android captures. This evidence is not relabeled as final-source success. The final-source runs are Android CI 37290421616, Storage 37290421691 and Performance 37290421672; results must be recorded when those jobs complete.
+
+Remaining optical/device questions: original publication covers on both OLED and LCD; subtle parchment grain and age at normal reading distance; room/environment separation without crushed blacks; mixed-script publication-title proportions inside Persian chrome; whole-screen navigation-shell composition and insets; tactile Paper Curl vs Slide, gesture release feel and real frame pacing; actual hinge/rotation behavior. Native preview or emulator acceptance cannot resolve these completely. Reader modes, navigation/progression, persistence, exact locators, TTS, PDF, annotation ownership and source-grounded world state remain preserved. This candidate is neither 100/100 nor physical DEVICE-GREEN.
+
+### Final-source Android instrumentation result
+
+Storage run **37290421691 succeeded** at exact source head **3686fb77b5adb760b43bd51115ec68e50efc9c63**. Its log records `BUILD SUCCESSFUL in 9m27s`. Original artwork, all 16 newly added localized live-search cases, and the existing case matrix remain enabled. The unchanged matrix contains 148 expected cases and 96 expected capture names; these are source expectations, not independently re-counted current JUnit/image totals.
+
+Artifact **11337010835** is **49,773,780 bytes**, digest `sha256:68463694b70bdab7481ca18f36f51e32d3df42ff271163e523ffa777d7991a5c`. The executor rejects transfers above 32 MiB, and the authorized direct file URL returns HTTP 403. Therefore the final-source Android archive is not claimed downloaded, extracted, or optically inspected. Its complete downloadable artifact remains available through the successful GitHub run. `authored-world-android-run.json` records this evidence boundary. The 540 fresh local native images and eight focused detail images are independently checked and selected frames are retained. This limitation is evidence-transfer infrastructure, not an app or test regression.
+
+### Completed GitHub gates for the exact executable source
+
+All three runs succeeded at executable source head **3686fb77b5adb760b43bd51115ec68e50efc9c63**:
+
+- [Android CI 37290421616](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37290421616): unit tests, Room schema verification, lint, debug build, optimized release artifacts/archive verification and performance-harness compilation.
+- [Storage Instrumentation 37290421691](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37290421691): actual Android emulator instrumentation, including original-art live-search cases.
+- [Performance 37290421672](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37290421672): profile generation, benchmark smoke, profiled release packaging and configured emulator checks. This is emulator evidence, not physical-phone performance acceptance.
+
+The Android CI artifact **11337072716** was downloaded and independently parsed: **729 cases / 130 suites; zero failures, errors or skips; lint 175 warnings / one hint / zero errors**. Its complete suite attributes and archive digest are retained in `authored-world-ci-verification.json`; they agree with the local run. Storage's larger archive transfer limitation remains explicitly recorded; neither its image count nor its current raw JUnit total is falsely claimed independently re-counted.
+
+The following publication contains documentation/verification images only. Executable sources and workflows are unchanged from this tested head; the retained SHA-256 source manifest makes that equivalence reviewable. No new engine, branch, merge to main, force push, production fake history or regression ownership change is introduced. PR #371 remains Draft. Optical and tactile acceptance still requires physical-device evidence.
+
+Performance scope: API35/lavapipe absolute smoke budgets passed and four metrics were normalized. The relative delta gate was explicitly skipped because no persisted main baseline exists; this is not claimed as a measured main-branch improvement. Profiled release verification reported APK 24,405,233 bytes, AAB 21,418,324 bytes, and packaged baseline profile 13,806 bytes. Physical-phone frame pacing remains unverified.
+
+The tested PR merge `94bcbdb64ec56c0d7bef27b3236be1d6047bad84` and executable source head have the exact same Git tree `2cc85102b5300290d3ef0f57a5f82f1cdca0d0d0`, verified by fetching the real merge ref.

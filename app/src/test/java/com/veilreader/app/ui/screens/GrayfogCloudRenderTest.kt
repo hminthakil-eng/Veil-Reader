@@ -41,7 +41,7 @@ class GrayfogCloudRenderTest {
         }
         for (surface in GrayfogReviewSurface.entries) {
             compose.runOnIdle { current.value = surface }
-            compose.waitForIdle()
+            compose.awaitGrayfogArtwork()
             val roots = compose.onAllNodes(isRoot())
             val root = if (surface.name.startsWith("BOOK_DETAIL") || surface == GrayfogReviewSurface.RITUAL || surface == GrayfogReviewSurface.ERROR) compose.onNode(isDialog())
                 else roots[roots.fetchSemanticsNodes().lastIndex]

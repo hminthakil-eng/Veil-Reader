@@ -1,0 +1,5254 @@
+{
+  "date": "2026-10-04",
+  "parent": "438a967a074484aec373a8edc15eeca467ffaa13",
+  "canonical_base": "18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf",
+  "source_sha256": {
+    "app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewFixtures.kt": "736dc5bccb01132555f42f30fba74f6c3035a3625556b7b307dbfe0d1360e092",
+    "app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt": "8a72b07637cba927be176b9c51a635aeaf3759da839d4f8eb37aedb492c9fc15",
+    "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt": "82222d381daab9f00ca0026ca6255ce1d4a669e963601ac214f0f9060f6951a9",
+    "app/src/main/java/com/veilreader/app/ui/screens/Common.kt": "9892ee5d7b035ba0575eea305fd215172b3941040234b3f2acab6e3a3e5fa7d5",
+    "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt": "e06df38cf0456b026214a94c473ae7a8adb88cb0c619f245fcaa4c66db83cf2a",
+    "app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt": "c4c4fe84323d171c94ffcf94c30513470eee9ed96b0060012013452663ced266",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt": "bd06ea6f379a8785610dfb906c1d758bf7ddcc15601cd693498e20e9bbe52b2f",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt": "2de88f29aee6939ee8cf4669c81704acb16895b5a3c393639f7d2807ff639743",
+    "app/src/main/java/com/veilreader/app/ui/screens/SettingsScreen.kt": "1e89d710e4fd0ac62be6e56ea9b1e426390a8de4556bf27086feb68bfb6f0160",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignConstitution.kt": "e449e4ea37209cf0d38b31b3ee65c3314cc648b4b0ffc481a91cc211c1491d24",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignSystem.kt": "f960abe91811afb9159d7e539294f533a31df5afc78ba90976d0d5e2ad0b8a29",
+    "app/src/test/java/com/veilreader/app/ui/theme/DesignConstitutionTest.kt": "7aed42a6ae2408f94bc988b071d7bc650328aebeeabfd74a0ec45fcff64c8a7e",
+    "tools/grayfog-capture.sh": "643c3e848d2fd9429652554032a0470c48795eff0eb16c3bd3527b9637ab8aaf",
+    "app/src/test/java/com/veilreader/app/ui/screens/GrayfogCloudDetailTest.kt": "d0652eee1d17dcbf5902d90aa592fc6bc4e54f36f4ff893b5dc68ebb766848c4"
+  },
+  "jvm": {
+    "suites": 128,
+    "tests": 722,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "test_suites": [
+    {
+      "name": "com.veilreader.app.data.GameCompletionEvidenceTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:11.764Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.data.GameRepositoryDurabilityTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:11.813Z",
+      "hostname": "251b4627a937",
+      "time": "17.255"
+    },
+    {
+      "name": "com.veilreader.app.data.ReaderProgressWriteOrderTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:29.113Z",
+      "hostname": "251b4627a937",
+      "time": "0.012"
+    },
+    {
+      "name": "com.veilreader.app.data.ReadingPaceStoreCodecTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:29.130Z",
+      "hostname": "251b4627a937",
+      "time": "7.927"
+    },
+    {
+      "name": "com.veilreader.app.data.migration.LegacyLibraryMigratorTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.059Z",
+      "hostname": "251b4627a937",
+      "time": "0.017"
+    },
+    {
+      "name": "com.veilreader.app.data.settings.ReaderFocusGuidePreferencesTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.078Z",
+      "hostname": "251b4627a937",
+      "time": "0.062"
+    },
+    {
+      "name": "com.veilreader.app.data.settings.ReaderTtsPreferencesTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.141Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.domain.ArrodesMirrorTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.144Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
+    },
+    {
+      "name": "com.veilreader.app.domain.BookArtifactMemoryTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.160Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
+    },
+    {
+      "name": "com.veilreader.app.domain.CastleMemoryStateTest",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.169Z",
+      "hostname": "251b4627a937",
+      "time": "0.05"
+    },
+    {
+      "name": "com.veilreader.app.domain.GamificationEngineTest",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.222Z",
+      "hostname": "251b4627a937",
+      "time": "0.01"
+    },
+    {
+      "name": "com.veilreader.app.domain.HighlightMemoryTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.234Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
+    },
+    {
+      "name": "com.veilreader.app.domain.HistoricalMemoryTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.241Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
+    },
+    {
+      "name": "com.veilreader.app.domain.LibraryAtmosphereStateTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.251Z",
+      "hostname": "251b4627a937",
+      "time": "0.009"
+    },
+    {
+      "name": "com.veilreader.app.domain.LibraryMemoryTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.262Z",
+      "hostname": "251b4627a937",
+      "time": "0.012"
+    },
+    {
+      "name": "com.veilreader.app.domain.LibraryWingsTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.276Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
+    },
+    {
+      "name": "com.veilreader.app.domain.MemoryAtlasTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.305Z",
+      "hostname": "251b4627a937",
+      "time": "0.009"
+    },
+    {
+      "name": "com.veilreader.app.domain.NarrativeIdentityTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.316Z",
+      "hostname": "251b4627a937",
+      "time": "0.009"
+    },
+    {
+      "name": "com.veilreader.app.domain.RankWorldMutationTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.327Z",
+      "hostname": "251b4627a937",
+      "time": "0.012"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReaderFocusGuideTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.341Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReaderTapZonesTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.346Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReaderTtsSettingsTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.354Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingMemoryTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.356Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingPolicyTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.616Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingSessionTrackerTest",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.362Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingTimeCapsuleTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.369Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingTimeEstimateTest",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.405Z",
+      "hostname": "251b4627a937",
+      "time": "0.013"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReturnRitualTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.420Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
+    },
+    {
+      "name": "com.veilreader.app.domain.RitualAftermathTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.431Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.domain.WorldMutationLedgerTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.435Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.domain.WorldProgressionProjectionTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.439Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.manga.challenge.BrowserChallengeCoordinatorTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.450Z",
+      "hostname": "251b4627a937",
+      "time": "0.259"
+    },
+    {
+      "name": "com.veilreader.app.manga.health.SourceExecutionHealthIntegrationTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.713Z",
+      "hostname": "251b4627a937",
+      "time": "0.017"
+    },
+    {
+      "name": "com.veilreader.app.manga.health.SourceHealthRankerTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.736Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
+    },
+    {
+      "name": "com.veilreader.app.manga.health.SourceHealthStoreTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.754Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.manga.importing.MangaCbzIngestorTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.761Z",
+      "hostname": "251b4627a937",
+      "time": "0.053"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.CanonicalMangaTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.817Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaChapterMatcherTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.826Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaOfflineCacheTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.833Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaOfflineChapterLocatorTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.840Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaProgressTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.845Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.MangaImageGeometryTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.850Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.MangaReaderControllerTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.858Z",
+      "hostname": "251b4627a937",
+      "time": "0.009"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.MangaReaderRestoreTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.869Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.image.MangaExtremeImageStrategyTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.875Z",
+      "hostname": "251b4627a937",
+      "time": "0.04"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.image.MangaLocalPageVerifierTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.916Z",
+      "hostname": "251b4627a937",
+      "time": "0.016"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.image.MangaRemotePagePolicyTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.933Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.presentation.MangaChapterNavigationTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.939Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.presentation.MangaReaderChapterLoaderTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.948Z",
+      "hostname": "251b4627a937",
+      "time": "0.017"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaProductSessionAdapterTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.967Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderDurableCloseTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:37.979Z",
+      "hostname": "251b4627a937",
+      "time": "0.295"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderGestureOwnershipPolicyTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.275Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderProgressMapperTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.278Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderSessionTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.281Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.ui.MangaReaderSavedStateCodecTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.287Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.ui.MangaReaderUiReducerTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.296Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.ui.MangaReaderViewportMathTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.311Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.manga.replacement.SourceAlternativeResolverTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.317Z",
+      "hostname": "251b4627a937",
+      "time": "0.016"
+    },
+    {
+      "name": "com.veilreader.app.manga.replacement.SourceAlternativeScorerTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.335Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.manga.replacement.SourceReplacementPlannerTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.339Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.MangaSourceProviderContractTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.346Z",
+      "hostname": "251b4627a937",
+      "time": "0.01"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.SourceExecutionCoordinatorTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.358Z",
+      "hostname": "251b4627a937",
+      "time": "0.12"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.SourceRecoveryPolicyTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.479Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.SourceRegistryTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.481Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.ui.CrossRealmAccessibilityTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.486Z",
+      "hostname": "251b4627a937",
+      "time": "0.054"
+    },
+    {
+      "name": "com.veilreader.app.ui.GrayfogSystemBarsTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:38.543Z",
+      "hostname": "251b4627a937",
+      "time": "2.474"
+    },
+    {
+      "name": "com.veilreader.app.ui.VeilAppAdaptiveLayoutTest",
+      "tests": "8",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.020Z",
+      "hostname": "251b4627a937",
+      "time": "0.015"
+    },
+    {
+      "name": "com.veilreader.app.ui.books.BookArtifactTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.037Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.ui.navigation.ReaderRestorePolicyTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.042Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.navigation.VeilAppViewModelProcessDeathTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.048Z",
+      "hostname": "251b4627a937",
+      "time": "0.089"
+    },
+    {
+      "name": "com.veilreader.app.ui.navigation.VeilAppViewModelTest",
+      "tests": "11",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.140Z",
+      "hostname": "251b4627a937",
+      "time": "0.027"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderCloseDurabilityTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.171Z",
+      "hostname": "251b4627a937",
+      "time": "0.011"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderHardwareAccessibilityTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.186Z",
+      "hostname": "251b4627a937",
+      "time": "0.096"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderHardwareKeyControllerTest",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.286Z",
+      "hostname": "251b4627a937",
+      "time": "0.019"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderHardwareKeyDispatcherTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.307Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderLocatorPolicyTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.311Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderNavigationTransactionTest",
+      "tests": "24",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.316Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderOpenAttemptGateTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.326Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderOpenResourceGuardTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.330Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderSessionOwnershipTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.333Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderStartupHandshakePolicyTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.335Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReaderTtsPolicyTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.338Z",
+      "hostname": "251b4627a937",
+      "time": "0.017"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReaderTtsReaderOwnershipTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.357Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReaderTtsSessionTest",
+      "tests": "11",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.364Z",
+      "hostname": "251b4627a937",
+      "time": "0.491"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReadiumTtsContentTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:41.858Z",
+      "hostname": "251b4627a937",
+      "time": "0.389"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.BookArtifactTest",
+      "tests": "22",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:42.250Z",
+      "hostname": "251b4627a937",
+      "time": "0.037"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.BookCoverSampleSizeTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:42.288Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.BookEntryTransitionTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:42.290Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.DenseChoiceLayoutPolicyTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:42.298Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrandLibraryModelTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:42.302Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrayfogCloudAccessibilityTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:42.315Z",
+      "hostname": "251b4627a937",
+      "time": "1.24"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrayfogCloudAppearanceTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:43.560Z",
+      "hostname": "251b4627a937",
+      "time": "0.46"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrayfogCloudDetailTest",
+      "tests": "8",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:26:11.363Z",
+      "hostname": "251b4627a937",
+      "time": "60.385"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrayfogCloudObservatoryTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:44.026Z",
+      "hostname": "251b4627a937",
+      "time": "0.578"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrayfogCloudRenderTest",
+      "tests": "15",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:27:44.610Z",
+      "hostname": "251b4627a937",
+      "time": "83.434"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.LibraryCompositionTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.047Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.LibrarySearchTest",
+      "tests": "11",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.054Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PaperCurlGeometryTest",
+      "tests": "33",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.064Z",
+      "hostname": "251b4627a937",
+      "time": "0.026"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PaperReleaseVelocityTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.091Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PathGeometryTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.092Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PdfZoomControlsTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.101Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PdfZoomPolicyTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.106Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderAsyncOwnershipTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.107Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderChromePolicyTest",
+      "tests": "24",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.109Z",
+      "hostname": "251b4627a937",
+      "time": "0.08"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderDossierHistoryTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.204Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderFocusGuideStateTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.213Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderImageViewerTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.228Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderInputArbiterTest",
+      "tests": "19",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.233Z",
+      "hostname": "251b4627a937",
+      "time": "0.017"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderLookupTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.256Z",
+      "hostname": "251b4627a937",
+      "time": "0.25"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderModeHandoffPolicyTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.510Z",
+      "hostname": "251b4627a937",
+      "time": "0.01"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderPdfInputTest",
+      "tests": "8",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.532Z",
+      "hostname": "251b4627a937",
+      "time": "0.202"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderPreferenceMappingTest",
+      "tests": "29",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:08.746Z",
+      "hostname": "251b4627a937",
+      "time": "0.613"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderPreferencesTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.367Z",
+      "hostname": "251b4627a937",
+      "time": "0.038"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderRelayoutContinuityPolicyTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.408Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderSelectionNotePolicyTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.413Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderTapOwnershipTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.433Z",
+      "hostname": "251b4627a937",
+      "time": "0.096"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderTtsSettingsStateTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.531Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.RelicHistoryTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.534Z",
+      "hostname": "251b4627a937",
+      "time": "0.015"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.RelicRarityTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.550Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.SlideTurnPolicyTest",
+      "tests": "14",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.553Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ThresholdCompositionTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.561Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ThresholdModelTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.578Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.VeilRevealMotionPolicyTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.583Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
+    },
+    {
+      "name": "com.veilreader.app.ui.sensory.VeilSensoryFeedbackPolicyTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.585Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.ArtDirectionTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.586Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.DesignConstitutionTest",
+      "tests": "19",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.591Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.DesignSystemTest",
+      "tests": "15",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.608Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.LibraryAtmosphereTimeTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-04T16:29:09.612Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
+    }
+  ],
+  "design_system_tests": 36,
+  "lint": {
+    "Warning": 176,
+    "Hint": 1
+  },
+  "reading_policy": 39,
+  "protected_unchanged": [
+    "app/src/main/java/com/veilreader/app/data",
+    "app/src/main/java/com/veilreader/app/domain",
+    "app/src/main/java/com/veilreader/app/ui/reader",
+    "app/src/main/java/com/veilreader/app/ui/navigation",
+    "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlDraw.kt",
+    "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlGeometry.kt",
+    "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlState.kt",
+    "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlInputListener.kt",
+    "app/src/main/java/com/veilreader/app/ui/screens/SlideNavigationInputListener.kt",
+    "app/src/main/java/com/veilreader/app/ui/screens/SlidePageState.kt",
+    "app/schemas"
+  ],
+  "reader_screen_boundary": "Heading semantics import and EpubAppearancePanel title only; draft lifecycle and navigation untouched",
+  "native_frames": [
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/appearance_advanced.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "ea67b65baf844b7d5927959c37fe7039f459e3234f94ecb9db65a23954e0a7ad"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/appearance_quick.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "5fc62c48593b2ee2b2d32a29f4e3befc8c94ec67f8ff142953a65c9ed23eb3bd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/book_detail.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "7d5300e72226b93a9756d4f770d6a790cbc90b9c109125cdab02eb1987880941"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/book_detail_missing.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "ccc28e21ec564ce19166ae26f0fe663881e2db7669bf66f7dd3b866a7359e940"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/book_detail_persian.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "158f5927438ca1aaf15cd6d052d93776d00ca6bb2c971da835872bd2c7c26bb1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/bookmarks.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "03e5a795ad0bcc88eb121a7a9840a94fdb13e43557b659911921d1a8590b0284"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/castle_advanced.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "e26dab3845f8c7f3125271e4c1f64647e3593df057f212a9a29193d3730fdadd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/castle_low.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "a1edcce27335c783bc04b983bf06f2ac255cc59de6c4323f5189fdc69b7081dc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/error.png",
+      "size": [
+        1280,
+        225
+      ],
+      "sha256": "a72dd0a8a353808e65403c0497ef5ecb0c019ee2fce552e1f2a13295a0b9fc3b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/highlights.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "c28ba9b71d1a85aef5ceaac9629e7e14c2a41d062876aca7127fd85bfa6fbb31"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_empty.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "c59f2a65280a94ea598badf6c83097a155256b9ba29d95f5f4d279f352d534db"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_gallery.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "4be8f467d2f1ba9d41e15bbbf70d0f515369ad5d06ae5ccc2116e6cf945c4f96"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_index.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "3130d07d8095ef402de31cf08f7616423ae9fe161b29c7abaaaf7378734cd7c1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_many.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "ece9feac26da9bf7fb6a385d96b77607d5c6d212f28e89a3dc1e98375b872944"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_missing_metadata.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "2994a7d738f765f2952f30c630404c8b0107f6ebcbf0a74a22b732c320c9032f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_no_results.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "82d907947372971a7773557e2f166a580eb0b83cd52e83cad4184105c59fa257"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_search.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "5edea66792f6c3f1dcf7b58eff7b15a1b16d4a0f2c8e5f9a23b1c29725796df0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/library_shelves.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "8a539d502ba7dfdd76f336d50e38eaa2444b951dc3738e139ac1d1fc74537eb3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/loading.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "625bf58242e9d5f880b10f44d06c086209aad12cddbd241782108aec8ba19525"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/notes.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "5cd77ac3b3cce55c9850039d0815e4dffbf9174fee678a4cd76666896db8d5ad"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/notes_empty.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "91ca20bbc93943b3c6cc85ca3155bfb517d493bde2b2fb7dc7c4a5cd66684f05"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/observatory_dense.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "7d568e1df9b7e3a02d57a06d0b3bf6035ee8f265ee0b1f98fbb8544a2f64867e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/observatory_isolated.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "0903db7f6d3cab3a18d6ecf0d8ba4d9a94e3ccbf1bf8b86a2a59a3422e5563fb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/path.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "6c7f2d2a135553b5a205fd0ffa9cc3cbab3fb4cf939c65acf1b91c029f927ccf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/profile.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "3ed6360def022cb3b3cac3f5a191029fec0815d0a035e8de15461d64ebed6d98"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/ritual.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "58ed2ec57c65debdce1cb95f156389ab1293e3623d00e47a6196959efc70e075"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/sanctum_locked.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "71d9ace82a7168cc2733e507b4465d71f35dd52961646d0018036dd8fab03ff8"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/sanctum_populated.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "c2fda723a4f014aef6bfbc7a633cffa303f335c374bdd9ec20f5d0631503741a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/settings.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "6c40a4fdedc4fd006cf906210a0b8cbb6874b9ba59dead96b79cd4b0b5e5b240"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/threshold_active.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "e28934e488841bb4640ed492a413bf62eb804eae061d07dffdd03caeec807f77"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/threshold_empty.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "3713118c96ef357aded05aa4ff36213f09b97b019eadfb13c670fab79fa5533a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-1280-tablet/threshold_persian_long.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "5336c4adcc1b56bc191c23f14a858f2dbc579e7b948bd3a24e0bee9cf351d64d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/appearance_advanced.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "73e4756f99c79e07c525fd90dc04bef933ac9a4c02fd43d375930b7523cc3b4f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/appearance_quick.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "df0d4d7947150fb8334209abc677bd5f2d2dbcb9026d7736ed7298c1a95c934b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/book_detail.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "3290123314ea0794eae60cad9b4ab7389215492a6410b173317e8bcf2f877e83"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/book_detail_missing.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "7c90c851c8aeb3330da6e3fb50f8f4c9cbab7f6c4796fbf0d3703ad69e7a16df"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/book_detail_persian.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "c5f619120694c2889f77c3b7b45180a1448b2adcb3d93dd5554b7045405ee2b5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/bookmarks.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "b8da0be3fd7d7dde30acd0bd4a4fd3e763c726e344b1fec0b6c2af14f0848126"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/castle_advanced.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "1f98a076b79da0a381b341ed9fbe3672ab5de95a85c055b4da34596f874a4e92"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/castle_low.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "b566fb2e1b6446d0f3fba3494375220d096ae2900e7ed8349982d720e9f76503"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/error.png",
+      "size": [
+        320,
+        275
+      ],
+      "sha256": "5518f9f71a0a3aa51b0ee5953ce3f37d2aa8d7e3ebc385a6a3738e1287694f42"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/highlights.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "857d697bcbb52548f6974e2059e8f4e5a057adec3a3539ba43111945da1e6f9a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_empty.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "417551a9b7760fdfacb25b0e971e2b51ac0eec16f19389fe49fc014b7f47b028"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_gallery.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "f5a947c6f8e3d627ddaa62816bac023bf2ab20c0807a0d0dee3a1ddb15e643ee"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_index.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "9f16192e940cd78890d388094db16be557d59429a9af83dbfb030dd46c6e6639"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_many.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "49e949816b4ec82ecfd64ccf5ae0751712c2ae4e7a3048b257efcf840483348f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_missing_metadata.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "fb6c55b7351adabbef088026a54999e4b2ebe75747f822b0da314ece3e1feb73"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_no_results.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "8859e79c0a37cdbee2d321d09e033d4536f3302f82f9de835f9a7ec2fc1b1464"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_search.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "c01f030f96444c75e890e0182ccaf21b54ab941126f1dea668d098223c1faa2d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/library_shelves.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "224526684216c469c95798bab224c45a292ee944d089a1da6bf61b6721af6ac4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/loading.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "e4fe7eb089af3ca449a972c4d982388c9c36bcc1675a1fe5f725613fc0b76296"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/notes.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "18493eb35f47e0bfdce47f72cefcaa8bde6d12a2b7c0b0824da89578f8fde8b4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/notes_empty.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "38cd03a38050d2904ebfb694acbff795e445d391007e75ba621667f4e21d0116"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/observatory_dense.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "643189df6115c0d956cae05c1b68663ec33ae27b3e8a5b4ee58478132943a1c6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/observatory_isolated.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "75609ff84ec1b25b67120c6a43fc5a20da230cd4f19446f35ab9cdfcf4a3250a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/path.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "cc931420b638c2833b87def7208cda1fc65d9c0215f85971e1ca3a3be40b1441"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/profile.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "09357c662793479e99a5cc6051dd1f6511411e3d78f45708b53b85af54fc4be9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/ritual.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "06f495898164eb0abf716803717845495a65c8a7769d7a39cbf2cda8ae8c62bb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/sanctum_locked.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "b84cfbe63c4b6f6bcbfb338e3cee741bfc4e42408eb9b3ec2dade62f68138ead"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/sanctum_populated.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "84c11743ed446068384bd6d8c305278b1f6b1b9d903c08ca67caaf2ced5b0f3a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/settings.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "8ebdc133f931ccd44d68045bfe54771acdffed8d9cc53d4eebe0cd6cf32ae52d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/threshold_active.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "de7bc7a6d3595a6a2b30603823bb8f18b9cb3985fcca34a76c20946f07adf60c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/threshold_empty.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "03c4ed23f246aea6df55974a36a6503c4bd297bc86b54a17604a17b532df3f94"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-320/threshold_persian_long.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "4d8d374eff8559cfcbf9e7e3760c67043f83803b29746c555596a3cb1444e2f3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/appearance_advanced.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "376512c13d3227f440cd7ebc24bfa93a96fd492425b661e514bb88c206647aed"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/appearance_quick.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "59e4232a7d4527085fb625fe82b4f8cf017d8bbe6eee80b117959ef84c1dba33"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/book_detail.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "15b998455fdaa8db64e4d2b6deb517f2b754ce557537a4c1dccac767a7f43a99"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/book_detail_missing.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "bd2a8f6c82375439ff0ccff4e062e6e3cbf5763ba5154ad5437857a7312d3a43"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/book_detail_persian.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "b215f8b120b0d99e1fedbffb11d05363ab50a4828571bdab153abe01a233f755"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/bookmarks.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "b46f42fb1c91a170a292d554a41fe6deae694267386a5f033287837201bca7f7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/castle_advanced.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "94cb9d9a6ec0886efee43cfda734e7a391889f359bab682ea8ea86f711a660af"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/castle_low.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "8ca66b4e508302d96a2795d5c2376433b3cfc7dd7cf1b1848b1b7eb1063bed4e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/error.png",
+      "size": [
+        412,
+        275
+      ],
+      "sha256": "10d0d38e1c020029cba5708a6fb6384d77440b93a7756685e98edbfbb0cf8ef7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/highlights.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "5d99c38b5082f73e2227489f19fecb0394236833297c5633e8f88ba2242309bf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_empty.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "2ce2a265175a04cdfa550ccca0b8402f9cd77daef873b92bd82d4cd38f127233"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_gallery.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "474af6d9622ffb7881ea214c5c83c02aab42d9fef7c77ff7b15181d287dc9323"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_index.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "770f27c8c181d228e9846b816621df0e392de60296e980f78096546d669e1926"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_many.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "357a587754b0c54b2e67d8e17a36a07e8ddd385affeff7bb8442966df46f7a2c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_missing_metadata.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "8ba0d8ff564911c5d2d02efefd709085b7c1c6af8a9502c14b66b3e0e37cfd1f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_no_results.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "4951b1c186bc232ae39f9147c5efde2acd1765d2b676e996ba104eae7f6dbdcb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_search.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "0296e124f5ef05d1b70d385b445adf3d0303f2fac345c8f8dadd6dd381e44ea0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/library_shelves.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "80c78ce61d0a5e42e505fe6e81cc1bde19f7f4e2ae1fdc7dd468c8d81010da72"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/loading.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "c1d7fbae5a6ff539fd83913476cc537e49266032b8cbab4b0004188a55a42771"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/notes.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "d50afe1b01ac84100da1b3eb9e45c9d4e0fc3cd8b86ce70b965b9b80bcdc9323"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/notes_empty.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "ad4fff3afb563d655e0c22cc556cb4c1a8d1f5d72a577ad678eb4dd45577e2b1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/observatory_dense.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "cdf444e826bad70836e613c339b00be395362e7d736258d2843b3ffbf914e229"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/observatory_isolated.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "ec3816f284b762b1b59a026dc4c6d994d4c20de6f406c47efa89a0d1bea477c5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/path.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "819122832bc68eb47b578ce28703fca57f81d4b2457740363c7f4a8a9f7f68c9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/profile.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "cc1e3bafd4aa4fff02e48b10f8c8e8236ed3eb4d529c64667e8aef505adcae2a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/ritual.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "ebfda637bef9c011c8583ca608788b9790e3570c885ecb26c397c295492c5fc6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/sanctum_locked.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "39750bf1eeb42563364b5d069fc6cd110069e3443a88b07c8592782d05732878"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/sanctum_populated.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "e7524ed9a1cda905cafdc51dde7fc4296334482b926ba72649e363d73272b829"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/settings.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "02200cd02ab92d4f8b2c1f50bcc6f4a12962444504ca98beb9bf5bff3ac65ff6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/threshold_active.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "c5e68cb7915021eed6befe29484bb14aa6a85155e33de2f35623c52657b9893b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/threshold_empty.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "04c9d11ecb8a0fd4380e2e12befb34090895d7f2eeff4efe4cb2c6c737c3edca"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-412/threshold_persian_long.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "be1a4e080eb59a020387350aa49cd5c2f48cd213f0786a1c1ba353a12e169bec"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/appearance_advanced.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "98bfc6ef4f79417a1bb497fb7a3aa96403d866fde877e4dd48c65de21c6b0321"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/appearance_quick.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "e4ff293c2ce30b1e8f14881e0b7d78debc8854514ffa60c9c3d89007e00f8f7b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/book_detail.png",
+      "size": [
+        600,
+        901
+      ],
+      "sha256": "0ef5ae5151048227e8fabca9239dea864ee2404db1f6562839c06874c62ad07a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/book_detail_missing.png",
+      "size": [
+        600,
+        901
+      ],
+      "sha256": "ef64651a63b9059f4373a6064d65e1615f1651d0b3c910cda5803e3ddddab354"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/book_detail_persian.png",
+      "size": [
+        600,
+        901
+      ],
+      "sha256": "ec5b599e2a03d510e9bce223ccc479df871190284642f6dcc45dcdb05f3ae945"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/bookmarks.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "300158c855cb29a6d96dd9f7fd671aedce75903d8ac31688f712ef03e92f81c4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/castle_advanced.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "0d884eb270670d6b5b1e29c3499f1db5b5d77c56bdeedc367e308deee34c29eb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/castle_low.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "8d6741985950c4a13707aaf82d2dd0b297dbe219d2fc86fe4466e5f99dedcba4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/error.png",
+      "size": [
+        600,
+        225
+      ],
+      "sha256": "bc3352a748a3346047c7a755cb20dce96ba47ff99a8ccdf92aeda19751798030"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/highlights.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "fd59cd7e5f7b13612691bb04bf1e5b1bbfe00178dcd2c3b1f93e86a410f816d2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_empty.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "3d0f6e60497477b0aa1bdd443da319b83e110471bfc2b9c16abe69f182b6c18f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_gallery.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "9096e046dc2e6e9104a26cd1c03acb87f0ca93f5d35d77a465d886f56e0bbbaf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_index.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "fde72a563854d9870fcec453c90afa204532f507ef5f7bbb0ce3de12604680fa"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_many.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "bf3e6d8464f77c54f6863659664921132ba5b18fa1bad4f8a4fc1fdb48daa539"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_missing_metadata.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "45967d9a354ece4757d68a27a948d39b545f514e7df715ff22fbde5f4837a415"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_no_results.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "fb4ddab8ec4ffbd97681f654256d2676404b158e8685fe5a7611ce8e0e23af0a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_search.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "5f42e07cff31a264352167a0c15061c9c02a3644a94258700a8e9f96f4d6e8ce"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/library_shelves.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "570328969d1a2d375bc3027515798742b827a6054e43afc96ac44c3155edc782"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/loading.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "4b7f822560a066bc2dfc077191cafb7790bec682b6046fc973b7e79bd4d586b3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/notes.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "a85560739139a9303d07c3ea81c4b1e790eaf2b2a020d748ddf885259b585b45"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/notes_empty.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "350a6a75c63e4290a43e55f751c2ac2d295c8095a46f2a495eb1e1e71db79e80"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/observatory_dense.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "13c9086ca1494fddc46a82b245c179bf312d3dba7fedebb201237e84408a2a55"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/observatory_isolated.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "b21d4c5564922eb5d93c5071545525a5333c34f86b9fc122c10d78e3d2529d62"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/path.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "334fb1f6962f8f3d4d03e83acce20efa19701aa43784dbd16d70132e0ec192da"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/profile.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "36c12071031c140c1d7ce82768a9d6395b40065a69674fc8573aa049f6e88c25"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/ritual.png",
+      "size": [
+        600,
+        901
+      ],
+      "sha256": "bf0d50cd140c9c796e431832fc7085a4fe392c5724c84ac9da330b5102b0d038"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/sanctum_locked.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "5b0421d6d11095333197802071004ed2eddff0b2fba629dd346270d7e3e8cfde"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/sanctum_populated.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "a8b75028b8d804d52094db735ad30955a95ed707ba0f7b84689634c6e8315f5b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/settings.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "e200e4cf3af0bdadbd17241911455aa3bac2ce75ed8447197071bc6771361d0d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/threshold_active.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "c2cbf72c65c912efd32fc897d1e2b61000253af166b9670630abbacf5124650e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/threshold_empty.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "f7135d57c848e6a488e324cd5c07d9a129007ec5cb1a9c3346e5ee61d9acd323"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-600/threshold_persian_long.png",
+      "size": [
+        600,
+        900
+      ],
+      "sha256": "0bad47ea53f04b09fbbacfd8066e7048c2b652e5bbf92b119a4b78d563609f8f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/appearance_advanced.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3bb4b3b915256f23ee575a8a17dd3e7fba42286f66ecdb61f0b627d682ec70f7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/appearance_quick.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "ae1012fd17f618d50aa5c423f0ed87a4f7bce82ca844f4999f467fcef5e5eae3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/book_detail.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "960512fef1d258017cd56f21f44a44a5722b940dc23c4e5f5ddd1be231d1d957"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/book_detail_missing.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "dc197fb43b56b7fc4088cf8f849beeeeb7a6f151a90af4000e13dc4cb210d1bd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/book_detail_persian.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "e374feea926b4e7f3ce63b7371a1747b4582e2681da96c04686de4394cf18334"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/bookmarks.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3a25a1106ca52ed4eb0aa03d558558c334d95dda47d0e5aee9238ad9b56cf44c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/castle_advanced.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "e15a84e4e7b97394970b0ac9f7148acda658e788a4b54f879ded4aeef1f73d20"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/castle_low.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "ff88e8fdf4d773c673562c06343cdd6bfc554ed87ffaa1fa989593ebfedc1c98"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/error.png",
+      "size": [
+        720,
+        225
+      ],
+      "sha256": "1535eb9f842396979da5e3e6f386d42f2fe073c94271c007e1051289dcde7a94"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/highlights.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "9e1be60981aff9120c0646136314f0c22a3733e9e54ba7eaa51b4a408e772bbc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_empty.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3407641583151e5eeabcc5dc6ec10a3b51409d50ad35b1c0f5cb48373bffb70e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_gallery.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "461086e16ed487b3310824398e7dad83cf2c673b38b99436e2ada820f0d44834"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_index.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "5668a8ec99cf2f147900006decd0c86e163074fe6d9aa15009fdeaadc29fa2bd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_many.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "af7421a5d4110f90728ed9d4453fc198ac8a3941c9e85d9f45853ff73c0fcfb7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_missing_metadata.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "513b3d15d662cbf30d6cd4b7b21fb466921bca94d38285f9bcd9ee7578fe920b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_no_results.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "b8600cc39b1188e1066dc3ae8e1b652526918ca0e6e7ad5de1b7ce27746a19c0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_search.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "ad20496379b294260393eb9bcec013be36204b4bedba16f268e6421da47a77f4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/library_shelves.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "f819e17cf0906293d4d94de21b31581a5b6adcd01b87fe2efab170944400701c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/loading.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "139d2b5ad58f1acc1b241341f5646cda6a55e748ef5a959da4ea145e882fd912"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/notes.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "1cf6c171ef0424181fa4623e5cc1c10e456920c9bdd69149fc781a45e2fd6a34"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/notes_empty.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "d8bd0def1540e9ce55443500eb9d2ec798b38bf71f04d610cf732abc0d1aeffb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/observatory_dense.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "26b6327006f7a9b446c0e8c49ddb81fea72b8b76960f5d89a3159c125786c032"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/observatory_isolated.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "6363400aabb69c63ffa52cd0fc8ee5f643f750c3deb164a8d8221f7a66765664"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/path.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "cbb8d6266926417adcc41cfa602e989b5a735dfacb82da28a6ce66fc416085f6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/profile.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "cbc2b867929a8b2ec3d468c715043a0f6180edc2d8e01e2ecff1cb67a35e60f9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/ritual.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "b2b0d558cfe3825f662f79604ec3555fcfae56772c16aba5c0c6edb56e3f7f0c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/sanctum_locked.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "c1864b5f50438ea1e2075970a1be9bfba24283d251975143fdcc9218a43ae285"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/sanctum_populated.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "283b0ad9ddb32943f0f6532dce04da2ceb881f4d8cb94fd299eee0fb2968979f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/settings.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3a4a4a0c5f722dc071c029e290f2e330fc1eb943e9d6ac1d679694b40134aa7d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/threshold_active.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3a141a5542d6a8f5df40ae09ad8853085c70b8d4b9dd52f5999f1fcb82a48053"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/threshold_empty.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "a6c4d63fc8bb3960b674fd3eacb9098f73d0341bb5fed58cbe2a588cb6ffb1d3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-720-foldable/threshold_persian_long.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "49d9b2846055e343ce70e1a4e446735f8eacb6175f715efdce09d905f5d7885b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/appearance_advanced.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "e6fe367b0555b583a1e4b0889614e79a4370e34303febf9940987da0687c57b7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/appearance_quick.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "05cdacc9bc3e498c3ed0ba1ac6272b6a46bf326ed9691c1ca3abb87fa83af731"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/book_detail.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "0581bedf6eedf03b189428af6f6c249eed9aadef19c88d06c3960e82fff4f420"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/book_detail_missing.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "69b3ebe2f9d8c2c4bdc080f424e378f98768ac80782498c40e791987081e8721"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/book_detail_persian.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "b270073d6b21fa5bcb78c9614b9b60ac29c5d338d9b164d204e594f5a4802433"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/bookmarks.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "02b163d56f8f27f02fcc25339797bafd189f82769a196af0c8b03b6d23da5678"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/castle_advanced.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "ae537d52c2b9d3f80f031975eaa232a1155b78e3876bea0286dc228c85e48e13"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/castle_low.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "c81d06caffef2d23d293f2e54e3caf2f1b43244f76308c8dd7ab086c6e0d3cea"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/error.png",
+      "size": [
+        900,
+        225
+      ],
+      "sha256": "7aad96b5eb2548cffb2cf25682f577da9e93763090e3ec1dad6bd6a889cb378a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/highlights.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "d89272f9bc7f0ef4d0a1dfc9d9c66c29b7a2b19f9c06efa9b739cd7a639e3375"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_empty.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "75d4bac1843986c65834fb1fabb4c17e90a690dd4913d9d131c5f16a03bf005a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_gallery.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "a95ba5ad6d59bf2cc758653cdb414c180dc6e5b124dc80241dad46e0ad73fc2b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_index.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "809a88599a43d3a7c2064d01bb472fbdb178c7413a6e304d37056af89a2a4a01"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_many.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "545bc4c2a3bb4c6fe586de1f5c481d3898a40df91d3b2029dc86ca1a4aa7299b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_missing_metadata.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "df25018fe9726105b775f25c2833f5721cfd70d1d7ed7c25c80c6eeb0cc7f11d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_no_results.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "ce6f5a22e6b4591895d2a6fca4ee3fd923efd49730671731b93a9e885261be28"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_search.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "e0b77737bc8cd93c4dd74615a9e398858c7ee27e6ea61cf0044f248096cc09fa"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/library_shelves.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "d318515561768be3ecd4d315ee6aa2566906e961cdf70eab657501f5fa9997b0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/loading.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "4857b01d12ae3dbbdd5b3c1d6520ba4aa4fd388b8be9b51cbe371fb6662a9e40"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/notes.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "b927c964dae8eeb630527ea01ae42d4f7c4a1e4cf70802cb97f3bba77de3e65d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/notes_empty.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "57c0b16c250707fce4b58b89fd5b829c3eaf343b4607bb9c58169fcfc5b1df02"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/observatory_dense.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "ceca0868e8a7d0bc82cd7f4d348f02c92fd8fc05fcfa79e36e66cd313d8dce66"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/observatory_isolated.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "7ed90ff67180cde33892005796bb26212b1aa60fe980b7ec6d241c92cf100adc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/path.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "102c70c026cd10d6923fc65ab945c3ba7f865e1089cad632ef0b63db90cb82ed"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/profile.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "5542f161b347b096c2c09cc23ea40d11d1d6a778661d35ddd5e780ad3a50e82c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/ritual.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "936a3e1182e52480e89354820bdc52b3d54f5e157e128b9e8453e56a3f7bcd9e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/sanctum_locked.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "978fa8277726da9463a3547b8d74fbcefafdc7e5d8fe5ea981527a192b332f37"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/sanctum_populated.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "53162961bc01017db5281f476f166ebb7cbf50d2ca4a8cdfd30f581862968f67"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/settings.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "ddbebed8b281e76af7d7b3f858fab631917f809e323b0512b620242feb34c3ae"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/threshold_active.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "ee743ded97df6052a2d4f6bdba80e4e199d0e0cc7dbe8cba556a983101db92b1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/threshold_empty.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "32977bc3d23856163068b919c1d7eadbfce639adbc6c5fb99f7a5f34f9b98ecb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-100-900-landscape/threshold_persian_long.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "40be858406112e0936518899b95da0a574f3cf27b233ce1c04071231003c5a8d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/appearance_advanced.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "fa82f2a7f0afc0f61f4303420345ebcdb48e2d84c4b0f7865aca1f8a6436c99a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/appearance_quick.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "92c6324ae664ee415886867496a548427f6c61f611517f6f2ed3d996c1ee2cba"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/book_detail.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "3290123314ea0794eae60cad9b4ab7389215492a6410b173317e8bcf2f877e83"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/book_detail_missing.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "7c90c851c8aeb3330da6e3fb50f8f4c9cbab7f6c4796fbf0d3703ad69e7a16df"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/book_detail_persian.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "c5f619120694c2889f77c3b7b45180a1448b2adcb3d93dd5554b7045405ee2b5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/bookmarks.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "385499fc70e2bc3982eeb566d7273289dcb9c3f0dc9f153e8da1afc0a26dfaa5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/castle_advanced.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "62bce8bff32043244764e4d88f62426e1b3ec5b641890432412e9855b51601f9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/castle_low.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "71782b5e8f8baa826feba6ed7b43a803c92ab27ae01f2c7a466a8068759ad25b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/error.png",
+      "size": [
+        320,
+        275
+      ],
+      "sha256": "5518f9f71a0a3aa51b0ee5953ce3f37d2aa8d7e3ebc385a6a3738e1287694f42"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/highlights.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "1281df319dfc6d5005b57b903a4e4cf22651351115d91f0eb29ee6add418e14c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_empty.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "cdd82cfece0f1b2af6f7bfdeef3267b71555546dc1decabc60b28dc082ff3b39"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_gallery.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "231e2c42b315c751a4353f5fd4c22ac26b4d84837cfac7f5f3ade73700fd9b05"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_index.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "0fa6644a04a5354fc9e7ad1d1ea552ac47993230537a787319dae2603d2840a9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_many.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "e6e20bde54002332dd7efca66cb1631f580a79631df3ce813ec41a214e1b994f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_missing_metadata.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "4c2d82e78960ab2159107b67d7d90e14765a8cd9e201bd7776ab8acbce062af4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_no_results.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "f57c4dc94d12ce53ec07bf6f1c306e7272a8c2c42e2b6d6fe20fa65bbea4f243"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_search.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "96df01063a141bf5251f456bf66ac8e4f669e39d7b0c9b5198ad0c58c97ab185"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/library_shelves.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "7d76da3d7796e063ff860ebd5e347c10edab16c5c4730bf5067f5207fb57cc1b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/loading.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "e52fadaaa143e7fbf3d85a1601a85064a2be33962f6413a43404a8547b6003bd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/notes.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "d3f581482f38a6b1ebbbfb36c2f10b935781f36795329d60b771c03e1d2197eb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/notes_empty.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "48f0b9ae1c83a38361190df3be4205ae2b9a8b2b3b065c9ef299f3253afd9598"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/observatory_dense.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "d1f35143e171ac415f93102067b1d251eb9b708acf6926f3e62dea48eb07dc6b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/observatory_isolated.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "53ff0022c406ba47d2ed80d5d4ec715737b1337c22e42f0785c0e717a65d7774"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/path.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "0696925f519b2c28d1709b9b15607dd7eb6510c2b2b0d0f233f9cb17b7c9f3a7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/profile.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "7671d12af44ddd0001329f7ccb881a5b6c8621d470e83e1eb7c4ff09133a4171"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/ritual.png",
+      "size": [
+        320,
+        721
+      ],
+      "sha256": "06f495898164eb0abf716803717845495a65c8a7769d7a39cbf2cda8ae8c62bb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/sanctum_locked.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "f2a116c0bad2a3b4dc557a195a4b16ca0eaeedeaf3e53358ce0a4696c9013b3e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/sanctum_populated.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "b058a74ae1fce60bae50ce2942604bad5541aa1a085f91050a1ae2c3bdc27b49"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/settings.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "f183b0d58dbe2f431e0a944e0a26310cf3471faa7c74e470adfd6b2566080032"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/threshold_active.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "dec6acc053f7acf5bf46059dc42df0f833947d4c44e5451adb1e4301b0c506ad"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/threshold_empty.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "572f395a8fdef76ccefa4348ecf0f6efd14a1c774c1d0105336c12f1a34b5256"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/en-200-320/threshold_persian_long.png",
+      "size": [
+        320,
+        720
+      ],
+      "sha256": "64c2922947411ca8957fcf8aede06f038f0a43ae70fd002e4957489273a66160"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/appearance_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "05edfcca850d2099314ac76d4f11c748af0e7f43848635a222dca1b21ad99d2c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/appearance_quick.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "bc6a0b538ebc71921ce61060e8abc24df754bfadd0d5599d0e6f08d900f5e542"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/book_detail.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "37c88033f0e67e21e25f0949100f46a5bb872269bedbbf5d6e9030584c240021"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/book_detail_missing.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "9e49b49f5ff8674241a7dc8078eac4d8c1a53462177986b3e4a353c883c6a9c3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/book_detail_persian.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "3bc10bd7bbd38ddb8343a11cf9f78bb06f7d74e6361eecb78b07c5f24b00b4d4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/bookmarks.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "58ce19ae52b586ad45322f6964b5cf27f6cc2036ceea4e7cabe5ebbf46a52261"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/castle_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "457ecad0a50d749ba4392cd67b643703f3eaea18e024d8c5db9abde146e4ce6c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/castle_low.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "bdb0189d4c23433e9e5d11e20bbb48aa2e8e035f7f826a9030fd684759b37a5e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/error.png",
+      "size": [
+        360,
+        258
+      ],
+      "sha256": "1ea7e8451dd2e3344c0d91035896d02ef99bc1c543f9301acf9b744fef729758"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/highlights.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "8d30e7abe4ee0cb00baefa485e68cbbb03dc85f21e7793687f63bf12efe53789"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c5e95009b6bb03a27a66ef5449bb24d063405a98b6ca2b49ce37bfaae1b19146"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_gallery.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "e4f8599dee077adf38633c8512cabee328270f7227326a63b898a22bfb4fad02"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_index.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "0c7e26dd5f65b5cb2ea19f0f294ec713907bad138f29808218ed0776c299baad"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_many.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f7a9b59dca402665f6d66a3f7be7aa3f0bd7e02ee3c144a235a3e8c3cb254231"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_missing_metadata.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "d0a422695b9e84b92170f36e27e7bc035846b8a7c9aea90f2fafe7ab4a56dbd7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_no_results.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "dbe1591e7d7fb8f76a569850a002d6c4f7e6812c250fb6ad3a6f63a620034459"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_search.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "fa2084b37876a5e3b4d6fb18b6f693d25280a4927cfb9b49069864a03807a3c1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/library_shelves.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "5e33f16eb842d688dd31c538e2c98373ea10a89c7e701b1a69952085d03bcdf5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/loading.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "bb9b0428c2f299fd0ecfe12cf90b3a236aa86771352fb7d4eb56e8c7a165a5e7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/notes.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "67a1995df0df60e5e9967d3bfffc169f02c5002afa4ed00fabef39b02761bd51"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/notes_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "2d79b58616ac5dbf1274f32766fcb5b2622faf1775e45063c45a45c674995bc9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/observatory_dense.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "5dead8de79090265c20e6706437067b03acf627b2ab69c640355f39519cb5812"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/observatory_isolated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "482287018a4431e52e9754a71ec9fe9a5ea80a2f0dedc7bd1b7f43182867e677"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/path.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c9363284f0bd21a53aa61af13280f6f48e0a811ddda788458d70edd36574a9df"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/profile.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "b09bd0ed817d27bb1f49a3bb6849cc86cae2efd11ceaa71fc6c11d0381336712"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/ritual.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "b6f78655c8420d18db5ebd64143a44487498d6b1a030e41aee517f5f0286393f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/sanctum_locked.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "2a18428d594cbe89a8e564dbba1f8e4d7e5b818cbce4dad80ced6ebbc2a3bf45"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/sanctum_populated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c7b5f1dca3221451496fadfc2a1000f10ebfa8e23b4767a309b1a1178d009183"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/settings.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "47da45bc4b3e99fcd0675027baf1ca2f8b486529c312fcc1c61f5b103059f875"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/threshold_active.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "2c2d53fbe7498c099111bbdd3ece9a6425542354b3ea091223f6fefe162fa028"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/threshold_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "3c57752d741ea22854b1ca919d6d3219ca05f35aef2191bef4a8dd18f05e88f2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-100-360/threshold_persian_long.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "a90327f153e8dc51b73a9df7d7ba7195752f5c8e679c680120ed778c249e00c6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/appearance_advanced.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "4c1c802dc7e219d92fa5afe0600f875baadbddba2d3830e8c298639d24d33dfc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/appearance_quick.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "7c33971596dee55aab6b02f1f6e3ffe797bee45471482425cc043fb6126b2e53"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/book_detail.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "bb2ee288ec71a382af0ff0204b9f2764146085549177cb7f31a57a13033e855f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/book_detail_missing.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "3be9ce8d12c7eefc0e31d6658a440f7219a3b3610cc185305b528aa945449bf9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/book_detail_persian.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "12a3445d4d3e9a96c70ae47f8fae880ef959d4e43748fabba7186ebeb10daaf2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/bookmarks.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "3e7025d2e3bd0f19614644c53989a0bed191b64e338c00ae390f34d76da3a0dd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/castle_advanced.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "54d0a172bc6ec58f626124e62c1d87c5ec12e6717b2f6849c967fdd63b6612a3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/castle_low.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "16eada849507ae334d49e9f564602f9db2109d005610aa57084812f097e0ef6e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/error.png",
+      "size": [
+        412,
+        234
+      ],
+      "sha256": "77c4cf35b97dd6f9830dd8a1003e5e251b6ee7b4e4f3d139d07018d2b3994e40"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/highlights.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "dfb2aa2283e695b47e6837917b2caec86349608872e0d328ac258d1dd8ffd7d3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_empty.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "c09df9d931c3a2d42dec3c683aff5bc6003383d89be1c616bd64c3d394c213a9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_gallery.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "0f9e328006466c882abac2f875af85f5823def442e3c0d91e25f52096ee41c37"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_index.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "f5b38d6fdaaeac343427be1a7f547fe6a2d01914df14122d45ce1d7630928ad0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_many.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "5479116926295021ec71fd503ec12a622f86dd06da863ab69d46b64545b1ea31"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_missing_metadata.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "adc680baa2259e70f80522545772f425d06ca9134ca134e91344f1e7bdeb640f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_no_results.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "9ff4cebdc3c4b84bc9ae465fe2fb164b754148c699cf5ff63144f5369641e184"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_search.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "2b54d33d69b41b48a37531c7106c209f788a26b2c0dc1a383078b9e44c16efc0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/library_shelves.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "4c74bc0033f8d3ba918a96fd5a658ce6a51f32e170f3ec8858daf2092b100691"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/loading.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "6ec0e7ac5cb04311b58bb952ba356c45494f25ff5c52964c91b9b4789955cd31"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/notes.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "b7598850b808fd1569662a2510ec5bf7c8b22520d576b7819d4dba504e8f7506"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/notes_empty.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "005e0a23f23e90221b880792dcee458c27070c41501e4357ca1a45e6f73a502a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/observatory_dense.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "1a539d39e6b3166cf28be5c236cdfbf54b9a09c340d5d3a0f7e6694d65f49770"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/observatory_isolated.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "a949b66c45c8eaace38d1e2219899f57e81ee49b41034aa0b3297c57b673123a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/path.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "cd9b65e4019b97719403bf1573446448e883e25f5b8b101c26752891d97817ff"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/profile.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "b942845b7c9fd33fac9a1c68e12d31382fefda391d25768d99df405a50bbfbaa"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/ritual.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "c154761a433355b8ea5feaa7134ef8dd1d7f41973e3c5e53ccbfe5842feb55c4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/sanctum_locked.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "257ec379e7ef95d5dc36f1d403eee34f28295f5e160e62d1fba2c962eff2cd67"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/sanctum_populated.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "4857d84c108cd271d5558209a1c81a79f1cc3de4c10bb02dd33dc0be42b981f6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/settings.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "fa4f516d309df2ee6da935ba8f3a83cb8848be7bf7e4bde05c52988fe5b4719b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/threshold_active.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "4a0e6da9e2b9517081315e648aab06f6ff69a875fa4b74bd3adf3202aa258b67"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/threshold_empty.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "52bd10e0a98c13ba95c74e98b24fb3867b08d7d13110fe90d1d4c1695ac8cc7d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-130-412/threshold_persian_long.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "f6d0881cca030c6c881606e9a27df643155a5aa815544ac7cc445ab24ec41bdf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/appearance_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c3360d5366f15fc0edc16a1761fe9da78ea1f64ebf277905c483f3edae3a553f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/appearance_quick.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "5e64313ff4d00d1700a5e9a34a480af1e046aaacf7ad4003962fe81bca3a8327"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/book_detail.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "37c88033f0e67e21e25f0949100f46a5bb872269bedbbf5d6e9030584c240021"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/book_detail_missing.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "9e49b49f5ff8674241a7dc8078eac4d8c1a53462177986b3e4a353c883c6a9c3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/book_detail_persian.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "3bc10bd7bbd38ddb8343a11cf9f78bb06f7d74e6361eecb78b07c5f24b00b4d4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/bookmarks.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c63bf984cfcff2dcbd95ddd115b3047e328da9ac9ee6ddf8a593bc6c2c835c5d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/castle_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "09214c563bef26b99fab58ceff56a1cbbc73a2f362d1993251203edc6eca3528"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/castle_low.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "1cf43ccc7b491e5983bd149d3ca12aa3acea21b945da1ea8b7fddecd39492c06"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/error.png",
+      "size": [
+        360,
+        258
+      ],
+      "sha256": "1ea7e8451dd2e3344c0d91035896d02ef99bc1c543f9301acf9b744fef729758"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/highlights.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "7fbc780cb8744f8888d41202cffc2ba48b09d985d17bef7496fa7f2fe01a36d0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "64c0365acb8c4bdfd88abc733cc0c469b1ee9b91dee6e3209a8efd0715ba816a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_gallery.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "81240a14886f4289bc00ee769a8f45c6da1ab6d1c7922f9a1fdd9d15b37b4cde"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_index.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "fcd7bbb991f31ddd7714638cbac39da8560aa90c80fcd365e87084733e7adb31"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_many.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "aaeb04ce7261f57b37a473b60c8e9b7574e4c662411d1dd53a7ed9d1127f111a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_missing_metadata.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c856b1ae9740a39ee7dac074516a53a5270aeecc512ec521003ce21a07ddadbb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_no_results.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f007868cd93b7f4c9c34b2cd6b659bb852f4f38661398a86e4436adab881d20f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_search.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "1703170e3cd812b25397b25ef667eb4ff939a7c92f3f7d8bb3a209827a0622e1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/library_shelves.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "94190d96a7a6ff0243540034633ab89c8eec37c947e43d5fdc7c76cf0283d20c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/loading.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "46cfa013c0c68fad158872a49f8a37909c635802561f288daa11a384e2ba6df8"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/notes.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f7aabfb2083ac2e3cf88d802fd5ddada3c25b0263cd4d76626020991ccb8fa7c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/notes_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "dadd57dfbfb3eeebf54e47a9d523fa85c40bf8a60d717b6004e15680aee65d78"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/observatory_dense.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "fa2608c8115dc5c06621283a4b63e9d0408974442486db197a58b4684c6563f4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/observatory_isolated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "8454ca56aaa763a03514a21ba26ece5ee640b8eaa271aa26884f96a14073e7d6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/path.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "9ac7eabc8d8c7b57ae6b5abc83da267b7fd05db1e788d1cd76348fe136455f3a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/profile.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "082732984445997bd11f9f34ff1e23e6476383493228027ec0167e495db9b6f9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/ritual.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "b6f78655c8420d18db5ebd64143a44487498d6b1a030e41aee517f5f0286393f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/sanctum_locked.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "94736f524817ff1404ba58d3d1beded9815672299f812c84573510d004874385"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/sanctum_populated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f4d932ffb4ee02a44b8399add9a6e2cbe7e508c5a9b9cb52cdc0359624fd538e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/settings.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "e223a981637829dfc44fda1622db82ad2d04b9ce4837dbf0162785e2761c551e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/threshold_active.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "fc6a948a069be2a847ead5ed0fc6b971d26432e6aaae45cfdd7e8c94a4c59e61"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/threshold_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "5bbe2152128a208842a9372704859d018643596d417bdf0ddd02d792187b59a9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-150-360/threshold_persian_long.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "b25788b4eea2f252cd79af90e4ee5fc74701fbd52752b5db683d76df0d3a647c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/appearance_advanced.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "ef2ffa2e3a93009d45565649b58d7153bc816940049f3416ce81b15fdee4be37"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/appearance_quick.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "6e6723b003f2bead0320c9df1ca98ac04d653ad200084b760c3005f07369843b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/book_detail.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "351d76d82d8aa2ffb6194c38a3c2f8a1a20c79718aa266b78fd8cfc1ce6df9bc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/book_detail_missing.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "22df93b1def65820b0d7e390f9b3986db81dac73ba52ee3fbe1c6c145835b23a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/book_detail_persian.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "0b8f196a7d7f9acccb32940d9cbbd5c8c38a4fef9c93480a3fde1d7eaf99bd7e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/bookmarks.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "318ba0debb0f54ba0e606e4b91e6eab30699d3f5107b119c2d7846df55c09bec"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/castle_advanced.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "b952d8d415d5b02387f92ca49145bff5ad0fb3e03765f2a6c411655ba399e99f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/castle_low.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "15015b19c760ea03015edf511f313285f8be947df34fcd317bdce74f9ea449f3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/error.png",
+      "size": [
+        1280,
+        234
+      ],
+      "sha256": "ec345dffcbff067e3507fdcc25f1dcc478f7813f528f9016507e6506cd5d84af"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/highlights.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "d8761d03afe640a01eecca68a1f3065c577b195cfda7f22fe7b2455b969a29d6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_empty.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "3aee7bbac0fb6703dcd0e6581d443dd2de460e7147c107264195027627ef7d4e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_gallery.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "0bbc86487907139412be9deb5d2221e68c1568b96cf8e02c7fdbd01fb44af285"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_index.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "fbebb519aa3b9489165d8b768beb8262ab6f04dcf235ea11349d2c29111edc81"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_many.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "c43d808081edf9e0a8743a15a6df4ec02ff7c32001dfc5408eaf1ab22580a8a7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_missing_metadata.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "ba8efc87b5a9a2ce47f7956dcf7bf633204ea9b28541b0d1bd8d6c11952ad607"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_no_results.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "20432bb862ed1503a035c8e43ae5d342cd8e2d9c2fb9044e5bda8c25760d12bc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_search.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "580950351a09c670fb908163e3a99504989f95539ac8a4b0a3566e8119dc4ae4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/library_shelves.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "adf34c86f49f23e93ca8bb8338630a8eef66d7552d933604df6bdd9b14d83086"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/loading.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "c80d7e123b183f00627a0a45f4b6240d0b205ea27c2116f4554ae66e5edca3a9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/notes.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "4aa6a5527f31dcb5a557990066cba132c6e62c56c1db2d999510e849bf93dab3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/notes_empty.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "cb253eb2376b0eee4da61e2bc4f7756bf47631e1e3ba675ec79019722b87b307"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/observatory_dense.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "312d94672f491d58c88d5ed80c38dfab10a397af664c32690d8fbc9f9781e5bb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/observatory_isolated.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "1e1d5b02e0779f2d3e84107da96bf196ecf0d869981c831eabd92d83486cc9e8"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/path.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "74594f163060bd068945fb169df4861ce9c0e8245a389e03cc394dc31a0451b2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/profile.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "9fc2e87b2ca83f701e045f4e59c693c8e869f15a6405d5f1125047129b401eea"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/ritual.png",
+      "size": [
+        1280,
+        901
+      ],
+      "sha256": "30830110860e8003577426d966ba2809efcea4698a2400edb44d9b8c2b066594"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/sanctum_locked.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "13b306d381920bff6e85c3f6c455bb48d1ed79ca9666e4a95f4ebfece6dea650"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/sanctum_populated.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "e6e70cf6d84c9030c425450600aa3dc4b359a1e02c2fe0ba6b5944565f2133bb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/settings.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "dedba8b5e400891ff0521de1e48a4e62f35aa12ad4ba25217fe655a2051b966d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/threshold_active.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "d995ac7c487eefb91208f5bfca846c9bc03f73bc5bcaf3692936970c368dd6f5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/threshold_empty.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "9f5aee94732aea872e8d0d6b5a587656dc6d9ad89c5247df8ca3db398a4e4caa"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-1280-tablet/threshold_persian_long.png",
+      "size": [
+        1280,
+        900
+      ],
+      "sha256": "caea1fb7f9975a9a0750bf3c8f206661ec16ff059a6eb3791165ff1ebec022bf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/appearance_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "6bc3e59a7f511de98ffceb78f84863743e0cdebd35b8fb461d7e1a5460a1ed61"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/appearance_quick.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "b85cd2cab78514ad69725fa501b0c949e0a88eef6c5eb06fad76ecf0c4e01893"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/book_detail.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "37c88033f0e67e21e25f0949100f46a5bb872269bedbbf5d6e9030584c240021"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/book_detail_missing.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "9e49b49f5ff8674241a7dc8078eac4d8c1a53462177986b3e4a353c883c6a9c3"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/book_detail_persian.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "3bc10bd7bbd38ddb8343a11cf9f78bb06f7d74e6361eecb78b07c5f24b00b4d4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/bookmarks.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "e9f7b10184441290a25c9072cb36af33c4cd708152e55d522c969379b86142c6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/castle_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "e17a5e2453da2d59a6899c46498e2b9ec4c2c924ffc2f9c61febe061827f2e66"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/castle_low.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "9754750bae5caa0be6ccc75d83877e1d9e5264eef7a07a1858e5191ea65fcc99"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/error.png",
+      "size": [
+        360,
+        258
+      ],
+      "sha256": "1ea7e8451dd2e3344c0d91035896d02ef99bc1c543f9301acf9b744fef729758"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/highlights.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "32cf8b33384b63420462a07cddc12fcc34a254d7fb5003b807cf5e874a4cc31b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "42101d389894fd25c4b0227887b022a61597fc71ea3a4b6b74e7bc0148827ed0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_gallery.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "892ef1a28ce02d0a95158a47bad36a48662caef717262c5a03bc0cf263d1e33a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_index.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f6dbf0bb554732181c4e89ebefa783729f761ba3bb76751aa1acd429cc8bbffd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_many.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "1b7b064a7fcd7fe6dfd6495b942f146006cbfa1d1ebb555fe5b97c307ba83a19"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_missing_metadata.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "88258652bda130d9213105b850ceba22690d28effa11668031f71c7da6faf7f6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_no_results.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "989729ae6cc1719acdc59c5804d126fc46163ee39a26ff4630a9f076ba6057b1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_search.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "dd1c9839b858fca38f3aba4974761d90fef761334c99fe80a5175de3aeec9458"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/library_shelves.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "313790b2fd17d22b21a6484f8ab7a303fd3421a14e536567a2a9b8c8c308ea0d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/loading.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "bb949d3fc4cfba226b292e3c73403275051845bec837ef85672284c2d2eb52b1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/notes.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "7082b6ebd740fa658440f1a23bea70516e76fb67eac5b520572688edfe504b09"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/notes_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "1490f8988a7be635ea0a23233a6535e3321fc19bf8e4a9a6e39f4fe504d9541b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/observatory_dense.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "d86aef43866f8b88167eb26244d9e0b724af51f740ad52d14043404b6116430b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/observatory_isolated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "0509c52a35f35aa8bd8fc3157ad50061ed69beee82785fde5713cf9bfefdafd1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/path.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "96e1a582e1b952980dee7db0c4746c50b0e7a062cb3bbe3afc4c9952aff9cdf9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/profile.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "da38ff7b8750f5552ea88706affc74b43c3e348084dcc21aa48dbde1e43d8880"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/ritual.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "b6f78655c8420d18db5ebd64143a44487498d6b1a030e41aee517f5f0286393f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/sanctum_locked.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f685c6c23addf02dd742336e3edaf98bc1e4504ee1d18cbbd240bd30ed7c5d9d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/sanctum_populated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "0c2820a6ce9072459e02947c07352bec285ded0c8a3c6b838c83f67fb98cc764"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/settings.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "a272fa2d9de86fb43822903f8253748bf1f3c1b954f272c7d4698d3b0ac004e5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/threshold_active.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "782d495f47f8b171f409667cc0529df7f96f719adcd7755d0ad852c9c653ec0d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/threshold_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "75f12ff95652677ef7852c740c0bce9a5a3dab8f895ed8669521a37db24653f2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360/threshold_persian_long.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "7df1832583dc448982fbe419a4ad1c10d47ade056ab5675fb326ef6e05d4e73d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/appearance_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "def13359fc8aedc47d0c50c0cf4d19e997c918ecdfd7540471abb67bc0a6eb7e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/appearance_quick.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "ac639e4faf7bd9d5025950cef13f90eda018f8ebaed88fe6118431e38fdd80b2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/book_detail.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "09a43bae64e52bd88c829ad9cf9b761045792b104f675eb8e62aa6a8c627bd51"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/book_detail_missing.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "5a00b6006982a80ee1fbe5517ced6e00314897e3ed23e960214d7633b2ccf402"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/book_detail_persian.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "efb202d7668ec78184ebd90bc32d9a551efb44b6ce22b91be28680928bbc0fdf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/bookmarks.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "9b438eb235d06241b30cf80f6b0dfd7e3e90d6d2c39d6a7bb686217c7ecaab08"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/castle_advanced.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "8dbe6be082bf850b1e18bbb4bbd2f4410b9b7bf616c482f1d407a3c555188a6c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/castle_low.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "548b35d3129c16d5ed6d77b010f6c8f2e9a07fc8bb0065a7494e6a7f5153508f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/error.png",
+      "size": [
+        360,
+        258
+      ],
+      "sha256": "8a0154714655fc939e59b52314a2e7ed95cdcb7bae8af9936074f222f585f016"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/highlights.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "9c86a8edeeb687e3cdd5c0a4fe6805254e5327a49a834318895885f0baaa220b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "9234bc5d5d311719eaac5fef5401ee5729ada7e886efdc28891e0f8fd35ba890"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_gallery.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "b72f51a34cf1c0d7276a8596421d0a038ab7a6559771c1597a2c64c6455391bb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_index.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "3eb7c79f351dbcb1133a2d6b87074f3da1d6430134e139d9b58c175a7427d9ea"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_many.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "f1365f0d508f092950da85e3423b26bea80010e521d1bd609fafb35ce4bbeb77"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_missing_metadata.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "8a600111587b8bf0f4b3265d25c08acf01230dbae3dc025b26f4f83852315e97"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_no_results.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c8dd161224d31f9900061eba4322d172d680dbaff5844164d4bc1b70bf9a4882"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_search.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "d9c712d36cb0e2d0ce6bb9ea618234ae2ea9696054de051c82b42e7ce2bae539"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/library_shelves.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "fe27f49f9c3cdb9c4857b61aeb6fe2ede1f779d8dbf997b7bd2d8907d5681575"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/loading.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "8c50bd6e8cd0f9ca3dd942468ce8e526b4c5b0c478ce3162836d46fd76a65845"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/notes.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "0f94810b2077009fdff530daa339494e83c98a01278b9975bfffeb62f6361ce9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/notes_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "aa3bb8e3273065ed7405f00958d4ea850e7e25fba8254e66807771cf07990c58"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/observatory_dense.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c2c63c56e83e1a47956451d91ddc533229688aff2b8dbddd66eb36bebc5422ca"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/observatory_isolated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "8f4f3f9bc53d598b93887be103b7c75ff55f5c7cced12cb333f6c8da487d6a8e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/path.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "373a6968ed46563f8cad48590ee4712e6b057e672f52f36f31995b95fbe7d69f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/profile.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "a18bd4fb387591334012d67593a0b18cb0ec79a1492d2612ebc240c15f05386e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/ritual.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "37bfe47ac95ca47e8f829ad705bc61fa25a75d443a9d188fdb15ee6b077a9f0e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/sanctum_locked.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "c7927a45a02545e70906cacd4acc912ce4d48de3d6b1f08908aa99a1ab8b0998"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/sanctum_populated.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "01c27103d69dfc194003dd3230e7dde146b3d340ef835631aeda245bbe3c7996"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/settings.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "89a72dc25c61cfddcb70dc81e358a31904ab5f2067f41f3da9e42289b278308f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/threshold_active.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "2d69726a76b7ec8282d47855c4d9a1b7b4a27f5c069f18636509a21673d6716b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/threshold_empty.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "a3715d7809c6fef55f719d16cf7bb88a702924c7bab0be2933034a798d55a0bf"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-360-contrast/threshold_persian_long.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "6e96c9ff9ee0af74e0c670b9237cb97cd99d17cd9146e19025e295fcf54d4a9b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/appearance_advanced.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "870ba1d562f1c37cb28dff7e285a69e6377cb0c2b5b1712ce6752482fa1c35d9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/appearance_quick.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "cd86c557c069eef34304a61cae1a32027edb31207a30082b5b0528651238f513"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/book_detail.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "39477d3b5e453a76d7c71eb2d81e3b90bd95828ae8777f86e7a08b5b6d8aa61a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/book_detail_missing.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "96133471bae5ccf1089116d076d7361f998274e9042a76dbfb3225cab84eabfa"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/book_detail_persian.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "6ab45896ba8248d2a17763f23ec0875bd8cdb028849451d846c039327425505c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/bookmarks.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "c3eb573c84107a22dbe0e1649d3cf77df29da63242c6cdd27eb31dca80e6cf84"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/castle_advanced.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "48df13507fe19a05be3f1abec521d8b1cf15add05aa516fc703f46e36e6346b6"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/castle_low.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "e5a072efdc053d5dc038ee04833572aa2df19bd6ba831fe977f9844a5696b74e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/error.png",
+      "size": [
+        720,
+        234
+      ],
+      "sha256": "3144d06a1ca05b6039350735eeae6eb021b2c6d4b20136759122db8f728969ea"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/highlights.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "491b6217ef9b0b07a616643abe03067084547ce3183603dfd6609ca7298ea0ae"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_empty.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "4b5678fc584ab870974da177c6a3764a283a766b8d595a36a884a82a642bf69f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_gallery.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "8259db884ee4afdb94a4306ca8a4b0682adbe9fd3c513b72dc491dc44e70e205"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_index.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "2068625e460f4b55f9d4ab7b5297d7c3522eed876e103935d1cecfde41521765"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_many.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "d0543fcd743f2d9bf0245e26a3d2b23c900c171f74c7dac2f37fb9a93dac0a27"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_missing_metadata.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3ab932d329c86fe473812338daac1dab570e1e336768eedf90b118c9c3841a7f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_no_results.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3d8e60dc489692d680b1ca85a12254b1980eec1b308f7e5ff770dffb0e4e7bf7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_search.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "f96b69daac55f0d4ef147b28b5d96ee37eba509f20212a602153b4c9f5472c5a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/library_shelves.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "2d7da0d1cfb301a0eda840d93f337f04d1635a9e7172e6c6b3b63c50f0e87a3f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/loading.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "3fb57d675c5456f2ba9a221966cdfd375a8928c0abde34373a6408e75616b09f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/notes.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "61958a4e903087228f8fb6fe46f3d3c0af45f64dd0ffecf77b6bfa48191b8aa9"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/notes_empty.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "38494c7e8567804b1b87e342bcb522fbc90ecfc5d23ef1a378f3a484cdb6b050"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/observatory_dense.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "da17ceaac876f78d48935135f7979a71119770087787f2951d04bfb60840f951"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/observatory_isolated.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "a5dce85137c81a1ed68c715d49adb02e29c0a8dcbfd462a62a85a76f10fb1a59"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/path.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "271a6fa306a0fff0199db5538f8db1d0721e1ba277c8adbedac82f86bc41ac43"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/profile.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "e565b9928663aa367ef3cc02b030aec643d2a1216a28ce2b733b44d7974dd80f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/ritual.png",
+      "size": [
+        720,
+        721
+      ],
+      "sha256": "0771670007959d53e7ca5d13b7aef57b05ffd8407fe8ec14c880910328c31886"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/sanctum_locked.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "5e5f2eb8328439720cd2d89f74d269038704eedf989a4e9809d765a2077a97ad"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/sanctum_populated.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "1205d04ba7a6d22afe4988571836a94a44d218e43af3d3c1318f1c2f7b26c344"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/settings.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "7dc5d10a416d2fe442808dc1781b9d9f1804a4fa162b258ae10ef2b55a9131eb"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/threshold_active.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "603cf2bb2016c0efa8447ba7bd82358d8e0bd4a7ebed178f3562a863fb6a7ddc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/threshold_empty.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "ac94288806bff758142ca437ed1f3e38f63a2f6906047daad8649b8b2d1548b4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-720-foldable/threshold_persian_long.png",
+      "size": [
+        720,
+        720
+      ],
+      "sha256": "8f3e97aaa93975e4fba778d0a1614ee2c45f9636d91e3832f7db87e7e5b23d98"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/appearance_advanced.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "5e36a505fc940f41385fc0348dddbd7bebac8261dd0a4785cf144b92ecfb6bef"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/appearance_quick.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "7e3bc04bdb65f620807268a2360a305aadcd359b6a9fd17902e1ccb22296b3e2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/book_detail.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "8ece8b628b0c68ceee425c5e8d1fc066387e2d2060cdc7ac0b01ca5da03cfbad"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/book_detail_missing.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "cfb340327b9a35d7fde786e6b3587cf1962a8bd3cb215bbe6b33ea5be8367a2e"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/book_detail_persian.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "4ca19e04dd156c2c5ef46e82b937330a81b1cfd0d131c1239f03410541e70dd8"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/bookmarks.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "0873d6138ea5f72b8ff454ac8aea8a455b1451d10d13a74877016e98c6c3a577"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/castle_advanced.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "9be831e2bf858500e39ec016c5261eafa08678b359c40ea7997a76d6adaaf378"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/castle_low.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "3257439649ed8131a3061fea62ba37fbe16e90a5720c6d79cd9204d29fbe7604"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/error.png",
+      "size": [
+        900,
+        234
+      ],
+      "sha256": "e39f7b339ff530fa8b55d6695130b0165f182c68f9b1fae2b2dd1170b658cad0"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/highlights.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "ec89e30b6a31e04b05105ead1b4f5b93a182414933bd8e43b0fe3672c401081c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_empty.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "9789a74af2919ff91c5d67cd5733be9be32e34b04f9dde623ba10651c46e478a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_gallery.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "53e35ab6c324ad0332190f8447037bae3c7df35c6f59193eb05ac9c8812d5131"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_index.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "cbd9f9a0d1680a6314c9672d81336c9e4f276973fce4e56e93b0665888681f8d"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_many.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "1dfcba9fc703c1b9ef18641ca39ccebd35379212a2a89a9194fbe020aa63cdcd"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_missing_metadata.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "7e037b31261388882beeb393821de0aa13b04f0898f974a5c6655178c90f96b2"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_no_results.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "31d5d987083458bae55b05739b34857ad54e084b4fadcbbfcb16ad47e46932ef"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_search.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "dac8e7a3f88b97bda8c3c0c17f932574407e011bf6ff732b30cd3e4523ddf63f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/library_shelves.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "13115696ce4314a9e8a6fdd53fcafc3d50e321eea0d2dc261420573f634f37dc"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/loading.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "81f460311a1f6c39ba151c23d097642d5987d49fa5a43b71c07a06c82b188801"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/notes.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "003ec3c1fc155af63f8680f06113f9d5c58d6c3429a65b5b45a75262edaa5717"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/notes_empty.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "1fa3ed545d180966dbb2e119fab715cc161ddb8f378977db4da726b6ea8bad03"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/observatory_dense.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "a33e04b5a2edf7c47b6183779f8fa0074eb49d2c81e3989f5209036aeb251904"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/observatory_isolated.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "c79dde869f613e4a0a2a47d804b098821566cf6cf78eb970d88b2164a0a2b7c8"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/path.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "f908cce76c4fbafd75a4d610fb6de78bf867d55254bf6b136b1c6caaa2780cc1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/profile.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "745469c9b36bdee42b69aeadaacf3e4eb2c3aad0ce36bc09e17c23b68ca8ade4"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/ritual.png",
+      "size": [
+        900,
+        421
+      ],
+      "sha256": "9123cf1d4ccfe87c0df6a1df57ccfa05c516a0d0c455b52cfec7764837a070ef"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/sanctum_locked.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "e43fc57ac2260d4531587f4a888d551b095962db5b92f732c992fa9c06c99f2c"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/sanctum_populated.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "445085c3ba2402dc074f5d8f4f69d826e945839219965a06de6e6fc5de2bc974"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/settings.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "d5188a520f15b543d76c3131f7aa9852b33bf3aa66d5d818e108ee18bfc9da83"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/threshold_active.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "652c4376750a881e1d0d1f15b80df3d8d686342fe2d70fa1f877895f3517742b"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/threshold_empty.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "483be323298ed36bb67643d06009ff1f49535380a8a3811c94d770fc0ea26c34"
+    },
+    {
+      "path": "app/build/outputs/grayfog-cloud/fa-200-900-landscape/threshold_persian_long.png",
+      "size": [
+        900,
+        420
+      ],
+      "sha256": "db5e2b54559282b86f7123edc3bf042d3f718ce618c6aa85bd712c8e7513c824"
+    }
+  ],
+  "supplemental_frames": [
+    {
+      "path": "app/build/outputs/grayfog-detail/en/book-detail-unknown-date.png",
+      "size": [
+        412,
+        901
+      ],
+      "sha256": "3d80738b7a95c0f86e286aadb25bfe23455b777eedbb073b125a835f4886a1b5"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/en/missing-metadata-gallery.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "4d90a1315f382f495dd063385da0bc9ad77179dec81c8288366a655d66396e02"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/en/missing-metadata-index.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "e27d3c9fd819edfd48a8b7a8c625679f2597cef35d7b1b4f013c699f6b45fde1"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/en/missing-metadata-shelves.png",
+      "size": [
+        412,
+        900
+      ],
+      "sha256": "01f48a58089ce0516bf9a5fbdfe8057c759e1b136697e77321e34a4f64f54b9f"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/fa/book-detail-unknown-date.png",
+      "size": [
+        360,
+        801
+      ],
+      "sha256": "926f251bd7c1287dc5a1708c7cc6c22818a52a93c7df5c21e54963c6e0ecb112"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/fa/missing-metadata-gallery.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "a2992eccfda7311dbe72065245b9b12a93d3b6c8c12a4dc84784e197f1219af7"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/fa/missing-metadata-index.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "d22e7afced3f33102eef14e7988831e1df7b4d843b8fb7e57b4a5e89a824f82a"
+    },
+    {
+      "path": "app/build/outputs/grayfog-detail/fa/missing-metadata-shelves.png",
+      "size": [
+        360,
+        800
+      ],
+      "sha256": "e672b91b4f7778e0d32c506d486d950c4c77dcdf2febbcdcab6857b41cd10194"
+    }
+  ],
+  "native_renderer": "Robolectric SDK 35 native graphics, actual production Composables, Reduced Motion",
+  "native_configuration_count": 15,
+  "compose_preview_count": 352,
+  "device_acceptance": false,
+  "apks": [
+    {
+      "path": "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "bytes": 1444781,
+      "sha256": "ebf3e81464de7acc68eba1ad9b116ce6992c86bdd6410c4e9527d432e1f2dc1b"
+    },
+    {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 51071612,
+      "sha256": "4700ed2b1361d6d200b8c461692bf76053a7e892bd3cf17acdc42eff2f582cea"
+    }
+  ]
+}

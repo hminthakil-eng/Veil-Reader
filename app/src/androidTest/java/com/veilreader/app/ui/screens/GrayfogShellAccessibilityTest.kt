@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
@@ -28,6 +29,9 @@ import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.review.GrayfogReviewContent
+import com.veilreader.app.ui.review.GrayfogReviewFixtures
+import com.veilreader.app.ui.review.GrayfogReviewSurface
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilTheme
@@ -71,7 +75,10 @@ class GrayfogShellAccessibilityTest(
         val localized = localizedContext()
         compose.setContent {
             val density = LocalDensity.current
+            // Keep the real host's launcher ownership while localizing its resources.
+            val activityResults = checkNotNull(LocalActivityResultRegistryOwner.current)
             CompositionLocalProvider(
+                LocalActivityResultRegistryOwner provides activityResults,
                 LocalContext provides localized,
                 LocalResources provides localized.resources,
                 LocalConfiguration provides localized.resources.configuration,
@@ -90,9 +97,38 @@ class GrayfogShellAccessibilityTest(
     }
 
     @Test
+    fun liveSearchPreservesItsPurposeWhileOriginalArtworkLeavesTheResults() {
+        val localized = localizedContext()
+        val original = GrayfogReviewFixtures.booksWithOriginalCover(localized).first()
+        assertTrue(File(checkNotNull(original.coverCachePath)).isFile)
+        present {
+            GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY, highContrast = highContrast)
+        }
+        val label = localized.getString(R.string.library_search_hint)
+        val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
+        search.performScrollTo().assertHeightIsAtLeast(48.dp)
+        compose.waitUntil(20_000) {
+            val nodes = compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
+                .fetchSemanticsNodes()
+            nodes.isNotEmpty() && nodes.all { it.config[BookCoverArtworkReady] }
+        }
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
+        search.performTextInput("Still")
+        search.assertTextContains("Still").assertIsDisplayed()
+        compose.onNodeWithText(original.title).assertDoesNotExist()
+        val remaining = GrayfogReviewFixtures.books.first { it.title.contains("Still") }
+        // The editable query contains the same words as the matching book title.
+        // Assert the publication record, not the text field that initiated retrieval.
+        compose.onNode(hasText(remaining.title) and !hasSetTextAction()).assertExists()
+        capture("archive-search")
+    }
+
+    @Test
     fun thresholdCopyDoesNotOverlapAndResumeRemainsReachable() {
         val localized = localizedContext()
-        val book = Book(id = "grayfog-review", title = "The Unwritten Observatory", author = "Archive fixture", progress = 0.42f)
+        val book = Book(id = "grayfog-review", title = "The Unwritten Observatory", author = "Archive fixture",
+            progress = 0.42f, sourceUri = "veil-review://fictional/grayfog-review")
         var opens = 0
         present {
             ReadingNowScreen(
@@ -102,8 +138,15 @@ class GrayfogShellAccessibilityTest(
             )
         }
         val title = compose.onNodeWithText(localized.getString(R.string.threshold_title_first_volume)).fetchSemanticsNode()
-        val body = compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume)).fetchSemanticsNode()
-        assertTrue("Editorial copy must occupy separate vertical space", title.boundsInRoot.bottom <= body.boundsInRoot.top)
+        val body = compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume))
+        // Optional approach copy yields to the current book at large text. The reading action
+        // remains mandatory in every case; requiring omitted copy would reject that adaptation.
+        if (scale >= com.veilreader.app.ui.theme.VeilComposition.ApproachCondenseFontScale) {
+            body.assertDoesNotExist()
+        } else {
+            val bodyBounds = body.fetchSemanticsNode().boundsInRoot
+            assertTrue("Editorial copy must occupy separate vertical space", title.boundsInRoot.bottom <= bodyBounds.top)
+        }
         capture("threshold-entrance")
         compose.onNodeWithText(localized.getString(R.string.threshold_return_volume))
             .performScrollTo().assertIsDisplayed().assertHasClickAction()
@@ -196,8 +239,10 @@ class GrayfogShellAccessibilityTest(
         val context = ApplicationProvider.getApplicationContext<Context>()
         val directory = File(context.filesDir, "grayfog-review").apply { mkdirs() }
         val name = "$surface-$language-${(scale * 100).toInt()}-${if (highContrast) "contrast" else "standard"}.png"
-        File(directory, name).outputStream().use { output ->
-            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
+        val file = File(directory, name)
+        file.outputStream().use { output ->
+            check(compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
         }
+        com.veilreader.app.exportGrayfogCapture(file)
     }
 }

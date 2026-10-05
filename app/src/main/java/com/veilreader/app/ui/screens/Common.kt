@@ -41,7 +41,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -111,6 +114,11 @@ internal fun currentVeilWindowSizeDp(): VeilWindowSizeDp {
     )
 }
 
+/** A display fallback only; never changes metadata, source identity or stored history. */
+@Composable
+internal fun bookDisplayTitle(title: String): String =
+    title.trim().ifBlank { stringResource(R.string.common_untitled_book) }
+
 @Composable
 internal fun localizedBookFormatLabel(format: BookFormat): String =
     stringResource(
@@ -136,9 +144,11 @@ internal fun rememberVeilPercentFormatter(): (Float) -> String {
     }
 }
 @Composable
-internal fun rememberVeilIntegerFormatter(): (Number) -> String {
+internal fun rememberVeilIntegerFormatter(minimumDigits: Int = 1): (Number) -> String {
     val locale = LocalConfiguration.current.locales[0]
-    val formatter = remember(locale) { NumberFormat.getIntegerInstance(locale) }
+    val formatter = remember(locale, minimumDigits) {
+        NumberFormat.getIntegerInstance(locale).apply { minimumIntegerDigits = minimumDigits.coerceAtLeast(1) }
+    }
     return remember(formatter) {
         { value -> formatter.format(value) }
     }
@@ -369,12 +379,8 @@ internal fun VeilMicroLabel(
         text = if (arabicScript) text else text.uppercase(),
         modifier = modifier,
         color = color,
-        style = if (arabicScript) {
-            if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall
-        } else {
-            (if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall)
-                .withVeilTracking(text, if (strong) 0.75.sp else 0.65.sp)
-        }
+        style = (if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall)
+            .withVeilTracking(text, if (strong) 0.75.sp else 0.65.sp)
     )
 }
 
@@ -389,7 +395,7 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
             if (arabicScriptEyebrow) eyebrow else eyebrow.uppercase(),
             color = VeilPalette.Brass,
             style = if (arabicScriptEyebrow) {
-                MaterialTheme.typography.labelMedium
+                MaterialTheme.typography.labelMedium.withVeilContentScript(eyebrow)
             } else {
                 MaterialTheme.typography.labelMedium.withVeilTracking(eyebrow, 0.75.sp)
             }
@@ -398,13 +404,14 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         Text(
             title,
             style = MaterialTheme.typography.headlineLarge.withVeilContentScript(title),
+            modifier = Modifier.semantics { heading() },
             color = MaterialTheme.colorScheme.onBackground
         )
         subtitle?.takeIf(String::isNotBlank)?.let {
             Text(
                 it,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.withVeilContentScript(it),
                 modifier = Modifier.widthIn(max = VeilMeasure.EditorialText)
             )
         }
@@ -506,6 +513,9 @@ internal fun bookCoverSampleSize(
     }
     return sample
 }
+
+/** Render-review readiness only; decorative cover artwork stays unannounced by TalkBack. */
+internal val BookCoverArtworkReady = SemanticsPropertyKey<Boolean>("BookCoverArtworkReady")
 
 private fun decodeBookCover(file: File, target: IntSize): CachedCoverVisual? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -610,7 +620,7 @@ fun BookCover(
         label = "cover-fade"
     )
 
-    val displayTitle = title.ifBlank { stringResource(R.string.common_untitled_book) }
+    val displayTitle = bookDisplayTitle(title)
     val aura = cachedCover?.aura
         ?: fallbackBookAura(displayTitle)
     val auraStrength = when {
@@ -656,7 +666,9 @@ fun BookCover(
             )
             // Every current cover placement already presents the book title beside the artwork.
             // Keep the image layers decorative so TalkBack does not announce the same title twice.
-            .clearAndSetSemantics { }
+            .clearAndSetSemantics {
+                this[BookCoverArtworkReady] = imagePath.isNullOrBlank() || cachedCover != null
+            }
     ) {
         GeneratedBookCover(title = displayTitle, subtitle = subtitle)
         cachedCover?.let { cover ->
@@ -694,7 +706,7 @@ fun BookCover(
 }
 
 @Composable
-private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
+internal fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
     val palettes = listOf(
         listOf(Color(0xFF26313A), Color(0xFF12181E), Color(0xFF090C10)),
         listOf(Color(0xFF372529), Color(0xFF1B1417), Color(0xFF0C0A0B)),
@@ -727,10 +739,77 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             .align(Alignment.CenterStart)
     )
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val captionFits = com.veilreader.app.ui.theme.artifactCaptionFits(
+            maxWidth.value, maxHeight.value, LocalDensity.current.fontScale)
+        val compactCover = maxWidth.value < com.veilreader.app.ui.theme.VeilComposition.CompactArtifactCaptionWidthDp
+        if (captionFits) {
+            Column(
+                Modifier.fillMaxSize().padding(start = 17.dp, end = 14.dp, top = 16.dp, bottom = 16.dp)
+            ) {
+                BrassRule(Modifier.width(42.dp))
+                // Registration occupies only spare space, never the book's identity field.
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    if (maxHeight >= com.veilreader.app.ui.theme.VeilArtifact.RegistrationSize) {
+                        GeneratedCoverRegistration()
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        title,
+                        color = VeilPalette.Moon,
+                        style = (if (compactCover) MaterialTheme.typography.titleSmall
+                            else MaterialTheme.typography.titleMedium).withVeilContentScript(title),
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    subtitle?.takeIf { it.isNotBlank() }?.let {
+                        Text(
+                            it,
+                            color = VeilPalette.Mist.copy(alpha = 0.82f),
+                            style = MaterialTheme.typography.labelSmall.withVeilContentScript(it),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        } else {
+            GeneratedCoverMonogram(title)
+        }
+    }
+}
+
+@Composable
+private fun GeneratedCoverMonogram(title: String) {
+    val initial = remember(title) {
+        title.codePoints().filter { Character.isLetter(it) }.findFirst().let { letter ->
+            if (letter.isPresent) String(Character.toChars(Character.toUpperCase(letter.asInt))) else null
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        if (initial == null || maxWidth < 48.dp || maxHeight < 64.dp) {
+            GeneratedCoverRegistration()
+        } else {
+            // This is a decorative edition mark, sized like artwork. The readable title next
+            // to the cover still follows user font scale; it remains the accessible identity.
+            val markSize = (maxWidth.value * 0.42f / LocalDensity.current.fontScale).sp
+            Text(
+                initial,
+                color = VeilPalette.Moon.copy(alpha = 0.72f),
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = markSize, lineHeight = markSize * 1.25f
+                ).withVeilContentScript(initial)
+            )
+        }
+    }
+}
+
+@Composable
+private fun GeneratedCoverRegistration() {
     Box(
         modifier = Modifier
-            .align(Alignment.Center)
-            .size(42.dp),
+            .size(com.veilreader.app.ui.theme.VeilArtifact.RegistrationSize),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -762,40 +841,6 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
         )
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val compactCover = maxWidth.value < com.veilreader.app.ui.theme.VeilComposition.CompactArtifactCaptionWidthDp
-        // Small cover specimens are visual objects; their accessible title remains beside them.
-        // Do not squeeze duplicate metadata into a tiny substitute for missing publication art.
-        if (maxWidth.value / LocalDensity.current.fontScale.coerceAtLeast(1f) >= com.veilreader.app.ui.theme.VeilComposition.ArtifactCaptionMinWidthDp) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(start = 17.dp, end = 14.dp, top = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        BrassRule(Modifier.width(42.dp))
-
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                title,
-                color = VeilPalette.Moon,
-                style = if (compactCover) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis
-            )
-            subtitle?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    it,
-                    color = VeilPalette.Mist.copy(alpha = 0.82f),
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-        }
-    }
 }
 
 /** A map and its record become adjacent rooms on wide windows; large text restores reading order. */

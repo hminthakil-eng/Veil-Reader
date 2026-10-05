@@ -189,6 +189,9 @@
     <string name="reader_zoom">بزرگ‌نمایی</string>
     <string name="reader_chrome_notebook">دفترچه</string>
     <string name="reader_chrome_bookmark">نشانک</string>
+    <string name="reader_menu_auto_hide">پنهان‌شدن خودکار منوی مطالعه</string>
+    <string name="reader_menu_auto_hide_description">کنترل‌ها پس از مکث پنهان می‌شوند. خاموش کنید تا منوی مطالعه تا زمانی که خودتان آن را می‌بندید نمایان بماند.</string>
+    <string name="reader_reading_menu">منوی مطالعه</string>
     <string name="reader_chrome_appearance">ظاهر</string>
     <string name="reader_chrome_pdf_view">نمای PDF</string>
     <string name="reader_return">بازگشت</string>
@@ -391,8 +394,6 @@
     <string name="library_header_title">آرشیو گری‌فاگ</string>
     <string name="library_header_tagline">بریده‌ها · یادگارها · رازها</string>
     <string name="library_header_empty">قفسه‌ها در انتظار نخستین کتاب‌اند.</string>
-    <string name="library_header_one">%1$d کتاب در این دستگاه ثبت شده است.</string>
-    <string name="library_header_many">%1$d کتاب در این دستگاه ثبت شده‌اند.</string>
     <string name="library_search_hint">جست‌وجوی بایگانی</string>
     <string name="library_search_clear">پاک کردن</string>
     <string name="library_import_preparing_label">آماده‌سازی کتاب</string>
@@ -1367,4 +1368,7 @@
     <string name="observatory_show_fewer_connections">نمایش ارتباط‌های کمتر</string>
     <string name="reader_show_reading_preview">نمایش پیش‌نمایش مطالعه</string>
     <string name="reader_hide_reading_preview">پنهان کردن پیش‌نمایش</string>
+    <string name="library_reading_filter">وضعیت مطالعه</string>
+    <string name="library_shelf_all">همهٔ جلدها</string>
+    <string name="library_reading_filter_selection">وضعیت مطالعه: %1$s. تعداد: %2$d.</string>
 </resources>

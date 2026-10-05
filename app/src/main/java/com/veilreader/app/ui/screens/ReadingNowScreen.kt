@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -234,8 +237,13 @@ private fun ThresholdHeader(
     headerHeightDp: Float
 ) {
     val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
-    val abbreviatedEntry = hasCurrentBook && (LocalDensity.current.fontScale >= 1.3f ||
-        currentVeilWindowSizeDp().height < 500)
+    val windowSize = currentVeilWindowSizeDp()
+    val abbreviatedEntry = hasCurrentBook && com.veilreader.app.ui.theme.condenseRealmApproach(
+        LocalDensity.current.fontScale, windowSize.height)
+    val approachHeightDp = if (hasCurrentBook && windowSize.width <
+        com.veilreader.app.ui.theme.VeilComposition.ArchitecturalPairMinWidthDp) {
+        headerHeightDp.coerceAtMost(com.veilreader.app.ui.theme.VeilComposition.ThresholdActiveApproachMaxHeightDp)
+    } else headerHeightDp
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -265,7 +273,7 @@ private fun ThresholdHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = if (abbreviatedEntry) 0.dp else headerHeightDp.dp)
+                .heightIn(min = if (abbreviatedEntry) 0.dp else approachHeightDp.dp)
                 .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -301,6 +309,7 @@ private fun ThresholdHeader(
                     }
                 ),
                 style = if (abbreviatedEntry) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.semantics { heading() },
                 color = VeilPalette.Moon,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
@@ -479,8 +488,14 @@ private fun ContinueReadingHero(
                 shellShape
             )
     ) {
-        // Reserve a readable identity measure instead of squeezing it beside the artifact.
-        val stacked = (maxWidth.value - 36f - coverWidthDp - 16f) /
+        // Keep the physical book beside its identity at normal compact widths;
+        // large text still owns a full column rather than being squeezed.
+        val coverBudget = maxWidth.value - 36f - 16f -
+            com.veilreader.app.ui.theme.VeilComposition.ResumeIdentityMinWidthDp * fontScale.coerceAtLeast(1f)
+        val objectWidth = if (coverBudget >= com.veilreader.app.ui.theme.VeilComposition.ThresholdCoverMinObjectWidthDp)
+            coverWidthDp.coerceAtMost(coverBudget) else coverWidthDp
+        val objectHeight = coverHeightDp * objectWidth / coverWidthDp
+        val stacked = (maxWidth.value - 36f - objectWidth - 16f) /
             fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ResumeIdentityMinWidthDp
 
         ThresholdParchmentTexture(
@@ -549,53 +564,13 @@ private fun ContinueReadingHero(
             ),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.library_continue_reading),
-                        color = VeilPalette.LightBrass,
-                        strong = true
-                    )
-                    Text(
-                        heroProgressLabel(current, progress),
-                        style = MaterialTheme.typography.labelMedium.withVeilContentScript(heroProgressLabel(current, progress)),
-                        color = VeilPalette.LightMist,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-            }
-
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                VeilPalette.LightBrass.copy(alpha = 0.58f),
-                                VeilPalette.LightBrass.copy(alpha = 0.82f),
-                                VeilPalette.LightBrass.copy(alpha = 0.58f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
             if (stacked) {
                 HeroDetails(
                     current = current,
                     ink = VeilPalette.LightInk,
                     secondaryInk = VeilPalette.LightMist,
-                    readingAction = { ResumeAction() }
+                    readingAction = { ResumeAction() },
+                    includeMetadata = false
                 )
                 Row(
                     Modifier.fillMaxWidth(),
@@ -604,10 +579,11 @@ private fun ContinueReadingHero(
                     HeroCover(
                         current,
                         artifactMemory,
-                        coverWidthDp,
-                        coverHeightDp
+                        objectWidth,
+                        objectHeight
                     )
                 }
+                HeroMetadata(current, VeilPalette.LightMist)
 
             } else {
                 Row(
@@ -618,13 +594,14 @@ private fun ContinueReadingHero(
                     HeroCover(
                         current,
                         artifactMemory,
-                        coverWidthDp,
-                        coverHeightDp
+                        objectWidth,
+                        objectHeight
                     )
                     HeroDetails(
                         current = current,
                         ink = VeilPalette.LightInk,
                         secondaryInk = VeilPalette.LightMist,
+                        maxTitleLines = 4,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -641,6 +618,14 @@ private fun ContinueReadingHero(
             )
 
             if (!stacked) ResumeAction()
+            val progressInscription = heroProgressLabel(current, progress)
+            Text(
+                progressInscription,
+                style = MaterialTheme.typography.labelMedium.withVeilContentScript(progressInscription),
+                color = VeilPalette.LightMist,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
         }
     }
@@ -741,17 +726,27 @@ private fun HeroDetails(
     ink: Color,
     secondaryInk: Color,
     modifier: Modifier = Modifier,
-    readingAction: (@Composable () -> Unit)? = null
+    readingAction: (@Composable () -> Unit)? = null,
+    includeMetadata: Boolean = true,
+    maxTitleLines: Int = 3
 ) {
+    val displayTitle = bookDisplayTitle(current.title)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
-            current.title,
-            style = MaterialTheme.typography.titleLarge.withVeilContentScript(current.title),
+            displayTitle,
+            style = MaterialTheme.typography.titleLarge.withVeilContentScript(displayTitle),
             color = ink,
-            maxLines = 3,
+            maxLines = maxTitleLines,
             overflow = TextOverflow.Ellipsis
         )
         readingAction?.invoke()
+        if (includeMetadata) HeroMetadata(current, secondaryInk)
+    }
+}
+
+@Composable
+private fun HeroMetadata(current: Book, secondaryInk: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
             current.author.ifBlank { stringResource(R.string.common_unknown_author) },
             style = MaterialTheme.typography.bodyMedium.withVeilContentScript(current.author.ifBlank { stringResource(R.string.common_unknown_author) }),
@@ -792,9 +787,12 @@ private fun RecentBooksShelf(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 VeilMicroLabel(
                     text = stringResource(R.string.threshold_recent_eyebrow),
                     strong = true
@@ -848,6 +846,7 @@ private fun RecentBookCard(
     coverHeightDp: Float,
     onOpenBook: (Book) -> Unit
 ) {
+    val displayTitle = bookDisplayTitle(book.title)
     Surface(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(itemWidthDp.dp),
@@ -867,7 +866,7 @@ private fun RecentBookCard(
                 contentAlignment = Alignment.Center
             ) {
                 BookCover(
-                    title = book.title,
+                    title = displayTitle,
                     subtitle = book.author,
                     imagePath = book.coverCachePath,
                     artifact = bookArtifactState(
@@ -900,8 +899,8 @@ private fun RecentBookCard(
             }
 
             Text(
-                book.title,
-                style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
+                displayTitle,
+                style = MaterialTheme.typography.titleSmall.withVeilContentScript(displayTitle),
                 color = VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

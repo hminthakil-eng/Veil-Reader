@@ -141,3 +141,7 @@ private fun ProfileReview() = GrayfogReviewContent(GrayfogReviewSurface.PROFILE)
 @GrayfogReviewSizes
 @Composable
 private fun ThresholdPersianLongReview() = GrayfogReviewContent(GrayfogReviewSurface.THRESHOLD_PERSIAN_LONG)
+
+@GrayfogReviewSizes
+@Composable
+private fun LibraryMissingMetadataReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_MISSING_METADATA)

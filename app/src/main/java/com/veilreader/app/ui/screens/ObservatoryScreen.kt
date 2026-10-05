@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -392,6 +393,7 @@ internal fun ObservatorySelection(
     booksById: Map<String, com.veilreader.app.domain.MemoryAtlasNode>,
     onOpenBook: (Book) -> Unit
 ) {
+    val displayTitle = bookDisplayTitle(node.book.title)
     var expanded by remember(node.book.id) { mutableStateOf(false) }
     val formatNumber = rememberVeilNumberFormatter()
     Surface(
@@ -412,7 +414,7 @@ internal fun ObservatorySelection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BookCover(
-                    title = node.book.title,
+                    title = displayTitle,
                     subtitle = node.book.author,
                     imagePath = node.book.coverCachePath,
                     artifact = canonicalBookArtifactState(node.book),
@@ -428,8 +430,9 @@ internal fun ObservatorySelection(
                         text = stringResource(R.string.observatory_selected_constellation)
                     )
                     Text(
-                        node.book.title,
-                        style = MaterialTheme.typography.titleLarge.withVeilContentScript(node.book.title),
+                        displayTitle,
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.titleLarge.withVeilContentScript(displayTitle),
                         color = VeilPalette.Moon,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis

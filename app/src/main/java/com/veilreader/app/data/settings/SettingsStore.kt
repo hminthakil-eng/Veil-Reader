@@ -50,6 +50,7 @@ data class SensorySettings(
 data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val highContrastEnabled: Boolean = false,
+    val readerChromeAutoHideEnabled: Boolean = true,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     val readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
@@ -67,6 +68,7 @@ class SettingsStore(private val context: Context) {
     private object Keys {
         val appThemeMode = stringPreferencesKey("app_theme_mode")
         val highContrastEnabled = booleanPreferencesKey("accessibility_high_contrast")
+        val readerChromeAutoHideEnabled = booleanPreferencesKey("reader_chrome_auto_hide")
         val theme = stringPreferencesKey("reader_theme")
         val fontScale = doublePreferencesKey("reader_font_scale")
         val lineHeight = doublePreferencesKey("reader_line_height")
@@ -116,6 +118,7 @@ class SettingsStore(private val context: Context) {
                 AppThemeMode.valueOf(prefs[Keys.appThemeMode] ?: AppThemeMode.SYSTEM.name)
             }.getOrDefault(AppThemeMode.SYSTEM),
             highContrastEnabled = prefs[Keys.highContrastEnabled] ?: false,
+            readerChromeAutoHideEnabled = prefs[Keys.readerChromeAutoHideEnabled] ?: true,
             readerAppearance = ReaderAppearance(
                 theme = runCatching {
                     ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.PAPER.name)
@@ -224,6 +227,10 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setAppThemeMode(mode: AppThemeMode) {
         context.veilSettingsDataStore.edit { it[Keys.appThemeMode] = mode.name }
+    }
+
+    suspend fun setReaderChromeAutoHideEnabled(enabled: Boolean) {
+        context.veilSettingsDataStore.edit { it[Keys.readerChromeAutoHideEnabled] = enabled }
     }
 
     suspend fun setHighContrastEnabled(enabled: Boolean) {

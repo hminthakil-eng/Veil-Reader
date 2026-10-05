@@ -37,6 +37,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
@@ -199,6 +200,8 @@ fun ReaderScreen(
     library: LocalLibraryRepository,
     game: GameRepository,
     readerAppearance: ReaderAppearance,
+    readerChromeAutoHideEnabled: Boolean = true,
+    onReaderChromeAutoHideChange: (Boolean) -> Unit = {},
     readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
     focusGuide: ReaderFocusGuideSettings = ReaderFocusGuideSettings(),
@@ -761,7 +764,8 @@ fun ReaderScreen(
         showAppearance,
         showPdfZoom,
         selectionModeActive,
-        touchExplorationEnabled
+        touchExplorationEnabled,
+        readerChromeAutoHideEnabled
     ) {
         if (
             shouldAutoHideReaderChrome(
@@ -770,7 +774,8 @@ fun ReaderScreen(
                 showAppearance = showAppearance,
                 showPdfZoom = showPdfZoom,
                 selectionModeActive = selectionModeActive,
-                touchExplorationEnabled = touchExplorationEnabled
+                touchExplorationEnabled = touchExplorationEnabled,
+                autoHideEnabled = readerChromeAutoHideEnabled
             )
         ) {
             delay(VeilSanctuary.chromeAutoHideMillis)
@@ -2584,17 +2589,13 @@ fun ReaderScreen(
     }
 
     val readerCanvas = readerCanvasColor(presentedReaderAppearance.theme)
-    val lightReaderChrome =
-        presentedReaderAppearance.theme == ReaderTheme.PAPER ||
-            presentedReaderAppearance.theme == ReaderTheme.SEPIA
-    val readerChromeBackground = if (lightReaderChrome) {
-        Color(0xFFF0E4CC).copy(alpha = 0.94f)
-    } else {
-        VeilPalette.Ink.copy(alpha = 0.94f)
+    val chromeColors = remember(presentedReaderAppearance.theme) {
+        readerAccessColors(presentedReaderAppearance.theme)
     }
-    val readerChromeForeground = if (lightReaderChrome) Color(0xFF2B241B) else VeilPalette.Moon
+    val readerChromeBackground = chromeColors.background
+    val readerChromeForeground = chromeColors.foreground
     val readerChromeMuted = readerChromeForeground.copy(alpha = 0.56f)
-    val readerChromeAccent = if (lightReaderChrome) Color(0xFF8A6630) else VeilPalette.Brass
+    val readerChromeAccent = chromeColors.accent
     val readerBookTitle = opened.book.title.ifBlank {
         stringResource(R.string.common_untitled_book)
     }
@@ -2826,33 +2827,40 @@ fun ReaderScreen(
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .padding(bottom = 12.dp),
-            enter = fadeIn(tween(VeilMotion.MICRO_FAST_MS)),
-            exit = fadeOut(tween(VeilMotion.MICRO_FAST_MS))
+            enter = fadeIn(tween(if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS else VeilMotion.MICRO_FAST_MS)),
+            exit = fadeOut(tween(if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS else VeilMotion.MICRO_FAST_MS))
         ) {
-            ReaderChromeButton(
-                action = when (contextControl) {
+            ReaderAccessDock(
+                settingsAction = when (contextControl) {
                     ReaderContextControl.APPEARANCE -> ReaderAction.APPEARANCE
                     ReaderContextControl.PDF_VIEW -> ReaderAction.ZOOM
                 },
-                accessibilityLabel = stringResource(
+                settingsLabel = stringResource(
                     when (contextControl) {
                         ReaderContextControl.APPEARANCE -> R.string.reader_chrome_appearance
                         ReaderContextControl.PDF_VIEW -> R.string.reader_chrome_pdf_view
                     }
                 ),
-                tint = readerChromeAccent
-            ) {
-                readerViewModel.onUserInteraction(readerSessionInstanceId)
-                selectionActionModeCallback.dismissSelection()
-                when (contextControl) {
-                    ReaderContextControl.APPEARANCE -> {
-                        appearanceCloseJob?.cancel()
-                        appearanceCloseJob = null
-                        showAppearance = true
+                background = readerChromeBackground,
+                foreground = readerChromeForeground,
+                accent = readerChromeAccent,
+                onMenu = {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    controlsVisible = true
+                },
+                onSettings = {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    selectionActionModeCallback.dismissSelection()
+                    when (contextControl) {
+                        ReaderContextControl.APPEARANCE -> {
+                            appearanceCloseJob?.cancel()
+                            appearanceCloseJob = null
+                            showAppearance = true
+                        }
+                        ReaderContextControl.PDF_VIEW -> showPdfZoom = true
                     }
-                    ReaderContextControl.PDF_VIEW -> showPdfZoom = true
                 }
-            }
+            )
         }
 
         AnimatedVisibility(
@@ -3701,6 +3709,8 @@ fun ReaderScreen(
                 ) {
                     EpubAppearancePanel(
                         appearance = readerAppearance,
+                        readerChromeAutoHideEnabled = readerChromeAutoHideEnabled,
+                        onReaderChromeAutoHideChange = onReaderChromeAutoHideChange,
                         fixedLayout = fixedLayoutPublication,
                         fixedLayoutSpread = activeFixedLayoutSpread,
                         publicationLanguage = publicationLanguage,
@@ -4027,16 +4037,17 @@ internal fun shouldAutoHideReaderChrome(
     showAppearance: Boolean,
     showPdfZoom: Boolean,
     selectionModeActive: Boolean,
-    touchExplorationEnabled: Boolean
+    touchExplorationEnabled: Boolean,
+    autoHideEnabled: Boolean = true
 ): Boolean =
-    controlsVisible &&
+    autoHideEnabled && controlsVisible &&
         !showNotebook &&
         !showAppearance &&
         !showPdfZoom &&
         !selectionModeActive &&
         !touchExplorationEnabled
 
-private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
+internal fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
     ReaderTheme.PAPER -> Color(0xFFE9DEC5)
     ReaderTheme.SEPIA -> Color(0xFFE2D0AA)
     ReaderTheme.DUSK -> Color(0xFF18151D)
@@ -4456,10 +4467,10 @@ private data class ReaderFootnote(
     val text: String
 )
 
-private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
+internal enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
 
 @Composable
-private fun ReaderChromeButton(
+internal fun ReaderChromeButton(
     action: ReaderAction,
     accessibilityLabel: String,
     tint: Color = VeilPalette.Brass,
@@ -4633,7 +4644,9 @@ internal fun EpubAppearancePanel(
     onChange: (ReaderAppearance) -> Unit,
     onDone: (ReaderAppearance) -> Unit,
     modifier: Modifier = Modifier,
-    initiallyAdvanced: Boolean = false
+    initiallyAdvanced: Boolean = false,
+    readerChromeAutoHideEnabled: Boolean = true,
+    onReaderChromeAutoHideChange: (Boolean) -> Unit = {}
 ) {
     com.veilreader.app.ui.VeilSystemBars(lightBackground = false)
     val formatPercent = rememberVeilPercentFormatter()
@@ -4720,6 +4733,7 @@ internal fun EpubAppearancePanel(
             }
             Text(
                 stringResource(R.string.settings_appearance_title),
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -4990,6 +5004,8 @@ internal fun EpubAppearancePanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            BrassRule(Modifier.fillMaxWidth())
+            ReaderMenuAutoHideControl(readerChromeAutoHideEnabled, onReaderChromeAutoHideChange)
         } else {
             VeilMicroLabel(
                 text = stringResource(R.string.reader_typography_layout),

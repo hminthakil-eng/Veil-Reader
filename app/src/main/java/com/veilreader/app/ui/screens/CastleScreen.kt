@@ -8,6 +8,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,8 +35,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -44,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.Book
@@ -145,6 +152,21 @@ fun CastleScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+    if (!LocalVeilHighContrast.current) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_keep_v3),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize(),
+            alpha = 0.80f
+        )
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(
+            0f to VeilPalette.Ink.copy(alpha = 0.58f),
+            0.32f to VeilPalette.Ink.copy(alpha = 0.52f),
+            0.75f to VeilPalette.Ink.copy(alpha = 0.80f),
+            1f to VeilPalette.Ink.copy(alpha = 0.93f)
+        )))
+    }
     Column(
         modifier = Modifier
             .widthIn(max = castleLayout.contentMaxWidthDp.dp)
@@ -168,10 +190,6 @@ fun CastleScreen(
             primary = {
                 Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
                     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        VeilMicroLabel(
-                            text = stringResource(R.string.castle_inner_keep_eyebrow),
-                            strong = true
-                        )
                         Text(
                             stringResource(R.string.castle_awakened_chambers_title),
                             style = MaterialTheme.typography.titleLarge,
@@ -749,6 +767,11 @@ private fun CastleWorldMap(
 ) {
     val rooms = SampleData.rooms
     val reducedMotion = LocalVeilReducedMotion.current
+    val highContrast = LocalVeilHighContrast.current
+    val fieldMaterial = remember(highContrast) {
+        Brush.verticalGradient(if (highContrast) listOf(VeilPalette.Ink, VeilPalette.Ink)
+            else listOf(Color.Transparent, VeilMaterials.WorldFieldWash, VeilMaterials.WorldFieldFoundation))
+    }
     var revealed by remember { mutableStateOf(false) }
     LaunchedEffect(reducedMotion) { revealed = true }
 
@@ -756,20 +779,7 @@ private fun CastleWorldMap(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF090C10),
-                        VeilPalette.Archive.copy(alpha = 0.98f),
-                        Color(0xFF0B1016),
-                        VeilPalette.Ink
-                    )
-                )
-            )
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                MaterialTheme.shapes.small
-            )
+            .background(fieldMaterial)
     ) {
         CastleArchitectureBackdrop(
             modifier = Modifier.matchParentSize(),
@@ -961,6 +971,30 @@ private fun CastleFloor(
         Box(
             modifier = Modifier.fillMaxWidth()
         ) {
+
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val usableWidth = maxWidth.value / androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
+                if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
+                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp &&
+                        id != "library" && id != "observatory") {
+                        // A narrow stair datum remains spatial without taking half the reading width.
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                            val registrationWidth = (com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp *
+                                androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp
+                            if (!roomOnLeft) FloorInscription(floor, unlocked, Modifier.width(registrationWidth))
+                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
+                                chamberMinHeightDp, onOpenRoom, Modifier.weight(1f))
+                            if (roomOnLeft) FloorInscription(floor, unlocked, Modifier.width(registrationWidth))
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                            FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
+                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
+                                chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth())
+                        }
+                    }
+                } else {
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -988,25 +1022,6 @@ private fun CastleFloor(
                     )
             )
 
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val usableWidth = maxWidth.value / androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
-                if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
-                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp) {
-                        // A narrow stair datum remains spatial without taking half the reading width.
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                            FloorInscription(floor, unlocked, Modifier.width((com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp))
-                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
-                                chamberMinHeightDp, onOpenRoom, Modifier.weight(1f))
-                        }
-                    } else {
-                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                            FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
-                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
-                                chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth())
-                        }
-                    }
-                } else {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1055,6 +1070,11 @@ private fun CastleFloor(
             }
         }
 
+        // The actual measured room establishes its landing; text expansion cannot make
+        // a guessed backdrop floor drift away from the doorway.
+        Box(Modifier.fillMaxWidth().height(1.dp).background(
+            if (unlocked) VeilPalette.Brass.copy(alpha = 0.18f) else VeilPalette.BorderDark
+        ))
         if (!isLast) {
             Box(
                 Modifier
@@ -1099,13 +1119,14 @@ private fun FloorInscription(
     unlocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val formatFloor = rememberVeilIntegerFormatter(minimumDigits = 2)
     Column(
         modifier = modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         VeilMicroLabel(
-            text = stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
+            text = stringResource(R.string.castle_floor, formatFloor(floor)),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
             } else {
@@ -1139,6 +1160,12 @@ private fun CastleChamberNode(
     modifier: Modifier = Modifier
 ) {
     val safeResonance = resonance.coerceIn(0f, 1f)
+    val highContrast = LocalVeilHighContrast.current
+    val chamberVault = RoundedCornerShape(
+        topStart = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp,
+        topEnd = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp,
+        bottomStart = 2.dp, bottomEnd = 2.dp
+    )
     val chamberDescription = if (unlocked) {
         stringResource(R.string.castle_chamber_open_semantics, name, purpose)
     } else {
@@ -1151,8 +1178,14 @@ private fun CastleChamberNode(
     Column(
         modifier = modifier
             .heightIn(min = chamberMinHeightDp.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilMaterials.Surface)
+            .clip(chamberVault)
+            .background(Brush.verticalGradient(listOf(
+                if (highContrast) VeilPalette.Ink else VeilMaterials.ChamberRecess,
+                if (highContrast) VeilPalette.Ink else VeilMaterials.ChamberFoundation
+            )))
+            .castlePortalFrame(
+                if (unlocked) VeilPalette.Brass.copy(alpha = 0.22f + safeResonance * 0.12f)
+                else VeilPalette.BorderDark)
             .semantics {
                 contentDescription = chamberDescription
             }
@@ -1160,83 +1193,65 @@ private fun CastleChamberNode(
                 enabled = unlocked,
                 role = Role.Button
             ) { onOpenRoom(id) }
-            .padding(horizontal = 10.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(start = 18.dp, end = 18.dp, top = 30.dp, bottom = 18.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Box(
-            Modifier
-                .width(50.dp)
-                .height(44.dp)
-                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 3.dp, bottomEnd = 3.dp))
-                .background(
-                    if (unlocked) VeilPalette.DeepBrass.copy(alpha = 0.38f)
-                    else VeilPalette.Ink.copy(alpha = 0.74f)
-                )
-                .border(
-                    BorderStroke(
-                        1.dp,
-                        if (unlocked) VeilPalette.Brass.copy(alpha = 0.46f)
-                        else VeilPalette.BorderDark
-                    ),
-                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 3.dp, bottomEnd = 3.dp)
-                ),
-            contentAlignment = Alignment.Center
+        // A room is an entrance into the shared keep, not a centered reward tile.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CastleRoomIcon(
-                id = id,
-                unlocked = unlocked,
-                modifier = Modifier.size(24.dp)
+            CastleRoomIcon(id = id, unlocked = unlocked, modifier = Modifier.size(24.dp))
+            Text(
+                name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium.withVeilContentScript(name),
+                textAlign = TextAlign.Start,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
+                color = if (unlocked) VeilPalette.Moon else VeilMaterials.TextSecondary
             )
         }
-
-        Spacer(Modifier.height(7.dp))
-
-        if (unlocked && safeResonance > 0.01f) {
-            Box(
-                Modifier
-                    .width((26f + safeResonance * 34f).dp)
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                VeilPalette.Brass.copy(
-                                    alpha = 0.24f + safeResonance * 0.46f
-                                ),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-            Spacer(Modifier.height(5.dp))
-        }
-
+        val chamberBody = if (unlocked) purpose else sealedBody
         Text(
-            name,
-            style = MaterialTheme.typography.titleSmall,
-            textAlign = TextAlign.Center,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis,
-            color = if (unlocked) VeilPalette.Moon else VeilMaterials.TextSecondary
-        )
-
-        Text(
-            if (unlocked) purpose else sealedBody,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
+            chamberBody,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.bodySmall.withVeilContentScript(chamberBody),
+            textAlign = TextAlign.Start,
             maxLines = 4,
             overflow = TextOverflow.Ellipsis,
             color = VeilMaterials.TextSecondary
         )
-
-        Spacer(Modifier.height(5.dp))
-
-        VeilMicroLabel(
-            text = actionLabel,
-            color = if (unlocked) VeilPalette.Brass else VeilMaterials.TextSecondary
-        )
+        if (unlocked) {
+            // Resonance marks the actual room's memory, quietly, on its threshold.
+            Box(
+                Modifier.width((32f + safeResonance * 36f).dp).height(1.dp)
+                    .background(VeilPalette.Brass.copy(alpha = 0.20f + safeResonance * 0.26f))
+            )
+            VeilMicroLabel(text = actionLabel, color = VeilPalette.Brass)
+        }
     }
+}
+
+/** An open vault joins its landing; it is not a closed content-panel frame. */
+private fun Modifier.castlePortalFrame(color: Color): Modifier = drawWithCache {
+    val stroke = 0.5.dp.toPx()
+    val inset = stroke / 2f
+    val radius = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp.toPx()
+        .coerceAtMost((size.width - stroke).coerceAtLeast(0f) / 2f)
+        .coerceAtMost((size.height - stroke).coerceAtLeast(0f) / 2f)
+    val vault = Path().apply {
+        moveTo(inset, size.height)
+        lineTo(inset, radius + inset)
+        arcTo(Rect(inset, inset, radius * 2f + inset, radius * 2f + inset), 180f, 90f, false)
+        lineTo(size.width - radius - inset, inset)
+        arcTo(Rect(size.width - radius * 2f - inset, inset,
+            size.width - inset, radius * 2f + inset), 270f, 90f, false)
+        lineTo(size.width - inset, size.height)
+    }
+    onDrawBehind { drawPath(vault, color, style = Stroke(stroke)) }
 }
 
 @Composable

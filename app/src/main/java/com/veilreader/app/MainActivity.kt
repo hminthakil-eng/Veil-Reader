@@ -54,6 +54,7 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
                     appSettings = appSettings,
                     onSetAppThemeMode = settingsViewModel::setAppThemeMode,
                     onSetHighContrastEnabled = settingsViewModel::setHighContrastEnabled,
+                    onSetReaderChromeAutoHideEnabled = settingsViewModel::setReaderChromeAutoHideEnabled,
                     onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
                     onSaveReaderTapGrid = settingsViewModel::saveReaderTapGrid,
                     onSaveReaderHardwareKeys = settingsViewModel::saveReaderHardwareKeys,

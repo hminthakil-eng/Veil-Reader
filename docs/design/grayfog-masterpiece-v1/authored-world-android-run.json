@@ -1,0 +1,13 @@
+{
+  "source_head": "3686fb77b5adb760b43bd51115ec68e50efc9c63",
+  "run_id": 37290421691,
+  "conclusion": "success",
+  "artifact_id": 11337010835,
+  "artifact_bytes": 49773780,
+  "artifact_github_digest": "sha256:68463694b70bdab7481ca18f36f51e32d3df42ff271163e523ffa777d7991a5c",
+  "artifact_downloaded": false,
+  "limitation": "Executor transfer limit is 32 MiB; authorized direct file URL returns HTTP 403. The archive has not been extracted or visually reviewed. Exact current remote JUnit totals and capture count are not independently re-counted.",
+  "expected_cases_from_unchanged_test_matrix": 148,
+  "expected_captures_from_enabled_capture_matrix": 96,
+  "physical_device_green": false
+}

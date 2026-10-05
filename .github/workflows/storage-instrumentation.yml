@@ -64,6 +64,18 @@ jobs:
       - name: Run Room instrumentation tests
         run: bash tools/run_android_ci_emulator.sh storage
 
+      - name: Upload production Compose review captures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-grayfog-shell-review
+          path: |
+            build/reports/grayfog-review.tar
+            build/reports/veil-grayfog-review/
+            app/build/outputs/androidTest-results/connected/debug/TEST-*.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload instrumentation reports on failure only
         if: failure()
         uses: actions/upload-artifact@v7
