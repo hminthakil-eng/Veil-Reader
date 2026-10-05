@@ -237,7 +237,7 @@ fun CastleScreen(
         CastleRitualAftermath(profile, ritualAfterglow)
         CastleMutationLedgerSummary(mutationLedger)
 
-        BrassRule(Modifier.fillMaxWidth())
+        BrassRule(Modifier.width(72.dp))
 
         Text(
             stringResource(R.string.castle_growth_note),
@@ -488,17 +488,32 @@ private fun CastleMutationInscription(memory: CastleMemoryState) {
         memory == CastleMemoryState.EMPTY
     ) return
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.46f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.20f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = VeilSpacing.Micro,
+                vertical = VeilSpacing.Inline
+            ),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Inline),
+        verticalAlignment = Alignment.Top
     ) {
+        Box(
+            Modifier
+                .width(2.dp)
+                .heightIn(min = 34.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.58f),
+                            VeilPalette.Brass.copy(alpha = 0.08f)
+                        )
+                    )
+                )
+        )
         Text(
             localizedCastleMutationSignal(memory.mutationSignal),
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.80f)
         )
@@ -516,39 +531,46 @@ private fun CastleRitualAftermath(
     val fromRank = localizedRankName(profile.path.id, aftermath.fromRankIndex, fromFallback)
     val toRank = localizedRankName(profile.path.id, aftermath.toRankIndex, toFallback)
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Ink.copy(alpha = 0.56f),
-        border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = 0.24f + afterglow * 0.36f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = VeilSpacing.Micro,
+                vertical = VeilSpacing.Inline
+            ),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.Micro)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Inline),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Box(
+                Modifier
+                    .width((26f + afterglow.coerceIn(0f, 1f) * 38f).dp)
+                    .height(1.dp)
+                    .background(
+                        VeilPalette.Brass.copy(alpha = 0.28f + afterglow * 0.44f)
+                    )
+            )
             VeilMicroLabel(
                 text = stringResource(R.string.castle_sealed_advancement),
                 strong = true
             )
-            Text(
-                "$fromRank → $toRank",
-                style = MaterialTheme.typography.titleSmall,
-                color = VeilPalette.Moon
-            )
-            Text(
-                stringResource(
-                    if (afterglow > 0f) R.string.castle_afterglow_active
-                    else R.string.castle_afterglow_faded
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = VeilPalette.Mist.copy(alpha = 0.74f)
-            )
         }
+        Text(
+            "$fromRank → $toRank",
+            style = MaterialTheme.typography.titleSmall,
+            color = VeilPalette.Moon
+        )
+        Text(
+            stringResource(
+                if (afterglow > 0f) R.string.castle_afterglow_active
+                else R.string.castle_afterglow_faded
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.74f)
+        )
     }
 }
 
