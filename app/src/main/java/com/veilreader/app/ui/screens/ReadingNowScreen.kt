@@ -317,6 +317,11 @@ private fun ThresholdHeader(
                     VeilMicroLabel(text = stringResource(R.string.app_name), strong = true)
                     VeilMicroLabel(
                         text = stringResource(R.string.threshold_grayfog_archive),
+                        modifier = if (abbreviatedEntry) {
+                            Modifier.semantics { heading() }
+                        } else {
+                            Modifier
+                        },
                         color = VeilPalette.Mist
                     )
                 }
