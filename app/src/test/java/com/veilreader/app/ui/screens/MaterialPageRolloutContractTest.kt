@@ -76,6 +76,39 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `Paper input ownership falls back until GPU renderer is ready`() {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            assertFalse(
+                paperRendererCanOwnNavigationInput(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.INITIALIZING
+                )
+            )
+            assertFalse(
+                paperRendererCanOwnNavigationInput(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.FAILED
+                )
+            )
+            assertFalse(
+                paperRendererCanOwnNavigationInput(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.UNSUPPORTED
+                )
+            )
+            assertTrue(
+                paperRendererCanOwnNavigationInput(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.READY
+                )
+            )
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `Reduced Motion keeps functional Paper navigation without a curl visual`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
