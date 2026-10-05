@@ -115,6 +115,24 @@ fun galleryCellMeasureDp(baseMeasureDp: Float, fontScale: Float): Float {
     return baseMeasureDp * scale.coerceAtMost(2f)
 }
 
+/**
+ * Accessibility may widen a Gallery record for readable metadata, but the physical
+ * cover itself remains bounded so one artifact cannot consume the retrieval viewport.
+ */
+fun galleryBookObjectWidthDp(
+    availableWidthDp: Float,
+    fontScale: Float
+): Float {
+    val available = availableWidthDp.takeIf { it.isFinite() }?.coerceAtLeast(0f) ?: 0f
+    val scale = fontScale.takeIf { it.isFinite() && it > 0f } ?: 1f
+    val cap = if (scale >= VeilComposition.ControlCaptionCondenseFontScale) {
+        VeilComposition.GalleryLargeTextCoverMaxWidthDp
+    } else {
+        VeilComposition.GalleryCoverMaxWidthDp
+    }
+    return available.coerceAtMost(cap)
+}
+
 data class VeilThresholdLayoutPolicy(
     val contentMaxWidthDp: Float,
     val horizontalPaddingDp: Float,
@@ -408,6 +426,34 @@ fun shouldAbbreviateThresholdEntry(
         widthDp < VeilComposition.ArchitecturalPairMinWidthDp ||
             condenseRealmApproach(fontScale = fontScale, heightDp = heightDp)
         )
+
+/** Populated Archive prioritizes retrieval; full cinematic header belongs to empty/first-use. */
+fun shouldCondenseArchiveHeader(
+    bookCount: Int,
+    retrievalActive: Boolean,
+    fontScale: Float,
+    heightDp: Int
+): Boolean =
+    bookCount > 0 ||
+        retrievalActive ||
+        condenseRealmApproach(fontScale = fontScale, heightDp = heightDp)
+
+/**
+ * Compact header actions may share the identity row at normal text scale.
+ * Large text moves actions below instead of shrinking labels.
+ */
+fun shouldInlineCondensedArchiveActions(
+    adjacentLayout: Boolean,
+    condensed: Boolean,
+    compactLayout: Boolean,
+    fontScale: Float
+): Boolean {
+    if (adjacentLayout) return true
+    val scale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    return condensed &&
+        compactLayout &&
+        scale < VeilComposition.ControlCaptionCondenseFontScale
+}
 
 /** Cover captions are optional duplicates: omit them before physical dimensions crowd identity. */
 fun artifactCaptionFits(widthDp: Float, heightDp: Float, fontScale: Float): Boolean {
