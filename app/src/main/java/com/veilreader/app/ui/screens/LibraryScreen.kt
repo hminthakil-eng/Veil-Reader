@@ -2549,16 +2549,21 @@ private fun LibraryHeader(
             .clip(MaterialTheme.shapes.extraSmall)
     ) {
         val compact = maxWidth < 560.dp
-        val condensed = retrievalActive || com.veilreader.app.ui.theme.condenseRealmApproach(
-            LocalDensity.current.fontScale, with(LocalDensity.current) {
-            LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
-        })
+        val condensed = bookCount > 0 || retrievalActive ||
+            com.veilreader.app.ui.theme.condenseRealmApproach(
+                LocalDensity.current.fontScale,
+                with(LocalDensity.current) {
+                    LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
+                }
+            )
+        // Populated Archive is a retrieval surface. Full cinematic height is reserved
+        // for the empty/first-use state; returning users should reach books quickly.
         val headerHeight = if (condensed) 0.dp else if (compact) 112.dp else 144.dp
         val adjacent = com.veilreader.app.ui.theme.useArchitecturalPair(
             maxWidth.value - VeilSpacing.md.value * 2f, LocalDensity.current.fontScale)
         @Composable fun HeaderActions(modifier: Modifier = Modifier) {
             FlowRow(
-                modifier = modifier.fillMaxWidth(),
+                modifier = modifier,
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm, Alignment.End),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
@@ -2657,19 +2662,33 @@ private fun LibraryHeader(
 
 
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = VeilSpacing.Content,
+                        vertical = if (condensed) VeilSpacing.Inline else VeilSpacing.Cluster
+                    ),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
             ) {
-                if (adjacent) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-                        verticalAlignment = Alignment.CenterVertically) {
+                if (adjacent || condensed) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Content),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         HeaderIdentity(Modifier.weight(1f))
-                        HeaderActions(Modifier.width((com.veilreader.app.ui.theme.VeilComposition.InstrumentActionsReadableWidthDp *
-                            LocalDensity.current.fontScale.coerceAtLeast(1f)).dp))
+                        HeaderActions(
+                            Modifier.widthIn(
+                                max = (
+                                    com.veilreader.app.ui.theme.VeilComposition.InstrumentActionsReadableWidthDp *
+                                        LocalDensity.current.fontScale.coerceAtLeast(1f)
+                                    ).dp
+                            )
+                        )
                     }
                 } else {
                     HeaderIdentity()
-                    HeaderActions()
+                    HeaderActions(Modifier.fillMaxWidth())
                 }
             }
         }
