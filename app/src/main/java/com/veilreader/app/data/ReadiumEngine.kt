@@ -184,7 +184,7 @@ class ReadiumEngine(context: Context) {
     }
 
     private suspend fun cacheCover(publication: Publication, bookId: String): String {
-        val bitmap = runCatching { publication.coverFitting(COVER_MAX_SIZE) }.getOrNull()
+        val bitmap = publication.coverFitting(COVER_MAX_SIZE)
             ?: return ""
         val coversDir = File(appContext.filesDir, "covers").apply { mkdirs() }
         val safeName = UUID.nameUUIDFromBytes(
@@ -206,9 +206,9 @@ class ReadiumEngine(context: Context) {
                 }
                 check(temporary.renameTo(target)) { "Could not install the cover thumbnail." }
                 target.absolutePath
-            } catch (_: Throwable) {
+            } catch (error: Throwable) {
                 temporary.delete()
-                ""
+                throw error
             }
         }
     }
