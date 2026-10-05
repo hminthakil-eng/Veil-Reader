@@ -409,6 +409,34 @@ fun shouldAbbreviateThresholdEntry(
             condenseRealmApproach(fontScale = fontScale, heightDp = heightDp)
         )
 
+/** Populated Archive prioritizes retrieval; full cinematic header belongs to empty/first-use. */
+fun shouldCondenseArchiveHeader(
+    bookCount: Int,
+    retrievalActive: Boolean,
+    fontScale: Float,
+    heightDp: Int
+): Boolean =
+    bookCount > 0 ||
+        retrievalActive ||
+        condenseRealmApproach(fontScale = fontScale, heightDp = heightDp)
+
+/**
+ * Compact header actions may share the title row at normal text scale.
+ * Large text keeps full-size labels and moves actions below instead of shrinking them.
+ */
+fun shouldInlineCondensedArchiveActions(
+    adjacentLayout: Boolean,
+    condensed: Boolean,
+    compactLayout: Boolean,
+    fontScale: Float
+): Boolean {
+    if (adjacentLayout) return true
+    val scale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    return condensed &&
+        compactLayout &&
+        scale < VeilComposition.ControlCaptionCondenseFontScale
+}
+
 /** Cover captions are optional duplicates: omit them before physical dimensions crowd identity. */
 fun artifactCaptionFits(widthDp: Float, heightDp: Float, fontScale: Float): Boolean {
     val scale = if (fontScale.isFinite() && fontScale > 0f) fontScale.coerceAtLeast(1f) else 1f
