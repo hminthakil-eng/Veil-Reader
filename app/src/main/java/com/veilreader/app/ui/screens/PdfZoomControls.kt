@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,7 +73,7 @@ internal fun PdfZoomControls(
     var pdfView by remember(navigator) {
         mutableStateOf(navigator.findPdfView())
     }
-    var probeGeneration by remember(navigator) { mutableStateOf(0) }
+    var probeGeneration by remember(navigator) { mutableIntStateOf(0) }
     var probeExhausted by remember(navigator) { mutableStateOf(false) }
 
     LaunchedEffect(navigator, probeGeneration) {
