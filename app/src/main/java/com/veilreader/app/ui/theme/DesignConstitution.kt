@@ -394,6 +394,21 @@ fun condenseRealmApproach(fontScale: Float, heightDp: Int): Boolean {
         heightDp in 1 until VeilComposition.ApproachShortHeightDp
 }
 
+/**
+ * Returning phone readers should reach their active volume before recurring cinematic copy.
+ * Wide layouts may keep the full authored approach because the book can sit alongside it.
+ */
+fun shouldAbbreviateThresholdEntry(
+    hasCurrentBook: Boolean,
+    widthDp: Float,
+    heightDp: Int,
+    fontScale: Float
+): Boolean =
+    hasCurrentBook && (
+        widthDp < VeilComposition.ArchitecturalPairMinWidthDp ||
+            condenseRealmApproach(fontScale = fontScale, heightDp = heightDp)
+        )
+
 /** Cover captions are optional duplicates: omit them before physical dimensions crowd identity. */
 fun artifactCaptionFits(widthDp: Float, heightDp: Float, fontScale: Float): Boolean {
     val scale = if (fontScale.isFinite() && fontScale > 0f) fontScale.coerceAtLeast(1f) else 1f
