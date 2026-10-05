@@ -1,6 +1,12 @@
 name: Quality Dashboard
 
 on:
+  pull_request:
+    paths:
+      - "quality/**"
+      - "tools/build_quality_dashboard.py"
+      - "tools/test_quality_dashboard.py"
+      - ".github/workflows/quality-dashboard.yml"
   workflow_run:
     workflows:
       - Android CI
@@ -32,10 +38,13 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
           INPUT_SHA: ${{ inputs.sha }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
           FALLBACK_SHA: ${{ github.sha }}
         run: |
           if [ "$EVENT_NAME" = "workflow_run" ]; then
             TARGET_SHA="$WORKFLOW_SHA"
+          elif [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_SHA" ]; then
+            TARGET_SHA="$PR_SHA"
           elif [ -n "$INPUT_SHA" ]; then
             TARGET_SHA="$INPUT_SHA"
           else
