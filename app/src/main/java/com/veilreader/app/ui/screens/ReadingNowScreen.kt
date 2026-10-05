@@ -131,7 +131,12 @@ fun ReadingNowScreen(
                 spacing = VeilSpacing.xs,
                 primary = {
                     VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
-                        Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
+                        Box(
+                            Modifier.padding(
+                                horizontal = VeilSpacing.Cluster,
+                                vertical = if (current != null) VeilSpacing.Micro else VeilSpacing.Inline
+                            )
+                        ) {
                             ThresholdHeader(
                                 bookCount = books.size,
                                 hasCurrentBook = current != null,
@@ -289,10 +294,10 @@ private fun ThresholdHeader(
                 .heightIn(min = if (abbreviatedEntry) 0.dp else approachHeightDp.dp)
                 .padding(
                     horizontal = VeilSpacing.Content,
-                    vertical = if (abbreviatedEntry) VeilSpacing.Cluster else VeilSpacing.Content
+                    vertical = if (abbreviatedEntry) VeilSpacing.Inline else VeilSpacing.Content
                 ),
             verticalArrangement = Arrangement.spacedBy(
-                if (abbreviatedEntry) VeilSpacing.Inline else VeilSpacing.Cluster
+                if (abbreviatedEntry) VeilSpacing.Micro else VeilSpacing.Cluster
             ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -316,22 +321,22 @@ private fun ThresholdHeader(
                     )
                 }
             }
-            if (!abbreviatedEntry) Spacer(Modifier.height(VeilSpacing.Section))
-            Text(
-                stringResource(
-                    when {
-                        bookCount == 0 -> R.string.threshold_title_unwritten
-                        bookCount == 1 -> R.string.threshold_title_first_volume
-                        hasCurrentBook -> R.string.threshold_title_library_awaits
-                        else -> R.string.threshold_title_return_archive
-                    }
-                ),
-                style = if (abbreviatedEntry) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.semantics { heading() },
-                color = VeilPalette.Moon,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
             if (!abbreviatedEntry) {
+                Spacer(Modifier.height(VeilSpacing.Section))
+                Text(
+                    stringResource(
+                        when {
+                            bookCount == 0 -> R.string.threshold_title_unwritten
+                            bookCount == 1 -> R.string.threshold_title_first_volume
+                            hasCurrentBook -> R.string.threshold_title_library_awaits
+                            else -> R.string.threshold_title_return_archive
+                        }
+                    ),
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier.semantics { heading() },
+                    color = VeilPalette.Moon,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
                 Text(
                     stringResource(
                         when {
@@ -346,8 +351,8 @@ private fun ThresholdHeader(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier.widthIn(max = 540.dp)
                 )
+                BrassRule(Modifier.width(112.dp), strong = true)
             }
-            BrassRule(Modifier.width(112.dp), strong = true)
         }
     }
 }
@@ -546,10 +551,10 @@ private fun ContinueReadingHero(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
-                            start = VeilSpacing.md,
-                            end = 7.dp,
-                            top = 7.dp,
-                            bottom = 7.dp
+                            start = VeilSpacing.Content,
+                            end = VeilSpacing.Inline,
+                            top = VeilSpacing.Micro,
+                            bottom = VeilSpacing.Micro
                         ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -577,10 +582,10 @@ private fun ContinueReadingHero(
 
         Column(
             modifier = Modifier.padding(
-                horizontal = 18.dp,
-                vertical = 16.dp
+                horizontal = VeilSpacing.Content,
+                vertical = VeilSpacing.Cluster
             ),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.Cluster)
         ) {
             if (stacked) {
                 HeroDetails(
