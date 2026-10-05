@@ -225,8 +225,11 @@ fun VeilApp(
     }
     LaunchedEffect(nextCoverBook?.id) {
         val book = nextCoverBook ?: return@LaunchedEffect
-        val cachedPath = readerEngine.extractAndCacheCover(book).getOrDefault("")
-        library.updateCoverCachePath(book.id, cachedPath)
+        readerEngine.extractAndCacheCover(book)
+            .getOrNull()
+            ?.let { cachedPath ->
+                library.updateCoverCachePath(book.id, cachedPath)
+            }
     }
 
     // Fingerprints are derived cache metadata too. Backfill old/restored books incrementally so
