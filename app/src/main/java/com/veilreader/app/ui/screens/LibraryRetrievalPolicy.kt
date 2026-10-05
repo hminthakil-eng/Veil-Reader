@@ -147,3 +147,26 @@ internal fun deriveLibraryShelfGroups(
 
     return groups
 }
+
+
+internal fun librarySecondaryFilterCount(
+    collection: String,
+    series: String,
+    sort: String
+): Int =
+    (if (collection.isNotBlank()) 1 else 0) +
+        (if (series.isNotBlank()) 1 else 0) +
+        (if (sort != "Recent") 1 else 0)
+
+internal fun libraryRetrievalModified(
+    query: String,
+    shelf: String,
+    collection: String,
+    series: String,
+    sort: String
+): Boolean =
+    query.isNotBlank() ||
+        shelf != "All" ||
+        collection.isNotBlank() ||
+        series.isNotBlank() ||
+        sort != "Recent"
