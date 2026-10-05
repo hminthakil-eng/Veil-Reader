@@ -110,7 +110,10 @@ object VeilComposition {
     // Empty Threshold and the wide architectural pair retain their full approach.
     const val ThresholdActiveApproachMaxHeightDp = 216f
     const val ControlCaptionCondenseFontScale = 1.3f
-    const val GalleryLargeTextCoverMaxWidthDp = 168f
+    // Gallery cells may expand for text/accessibility, but the physical book object
+    // must stay subordinate to retrieval density.
+    const val GalleryCoverMaxWidthDp = 152f
+    const val GalleryLargeTextCoverMaxWidthDp = 144f
     const val InstrumentActionsReadableWidthDp = 300f
 }
 
