@@ -50,6 +50,49 @@ private data class SigilPresentation(
     val descriptionRes: Int
 )
 
+private data class RelicPresentation(
+    val id: String,
+    val nameRes: Int,
+    val symbol: String,
+    val clueRes: Int,
+    val rarity: RelicRarity,
+    val awakened: (ReaderProfile) -> Boolean
+)
+
+private data class BookplatePresentation(
+    val nameRes: Int,
+    val inscriptionRes: Int,
+    val awakened: (ReaderProfile) -> Boolean
+)
+
+private val sigils = linkedMapOf(
+    "first_hour" to SigilPresentation(
+        R.string.treasury_sigil_quiet_hour,
+        "◷",
+        R.string.treasury_sigil_quiet_hour_body
+    ),
+    "passage_keeper" to SigilPresentation(
+        R.string.treasury_sigil_passage_keeper,
+        "✦",
+        R.string.treasury_sigil_passage_keeper_body
+    ),
+    "seven_days" to SigilPresentation(
+        R.string.treasury_sigil_seven_day_lantern,
+        "◇",
+        R.string.treasury_sigil_seven_day_lantern_body
+    ),
+    "ten_tomes" to SigilPresentation(
+        R.string.treasury_sigil_ten_tomes,
+        "▥",
+        R.string.treasury_sigil_ten_tomes_body
+    ),
+    "first_threshold" to SigilPresentation(
+        R.string.treasury_sigil_first_threshold,
+        "✧",
+        R.string.treasury_sigil_first_threshold_body
+    )
+)
+
 private val readingRelics = listOf(
     RelicPresentation(
         id = "ember_bookmark",
