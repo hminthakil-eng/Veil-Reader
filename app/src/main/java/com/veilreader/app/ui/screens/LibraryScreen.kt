@@ -3550,6 +3550,7 @@ internal fun BookLibraryTile(
                         subtitle = book.author,
                         imagePath = book.coverCachePath,
                         artifact = artifact,
+                        showGeneratedCaption = false,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
