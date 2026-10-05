@@ -2370,6 +2370,25 @@ fun ReaderScreen(
         val requestedSource = readerAppearance
         val requested = effectiveReaderAppearance
         val requestedSpread = activeFixedLayoutSpread
+
+        if (
+            !readerPreferencesNeedSubmission(
+                previousPresented = previousPresented,
+                previousAccepted = previousAccepted,
+                previousSpread = previousPresentedSpread,
+                requestedPresented = requested,
+                requestedSource = requestedSource,
+                requestedSpread = requestedSpread
+            )
+        ) {
+            // The FragmentFactory already supplied these exact preferences to Readium.
+            // Re-submitting them during the first navigator attach can leave the
+            // renderer preference coroutine waiting while Veil blocks every input.
+            rendererPreferencesSettling = false
+            readerModeHandoffState.clearImmediately()
+            return@LaunchedEffect
+        }
+
         val fixedLayoutSpreadChanged =
             fixedLayoutPublication && previousPresentedSpread != requestedSpread
         val captureModeHandoff = shouldCaptureReaderModeHandoff(
@@ -3890,6 +3909,18 @@ internal fun shouldAwaitReaderAppearanceClose(
 ): Boolean =
     rendererPreferencesSettling ||
         (expected != null && presented != expected)
+
+internal fun readerPreferencesNeedSubmission(
+    previousPresented: ReaderAppearance,
+    previousAccepted: ReaderAppearance,
+    previousSpread: ReaderFixedLayoutSpread,
+    requestedPresented: ReaderAppearance,
+    requestedSource: ReaderAppearance,
+    requestedSpread: ReaderFixedLayoutSpread
+): Boolean =
+    previousPresented != requestedPresented ||
+        previousAccepted != requestedSource ||
+        previousSpread != requestedSpread
 
 private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
 private const val READER_VIEWPORT_REFLOW_QUIET_MS = 650L
