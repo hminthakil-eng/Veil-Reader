@@ -87,6 +87,11 @@ object VeilMeasure {
 /** Readable working width, after accessibility scaling, for architectural adjacency. */
 object VeilComposition {
     const val ArtifactIdentityMinWidthDp = 600f
+    const val BookDetailCompactPairReadableWidthDp = 380f
+    const val BookDetailCompactCoverWidthDp = 118f
+    const val BookDetailCompactCoverHeightDp = 170f
+    const val BookDetailStackedCoverWidthDp = 132f
+    const val BookDetailStackedCoverHeightDp = 190f
     const val ArchitecturalPairMinWidthDp = 640f
     const val ArchitecturalPairReadableWidthDp = 600f
     const val ResumeIdentityMinWidthDp = 150f

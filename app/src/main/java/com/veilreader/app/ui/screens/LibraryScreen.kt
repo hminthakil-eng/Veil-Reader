@@ -1437,7 +1437,7 @@ internal fun BookDetailDestination(
                     .widthIn(max = com.veilreader.app.ui.theme.VeilMeasure.ArchiveContent)
                     .fillMaxWidth()
                     .align(Alignment.CenterHorizontally)
-                    .heightIn(min = 356.dp)
+                    .heightIn(min = 280.dp)
             ) {
                 val heroPolicy = bookDetailAdaptivePolicy(
                     widthDp = maxWidth.value.toInt(),
@@ -1519,26 +1519,62 @@ internal fun BookDetailDestination(
                     }
 
                     if (compact) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-                        ) {
-                            BookDetailArtifactStand(
-                                book = book,
-                                artifactMemory = artifactMemory,
-                                modifier = Modifier
-                                    .width(184.dp)
-                                    .height(260.dp)
-                            )
-                            BookDetailIdentity(
-                                book = book,
-                                artifactMemory = artifactMemory,
-                                modifier = Modifier
-                                    .widthIn(max = 440.dp)
-                                    .fillMaxWidth(),
-                                readingAction = { ReadingAction() }
-                            )
+                        when (heroPolicy.compactLayout) {
+                            BookDetailCompactHeroLayout.SIDE_BY_SIDE -> {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Content),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    BookDetailArtifactStand(
+                                        book = book,
+                                        artifactMemory = artifactMemory,
+                                        modifier = Modifier
+                                            .width(
+                                                com.veilreader.app.ui.theme.VeilComposition
+                                                    .BookDetailCompactCoverWidthDp.dp
+                                            )
+                                            .height(
+                                                com.veilreader.app.ui.theme.VeilComposition
+                                                    .BookDetailCompactCoverHeightDp.dp
+                                            )
+                                    )
+                                    BookDetailIdentity(
+                                        book = book,
+                                        artifactMemory = artifactMemory,
+                                        modifier = Modifier.weight(1f),
+                                        readingAction = { ReadingAction() }
+                                    )
+                                }
+                            }
+
+                            BookDetailCompactHeroLayout.IDENTITY_FIRST -> {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.Content)
+                                ) {
+                                    BookDetailIdentity(
+                                        book = book,
+                                        artifactMemory = artifactMemory,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        readingAction = { ReadingAction() }
+                                    )
+                                    BookDetailArtifactStand(
+                                        book = book,
+                                        artifactMemory = artifactMemory,
+                                        modifier = Modifier
+                                            .width(
+                                                com.veilreader.app.ui.theme.VeilComposition
+                                                    .BookDetailStackedCoverWidthDp.dp
+                                            )
+                                            .height(
+                                                com.veilreader.app.ui.theme.VeilComposition
+                                                    .BookDetailStackedCoverHeightDp.dp
+                                            )
+                                    )
+                                }
+                            }
                         }
                     } else {
                         Row(

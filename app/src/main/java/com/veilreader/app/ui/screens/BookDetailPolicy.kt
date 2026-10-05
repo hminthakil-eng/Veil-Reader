@@ -7,8 +7,14 @@ import com.veilreader.app.domain.ReadingMilestoneKind
 import com.veilreader.app.domain.ReadingMilestoneRecord
 import com.veilreader.app.ui.theme.VeilComposition
 
+internal enum class BookDetailCompactHeroLayout {
+    SIDE_BY_SIDE,
+    IDENTITY_FIRST
+}
+
 internal data class BookDetailAdaptivePolicy(
     val compactHero: Boolean,
+    val compactLayout: BookDetailCompactHeroLayout,
     val stackUtilityActions: Boolean
 )
 
@@ -18,8 +24,20 @@ internal fun bookDetailAdaptivePolicy(
 ): BookDetailAdaptivePolicy {
     val safeWidth = widthDp.coerceAtLeast(0)
     val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    val readableWidth = safeWidth / safeScale.coerceAtLeast(1f)
+    val compactHero = readableWidth < VeilComposition.ArtifactIdentityMinWidthDp
     return BookDetailAdaptivePolicy(
-        compactHero = safeWidth / safeScale.coerceAtLeast(1f) < VeilComposition.ArtifactIdentityMinWidthDp,
+        compactHero = compactHero,
+        compactLayout =
+            if (
+                compactHero &&
+                readableWidth >= VeilComposition.BookDetailCompactPairReadableWidthDp &&
+                safeScale < VeilComposition.ControlCaptionCondenseFontScale
+            ) {
+                BookDetailCompactHeroLayout.SIDE_BY_SIDE
+            } else {
+                BookDetailCompactHeroLayout.IDENTITY_FIRST
+            },
         stackUtilityActions = shouldStackDenseChoices(
             widthDp = safeWidth,
             fontScale = safeScale,
