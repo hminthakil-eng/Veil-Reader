@@ -49,19 +49,23 @@ internal fun shouldCapturePaperTurnSnapshot(
  * source sheet was captured successfully. Reduced Motion deliberately permits a static
  * navigation path because accessibility policy removes the curl by design.
  */
+internal fun paperRendererCanOwnNavigationInput(
+    reducedMotion: Boolean,
+    rendererStatus: GpuMaterialPageRendererStatus
+): Boolean =
+    MaterialPageEngineRollout.isEnabled() &&
+        (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY)
+
 internal fun shouldAllowPaperNavigation(
     reducedMotion: Boolean,
     rendererStatus: GpuMaterialPageRendererStatus,
     visualActive: Boolean
 ): Boolean =
-    MaterialPageEngineRollout.isEnabled() &&
-        (
-            reducedMotion ||
-                (
-                    rendererStatus == GpuMaterialPageRendererStatus.READY &&
-                        visualActive
-                    )
-            )
+    paperRendererCanOwnNavigationInput(
+        reducedMotion = reducedMotion,
+        rendererStatus = rendererStatus
+    ) &&
+        (reducedMotion || visualActive)
 
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
