@@ -86,7 +86,7 @@ Current Veil stack already has a strong foundation:
 Immediate technology findings:
 
 - Compose UI/Foundation 1.10.6 should be upgraded and qualified against stable 1.12.1.
-- Android 17 / API 37 is still a preview/beta target. Keep an API 37 compatibility lane, but public release targeting should stay on the latest final production SDK until Android 17 becomes final.
+- Android 17 / API 37 shipped as a final platform on 2026-06-16. Veil's compileSdk/targetSdk 37 are valid production choices. Keep release behavior on final Android 17 and isolate only QPR beta compatibility testing.
 - Navigation3 1.2.0 is a stable candidate for shell/list-detail modernization, but Reader session ownership must not be migrated merely for novelty.
 - WorkManager 2.12.0 is a strong candidate for persistent offline sync queues.
 - Media3 1.11.x is appropriate for background TTS/media-session ownership if that path is adopted.
@@ -114,8 +114,8 @@ Classify every visible capability:
 ### R0.03 — Install universal GREEN contract
 Use the Definition of Done above in PRs and audits.
 
-### R0.04 — Separate release SDK from Android 17 compatibility lane
-Keep API 37 testing isolated until final platform SDK; release configuration must target a final publishable API.
+### R0.04 — Separate final Android 17 release validation from QPR beta compatibility testing
+Android 17 / API 37 is final and remains the production compile/target baseline. QPR beta images and minor-SDK experiments run in an isolated compatibility lane and must never redefine normal release behavior without explicit validation.
 
 ### R0.05 — Upgrade Compose stable line
 Dedicated reversible branch:
