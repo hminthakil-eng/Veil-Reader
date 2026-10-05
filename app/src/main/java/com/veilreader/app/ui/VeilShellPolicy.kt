@@ -1,9 +1,6 @@
 package com.veilreader.app.ui
 
-import androidx.compose.material3.adaptive.WindowSizeClass
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.isHeightAtLeastBreakpoint
-import androidx.compose.material3.adaptive.isWidthAtLeastBreakpoint
+import androidx.window.core.layout.WindowSizeClass
 
 internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
     windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
