@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "969dbe975665b99af4957bc4743364855c1c6a82",
+  "artifacts": [
+    {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 50900347,
+      "sha256": "a34008d60307ed81411d3bb1ecf1826b5a99a6d5dd551c21b32e754ff075f436"
+    },
+    {
+      "path": "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "bytes": 1415039,
+      "sha256": "214c5646a08de445452d6e4128eabb9b2f73a263aab9c9166afc6e4f2a60aae0"
+    }
+  ],
+  "dexNamesPresent": {
+    "PaperCurlDraw": false,
+    "PaperCurlGeometry": false,
+    "GpuMaterialPageCurlView": true,
+    "MaterialPageEngineState": true,
+    "SlidePageState": true
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "severity": {
+    "Warning": 181,
+    "Hint": 2
+  },
+  "byId": {
+    "ApplySharedPref": 13,
+    "AppBundleLocaleChanges": 1,
+    "AndroidGradlePluginVersion": 1,
+    "GradleDependency": 13,
+    "NewerVersionAvailable": 3,
+    "ComposableNaming": 1,
+    "ConfigurationScreenWidthHeight": 5,
+    "ModifierFactoryExtensionFunction": 2,
+    "ModifierParameter": 7,
+    "LogNotTimber": 7,
+    "PluralsCandidate": 56,
+    "DataExtractionRules": 1,
+    "AutoboxingStateCreation": 2,
+    "UnusedResources": 41,
+    "UseKtx": 30
+  }
+}
