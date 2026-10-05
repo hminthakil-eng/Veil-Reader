@@ -87,6 +87,7 @@ import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.galleryCellMeasureDp
+import com.veilreader.app.ui.theme.galleryBookObjectWidthDp
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.archiveTimePhaseForHour
 import com.veilreader.app.ui.theme.VeilRealm
@@ -3534,11 +3535,16 @@ internal fun BookLibraryTile(
             BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 // Reading text may need a full column at 200%; the physical book object
                 // need not grow to fill that column and push its own identity offscreen.
-                val objectWidth = if (largeText) maxWidth.coerceAtMost(
-                    com.veilreader.app.ui.theme.VeilComposition.GalleryLargeTextCoverMaxWidthDp.dp
-                ) else maxWidth
-                Box(Modifier.width(objectWidth).aspectRatio(0.69f)
-                    .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.sm)) {
+                val objectWidth = galleryBookObjectWidthDp(
+                    availableWidthDp = maxWidth.value,
+                    fontScale = LocalDensity.current.fontScale
+                ).dp
+                Box(
+                    Modifier
+                        .width(objectWidth)
+                        .aspectRatio(0.69f)
+                        .padding(horizontal = VeilSpacing.Inline, vertical = VeilSpacing.Inline)
+                ) {
                     BookCover(
                         title = displayTitle,
                         subtitle = book.author,
@@ -3567,18 +3573,18 @@ internal fun BookLibraryTile(
 
             Column(
                 modifier = Modifier.padding(
-                    start = VeilSpacing.sm,
-                    end = VeilSpacing.sm,
-                    top = VeilSpacing.sm,
-                    bottom = 4.dp
+                    start = VeilSpacing.Cluster,
+                    end = VeilSpacing.Cluster,
+                    top = VeilSpacing.Inline,
+                    bottom = VeilSpacing.Micro
                 ),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.Micro)
             ) {
                 Text(
                     displayTitle,
                     style = MaterialTheme.typography.titleMedium.withVeilContentScript(displayTitle),
                     color = VeilPalette.Moon,
-                    minLines = if (largeText) 1 else 2,
+                    minLines = 1,
                     maxLines = if (largeText) 3 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3587,8 +3593,8 @@ internal fun BookLibraryTile(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     color = VeilMaterials.TextSecondary,
                     style = MaterialTheme.typography.labelMedium.withVeilContentScript(book.author.ifBlank { stringResource(R.string.common_unknown_author) }),
-                    minLines = if (largeText) 1 else 2,
-                    maxLines = 2,
+                    minLines = 1,
+                    maxLines = if (largeText) 2 else 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
@@ -3639,28 +3645,23 @@ internal fun BookLibraryTile(
                     )
             )
 
-            FlowRow(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
-                    .padding(start = 4.dp, end = 2.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                    .padding(horizontal = VeilSpacing.Micro),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                IconButton(
                     onClick = onDetails,
                     modifier = Modifier
-                        .then(if (largeText) Modifier.fillMaxWidth() else Modifier.widthIn(min = 48.dp))
-                        .heightIn(min = 48.dp)
-                        .semantics {
-                            contentDescription = detailsLabel
-                        },
-                    contentPadding = PaddingValues(horizontal = 6.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = VeilPalette.Brass
-                    )
+                        .size(48.dp)
+                        .semantics { contentDescription = detailsLabel }
                 ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.library_archive_record_button)
+                    EllipsisIcon(
+                        modifier = Modifier.size(17.dp),
+                        tint = VeilPalette.Brass
                     )
                 }
 
@@ -3668,9 +3669,7 @@ internal fun BookLibraryTile(
                     onClick = onFavorite,
                     modifier = Modifier
                         .size(48.dp)
-                        .semantics {
-                            contentDescription = favoriteLabel
-                        }
+                        .semantics { contentDescription = favoriteLabel }
                 ) {
                     FavoriteIcon(book.favorite, Modifier.size(15.dp))
                 }
