@@ -353,10 +353,18 @@ internal fun LibraryArchiveContent(
     val detailBook = detailBookId?.let(booksById::get)
     val filterActive = trimmedQuery.isNotBlank() || shelf != "All" ||
         collection.isNotEmpty() || seriesFilter.isNotEmpty()
-    val secondaryFilterCount =
-        (if (collection.isNotEmpty()) 1 else 0) +
-            (if (seriesFilter.isNotEmpty()) 1 else 0) +
-            (if (sort != "Recent") 1 else 0)
+    val retrievalModified = libraryRetrievalModified(
+        query = trimmedQuery,
+        shelf = shelf,
+        collection = collection,
+        series = seriesFilter,
+        sort = sort
+    )
+    val secondaryFilterCount = librarySecondaryFilterCount(
+        collection = collection,
+        series = seriesFilter,
+        sort = sort
+    )
     val shelfLabels = LibraryShelfLabels(
         filteredArchive = stringResource(R.string.library_group_filtered),
         matchingVolumes = stringResource(R.string.library_group_matching),
@@ -415,7 +423,7 @@ internal fun LibraryArchiveContent(
                     isImporting = isImporting,
                     onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
                     onOpenSettings = onOpenSettings,
-                    retrievalActive = filterActive || sort != "Recent"
+                    retrievalActive = retrievalModified
                 )
             }
         }
@@ -535,13 +543,14 @@ internal fun LibraryArchiveContent(
                         )
                     }
 
-                    if (filterActive) {
+                    if (retrievalModified) {
                         TextButton(
                             onClick = {
                                 query = ""
                                 shelf = "All"
                                 collection = ""
                                 seriesFilter = ""
+                                sort = "Recent"
                             },
                             modifier = Modifier.heightIn(min = 48.dp),
                             contentPadding = PaddingValues(horizontal = VeilSpacing.Inline),
