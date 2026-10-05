@@ -27,3 +27,15 @@ This slice does not move or alter:
 - Gallery/Shelves/Index rendering.
 
 The goal is to reduce screen responsibility before UI composition is rebuilt.
+
+
+## Slice 2 — Book Detail policy
+
+Extracted into `BookDetailPolicy.kt`:
+- adaptive hero/action policy;
+- journey phase and dominant action;
+- archive timeline derivation;
+- preserved-memory sampling;
+- display identity normalization.
+
+No Book Detail composable, action callback, dialog, navigation or persistence ownership moved.
