@@ -37,7 +37,10 @@ class GrayfogCloudSearchAccessibilityTest {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
                 VeilTheme(AppThemeMode.DARK) {
-                    GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY)
+                    // Search semantics use the real missing-art path here. Live bitmap
+                    // decoding plus filtering is covered on actual Android native runtime
+                    // by GrayfogShellAccessibilityTest, across all 16 review configurations.
+                    GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY, includeOriginalCover = false)
                 }
             }
         }
@@ -49,7 +52,14 @@ class GrayfogCloudSearchAccessibilityTest {
         compose.waitForIdle()
         val label = context.getString(R.string.library_search_hint)
         val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
-        search.performScrollTo().assertHeightIsAtLeast(48.dp).performTextInput("Still")
+        search.performScrollTo().assertHeightIsAtLeast(48.dp)
+        // Scrolling can compose/re-size a prefetched cover and start another IO decode.
+        // Settle that actual artwork before typing removes the book from the result set.
+        compose.waitForIdle()
+        awaitCoverArtwork()
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
+        search.performTextInput("Still")
         search.assertTextContains("Still")
         search.assertIsDisplayed()
         compose.waitForIdle()

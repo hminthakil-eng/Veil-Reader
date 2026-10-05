@@ -28,6 +28,9 @@ import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.review.GrayfogReviewContent
+import com.veilreader.app.ui.review.GrayfogReviewFixtures
+import com.veilreader.app.ui.review.GrayfogReviewSurface
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilTheme
@@ -87,6 +90,32 @@ class GrayfogShellAccessibilityTest(
                 }
             }
         }
+    }
+
+    @Test
+    fun liveSearchPreservesItsPurposeWhileOriginalArtworkLeavesTheResults() {
+        val localized = localizedContext()
+        val original = GrayfogReviewFixtures.booksWithOriginalCover(localized).first()
+        assertTrue(File(checkNotNull(original.coverCachePath)).isFile)
+        present {
+            GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY, highContrast = highContrast)
+        }
+        val label = localized.getString(R.string.library_search_hint)
+        val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
+        search.performScrollTo().assertHeightIsAtLeast(48.dp)
+        compose.waitUntil(20_000) {
+            val nodes = compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
+                .fetchSemanticsNodes()
+            nodes.isNotEmpty() && nodes.all { it.config[BookCoverArtworkReady] }
+        }
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
+        search.performTextInput("Still")
+        search.assertTextContains("Still").assertIsDisplayed()
+        compose.onNodeWithText(original.title).assertDoesNotExist()
+        val remaining = GrayfogReviewFixtures.books.first { it.title.contains("Still") }
+        compose.onNodeWithText(remaining.title).assertExists()
+        capture("archive-search")
     }
 
     @Test
