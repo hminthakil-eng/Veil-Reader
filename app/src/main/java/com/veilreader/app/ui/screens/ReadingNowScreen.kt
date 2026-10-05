@@ -238,12 +238,25 @@ private fun ThresholdHeader(
 ) {
     val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
     val windowSize = currentVeilWindowSizeDp()
-    val abbreviatedEntry = hasCurrentBook && com.veilreader.app.ui.theme.condenseRealmApproach(
-        LocalDensity.current.fontScale, windowSize.height)
-    val approachHeightDp = if (hasCurrentBook && windowSize.width <
-        com.veilreader.app.ui.theme.VeilComposition.ArchitecturalPairMinWidthDp) {
-        headerHeightDp.coerceAtMost(com.veilreader.app.ui.theme.VeilComposition.ThresholdActiveApproachMaxHeightDp)
-    } else headerHeightDp
+    val compactReturningEntry =
+        hasCurrentBook &&
+            windowSize.width < com.veilreader.app.ui.theme.VeilComposition.ArchitecturalPairMinWidthDp
+    val accessibilityCondensedEntry =
+        hasCurrentBook &&
+            com.veilreader.app.ui.theme.condenseRealmApproach(
+                LocalDensity.current.fontScale,
+                windowSize.height
+            )
+    // Returning phone users came here to resume reading. Preserve the doorway,
+    // but do not make them re-read the cinematic prologue on every visit.
+    val abbreviatedEntry = compactReturningEntry || accessibilityCondensedEntry
+    val approachHeightDp = if (compactReturningEntry) {
+        headerHeightDp.coerceAtMost(
+            com.veilreader.app.ui.theme.VeilComposition.ThresholdActiveApproachMaxHeightDp
+        )
+    } else {
+        headerHeightDp
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,8 +287,13 @@ private fun ThresholdHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = if (abbreviatedEntry) 0.dp else approachHeightDp.dp)
-                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                .padding(
+                    horizontal = VeilSpacing.Content,
+                    vertical = if (abbreviatedEntry) VeilSpacing.Cluster else VeilSpacing.Content
+                ),
+            verticalArrangement = Arrangement.spacedBy(
+                if (abbreviatedEntry) VeilSpacing.Inline else VeilSpacing.Cluster
+            ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -298,7 +316,7 @@ private fun ThresholdHeader(
                     )
                 }
             }
-            if (!abbreviatedEntry) Spacer(Modifier.height(VeilSpacing.xl))
+            if (!abbreviatedEntry) Spacer(Modifier.height(VeilSpacing.Section))
             Text(
                 stringResource(
                     when {
