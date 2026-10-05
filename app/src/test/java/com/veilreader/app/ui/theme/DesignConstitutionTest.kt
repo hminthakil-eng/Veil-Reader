@@ -323,4 +323,27 @@ class DesignConstitutionTest {
             )
         )
     }
+
+    @Test
+    fun `gallery cover remains bounded while record widens`() {
+        assertEquals(
+            VeilComposition.GalleryCoverMaxWidthDp,
+            galleryBookObjectWidthDp(220f, 1f),
+            0.001f
+        )
+    }
+
+    @Test
+    fun `gallery cover preserves smaller available width`() {
+        assertEquals(132f, galleryBookObjectWidthDp(132f, 1f), 0.001f)
+    }
+
+    @Test
+    fun `large text uses the tighter physical cover cap`() {
+        assertEquals(
+            VeilComposition.GalleryLargeTextCoverMaxWidthDp,
+            galleryBookObjectWidthDp(260f, 2f),
+            0.001f
+        )
+    }
 }
