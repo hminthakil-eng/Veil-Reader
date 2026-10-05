@@ -883,12 +883,12 @@ fun SettingsScreen(
 
         if (BuildConfig.DEBUG) {
             SettingsSection(
-                title = "Canonical GPU Material Page Engine",
-                description = "Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification."
+                title = stringResource(R.string.settings_debug_material_engine_title),
+                description = stringResource(R.string.settings_debug_material_engine_description)
             ) {
                 SettingsSwitchRow(
-                    title = "Force canonical GPU Paper review mode",
-                    subtitle = "Temporarily forces Paged + Paper for material review without changing normal debug engine availability.",
+                    title = stringResource(R.string.settings_debug_material_force_title),
+                    subtitle = stringResource(R.string.settings_debug_material_force_subtitle),
                     checked = materialPageReviewEnabled,
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
@@ -909,7 +909,7 @@ fun SettingsScreen(
 
                 if (materialPageReviewEnabled) {
                     Text(
-                        "Review material",
+                        stringResource(R.string.settings_debug_material_review_label),
                         style = MaterialTheme.typography.labelLarge
                     )
                     ChoiceRow(
@@ -917,11 +917,11 @@ fun SettingsScreen(
                         selected = materialPageReviewPreset,
                         label = { preset ->
                             when (preset) {
-                                MaterialPagePreset.GLOSSY -> "Glossy"
-                                MaterialPagePreset.MATTE_BOOK -> "Matte book"
-                                MaterialPagePreset.PARCHMENT -> "Parchment"
-                                MaterialPagePreset.PAPYRUS -> "Papyrus"
-                                MaterialPagePreset.MANUSCRIPT -> "Manuscript"
+                                MaterialPagePreset.GLOSSY -> stringResource(R.string.settings_debug_material_glossy)
+                                MaterialPagePreset.MATTE_BOOK -> stringResource(R.string.settings_debug_material_matte_book)
+                                MaterialPagePreset.PARCHMENT -> stringResource(R.string.settings_debug_material_parchment)
+                                MaterialPagePreset.PAPYRUS -> stringResource(R.string.settings_debug_material_papyrus)
+                                MaterialPagePreset.MANUSCRIPT -> stringResource(R.string.settings_debug_material_manuscript)
                             }
                         },
                         onSelected = { preset ->
@@ -930,7 +930,7 @@ fun SettingsScreen(
                         }
                     )
                     Text(
-                        "Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets the canonical GPU renderer.",
+                        stringResource(R.string.settings_debug_material_note),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
