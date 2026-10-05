@@ -53,13 +53,13 @@ class RoomMangaSessionRepository(
                 val sourceId = runCatching { SourceId(link.sourceId) }.getOrNull()
                     ?: return@firstOrNull false
                 sourceRegistry.find(sourceId)?.supports(MangaSourceCapability.PAGES) == true
-            } ?: sourceLinks.first()
+            } ?: sourceLinks.firstOrNull { link ->
+                runCatching { SourceId(link.sourceId) }.isSuccess
+            } ?: return MangaSessionAdapterResult.Unavailable(
+                MangaSessionUnavailableReason.MISSING_SOURCE_LINK
+            )
 
-            val sourceId = runCatching { SourceId(selected.sourceId) }.getOrElse {
-                return MangaSessionAdapterResult.Unavailable(
-                    MangaSessionUnavailableReason.MISSING_SOURCE_LINK
-                )
-            }
+            val sourceId = SourceId(selected.sourceId)
             val provider = sourceRegistry.find(sourceId)
                 ?.takeIf { it.supports(MangaSourceCapability.PAGES) }
 
