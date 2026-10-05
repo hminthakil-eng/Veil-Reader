@@ -594,7 +594,8 @@ fun BookCover(
     subtitle: String? = null,
     imagePath: String? = null,
     artifact: BookArtifactState? = null,
-    focusArtifact: Boolean = false
+    focusArtifact: Boolean = false,
+    showGeneratedCaption: Boolean = true
 ) {
     var coverSize by remember { mutableStateOf(IntSize.Zero) }
     val cachedCover by produceState<CachedCoverVisual?>(
@@ -677,7 +678,11 @@ fun BookCover(
                 this[BookCoverArtworkReady] = imagePath.isNullOrBlank() || cachedCover != null
             }
     ) {
-        GeneratedBookCover(title = displayTitle, subtitle = subtitle)
+        GeneratedBookCover(
+            title = displayTitle,
+            subtitle = subtitle,
+            showCaption = showGeneratedCaption
+        )
         cachedCover?.let { cover ->
             Image(
                 bitmap = cover.bitmap,
@@ -713,7 +718,11 @@ fun BookCover(
 }
 
 @Composable
-internal fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
+internal fun BoxScope.GeneratedBookCover(
+    title: String,
+    subtitle: String?,
+    showCaption: Boolean = true
+) {
     val palettes = listOf(
         listOf(Color(0xFF26313A), Color(0xFF12181E), Color(0xFF090C10)),
         listOf(Color(0xFF372529), Color(0xFF1B1417), Color(0xFF0C0A0B)),
@@ -750,7 +759,7 @@ internal fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
         val captionFits = com.veilreader.app.ui.theme.artifactCaptionFits(
             maxWidth.value, maxHeight.value, LocalDensity.current.fontScale)
         val compactCover = maxWidth.value < com.veilreader.app.ui.theme.VeilComposition.CompactArtifactCaptionWidthDp
-        if (captionFits) {
+        if (captionFits && showCaption) {
             Column(
                 Modifier.fillMaxSize().padding(start = 17.dp, end = 14.dp, top = 16.dp, bottom = 16.dp)
             ) {
