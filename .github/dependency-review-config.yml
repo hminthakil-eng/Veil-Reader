@@ -1,0 +1,17 @@
+fail-on-severity: high
+fail-on-scopes:
+  - runtime
+retry-on-snapshot-warnings: true
+retry-on-snapshot-warnings-timeout: 600
+show-openssf-scorecard: true
+warn-on-openssf-scorecard-level: 3
+show-patched-versions: true
+
+# This is a product policy gate, not a substitute for legal review.
+# Only newly introduced dependencies are evaluated by dependency-review.
+deny-licenses:
+  - AGPL-3.0-only
+  - AGPL-3.0-or-later
+  - GPL-3.0-only
+  - GPL-3.0-or-later
+  - SSPL-1.0
