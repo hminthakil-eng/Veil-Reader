@@ -108,6 +108,8 @@ object VeilComposition {
     // On a phone the active volume follows the doorway before a large empty foreground.
     // Empty Threshold and the wide architectural pair retain their full approach.
     const val ThresholdActiveApproachMaxHeightDp = 216f
+    const val ControlCaptionCondenseFontScale = 1.3f
+    const val GalleryLargeTextCoverMaxWidthDp = 168f
     const val InstrumentActionsReadableWidthDp = 300f
 }
 

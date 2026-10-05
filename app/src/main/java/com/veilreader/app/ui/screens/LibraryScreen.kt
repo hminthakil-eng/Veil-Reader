@@ -655,15 +655,11 @@ internal fun LibraryArchiveContent(
 
                     if (collections.isNotEmpty()) {
                         Box {
-                            OutlinedButton(
+                            TextButton(
                                 onClick = { collectionMenu = true },
                                 modifier = Modifier.heightIn(min = 48.dp),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(horizontal = 10.dp),
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-                                )
+                                contentPadding = PaddingValues(horizontal = 10.dp)
                             ) {
                                 Text(
                                     if (collection.isBlank()) stringResource(R.string.library_collection) else collection,
@@ -692,12 +688,11 @@ internal fun LibraryArchiveContent(
 
                     if (wingState.seriesWings.isNotEmpty()) {
                         Box {
-                            OutlinedButton(
+                            TextButton(
                                 onClick = { seriesMenu = true },
                                 modifier = Modifier.heightIn(min = 48.dp),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(horizontal = VeilSpacing.sm),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                contentPadding = PaddingValues(horizontal = VeilSpacing.sm)
                             ) {
                                 Text(
                                     stringResource(R.string.library_group_series),
@@ -736,17 +731,13 @@ internal fun LibraryArchiveContent(
                             else -> stringResource(R.string.library_sort_recent)
                         }
                         val sortDescription = stringResource(R.string.library_sort_books, sortLabel)
-                        OutlinedButton(
+                        TextButton(
                             onClick = { sortMenu = true },
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
                                 .semantics { contentDescription = sortDescription },
                             shape = MaterialTheme.shapes.extraSmall,
-                            contentPadding = PaddingValues(horizontal = 10.dp),
-                            border = BorderStroke(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-                            )
+                            contentPadding = PaddingValues(horizontal = 10.dp)
                         ) {
                             Text(
                                 sortLabel,
@@ -2806,6 +2797,8 @@ internal fun LibraryReadingFilter(
     val formatNumber = rememberVeilIntegerFormatter()
     val stateLabel = stringResource(R.string.library_reading_filter)
     val currentDescription = stringResource(R.string.library_reading_filter_selection, current.label, current.count)
+    val condensedCaption = LocalDensity.current.fontScale >=
+        com.veilreader.app.ui.theme.VeilComposition.ControlCaptionCondenseFontScale
     Box(Modifier.fillMaxWidth()) {
         Surface(
             onClick = { expanded = true },
@@ -2819,9 +2812,12 @@ internal fun LibraryReadingFilter(
         ) {
             Column(Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
                 verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                VeilMicroLabel(stateLabel, strong = true)
+                if (!condensedCaption) VeilMicroLabel(stateLabel, strong = true)
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                    if (condensedCaption) {
+                        FilterIcon(Modifier.size(18.dp), VeilPalette.Brass)
+                    }
                     Text(current.label, Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium.withVeilContentScript(current.label),
                         color = VeilPalette.Moon)
@@ -3470,21 +3466,22 @@ internal fun BookLibraryTile(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.69f)
-                    .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.sm)
-            ) {
-                BookCover(
-                    title = displayTitle,
-                    subtitle = book.author,
-                    imagePath = book.coverCachePath,
-                    artifact = artifact,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-
+            BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                // Reading text may need a full column at 200%; the physical book object
+                // need not grow to fill that column and push its own identity offscreen.
+                val objectWidth = if (largeText) maxWidth.coerceAtMost(
+                    com.veilreader.app.ui.theme.VeilComposition.GalleryLargeTextCoverMaxWidthDp.dp
+                ) else maxWidth
+                Box(Modifier.width(objectWidth).aspectRatio(0.69f)
+                    .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.sm)) {
+                    BookCover(
+                        title = displayTitle,
+                        subtitle = book.author,
+                        imagePath = book.coverCachePath,
+                        artifact = artifact,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
             run {
@@ -4143,6 +4140,18 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
                         .background(if (active) LocalContentColor.current else Color.Transparent))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun FilterIcon(modifier: Modifier, tint: Color) {
+    Canvas(modifier) {
+        repeat(3) { index ->
+            val inset = 0.12f + index * 0.13f
+            val y = size.height * (0.25f + index * 0.25f)
+            drawLine(tint, Offset(size.width * inset, y), Offset(size.width * (1f - inset), y),
+                1.6.dp.toPx(), StrokeCap.Round)
         }
     }
 }

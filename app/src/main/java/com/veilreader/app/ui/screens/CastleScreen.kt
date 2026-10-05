@@ -36,8 +36,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -771,6 +773,11 @@ private fun CastleWorldMap(
 ) {
     val rooms = SampleData.rooms
     val reducedMotion = LocalVeilReducedMotion.current
+    val highContrast = LocalVeilHighContrast.current
+    val fieldMaterial = remember(highContrast) {
+        Brush.verticalGradient(if (highContrast) listOf(VeilPalette.Ink, VeilPalette.Ink)
+            else listOf(Color.Transparent, VeilMaterials.WorldFieldWash, VeilMaterials.WorldFieldFoundation))
+    }
     var revealed by remember { mutableStateOf(false) }
     LaunchedEffect(reducedMotion) { revealed = true }
 
@@ -778,20 +785,7 @@ private fun CastleWorldMap(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        VeilPalette.Ink.copy(alpha = 0.78f),
-                        VeilPalette.Archive.copy(alpha = 0.82f),
-                        VeilPalette.Archive.copy(alpha = 0.88f),
-                        VeilPalette.Ink.copy(alpha = 0.96f)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                MaterialTheme.shapes.small
-            )
+            .background(fieldMaterial)
     ) {
         CastleArchitectureBackdrop(
             modifier = Modifier.matchParentSize(),
@@ -1081,6 +1075,11 @@ private fun CastleFloor(
             }
         }
 
+        // The actual measured room establishes its landing; text expansion cannot make
+        // a guessed backdrop floor drift away from the doorway.
+        Box(Modifier.fillMaxWidth().height(1.dp).background(
+            if (unlocked) VeilPalette.Brass.copy(alpha = 0.18f) else VeilPalette.BorderDark
+        ))
         if (!isLast) {
             Box(
                 Modifier
@@ -1166,6 +1165,7 @@ private fun CastleChamberNode(
     modifier: Modifier = Modifier
 ) {
     val safeResonance = resonance.coerceIn(0f, 1f)
+    val highContrast = LocalVeilHighContrast.current
     val chamberVault = RoundedCornerShape(
         topStart = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp,
         topEnd = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp,
@@ -1185,12 +1185,12 @@ private fun CastleChamberNode(
             .heightIn(min = chamberMinHeightDp.dp)
             .clip(chamberVault)
             .background(Brush.verticalGradient(listOf(
-                VeilPalette.Archive.copy(alpha = if (unlocked) 0.92f else 0.60f),
-                VeilPalette.Ink.copy(alpha = 0.86f)
+                if (highContrast) VeilPalette.Ink else VeilMaterials.ChamberRecess,
+                if (highContrast) VeilPalette.Ink else VeilMaterials.ChamberFoundation
             )))
-            .border(BorderStroke(0.5.dp,
+            .castlePortalFrame(
                 if (unlocked) VeilPalette.Brass.copy(alpha = 0.22f + safeResonance * 0.12f)
-                else VeilPalette.BorderDark), chamberVault)
+                else VeilPalette.BorderDark)
             .semantics {
                 contentDescription = chamberDescription
             }
@@ -1275,6 +1275,25 @@ private fun CastleChamberNode(
             color = if (unlocked) VeilPalette.Brass else VeilMaterials.TextSecondary
         )
     }
+}
+
+/** An open vault joins its landing; it is not a closed content-panel frame. */
+private fun Modifier.castlePortalFrame(color: Color): Modifier = drawWithCache {
+    val stroke = 0.5.dp.toPx()
+    val inset = stroke / 2f
+    val radius = com.veilreader.app.ui.theme.VeilComposition.ChamberVaultRadiusDp.dp.toPx()
+        .coerceAtMost((size.width - stroke).coerceAtLeast(0f) / 2f)
+        .coerceAtMost((size.height - stroke).coerceAtLeast(0f) / 2f)
+    val vault = Path().apply {
+        moveTo(inset, size.height)
+        lineTo(inset, radius + inset)
+        arcTo(Rect(inset, inset, radius * 2f + inset, radius * 2f + inset), 180f, 90f, false)
+        lineTo(size.width - radius - inset, inset)
+        arcTo(Rect(size.width - radius * 2f - inset, inset,
+            size.width - inset, radius * 2f + inset), 270f, 90f, false)
+        lineTo(size.width - inset, size.height)
+    }
+    onDrawBehind { drawPath(vault, color, style = Stroke(stroke)) }
 }
 
 @Composable

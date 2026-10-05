@@ -107,6 +107,11 @@ object VeilMaterials {
     val Frame = ArenaPalette.GoldHairline
     val Ornament = ArenaPalette.Brass
     val Depth = ArenaPalette.Cathedral
+    // World fields remain continuous behind useful rooms, rather than boxed into a card.
+    val WorldFieldWash = Depth.copy(alpha = 0.28f)
+    val WorldFieldFoundation = RealmBackground.copy(alpha = 0.90f)
+    val ChamberRecess = Surface.copy(alpha = 0.74f)
+    val ChamberFoundation = RealmBackground.copy(alpha = 0.94f)
     val Error = Color(0xFFFFB4AB)
     val Warning = Color(0xFFE2C18B)
     val Success = Color(0xFFA9C6B2)

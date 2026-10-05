@@ -217,3 +217,11 @@ Final local zero-baseline wave: full `testDebugUnitTest lintDebug assembleDebug 
 Selected new images are `zero-baseline-threshold.png`, `zero-baseline-threshold-persian200.png`, `zero-baseline-library.png`, and `zero-baseline-library-persian200.png`. Actual artwork is present; the former fixed-delay fallback is no longer accepted as a real-cover capture. These are native Skia review images, not physical Android acceptance.
 
 Remaining source/design work: Castle still repeats chamber panels; Gallery retrieval controls consume much of the narrow 200% viewport; parchment/action object proportions and cross-screen spatial grammar need further rendered refinement. The current work is a new starting baseline, **not source-final, not 100/100 and not DEVICE-GREEN**. New remote CI JNI/PDF/capture-export results remain required. Preserve the draft PR and all reading owners; do not merge.
+
+## Open-world wave — verification in progress, 2026-10-05
+
+Previous remote head `ed24d8ad79209c38b445bf95ec34e1b2c1891e41`: Android CI 37276932198 failed with a native FloatBuffer JNI abort. Storage 37276932197 ran 132 cases: 64 failed in Grayfog screenshot export, 68 passed, including native PDF links/navigation. Performance 37276932196 passed on the emulator only. The local published 729-case result does not override these actual Cloud failures.
+
+Current uncommitted source: the complete nine-case native GrayfogCloudAccessibilityTest and assembleDebugAndroidTest passed in 29 seconds after explicit Castle cover-readiness teardown. Reading policy: 39 checks passed. Full unit/lint/debug/instrumentation packaging and fresh native matrix are in progress; do not reuse previous wave totals as this source's evidence. Capture export requires the next actual Android run. No physical device has been used.
+
+Follow-up: the first full wave reproduced FloatBuffer despite Castle readiness; it was interrupted after the native abort, so no full-green result is claimed. Search production-screen cases are now a separate native test class under existing per-class process isolation; all nine cases (seven component/chamber cases and two full-screen search cases) passed together in 40 seconds. No native test, assertion or coverage was removed. A fresh complete verification wave is required; prior totals remain historical.

@@ -63,33 +63,6 @@ class GrayfogCloudAccessibilityTest {
 
     @Test @Config(qualifiers = "fa-rIR-w360dp-h900dp-mdpi")
     fun persianLargeGalleryUtilities() = checkGallery(2f, 224)
-    private fun checkSearchLabel(scale: Float) {
-        val context = RuntimeEnvironment.getApplication()
-        compose.setContent {
-            val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, scale)) {
-                VeilTheme(AppThemeMode.DARK) {
-                    GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY)
-                }
-            }
-        }
-        // Compose idle does not include IO. Await real artwork before filtering disposes
-        // a cover, and before Robolectric tears down the native rendering sandbox.
-        compose.waitForIdle()
-        awaitCoverArtwork()
-        compose.mainClock.advanceTimeBy(200)
-        compose.waitForIdle()
-        val label = context.getString(R.string.library_search_hint)
-        val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
-        search.performScrollTo().assertHeightIsAtLeast(48.dp).performTextInput("Still")
-        search.assertTextContains("Still")
-        search.assertIsDisplayed()
-        compose.waitForIdle()
-        awaitCoverArtwork()
-        compose.mainClock.advanceTimeBy(200)
-        compose.waitForIdle()
-    }
-
     private fun awaitCoverArtwork() {
         compose.waitUntil(timeoutMillis = 20_000) {
             compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
@@ -97,11 +70,6 @@ class GrayfogCloudAccessibilityTest {
         }
     }
 
-    @Test @Config(qualifiers = "en-w320dp-h720dp-mdpi")
-    fun searchPurposeSurvivesEnteredText() = checkSearchLabel(1f)
-
-    @Test @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
-    fun persianLargeTextSearchRetainsItsAccessibleLabel() = checkSearchLabel(2f)
     private fun checkReadingAccess(scale: Float) {
         val context = RuntimeEnvironment.getApplication()
         var menus = 0
@@ -166,6 +134,9 @@ class GrayfogCloudAccessibilityTest {
         compose.onNodeWithText(context.getString(R.string.castle_floor, "۰۶"))
             .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(context.getString(R.string.castle_floor, "06")).assertDoesNotExist()
+        awaitCoverArtwork()
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
     }
 
 }
