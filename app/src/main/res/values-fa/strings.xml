@@ -1371,4 +1371,15 @@
     <string name="library_reading_filter">وضعیت مطالعه</string>
     <string name="library_shelf_all">همهٔ جلدها</string>
     <string name="library_reading_filter_selection">وضعیت مطالعه: %1$s. تعداد: %2$d.</string>
+    <string name="settings_debug_material_engine_title">موتور مرجع ورق‌زدن مادی GPU</string>
+    <string name="settings_debug_material_engine_description">بازبینی اشکال‌زدایی رندرر استوانهٔ مجازی با شبکهٔ مثلثی. نسخهٔ انتشار تا تأیید روی دستگاه همچنان مسدود می‌ماند.</string>
+    <string name="settings_debug_material_force_title">اجبار حالت بازبینی مرجع GPU Paper</string>
+    <string name="settings_debug_material_force_subtitle">برای بازبینی جنس صفحه، موقتاً حالت Paged + Paper را فعال می‌کند بدون اینکه دسترس‌پذیری عادی موتور در نسخهٔ اشکال‌زدایی تغییر کند.</string>
+    <string name="settings_debug_material_review_label">جنس صفحه برای بازبینی</string>
+    <string name="settings_debug_material_glossy">براق</string>
+    <string name="settings_debug_material_matte_book">کاغذ مات کتاب</string>
+    <string name="settings_debug_material_parchment">پوست‌نوشت</string>
+    <string name="settings_debug_material_papyrus">پاپیروس</string>
+    <string name="settings_debug_material_manuscript">دست‌نوشته</string>
+    <string name="settings_debug_material_note">حالت بازبینی، Paged + Paper را اجباری می‌کند. این بیلد هیچ موتور قدیمی یا جایگزین Canvas برای ورق‌زدن ندارد و بازبینی Paper همیشه رندرر مرجع GPU را هدف می‌گیرد.</string>
 </resources>
