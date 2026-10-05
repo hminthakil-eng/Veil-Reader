@@ -69,6 +69,7 @@ object VeilPalette {
 }
 
 object VeilSpacing {
+    // Canonical 4dp micro / 8dp macro rhythm.
     val xxs = 4.dp
     val xs = 8.dp
     val sm = 12.dp
@@ -77,6 +78,21 @@ object VeilSpacing {
     val xl = 24.dp
     val xxl = 32.dp
     val xxxl = 40.dp
+
+    // Semantic aliases. New layout code should prefer intent over scale names.
+    // Existing xxs..xxxl names remain for compatibility while screens migrate.
+    val Micro = xxs
+    val Inline = xs
+    val Cluster = sm
+    val Content = md
+    val Section = xl
+    val Realm = xxl
+
+    // Screen gutters are semantic because compact/wide/large layouts should not
+    // invent local padding values independently.
+    val ScreenCompact = md
+    val ScreenWide = xl
+    val ScreenLarge = xxl
 }
 
 object VeilMotion {
