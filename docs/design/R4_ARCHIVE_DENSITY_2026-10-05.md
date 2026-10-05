@@ -37,6 +37,7 @@ The feature set was not the problem. Its permanent visual footprint was.
 - author no longer reserves two lines at normal scale;
 - verbose Archive Record text action becomes a 48dp semantic icon action;
 - favorite remains a 48dp semantic action;
+- missing-cover fallback no longer repeats the full title/author inside the Gallery object when the readable identity is already immediately below it;
 - metadata spacing uses semantic spacing tokens.
 
 ## Accessibility
