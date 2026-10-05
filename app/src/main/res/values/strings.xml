@@ -459,6 +459,9 @@
 
     <string name="common_reset">Reset</string>
     <string name="library_filtered_volume_count">%1$d VOLUMES</string>
+    <string name="library_filters">Filters</string>
+    <string name="library_hide_filters">Hide filters</string>
+    <string name="library_filters_active">Filters · %1$d</string>
     <string name="library_collection">Collection</string>
     <string name="library_all_collections">All collections</string>
     <string name="library_sort_books">Sort books: %1$s</string>
