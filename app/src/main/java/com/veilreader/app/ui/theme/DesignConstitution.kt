@@ -115,6 +115,24 @@ fun galleryCellMeasureDp(baseMeasureDp: Float, fontScale: Float): Float {
     return baseMeasureDp * scale.coerceAtMost(2f)
 }
 
+/**
+ * Accessibility may widen a Gallery record for readable metadata, but the cover itself
+ * remains bounded so one artifact cannot consume the whole retrieval viewport.
+ */
+fun galleryBookObjectWidthDp(
+    availableWidthDp: Float,
+    fontScale: Float
+): Float {
+    val available = availableWidthDp.takeIf { it.isFinite() }?.coerceAtLeast(0f) ?: 0f
+    val scale = fontScale.takeIf { it.isFinite() && it > 0f } ?: 1f
+    val cap = if (scale >= VeilComposition.ControlCaptionCondenseFontScale) {
+        VeilComposition.GalleryLargeTextCoverMaxWidthDp
+    } else {
+        VeilComposition.GalleryCoverMaxWidthDp
+    }
+    return available.coerceAtMost(cap)
+}
+
 data class VeilThresholdLayoutPolicy(
     val contentMaxWidthDp: Float,
     val horizontalPaddingDp: Float,
