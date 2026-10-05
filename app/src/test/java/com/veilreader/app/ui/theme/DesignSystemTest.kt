@@ -54,6 +54,20 @@ class DesignSystemTest {
         }
     }
 
+
+    @Test
+    fun `regional Persian Arabic locale tags keep shaping safe typography`() {
+        listOf("fa-IR", "ar-SA", "ur_PK", "ps-AF", "ckb-IQ").forEach { language ->
+            assertEquals(VeilScriptGroup.PERSIAN_ARABIC, veilScriptGroupFor(language))
+        }
+    }
+
+    @Test
+    fun `Arabic Extended B metadata is detected as connected script`() {
+        // U+0870 is the first code point in Arabic Extended-B.
+        assertTrue(usesArabicScript("\u0870"))
+    }
+
     @Test
     fun `Latin and unknown languages keep the editorial Latin scale`() {
         listOf("en", "fr", "de", "tr", "ja", "").forEach { language ->
