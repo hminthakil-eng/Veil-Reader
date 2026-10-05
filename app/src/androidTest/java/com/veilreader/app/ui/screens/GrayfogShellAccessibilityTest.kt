@@ -92,7 +92,8 @@ class GrayfogShellAccessibilityTest(
     @Test
     fun thresholdCopyDoesNotOverlapAndResumeRemainsReachable() {
         val localized = localizedContext()
-        val book = Book(id = "grayfog-review", title = "The Unwritten Observatory", author = "Archive fixture", progress = 0.42f)
+        val book = Book(id = "grayfog-review", title = "The Unwritten Observatory", author = "Archive fixture",
+            progress = 0.42f, sourceUri = "veil-review://fictional/grayfog-review")
         var opens = 0
         present {
             ReadingNowScreen(

@@ -76,3 +76,8 @@ The registry now contains 36 production surface/component specimens. `tools/gray
 First live interaction checks: ordinary-tap Reading menu opens controls; Appearance remains a separate action; disable automatic hiding in Appearance Quick and Settings, reopen the app and verify it stays disabled; dismiss controls explicitly; repeat with active selection and TalkBack. Capture all four reading modes separately and check no bottom access overlap with actual content. No invented publication or persisted fictional reading history is used.
 
 For Castle capture both standard and High Contrast: the latter intentionally omits the illustration. Record real device density, locale, font scale, window bounds and hinge/cutout configuration. Native cloud captures approximate widths, not actual hinge geometry or GPU frame timing.
+
+
+### Automated Android-emulator review evidence
+
+Storage Instrumentation now uploads `veil-reader-grayfog-shell-review` for seven days on success or failure. Extract `grayfog-review.tar` to inspect the 80 expected inert production-component fixture captures (16 English/Persian × scale × contrast cases; entrance/resume/empty/index/gallery). PDF failure capture is optional and uses the real clean-room publication UI. CI pulls only this named review directory and preserves the original test result. Simulated Compose font scale, emulator rendering and fixture callbacks are clearly separate from the live physical-device matrix above.

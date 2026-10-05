@@ -1,0 +1,37 @@
+{
+  "source_commit": "d9d3e52f40346d8e1b6de68126327e989386efcc",
+  "android": {
+    "run_id": 37262761602,
+    "job_id": 111613242189,
+    "status": "failure",
+    "error": "Native Robolectric: Class not found java/nio/FloatBuffer; worker exit 134 / SIGABRT",
+    "partial_tests": 441,
+    "partial_skipped_due_to_abort": 1,
+    "artifact_id": 11324344356
+  },
+  "storage": {
+    "run_id": 37262761550,
+    "job_id": 111613242376,
+    "status": "failure",
+    "tests": 132,
+    "failures": 17,
+    "skipped": 0,
+    "failed_groups": {
+      "GrayfogShellAccessibilityTest.thresholdCopyDoesNotOverlapAndResumeRemainsReachable": 16,
+      "ReaderPdfReliabilityInstrumentedTest.importedPdf_exposesFitLayoutAndSurvivesRotation": 1
+    },
+    "artifact_id": 11325730273
+  },
+  "performance": {
+    "run_id": 37262761575,
+    "job_id": 111613242182,
+    "status": "success",
+    "environment": "Android API 35 emulator / lavapipe",
+    "startup_ttid_median_ms": 757.815,
+    "reader_gfx_frame_p95_ms": 200,
+    "reader_gfx_frame_p99_ms": 200,
+    "reader_gfx_frame_count": 68.5,
+    "relative_delta_gate": "Skipped: no persisted main baseline",
+    "physical_performance_green": false
+  }
+}

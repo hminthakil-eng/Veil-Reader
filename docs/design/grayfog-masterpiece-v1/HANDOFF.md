@@ -184,3 +184,10 @@ Registry: **36 production screen/component specimens**; the existing annotation-
 Inspect the new artwork on actual displays, real imported covers, live Reader dock versus publication content, TalkBack, 100/130/150/200% Persian, High Contrast, real hinges, OS/IME/cutouts, paper/slide mid-drag and long-session material comfort next. Do not infer DEVICE-GREEN or final optical acceptance from these source/native checks.
 
 Final frozen-input combined run passed in 6m: 729 tests / 129 suites, 36 design checks, 39 reading-policy checks, lint zero errors (174 warnings + one hint retained), both APKs assembled, 540 fresh native matrix frames plus eight focused captures. See VERIFICATION and material-world-verification.json. Future live device gates remain unchanged.
+
+
+### Follow-up after real GitHub runner allocation
+
+Continue from the latest remote design head. The published `d9d3e52f` run was not CI-green: native JVM abort and 17/132 Android instrumentation failures. Process-isolated local rerun passed 729/129 without skips; final packaging/lint passed after test-only fixture/PDF probe changes. See the isolated verification manifest and published CI JSON. No production main source or page engine changed in this repair. Verify the next GitHub Android and Storage runs before considering source verification complete.
+
+Storage CI exports `veil-reader-grayfog-shell-review` (seven-day retention): 80 expected production Compose fixture frames plus optional PDF failure capture. Extract the tar and inspect English/Persian 100/130/150/200%, high contrast, target separation and publication failure state. Physical device/TalkBack/hinge/GPU/material-feel gates remain mandatory. Prior performance smoke succeeded on an emulator; relative delta lacked a main baseline.

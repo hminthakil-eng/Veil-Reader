@@ -62,8 +62,7 @@ object GrayfogReviewFixtures {
     ) } }
     /** A fictional review cover from our original environment art, decoded by the real BookCover path. */
     fun booksWithOriginalCover(context: Context): List<Book> {
-        // Validate the real resource on the UI thread before asynchronous BookCover decoding.
-        // Native Robolectric JNI initialization must not first race on Dispatchers.IO.
+        // Validate the real resource before handing its cache file to asynchronous BookCover.
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeResource(context.resources, R.drawable.grayfog_keep_v3, bounds)
         check(bounds.outWidth > 0 && bounds.outHeight > 0) { "Original review artwork could not be decoded" }

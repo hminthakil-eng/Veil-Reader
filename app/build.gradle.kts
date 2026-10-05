@@ -68,6 +68,10 @@ baselineProfile {
 }
 
 tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    // Native Robolectric retains process-wide JNI bindings across SDK sandboxes.
+    // Give each test class a fresh worker: SDK 35 Skia review must not inherit
+    // the SDK 37 persistence suite's native state. All classes still execute.
+    forkEvery = 1
     // Robolectric's SDK 37 ApplicationSharedMemory bridge uses FileDescriptor
     // access through this JDK 21 package. Keep the export limited to test JVMs.
     jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
