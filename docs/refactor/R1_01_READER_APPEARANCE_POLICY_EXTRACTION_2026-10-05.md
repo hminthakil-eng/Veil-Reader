@@ -49,3 +49,17 @@ Also extracted into `ReaderInteractionPolicy.kt`:
 
 This slice also owns no side effects. The actual cancellation, close, navigation,
 gesture and persistence operations remain in ReaderScreen / their existing owners.
+
+
+## Slice 3 — page presentation primitives
+
+Extracted into `ReaderPresentation.kt`:
+- Reader canvas color;
+- boundary pulse rendering;
+- page atmosphere rendering;
+- renderable viewport guard.
+
+The viewport-change preview-cancel decision moved to
+`ReaderInteractionPolicy.kt`.
+
+This still does not move Reader mutable state or side-effect ownership.
