@@ -137,16 +137,13 @@ class GrayfogShellAccessibilityTest(
                 onOpenLibrary = {}, onOpenCastle = {}
             )
         }
-        val title = compose.onNodeWithText(localized.getString(R.string.threshold_title_first_volume)).fetchSemanticsNode()
-        val body = compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume))
-        // Optional approach copy yields to the current book at large text. The reading action
-        // remains mandatory in every case; requiring omitted copy would reject that adaptation.
-        if (scale >= com.veilreader.app.ui.theme.VeilComposition.ApproachCondenseFontScale) {
-            body.assertDoesNotExist()
-        } else {
-            val bodyBounds = body.fetchSemanticsNode().boundsInRoot
-            assertTrue("Editorial copy must occupy separate vertical space", title.boundsInRoot.bottom <= bodyBounds.top)
-        }
+        compose.onNodeWithText(localized.getString(R.string.threshold_title_first_volume))
+            .assertExists()
+            .assertIsDisplayed()
+        // Returning compact users should not pay the recurring cinematic prose cost.
+        // Large text follows the same rule without shrinking any user-visible text.
+        compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume))
+            .assertDoesNotExist()
         capture("threshold-entrance")
         compose.onNodeWithText(localized.getString(R.string.threshold_return_volume))
             .performScrollTo().assertIsDisplayed().assertHasClickAction()
@@ -166,6 +163,8 @@ class GrayfogShellAccessibilityTest(
                 onOpenLibrary = { libraries++ }, onOpenCastle = {}
             )
         }
+        compose.onNodeWithText(localized.getString(R.string.threshold_body_unwritten))
+            .assertExists()
         compose.onNodeWithText(localized.getString(R.string.threshold_enter_library))
             .performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(1, libraries) }
