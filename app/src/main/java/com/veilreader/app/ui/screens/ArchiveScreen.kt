@@ -54,6 +54,9 @@ import kotlinx.coroutines.delay
 
 internal enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
+internal fun shouldCondenseHiddenArchive(totalRecords: Int): Boolean =
+    totalRecords > 0
+
 @Composable
 private fun ArchiveMicroLabel(
     text: String,
@@ -135,6 +138,13 @@ internal fun ArchiveRecordContent(
         )
     }
     val cleanQuery = query.trim()
+    val totalArchiveRecords =
+        highlights.count { it.note.isNotBlank() } +
+            highlights.size +
+            bookmarks.size +
+            echoes.size +
+            capsules.size
+    val condensedHeader = shouldCondenseHiddenArchive(totalArchiveRecords)
 
     val matchingHighlights = remember(highlights, booksById, cleanQuery) {
         highlights.filter { highlight ->
@@ -196,11 +206,11 @@ internal fun ArchiveRecordContent(
             modifier = Modifier
                 .widthIn(max = 840.dp)
                 .fillMaxSize()
-                .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                .padding(horizontal = VeilSpacing.Content, vertical = VeilSpacing.Content),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
         ) {
         VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -225,17 +235,16 @@ internal fun ArchiveRecordContent(
                 Text(
                     stringResource(R.string.archive_title),
                     modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = if (condensedHeader) {
+                        MaterialTheme.typography.titleLarge
+                    } else {
+                        MaterialTheme.typography.headlineLarge
+                    },
                     color = VeilPalette.Moon
                 )
-                BrassRule(Modifier.width(92.dp), strong = true)
-
-                ArchiveRegister(
-                    notes = highlights.count { it.note.isNotBlank() },
-                    highlights = highlights.size,
-                    bookmarks = bookmarks.size,
-                    echoes = echoes.size,
-                    capsules = capsules.size
+                BrassRule(
+                    Modifier.width(if (condensedHeader) 56.dp else 92.dp),
+                    strong = true
                 )
             }
         }
@@ -311,7 +320,7 @@ internal fun ArchiveRecordContent(
             }
         }
 
-        BrassRule(Modifier.fillMaxWidth())
+        BrassRule(Modifier.width(56.dp))
 
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -633,56 +642,6 @@ internal fun ArchiveRecordContent(
             body = stringResource(R.string.notebook_delete_bookmark_body),
             onConfirm = { onDeleteBookmark(bookmarkId); deleteBookmarkId = null },
             onDismiss = { deleteBookmarkId = null }
-        )
-    }
-}
-
-@Composable
-private fun ArchiveRegister(
-    notes: Int,
-    highlights: Int,
-    bookmarks: Int,
-    echoes: Int,
-    capsules: Int
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilPalette.Archive.copy(alpha = 0.56f))
-            .border(
-                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.74f)),
-                MaterialTheme.shapes.extraSmall
-            )
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        ArchiveRegisterStat(stringResource(R.string.archive_notes), notes)
-        ArchiveRegisterStat(stringResource(R.string.archive_passages), highlights)
-        ArchiveRegisterStat(stringResource(R.string.archive_marks), bookmarks)
-        ArchiveRegisterStat(stringResource(R.string.archive_echoes), echoes)
-        ArchiveRegisterStat(stringResource(R.string.archive_sealed), capsules)
-    }
-}
-
-@Composable
-private fun ArchiveRegisterStat(
-    label: String,
-    value: Int
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp)
-    ) {
-        Text(
-            archiveNumber(value, minimumDigits = 2),
-            style = MaterialTheme.typography.titleSmall,
-            color = VeilPalette.Moon
-        )
-        VeilMicroLabel(
-            text = label,
-            color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
     }
 }
