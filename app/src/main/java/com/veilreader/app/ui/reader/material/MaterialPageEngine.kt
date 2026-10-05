@@ -17,6 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.veilreader.app.BuildConfig
 import com.veilreader.app.diagnostics.ReaderTrace
+import com.veilreader.app.feature.VeilFeatureGates
+import com.veilreader.app.feature.VeilRiskyFeature
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +44,8 @@ internal enum class MaterialPageTone {
  * Release remains disabled until build/device verification explicitly promotes v2.
  */
 internal object MaterialPageEngineRollout {
-    const val DEFAULT_ENABLED: Boolean = false
+    val DEFAULT_ENABLED: Boolean =
+        VeilFeatureGates.releaseEnabled(VeilRiskyFeature.GPU_MATERIAL_PAGE)
     @Volatile
     private var debugOverride: Boolean? = null
 
