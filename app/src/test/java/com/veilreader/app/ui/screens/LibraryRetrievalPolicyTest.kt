@@ -15,5 +15,6 @@ class LibraryRetrievalPolicyTest {
     @Test
     fun defaultRetrievalState_isNotModified() {
         assertFalse(libraryRetrievalModified("", "All", "", "", "Recent"))
+        assertEquals(0, librarySecondaryFilterCount("", "", "Recent"))
     }
 }
