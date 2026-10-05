@@ -14,6 +14,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.veilreader.app.diagnostics.ReaderJankMonitor
+import com.veilreader.app.diagnostics.VeilStrictMode
 import com.veilreader.app.ui.VeilApp
 import com.veilreader.app.ui.reader.ReaderHardwareButton
 import com.veilreader.app.ui.reader.ReaderHardwareButtonEvent
