@@ -33,6 +33,7 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
         // Readium navigator fragments require a custom factory during FragmentManager restore.
         supportFragmentManager.fragmentFactory = ReaderFragmentRestoration.fragmentFactory
         super.onCreate(savedInstanceState)
+        VeilStrictMode.installForDebug()
         ReaderFragmentRestoration.discardRestoredDummies(supportFragmentManager)
 
         enableEdgeToEdge()
