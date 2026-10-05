@@ -602,7 +602,6 @@ internal fun LibraryArchiveContent(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = VeilSpacing.sm)
                     .semantics { contentDescription = searchAccessibilityLabel }
             )
         }
@@ -616,8 +615,7 @@ internal fun LibraryArchiveContent(
         item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier
-                    .fillMaxWidth()
-                    .padding(top = VeilSpacing.sm),
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibraryReadingFilter(

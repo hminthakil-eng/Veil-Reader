@@ -118,7 +118,9 @@ class GrayfogShellAccessibilityTest(
         search.assertTextContains("Still").assertIsDisplayed()
         compose.onNodeWithText(original.title).assertDoesNotExist()
         val remaining = GrayfogReviewFixtures.books.first { it.title.contains("Still") }
-        compose.onNodeWithText(remaining.title).assertExists()
+        // The editable query contains the same words as the matching book title.
+        // Assert the publication record, not the text field that initiated retrieval.
+        compose.onNode(hasText(remaining.title) and !hasSetTextAction()).assertExists()
         capture("archive-search")
     }
 

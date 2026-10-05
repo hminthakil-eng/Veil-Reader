@@ -255,3 +255,15 @@ The broader native failure was reproduced in GrayfogCloudDetailTest, not the sea
 At published head 22b9074, Android CI 37284325323 and Performance 37284325278 passed; Storage 37284325152 ran 148 cases with 16 failures / zero errors or skips. All 16 were new search-fixture ActivityResultRegistryOwner failures after overriding LocalContext for language; all 132 established cases passed. The real host registry is now explicitly retained before localization. The artifact's raw JUnit XML provides exact totals. This is test-host wiring, not a Reader navigation change; the 16 cases must run again.
 
 Not 100/100, not physical DEVICE-GREEN. Remaining optical questions include actual publication-cover contrast, room/environment separation on OLED and LCD, whole-screen spatial harmony, large-text scroll rhythm, and finger-driven reading material/frame pacing. Source proofs and future capture gates do not substitute for those judgments.
+
+### Compact composition correction after rendered review
+
+The 320dp Threshold capture exposed a secondary-heading defect: an unconstrained recent-books title consumed the action's width, making View all wrap awkwardly. The heading now receives the remaining weighted measure, while the real 48dp action keeps its natural width. Both title and action may grow vertically; no truncation or font-size reduction is introduced.
+
+The Gallery capture also exposed duplicated spacing: lazy-grid row separation plus an extra top inset on both Search and Reading State. Removing the two redundant insets brings book objects forward while preserving the grid's shared rhythm, actual text-field size, filter target, and all direct retrieval controls. This is composition refinement, not hidden functionality or reduced touch geometry.
+
+Principle: an atmospheric archive introduces the world briefly, then gives its objects and retrieval instruments clear ownership. The latest source needs its final full verification and fresh render inspection; previous-head evidence must not be relabeled as current proof.
+
+### Android search assertion correction
+
+Storage run 37288831351 at 751c042 executed 148 cases: 16 failures, zero errors/skips. All 132 established cases passed. The actual host registry correction worked: the new cases reached live retrieval successfully. Their remaining failure was an ambiguous test selector matching both the editable query Still and the matching publication record Still. The assertion now excludes editable controls explicitly, retaining exact result-presence and original-art-result-removal checks across all 16 configurations. This is not an app retrieval failure and no production search code is changed. Original artwork remains enabled. The fresh Android run is required before declaring this correction verified.

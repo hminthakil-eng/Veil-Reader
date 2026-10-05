@@ -793,9 +793,12 @@ private fun RecentBooksShelf(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 VeilMicroLabel(
                     text = stringResource(R.string.threshold_recent_eyebrow),
                     strong = true
