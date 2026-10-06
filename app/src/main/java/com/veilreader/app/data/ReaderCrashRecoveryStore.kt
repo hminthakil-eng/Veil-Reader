@@ -127,11 +127,12 @@ internal class ReaderCrashRecoveryStore(context: Context) {
                 "Unsupported Reader crash-recovery checkpoint version."
             }
             val rawLocatorJson = json.getString("locatorJson")
-            val safeLocatorJson = sanitizeReaderCrashRecoveryLocatorJson(rawLocatorJson)
-                ?: error("Invalid Reader crash-recovery locator payload.")
-            check(rawLocatorJson == safeLocatorJson) {
+            val locatorObject = JSONObject(rawLocatorJson)
+            check(!locatorObject.has("text") && !locatorObject.has("title")) {
                 "Reader crash-recovery payload contained non-recovery publication metadata."
             }
+            val safeLocatorJson = sanitizeReaderCrashRecoveryLocatorJson(rawLocatorJson)
+                ?: error("Invalid Reader crash-recovery locator payload.")
             ReaderCrashRecoveryCheckpoint(
                 bookId = json.getString("bookId"),
                 sessionId = json.getString("sessionId"),
