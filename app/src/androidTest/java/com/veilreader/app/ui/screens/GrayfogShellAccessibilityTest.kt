@@ -137,11 +137,12 @@ class GrayfogShellAccessibilityTest(
                 onOpenLibrary = {}, onOpenCastle = {}
             )
         }
-        compose.onNodeWithText(localized.getString(R.string.threshold_title_first_volume))
+        // Returning compact users should see identity + current volume, not a repeated prologue.
+        compose.onNodeWithText(localized.getString(R.string.threshold_grayfog_archive))
             .assertExists()
             .assertIsDisplayed()
-        // Returning compact users should not pay the recurring cinematic prose cost.
-        // Large text follows the same rule without shrinking any user-visible text.
+        compose.onNodeWithText(localized.getString(R.string.threshold_title_first_volume))
+            .assertDoesNotExist()
         compose.onNodeWithText(localized.getString(R.string.threshold_body_first_volume))
             .assertDoesNotExist()
         capture("threshold-entrance")
@@ -163,6 +164,9 @@ class GrayfogShellAccessibilityTest(
                 onOpenLibrary = { libraries++ }, onOpenCastle = {}
             )
         }
+        compose.onNodeWithText(localized.getString(R.string.threshold_title_unwritten))
+            .assertExists()
+            .assertIsDisplayed()
         compose.onNodeWithText(localized.getString(R.string.threshold_body_unwritten))
             .assertExists()
         compose.onNodeWithText(localized.getString(R.string.threshold_enter_library))
