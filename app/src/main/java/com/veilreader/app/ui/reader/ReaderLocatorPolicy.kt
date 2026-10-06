@@ -8,14 +8,45 @@ package com.veilreader.app.ui.reader
  */
 internal enum class ReaderLocatorEvent(
     val commitsLocator: Boolean,
-    val countsPageTurn: Boolean
+    val countsPageTurn: Boolean,
+    /**
+     * Skip the 250 ms progress coalescer for semantic commits that users perceive as complete.
+     *
+     * This only moves the write into the existing serialized Room queue immediately; it does not
+     * claim a synchronous fsync or create a second progress writer.
+     */
+    val bypassProgressDebounce: Boolean
 ) {
-    NAVIGATOR_POSITION(commitsLocator = false, countsPageTurn = false),
-    NAVIGATOR_SCROLL_COMMIT(commitsLocator = true, countsPageTurn = false),
-    NAVIGATOR_PAGE_TURN(commitsLocator = true, countsPageTurn = true),
-    NAVIGATION_JUMP_COMMIT(commitsLocator = true, countsPageTurn = false),
-    PAPER_COMMIT(commitsLocator = true, countsPageTurn = true),
-    FINAL_SNAPSHOT(commitsLocator = true, countsPageTurn = false)
+    NAVIGATOR_POSITION(
+        commitsLocator = false,
+        countsPageTurn = false,
+        bypassProgressDebounce = false
+    ),
+    NAVIGATOR_SCROLL_COMMIT(
+        commitsLocator = true,
+        countsPageTurn = false,
+        bypassProgressDebounce = false
+    ),
+    NAVIGATOR_PAGE_TURN(
+        commitsLocator = true,
+        countsPageTurn = true,
+        bypassProgressDebounce = true
+    ),
+    NAVIGATION_JUMP_COMMIT(
+        commitsLocator = true,
+        countsPageTurn = false,
+        bypassProgressDebounce = true
+    ),
+    PAPER_COMMIT(
+        commitsLocator = true,
+        countsPageTurn = true,
+        bypassProgressDebounce = true
+    ),
+    FINAL_SNAPSHOT(
+        commitsLocator = true,
+        countsPageTurn = false,
+        bypassProgressDebounce = true
+    )
 }
 
 /** The navigator's first position is an opening checkpoint, even if loading took a long time. */

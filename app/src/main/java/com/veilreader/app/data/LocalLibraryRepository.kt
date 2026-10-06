@@ -449,7 +449,8 @@ class LocalLibraryRepository internal constructor(
         locatorJson: String,
         sequence: Long,
         completionSessionSnapshot: ReadingSessionSnapshot? = null,
-        nowEpochMs: Long = System.currentTimeMillis()
+        nowEpochMs: Long = System.currentTimeMillis(),
+        bypassDebounce: Boolean = false
     ): ReaderProgressSaveOutcome =
         synchronized(coalescingLock) {
             if (activeReaderProgressWriters[lease.bookId] != lease) {
@@ -497,7 +498,8 @@ class LocalLibraryRepository internal constructor(
                 traceSequence = sequence,
                 completionSessionSnapshot = completionSessionSnapshot,
                 nowEpochMs = nowEpochMs,
-                order = order
+                order = order,
+                bypassDebounce = bypassDebounce
             )
             if (newlyFinished == null) {
                 ReaderTrace.event(
@@ -584,7 +586,8 @@ class LocalLibraryRepository internal constructor(
         traceSequence: Long?,
         completionSessionSnapshot: ReadingSessionSnapshot?,
         nowEpochMs: Long,
-        order: ReaderProgressWriteOrder?
+        order: ReaderProgressWriteOrder?,
+        bypassDebounce: Boolean = false
     ): Boolean? {
         val current = getBook(id) ?: return null
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
@@ -624,7 +627,7 @@ class LocalLibraryRepository internal constructor(
                 completionBookSnapshot = updated.takeIf { newlyFinished },
                 milestones = crossedMilestones
             ),
-            immediate = newlyFinished
+            immediate = bypassDebounce || newlyFinished
         )
         return newlyFinished
     }

@@ -348,7 +348,8 @@ class ReaderViewModel(
             locatorJson = locatorJson,
             sequence = sequence,
             completionSessionSnapshot = current.snapshot(completionNow),
-            nowEpochMs = completionNow
+            nowEpochMs = completionNow,
+            bypassDebounce = event.bypassProgressDebounce
         )
         if (!saveOutcome.accepted) {
             ReaderTrace.event(
