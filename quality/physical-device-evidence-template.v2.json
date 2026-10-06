@@ -1,0 +1,106 @@
+{
+  "schema_version": 2,
+  "status": "UNVERIFIED",
+  "sha": null,
+  "build": {
+    "application_id": "com.veilreader.app",
+    "version_name": null,
+    "version_code": null,
+    "variant": null,
+    "artifact_sha256": null
+  },
+  "device": {
+    "manufacturer": null,
+    "model": null,
+    "android_version": null,
+    "api_level": null,
+    "refresh_hz": null,
+    "resolution_px": null,
+    "density_dpi": null,
+    "memory_class_mb": null
+  },
+  "configuration": {
+    "locale": null,
+    "layout_direction": null,
+    "publication_language": null,
+    "publication_progression": null,
+    "font_scale": null,
+    "display_scale": null,
+    "high_contrast": null,
+    "reduced_motion": null,
+    "talkback": null
+  },
+  "fixture": {
+    "book_id": null,
+    "format": null,
+    "file_name": null,
+    "file_sha256": null,
+    "provenance": null
+  },
+  "modes": {
+    "paged": {
+      "status": "UNVERIFIED",
+      "cases": []
+    },
+    "slide": {
+      "status": "UNVERIFIED",
+      "cases": []
+    },
+    "paper_curl": {
+      "status": "UNVERIFIED",
+      "cases": []
+    },
+    "scroll": {
+      "status": "UNVERIFIED",
+      "cases": []
+    },
+    "pdf_paginated": {
+      "status": "UNVERIFIED",
+      "cases": []
+    },
+    "pdf_continuous": {
+      "status": "UNVERIFIED",
+      "cases": []
+    }
+  },
+  "rtl": {
+    "status": "UNVERIFIED",
+    "ltr_book_rtl_ui": "UNVERIFIED",
+    "rtl_book_ltr_ui": "UNVERIFIED",
+    "rtl_book_rtl_ui": "UNVERIFIED",
+    "mixed_script_selection": "UNVERIFIED",
+    "search_normalization": "UNVERIFIED",
+    "pdf_order": "UNVERIFIED"
+  },
+  "accessibility": {
+    "status": "UNVERIFIED",
+    "talkback": "UNVERIFIED",
+    "switch_access": "UNVERIFIED",
+    "large_text_200": "UNVERIFIED",
+    "reduced_motion": "UNVERIFIED",
+    "external_keyboard": "UNVERIFIED"
+  },
+  "performance": {
+    "status": "UNVERIFIED",
+    "frame_overrun_p50_ms": null,
+    "frame_overrun_p90_ms": null,
+    "frame_overrun_p95_ms": null,
+    "frame_overrun_p99_ms": null,
+    "input_to_visible_response_ms": null,
+    "heap_high_water_mb": null,
+    "gpu_or_bitmap_high_water_mb": null,
+    "retained_memory_after_session_mb": null,
+    "battery_notes": null,
+    "thermal_notes": null
+  },
+  "evidence": {
+    "video": null,
+    "screenshots": [],
+    "trace": null,
+    "logs": null,
+    "test_report": null,
+    "captured_at_utc": null,
+    "reviewer": null
+  },
+  "notes": "Template only. Never change status to GREEN-DEVICE unless every claimed result belongs to this exact executable SHA and artifact hash."
+}
