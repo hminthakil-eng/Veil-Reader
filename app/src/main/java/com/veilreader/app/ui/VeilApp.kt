@@ -714,7 +714,7 @@ fun VeilApp(
         activeReturnRitual = null
         activeReturnLocatorJson = null
 
-        val book = library.getBook(targetId) ?: targetBook
+        val book = library.loadBookForReaderOpen(targetId)
         if (book == null) {
             routeViewModel.bookOpenFailed(targetId, openRequestId)
             showNotice(R.string.notice_book_record_missing, VeilNoticeKind.WARNING)
