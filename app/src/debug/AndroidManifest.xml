@@ -2,5 +2,12 @@
     <application>
         <!-- Only the debug APK exposes fictional, inert review fixtures. -->
         <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
+        <!-- CI-only fault injector; absent from release builds. It accepts no publication input. -->
+        <activity
+            android:name=".debug.ReaderCrashRecoveryFaultActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="com.veilreader.app.reader.crash.recovery" />
     </application>
 </manifest>
