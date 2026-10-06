@@ -187,6 +187,25 @@ Patterns to extract:
 
 Deployment/auth/business rules remain Eyad-owned.
 
+## Matt Pocock engineering skills
+
+Board state: **SELECTIVE CONTROLLED PILOT**
+
+Route:
+Prompt/Skill Registry → dedup → license/provenance → project-local Codex pilot.
+
+Current allowlist:
+- `codebase-design` — PILOT;
+- `code-review` — A/B PILOT against the existing Superpowers reviewer.
+
+Rejected as duplicates:
+- `diagnosing-bugs` → existing `systematic-debugging`;
+- `tdd` → existing `test-driven-development`.
+
+`grill-with-docs` remains HOLD pending dependency/workflow audit.
+
+Canonical pilot record: `docs/company-os/mattpocock-skills-controlled-pilot-v1.md`.
+
 ## Cross-cutting exit gate
 
 No provider reaches production until:
