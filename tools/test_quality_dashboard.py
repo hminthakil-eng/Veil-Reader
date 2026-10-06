@@ -25,4 +25,25 @@ def test_run_id():
 if __name__ == "__main__":
     test_latest_by_name()
     test_run_id()
+    test_required_checks_settled()
+    test_source_status_requires_every_gate_success()
     print("quality dashboard parser tests: PASS")
+
+
+def test_required_checks_settled():
+    checks = {
+        name: {"status": "completed", "conclusion": "success"}
+        for name in module.REQUIRED_CHECK_NAMES
+    }
+    assert module.required_checks_settled(checks)
+    checks["benchmark-smoke"] = {"status": "in_progress", "conclusion": None}
+    assert not module.required_checks_settled(checks)
+
+def test_source_status_requires_every_gate_success():
+    ok = {"status": "completed", "conclusion": "success", "url": None}
+    pending = {"status": "in_progress", "conclusion": None, "url": None}
+    failed = {"status": "completed", "conclusion": "failure", "url": None}
+
+    assert module.source_status_for([ok, ok, ok, ok, ok]) == "GREEN-SOURCE"
+    assert module.source_status_for([ok, ok, pending, ok, ok]) == "YELLOW"
+    assert module.source_status_for([ok, ok, failed, ok, ok]) == "RED"
