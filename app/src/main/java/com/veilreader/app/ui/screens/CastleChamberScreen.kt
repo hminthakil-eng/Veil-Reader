@@ -50,24 +50,6 @@ private data class SigilPresentation(
     val descriptionRes: Int
 )
 
-internal enum class RelicRarity {
-    FOUNDATION,
-    RESONANT,
-    ASCENDANT,
-    SOVEREIGN
-}
-
-internal fun relicRarityFor(relicId: String): RelicRarity =
-    when (relicId) {
-        "ember_bookmark" -> RelicRarity.FOUNDATION
-        "moonlit_lens",
-        "brass_quill",
-        "ivory_bookplate" -> RelicRarity.RESONANT
-        "astral_key" -> RelicRarity.ASCENDANT
-        "veil_crown" -> RelicRarity.SOVEREIGN
-        else -> RelicRarity.FOUNDATION
-    }
-
 private data class RelicPresentation(
     val id: String,
     val nameRes: Int,
@@ -110,9 +92,6 @@ private val sigils = linkedMapOf(
         R.string.treasury_sigil_first_threshold_body
     )
 )
-
-internal fun emberBookmarkAwakened(profile: ReaderProfile): Boolean =
-    profile.longestStreakDays >= 3
 
 private val readingRelics = listOf(
     RelicPresentation(
