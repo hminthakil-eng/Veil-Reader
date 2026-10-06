@@ -262,12 +262,12 @@ fun SettingsScreen(
             alpha = if (highContrast) 0.07f else 0.18f,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(216.dp)
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(330.dp)
+                .height(244.dp)
                 .background(
                     Brush.verticalGradient(
                         if (highContrast) {
@@ -292,8 +292,8 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .systemBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+                .padding(horizontal = VeilSpacing.Content, vertical = VeilSpacing.Section),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.Section)
         ) {
         TextButton(
             onClick = onClose,
@@ -303,7 +303,8 @@ fun SettingsScreen(
         }
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            modifier = Modifier.widthIn(max = 680.dp),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
         ) {
             Text(
                 stringResource(R.string.settings_eyebrow),
@@ -313,9 +314,9 @@ fun SettingsScreen(
             Text(
                 stringResource(R.string.settings_heading),
                     modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineLarge
+                style = MaterialTheme.typography.titleLarge
             )
-            BrassRule(Modifier.width(92.dp), strong = true)
+            BrassRule(Modifier.width(56.dp), strong = true)
             Text(
                 stringResource(R.string.settings_intro),
                 style = MaterialTheme.typography.bodyMedium,
@@ -1225,21 +1226,14 @@ private fun SettingsSection(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f).semantics { heading() }
-            )
-        }
-
-        BrassRule(Modifier.fillMaxWidth())
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.semantics { heading() }
+        )
 
         Text(
             description,
@@ -1247,11 +1241,13 @@ private fun SettingsSection(
             style = MaterialTheme.typography.bodySmall
         )
 
+        // Settings is a utility realm. A short registration mark preserves Veil identity
+        // without turning every section into another framed chamber.
+        BrassRule(Modifier.width(44.dp))
+
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.xs),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.Content)
         ) {
             content()
         }
