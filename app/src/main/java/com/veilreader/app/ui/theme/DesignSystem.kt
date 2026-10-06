@@ -26,17 +26,24 @@ enum class VeilScriptGroup {
 
 val LocalVeilScriptGroup = staticCompositionLocalOf { VeilScriptGroup.LATIN }
 
-fun veilScriptGroupFor(language: String): VeilScriptGroup =
-    when (language.lowercase()) {
+fun veilScriptGroupFor(language: String): VeilScriptGroup {
+    val primary = language
+        .trim()
+        .substringBefore('-')
+        .substringBefore('_')
+        .lowercase()
+    return when (primary) {
         "fa", "ar", "ur", "ps", "ckb" -> VeilScriptGroup.PERSIAN_ARABIC
         else -> VeilScriptGroup.LATIN
     }
+}
 
 fun usesArabicScript(text: String): Boolean =
     text.any { character ->
         val code = character.code
         code in 0x0600..0x06FF ||
             code in 0x0750..0x077F ||
+            code in 0x0870..0x089F ||
             code in 0x08A0..0x08FF ||
             code in 0xFB50..0xFDFF ||
             code in 0xFE70..0xFEFF
