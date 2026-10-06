@@ -27,6 +27,11 @@ internal enum class ReaderLocatorEvent(
         countsPageTurn = false,
         bypassProgressDebounce = false
     ),
+    RELAYOUT_CHECKPOINT(
+        commitsLocator = true,
+        countsPageTurn = false,
+        bypassProgressDebounce = false
+    ),
     NAVIGATOR_PAGE_TURN(
         commitsLocator = true,
         countsPageTurn = true,
@@ -71,7 +76,7 @@ internal fun readerObservedLocatorEvent(
 ): ReaderLocatorEvent =
     when {
         programmaticNavigationSettled -> ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
-        viewportRelayoutPending -> ReaderLocatorEvent.FINAL_SNAPSHOT
+        viewportRelayoutPending -> ReaderLocatorEvent.RELAYOUT_CHECKPOINT
         isSlidePreviewActive -> ReaderLocatorEvent.NAVIGATOR_POSITION
         else -> navigatorLocatorEvent(
             isInitialEmission = isInitialEmission,
