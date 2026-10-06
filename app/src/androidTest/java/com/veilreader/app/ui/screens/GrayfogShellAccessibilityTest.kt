@@ -287,11 +287,15 @@ class GrayfogShellAccessibilityTest(
         compose.onNodeWithText(localized.getString(R.string.archive_title))
             .assertExists()
             .assertIsDisplayed()
+        // Capture the untouched first viewport before reachability checks move the
+        // LazyColumn. This is the composition evidence used for density review.
+        capture("hidden-archive-populated-first-viewport")
         compose.onNodeWithText(note)
             .performScrollTo()
             .assertExists()
             .assertIsDisplayed()
-        capture("hidden-archive-populated")
+        // Keep a second capture proving the record remains reachable after scroll.
+        capture("hidden-archive-populated-note-reached")
     }
 
     @Test
