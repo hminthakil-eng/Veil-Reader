@@ -99,7 +99,7 @@ class ReaderCrashRecoveryFaultActivity : Activity() {
             )
             val outcome = repository.saveReaderProgress(
                 lease = lease,
-                progression = DESTINATION_PROGRESS,
+                progression = DESTINATION_PROGRESS.toDouble(),
                 locatorJson = DESTINATION_LOCATOR,
                 sequence = 1L,
                 nowEpochMs = CHECKPOINT_TIME_MS,
