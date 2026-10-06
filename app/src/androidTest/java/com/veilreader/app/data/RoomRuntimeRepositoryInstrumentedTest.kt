@@ -650,6 +650,8 @@ class RoomRuntimeRepositoryInstrumentedTest {
             bypassDebounce = false
         )
         assertTrue(scroll.accepted)
+        val recoveryStore = ReaderCrashRecoveryStore(context)
+        assertNull(recoveryStore.read("semantic-commit-book"))
 
         val committedTurn = repository.saveReaderProgress(
             lease = lease,
@@ -659,6 +661,13 @@ class RoomRuntimeRepositoryInstrumentedTest {
             bypassDebounce = true
         )
         assertTrue(committedTurn.accepted)
+        val crashCheckpoint = recoveryStore.read("semantic-commit-book")
+            ?: error("semantic commit checkpoint missing")
+        assertEquals("semantic-session", crashCheckpoint.sessionId)
+        assertEquals(lease.epoch, crashCheckpoint.writerEpoch)
+        assertEquals(2L, crashCheckpoint.sequence)
+        assertEquals("{\"href\":\"chapter-turn.xhtml\"}", crashCheckpoint.locatorJson)
+        assertEquals(0.41f, crashCheckpoint.progression)
 
         val stale = repository.saveReaderProgress(
             lease = lease,
@@ -668,8 +677,10 @@ class RoomRuntimeRepositoryInstrumentedTest {
             bypassDebounce = true
         )
         assertFalse(stale.accepted)
+        assertEquals(2L, recoveryStore.read("semantic-commit-book")?.sequence)
 
         repository.flushWrites()
+        assertNull(recoveryStore.read("semantic-commit-book"))
 
         sqlite.query("SELECT writes FROM semantic_progress_write_probe").use { cursor ->
             assertTrue(cursor.moveToFirst())
