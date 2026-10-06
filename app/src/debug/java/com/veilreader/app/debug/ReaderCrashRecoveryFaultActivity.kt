@@ -3,6 +3,7 @@ package com.veilreader.app.debug
 import android.app.Activity
 import android.os.Bundle
 import android.os.Process
+import android.os.SystemClock
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReaderCrashRecoveryStore
 import com.veilreader.app.data.VeilDatabase
@@ -97,26 +98,54 @@ class ReaderCrashRecoveryFaultActivity : Activity() {
                 bookId = BOOK_ID,
                 sessionId = SEED_SESSION_ID
             )
-            val outcome = repository.saveReaderProgress(
-                lease = lease,
-                progression = DESTINATION_PROGRESS.toDouble(),
-                locatorJson = DESTINATION_LOCATOR,
-                sequence = 1L,
-                nowEpochMs = CHECKPOINT_TIME_MS,
-                bypassDebounce = true
-            )
-            check(outcome.accepted)
+            val checkpointLatenciesUs = ArrayList<Long>(FAULT_COMMIT_COUNT)
+            repeat(FAULT_COMMIT_COUNT) { index ->
+                val sequence = index + 1L
+                val locator =
+                    if (sequence == FAULT_COMMIT_COUNT.toLong()) {
+                        DESTINATION_LOCATOR
+                    } else {
+                        "{\"href\":\"fault-$sequence.xhtml\",\"locations\":{\"totalProgression\":0.61}}"
+                    }
+                val startedAtNanos = SystemClock.elapsedRealtimeNanos()
+                val outcome = repository.saveReaderProgress(
+                    lease = lease,
+                    progression = DESTINATION_PROGRESS.toDouble(),
+                    locatorJson = locator,
+                    sequence = sequence,
+                    nowEpochMs = CHECKPOINT_TIME_MS + index,
+                    bypassDebounce = true
+                )
+                checkpointLatenciesUs +=
+                    (SystemClock.elapsedRealtimeNanos() - startedAtNanos) / 1_000L
+                check(outcome.accepted)
+            }
 
             val checkpoint = requireNotNull(ReaderCrashRecoveryStore(applicationContext).read(BOOK_ID))
             check(checkpoint.locatorJson == DESTINATION_LOCATOR)
             check(checkpoint.progression == DESTINATION_PROGRESS)
-            check(checkpoint.committedAtEpochMs == CHECKPOINT_TIME_MS)
+            check(checkpoint.sequence == FAULT_COMMIT_COUNT.toLong())
+            val expectedCheckpointTime = CHECKPOINT_TIME_MS + FAULT_COMMIT_COUNT - 1L
+            check(checkpoint.committedAtEpochMs == expectedCheckpointTime)
+
+            val sortedLatencyUs = checkpointLatenciesUs.sorted()
+            val p50Us = percentile(sortedLatencyUs, 0.50)
+            val p95Us = percentile(sortedLatencyUs, 0.95)
+            val maxUs = sortedLatencyUs.last()
 
             File(filesDir, SEED_FILE).writeText(
                 JSONObject()
                     .put("status", "checkpointed")
                     .put("bookId", BOOK_ID)
                     .put("sequence", checkpoint.sequence)
+                    .put("commitCount", FAULT_COMMIT_COUNT)
+                    .put(
+                        "checkpointWriteLatencyUs",
+                        JSONObject()
+                            .put("p50", p50Us)
+                            .put("p95", p95Us)
+                            .put("max", maxUs)
+                    )
                     .toString()
             )
 
@@ -149,6 +178,8 @@ class ReaderCrashRecoveryFaultActivity : Activity() {
             )
             check(recovered.locatorJson == DESTINATION_LOCATOR)
             check(recovered.progression == DESTINATION_PROGRESS)
+            check(recovered.sequence == FAULT_COMMIT_COUNT.toLong())
+            val seedEvidence = JSONObject(File(filesDir, SEED_FILE).readText())
 
             val promotion = repository.saveReaderOpenRecoveryProgress(
                 bookId = BOOK_ID,
@@ -174,12 +205,23 @@ class ReaderCrashRecoveryFaultActivity : Activity() {
                     .put("checkpointRecovered", true)
                     .put("roomAfterWasDestination", true)
                     .put("checkpointCleared", true)
+                    .put("commitCount", seedEvidence.getInt("commitCount"))
+                    .put(
+                        "checkpointWriteLatencyUs",
+                        seedEvidence.getJSONObject("checkpointWriteLatencyUs")
+                    )
             )
         }.onFailure { error ->
             writeResult("fail", "verify_" + error::class.java.simpleName)
         }
 
         runOnUiThread { finish() }
+    }
+
+    private fun percentile(sorted: List<Long>, quantile: Double): Long {
+        require(sorted.isNotEmpty())
+        val index = ((sorted.size - 1) * quantile).toInt().coerceIn(0, sorted.lastIndex)
+        return sorted[index]
     }
 
     private fun writeResult(
@@ -207,6 +249,7 @@ class ReaderCrashRecoveryFaultActivity : Activity() {
         private const val DESTINATION_LOCATOR = "{\"href\":\"destination.xhtml\",\"locations\":{\"totalProgression\":0.61}}"
         private const val ORIGIN_PROGRESS = 0.10
         private const val DESTINATION_PROGRESS = 0.61f
+        private const val FAULT_COMMIT_COUNT = 32
         private const val ORIGIN_TIME_MS = 1_000L
         private const val CHECKPOINT_TIME_MS = 2_000L
         private const val RECOVERY_TIME_MS = 3_000L
