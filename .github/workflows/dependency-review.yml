@@ -2,16 +2,7 @@ name: Dependency Review
 
 on:
   pull_request:
-    paths:
-      - "app/**"
-      - "benchmark/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle.properties"
-      - "gradle/**"
-      - ".github/dependency-review-config.yml"
-      - ".github/workflows/**"
-
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
 permissions:
   contents: read
 

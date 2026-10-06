@@ -2,17 +2,14 @@ name: Quality Dashboard
 
 on:
   pull_request:
-    paths:
-      - "quality/**"
-      - "tools/build_quality_dashboard.py"
-      - "tools/test_quality_dashboard.py"
-      - ".github/workflows/quality-dashboard.yml"
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   workflow_run:
     workflows:
       - Android CI
       - Storage Instrumentation
       - Performance Benchmarks
-      - Dependency Governance
+      - Dependency Review
+      - Dependency Baseline
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -26,10 +23,14 @@ permissions:
   actions: read
   checks: read
 
+concurrency:
+  group: quality-dashboard-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   dashboard:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 50
     steps:
       - name: Resolve target SHA
         id: target
@@ -68,6 +69,8 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --sha "${{ steps.target.outputs.sha }}" \
             --physical quality/physical-device-status.json \
+            --wait-seconds 2700 \
+            --poll-seconds 15 \
             --out-json build/reports/quality-dashboard.json \
             --out-md build/reports/quality-dashboard.md
           cat build/reports/quality-dashboard.md >> "$GITHUB_STEP_SUMMARY"

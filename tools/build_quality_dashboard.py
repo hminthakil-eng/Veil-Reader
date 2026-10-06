@@ -4,10 +4,19 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.request
 from pathlib import Path
 
 API = "https://api.github.com"
+
+REQUIRED_CHECK_NAMES = (
+    "build",
+    "room-on-android",
+    "benchmark-smoke",
+    "dependency-graph",
+    "dependency-review",
+)
 
 def api_get(path: str, token: str):
     req = urllib.request.Request(
@@ -39,6 +48,31 @@ def normalize(check):
         "conclusion": check.get("conclusion"),
         "url": check.get("html_url"),
     }
+
+def required_checks_settled(checks):
+    return all(
+        checks.get(name, {}).get("status") == "completed"
+        for name in REQUIRED_CHECK_NAMES
+    )
+
+def source_status_for(items):
+    if all(item["status"] == "completed" and item["conclusion"] == "success" for item in items):
+        return "GREEN-SOURCE"
+    if any(
+        item["status"] == "completed" and item["conclusion"] != "success"
+        for item in items
+    ):
+        return "RED"
+    return "YELLOW"
+
+def load_checks(repo, sha, token, wait_seconds=0, poll_seconds=15):
+    deadline = time.monotonic() + max(0, wait_seconds)
+    while True:
+        payload = api_get(f"/repos/{repo}/commits/{sha}/check-runs?per_page=100", token)
+        checks = latest_by_name(payload.get("check_runs", []))
+        if required_checks_settled(checks) or time.monotonic() >= deadline:
+            return checks
+        time.sleep(max(1, poll_seconds))
 
 def run_id_from_check(check):
     if not check:
@@ -76,6 +110,8 @@ def main():
     parser.add_argument("--sha", required=True)
     parser.add_argument("--token", default=os.environ.get("GITHUB_TOKEN"))
     parser.add_argument("--physical", required=True)
+    parser.add_argument("--wait-seconds", type=int, default=0)
+    parser.add_argument("--poll-seconds", type=int, default=15)
     parser.add_argument("--out-json", required=True)
     parser.add_argument("--out-md", required=True)
     args = parser.parse_args()
@@ -83,8 +119,13 @@ def main():
     if not args.token:
         raise SystemExit("GITHUB_TOKEN is required")
 
-    checks_payload = api_get(f"/repos/{args.repo}/commits/{args.sha}/check-runs?per_page=100", args.token)
-    checks = latest_by_name(checks_payload.get("check_runs", []))
+    checks = load_checks(
+        args.repo,
+        args.sha,
+        args.token,
+        wait_seconds=args.wait_seconds,
+        poll_seconds=args.poll_seconds,
+    )
 
     android = normalize(checks.get("build"))
     storage = normalize(checks.get("room-on-android"))
@@ -106,16 +147,8 @@ def main():
 
     physical, physical_fresh = load_physical(args.physical, args.sha)
 
-    core = [android, storage, performance]
-    any_failure = any(x["conclusion"] == "failure" for x in core)
-    all_success = all(x["conclusion"] == "success" for x in core)
-
-    if any_failure:
-        source_status = "RED"
-    elif all_success:
-        source_status = "GREEN-SOURCE"
-    else:
-        source_status = "YELLOW"
+    core = [android, storage, performance, dependency_graph, dependency_review]
+    source_status = source_status_for(core)
 
     device_status = (
         "GREEN-DEVICE"
