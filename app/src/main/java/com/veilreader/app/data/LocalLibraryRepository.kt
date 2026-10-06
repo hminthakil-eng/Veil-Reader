@@ -6,6 +6,7 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong
 import android.content.Context
 import android.net.Uri
+import android.os.SystemClock
 import androidx.room.withTransaction
 import com.veilreader.app.data.db.BookCollectionCrossRef
 import com.veilreader.app.data.db.CollectionEntity
@@ -79,6 +80,7 @@ class LocalLibraryRepository internal constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val readingPaceStore = ReadingPaceStore(appContext)
+    private val readerCrashRecoveryStore = ReaderCrashRecoveryStore(appContext)
     private val readingPaceGeneration = AtomicLong(0L)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
@@ -263,6 +265,50 @@ class LocalLibraryRepository internal constructor(
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
 
     /**
+     * Cold-start-safe Reader open lookup.
+     *
+     * The Room observer that hydrates [books] is asynchronous after process start. Reader route
+     * restoration must not interpret an empty in-memory projection as a missing durable book, so
+     * opening is resolved through the serialized Room queue itself.
+     */
+    suspend fun loadBookForReaderOpen(id: String): Book? {
+        if (id.isBlank()) return null
+        return orderedWrite {
+            database.books().findWithCollections(id)?.toDomain()
+        }
+    }
+
+    /**
+     * Returns the crash journal only when it is strictly newer than Room's durable progress state.
+     *
+     * Stale journals are deleted eagerly so they can never resurrect a location that Room already
+     * superseded in a later session.
+     */
+    internal fun loadReaderCrashRecoveryCheckpoint(book: Book): ReaderCrashRecoveryCheckpoint? {
+        val checkpoint = readerCrashRecoveryStore.read(book.id)
+        val fresh = freshReaderCrashRecoveryCheckpoint(book, checkpoint)
+        if (checkpoint != null && fresh == null) {
+            readerCrashRecoveryStore.clear(book.id)
+            ReaderTrace.event(
+                "reader_crash_checkpoint_discarded_stale",
+                bookId = book.id,
+                sessionId = checkpoint.sessionId,
+                details =
+                    "checkpointAt=${checkpoint.committedAtEpochMs} durableAt=${book.lastOpenedAtEpochMs}"
+            )
+        } else if (fresh != null) {
+            ReaderTrace.event(
+                "reader_crash_checkpoint_recovered",
+                bookId = book.id,
+                sessionId = fresh.sessionId,
+                details =
+                    "epoch=${fresh.writerEpoch} seq=${fresh.sequence} progress=${fresh.progression}"
+            )
+        }
+        return fresh
+    }
+
+    /**
      * Permanently removes one imported publication after all queued reader/session writes reach
      * Room. Reading sessions intentionally survive as historical records with a null bookId;
      * book-owned annotations, cycles, milestones and format extensions follow database cascades.
@@ -272,6 +318,7 @@ class LocalLibraryRepository internal constructor(
 
         flushWrites()
         invalidateReaderProgressOwnership(bookId)
+        readerCrashRecoveryStore.clear(bookId)
         val deleted = orderedWrite {
             val stored = database.books().findWithCollections(bookId)?.toDomain()
                 ?: return@orderedWrite null
@@ -302,6 +349,7 @@ class LocalLibraryRepository internal constructor(
      */
     suspend fun rollbackImportedBook(book: Book) {
         invalidateReaderProgressOwnership(book.id)
+        readerCrashRecoveryStore.clear(book.id)
         orderedWrite {
             database.books().deleteById(book.id)
         }
@@ -449,7 +497,8 @@ class LocalLibraryRepository internal constructor(
         locatorJson: String,
         sequence: Long,
         completionSessionSnapshot: ReadingSessionSnapshot? = null,
-        nowEpochMs: Long = System.currentTimeMillis()
+        nowEpochMs: Long = System.currentTimeMillis(),
+        bypassDebounce: Boolean = false
     ): ReaderProgressSaveOutcome =
         synchronized(coalescingLock) {
             if (activeReaderProgressWriters[lease.bookId] != lease) {
@@ -490,14 +539,71 @@ class LocalLibraryRepository internal constructor(
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
 
+            val currentBook = getBook(lease.bookId)
+            if (currentBook == null) {
+                ReaderTrace.event(
+                    "locator_save_rejected_missing_book",
+                    bookId = lease.bookId,
+                    sessionId = lease.sessionId,
+                    details = "epoch=${lease.epoch} seq=$sequence"
+                )
+                return@synchronized ReaderProgressSaveOutcome(accepted = false)
+            }
+
+            val safeProgression =
+                (if (progression.isFinite()) progression else currentBook.progress.toDouble())
+                    .coerceIn(0.0, 1.0)
+                    .toFloat()
+
+            if (bypassDebounce) {
+                val startedAtNanos = SystemClock.elapsedRealtimeNanos()
+                runCatching {
+                    readerCrashRecoveryStore.write(
+                        ReaderCrashRecoveryCheckpoint(
+                            bookId = lease.bookId,
+                            sessionId = lease.sessionId,
+                            writerEpoch = lease.epoch,
+                            sequence = sequence,
+                            locatorJson = locatorJson,
+                            progression = safeProgression,
+                            committedAtEpochMs = nowEpochMs
+                        )
+                    )
+                }.onSuccess {
+                    ReaderTrace.event(
+                        "reader_crash_checkpoint_persisted",
+                        bookId = lease.bookId,
+                        sessionId = lease.sessionId,
+                        details = buildString {
+                            append("epoch=").append(lease.epoch)
+                            append(" seq=").append(sequence)
+                            append(" latencyUs=")
+                            append((SystemClock.elapsedRealtimeNanos() - startedAtNanos) / 1_000L)
+                        }
+                    )
+                }.onFailure { error ->
+                    // The normal immediate Room path still proceeds. Device acceptance decides
+                    // whether this journal implementation is fast/reliable enough to graduate.
+                    ReaderTrace.event(
+                        "reader_crash_checkpoint_failed",
+                        bookId = lease.bookId,
+                        sessionId = lease.sessionId,
+                        details =
+                            "epoch=${lease.epoch} seq=$sequence error=${error::class.java.simpleName}"
+                    )
+                }
+            }
+
             val newlyFinished = saveProgressLocked(
                 id = lease.bookId,
-                progression = progression,
+                progression = safeProgression.toDouble(),
                 locatorJson = locatorJson,
                 traceSequence = sequence,
                 completionSessionSnapshot = completionSessionSnapshot,
                 nowEpochMs = nowEpochMs,
-                order = order
+                order = order,
+                writerSessionId = lease.sessionId,
+                bypassDebounce = bypassDebounce
             )
             if (newlyFinished == null) {
                 ReaderTrace.event(
@@ -584,7 +690,9 @@ class LocalLibraryRepository internal constructor(
         traceSequence: Long?,
         completionSessionSnapshot: ReadingSessionSnapshot?,
         nowEpochMs: Long,
-        order: ReaderProgressWriteOrder?
+        order: ReaderProgressWriteOrder?,
+        writerSessionId: String? = null,
+        bypassDebounce: Boolean = false
     ): Boolean? {
         val current = getBook(id) ?: return null
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
@@ -619,12 +727,13 @@ class LocalLibraryRepository internal constructor(
                 finished = updated.finished,
                 traceSequence = traceSequence,
                 order = order,
+                writerSessionId = writerSessionId,
                 completionAtEpochMs = nowEpochMs.takeIf { newlyFinished },
                 completionSessionSnapshot = completionSessionSnapshot.takeIf { newlyFinished },
                 completionBookSnapshot = updated.takeIf { newlyFinished },
                 milestones = crossedMilestones
             ),
-            immediate = newlyFinished
+            immediate = bypassDebounce || newlyFinished
         )
         return newlyFinished
     }
@@ -1018,6 +1127,7 @@ class LocalLibraryRepository internal constructor(
         readingPaceGeneration.incrementAndGet()
         discardAllPendingProgress()
         discardAllPendingReadingSessions()
+        readerCrashRecoveryStore.clearAll()
         orderedWrite {
             database.withTransaction {
                 database.passageVisits().deleteAll()
@@ -1234,6 +1344,26 @@ class LocalLibraryRepository internal constructor(
                 persistProgress()
             }
 
+            value.order?.let { order ->
+                value.writerSessionId?.let { sessionId ->
+                    if (
+                        readerCrashRecoveryStore.clearIfCovered(
+                            bookId = value.id,
+                            sessionId = sessionId,
+                            order = order,
+                            persistedAtEpochMs = value.lastOpenedAtEpochMs
+                        )
+                    ) {
+                        ReaderTrace.event(
+                            "reader_crash_checkpoint_cleared",
+                            bookId = value.id,
+                            sessionId = sessionId,
+                            details = "order=$order"
+                        )
+                    }
+                }
+            }
+
             ReaderTrace.event(
                 "locator_persisted",
                 bookId = value.id,
@@ -1415,6 +1545,7 @@ private data class PendingProgressWrite(
     val finished: Boolean,
     val traceSequence: Long? = null,
     val order: ReaderProgressWriteOrder? = null,
+    val writerSessionId: String? = null,
     val completionAtEpochMs: Long? = null,
     val completionSessionSnapshot: ReadingSessionSnapshot? = null,
     val completionBookSnapshot: Book? = null,

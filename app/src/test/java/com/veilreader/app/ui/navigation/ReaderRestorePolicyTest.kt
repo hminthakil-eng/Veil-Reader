@@ -7,18 +7,35 @@ import org.junit.Test
 class ReaderRestorePolicyTest {
 
     @Test
-    fun explicitOverride_winsOverCheckpointAndDurableLocator() {
-        assertEquals("explicit", chooseReaderRestoreLocator("explicit", "checkpoint", "durable"))
+    fun explicitOverride_winsOverCrashSavedStateAndDurableLocator() {
+        assertEquals(
+            "explicit",
+            chooseReaderRestoreLocator("explicit", "crash", "checkpoint", "durable")
+        )
     }
 
     @Test
-    fun processCheckpoint_winsOverOlderDurableLocator() {
-        assertEquals("checkpoint", chooseReaderRestoreLocator(null, "checkpoint", "durable"))
+    fun crashCheckpoint_winsOverSavedStateAndOlderDurableLocator() {
+        assertEquals(
+            "crash",
+            chooseReaderRestoreLocator(null, "crash", "checkpoint", "durable")
+        )
+    }
+
+    @Test
+    fun processCheckpoint_winsWhenCrashCheckpointIsAbsent() {
+        assertEquals(
+            "checkpoint",
+            chooseReaderRestoreLocator(null, null, "checkpoint", "durable")
+        )
     }
 
     @Test
     fun durableLocator_isFallback_andBlankValuesAreIgnored() {
-        assertEquals("durable", chooseReaderRestoreLocator(" ", "", "durable"))
-        assertNull(chooseReaderRestoreLocator(" ", "", null))
+        assertEquals(
+            "durable",
+            chooseReaderRestoreLocator(" ", "", "", "durable")
+        )
+        assertNull(chooseReaderRestoreLocator(" ", "", "", null))
     }
 }

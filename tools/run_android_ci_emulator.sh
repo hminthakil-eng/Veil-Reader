@@ -154,6 +154,10 @@ case "$MODE" in
   storage)
     "$ADB" -s "$SERIAL" shell rm -rf /data/local/tmp/veil-grayfog-review
     run_gradle :app:connectedDebugAndroidTest --stacktrace
+    # Exercise a real app-process death between semantic commit and Room persistence.
+    run_gradle :app:assembleDebug --stacktrace
+    "$ADB" -s "$SERIAL" install -r app/build/outputs/apk/debug/app-debug.apk >/dev/null
+    bash tools/run_reader_crash_recovery_fault_injection.sh "$ADB" "$SERIAL"
     ;;
   performance)
     run_gradle :app:generateBaselineProfile --stacktrace       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
