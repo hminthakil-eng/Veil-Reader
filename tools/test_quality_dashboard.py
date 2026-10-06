@@ -22,14 +22,6 @@ def test_run_id():
     assert module.run_id_from_check(check) == 12345
     assert module.run_id_from_check({}) is None
 
-if __name__ == "__main__":
-    test_latest_by_name()
-    test_run_id()
-    test_required_checks_settled()
-    test_source_status_requires_every_gate_success()
-    print("quality dashboard parser tests: PASS")
-
-
 def test_required_checks_settled():
     checks = {
         name: {"status": "completed", "conclusion": "success"}
@@ -47,3 +39,10 @@ def test_source_status_requires_every_gate_success():
     assert module.source_status_for([ok, ok, ok, ok, ok]) == "GREEN-SOURCE"
     assert module.source_status_for([ok, ok, pending, ok, ok]) == "YELLOW"
     assert module.source_status_for([ok, ok, failed, ok, ok]) == "RED"
+
+if __name__ == "__main__":
+    test_latest_by_name()
+    test_run_id()
+    test_required_checks_settled()
+    test_source_status_requires_every_gate_success()
+    print("quality dashboard parser tests: PASS")
