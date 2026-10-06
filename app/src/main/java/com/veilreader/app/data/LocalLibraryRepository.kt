@@ -265,6 +265,20 @@ class LocalLibraryRepository internal constructor(
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
 
     /**
+     * Cold-start-safe Reader open lookup.
+     *
+     * The Room observer that hydrates [books] is asynchronous after process start. Reader route
+     * restoration must not interpret an empty in-memory projection as a missing durable book, so
+     * opening is resolved through the serialized Room queue itself.
+     */
+    suspend fun loadBookForReaderOpen(id: String): Book? {
+        if (id.isBlank()) return null
+        return orderedWrite {
+            database.books().findWithCollections(id)?.toDomain()
+        }
+    }
+
+    /**
      * Returns the crash journal only when it is strictly newer than Room's durable progress state.
      *
      * Stale journals are deleted eagerly so they can never resurrect a location that Room already
