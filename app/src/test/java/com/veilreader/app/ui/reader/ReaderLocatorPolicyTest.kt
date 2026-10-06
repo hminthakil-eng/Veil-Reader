@@ -45,6 +45,7 @@ class ReaderLocatorPolicyTest {
         )
         assertTrue(opening.commitsLocator)
         assertFalse(opening.countsPageTurn)
+        assertFalse(opening.bypassProgressDebounce)
 
         val turn = navigatorLocatorEvent(
             isInitialEmission = false,
@@ -146,6 +147,7 @@ class ReaderLocatorPolicyTest {
     fun semanticCommitsBypassProgressDebounce_butScrollAndObservationsRemainCoalesced() {
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.bypassProgressDebounce)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.bypassProgressDebounce)
+        assertFalse(ReaderLocatorEvent.OPENING_CHECKPOINT.bypassProgressDebounce)
         assertFalse(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.bypassProgressDebounce)
 
         assertTrue(ReaderLocatorEvent.NAVIGATOR_PAGE_TURN.bypassProgressDebounce)
@@ -193,6 +195,10 @@ class ReaderLocatorPolicyTest {
 
         assertTrue(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.countsPageTurn)
+
+        assertTrue(ReaderLocatorEvent.OPENING_CHECKPOINT.commitsLocator)
+        assertFalse(ReaderLocatorEvent.OPENING_CHECKPOINT.countsPageTurn)
+        assertFalse(ReaderLocatorEvent.OPENING_CHECKPOINT.bypassProgressDebounce)
 
         assertTrue(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.commitsLocator)
         assertFalse(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.countsPageTurn)
