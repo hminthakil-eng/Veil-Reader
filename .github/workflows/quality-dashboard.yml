@@ -2,11 +2,7 @@ name: Quality Dashboard
 
 on:
   pull_request:
-    paths:
-      - "quality/**"
-      - "tools/build_quality_dashboard.py"
-      - "tools/test_quality_dashboard.py"
-      - ".github/workflows/quality-dashboard.yml"
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   workflow_run:
     workflows:
       - Android CI
@@ -26,6 +22,10 @@ permissions:
   contents: read
   actions: read
   checks: read
+
+concurrency:
+  group: quality-dashboard-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   dashboard:
