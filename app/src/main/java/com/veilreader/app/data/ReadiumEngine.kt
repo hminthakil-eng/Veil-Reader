@@ -155,36 +155,52 @@ class ReadiumEngine(context: Context) {
      * Regenerates a derived cover thumbnail for an existing imported publication.
      * The empty string is a successful terminal result meaning Readium found no usable cover.
      */
-    suspend fun extractAndCacheCover(book: Book): Result<String> = runCatching {
-        if (!book.isImported) return@runCatching ""
-        book.coverCachePath?.let { cached ->
-            if (cached.isBlank() || File(cached).isFile) return@runCatching cached
+    suspend fun extractAndCacheCover(book: Book): Result<String> = try {
+        if (!book.isImported) {
+            Result.success("")
+        } else {
+            val cached = book.coverCachePath
+            if (cached != null && (cached.isBlank() || File(cached).isFile)) {
+                Result.success(cached)
+            } else {
+                val uri = requireNotNull(book.sourceUri).let(Uri::parse)
+                val publication = openPublication(uri, allowUserInteraction = false)
+                val path = try {
+                    cacheCover(publication, book.id)
+                } finally {
+                    publication.close()
+                }
+                Result.success(path)
+            }
         }
-
-        val uri = requireNotNull(book.sourceUri).let(Uri::parse)
-        val publication = openPublication(uri, allowUserInteraction = false)
-        try {
-            cacheCover(publication, book.id)
-        } finally {
-            publication.close()
-        }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Throwable) {
+        Result.failure(error)
     }
 
     /** Computes SHA-256 for an existing app-private publication without reopening Readium. */
-    suspend fun computeContentFingerprint(book: Book): Result<String> = runCatching {
-        if (!book.isImported) return@runCatching ""
-        val uri = requireNotNull(book.sourceUri).let(Uri::parse)
-        require(uri.scheme == "file") { "Only app-private publication files can be fingerprinted." }
-        val file = File(requireNotNull(uri.path)).canonicalFile
-        val publicationsRoot = File(appContext.filesDir, "publications").canonicalFile
-        require(file.toPath().startsWith(publicationsRoot.toPath()) && file.isFile) {
-            "The imported publication file is missing."
+    suspend fun computeContentFingerprint(book: Book): Result<String> = try {
+        if (!book.isImported) {
+            Result.success("")
+        } else {
+            val uri = requireNotNull(book.sourceUri).let(Uri::parse)
+            require(uri.scheme == "file") { "Only app-private publication files can be fingerprinted." }
+            val file = File(requireNotNull(uri.path)).canonicalFile
+            val publicationsRoot = File(appContext.filesDir, "publications").canonicalFile
+            require(file.toPath().startsWith(publicationsRoot.toPath()) && file.isFile) {
+                "The imported publication file is missing."
+            }
+            Result.success(sha256(file))
         }
-        sha256(file)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Throwable) {
+        Result.failure(error)
     }
 
     private suspend fun cacheCover(publication: Publication, bookId: String): String {
-        val bitmap = runCatching { publication.coverFitting(COVER_MAX_SIZE) }.getOrNull()
+        val bitmap = publication.coverFitting(COVER_MAX_SIZE)
             ?: return ""
         val coversDir = File(appContext.filesDir, "covers").apply { mkdirs() }
         val safeName = UUID.nameUUIDFromBytes(
@@ -206,9 +222,9 @@ class ReadiumEngine(context: Context) {
                 }
                 check(temporary.renameTo(target)) { "Could not install the cover thumbnail." }
                 target.absolutePath
-            } catch (_: Throwable) {
+            } catch (error: Throwable) {
                 temporary.delete()
-                ""
+                throw error
             }
         }
     }

@@ -1,0 +1,11 @@
+{
+  "status": "UNVERIFIED",
+  "sha": null,
+  "device": null,
+  "os": null,
+  "paper": "UNVERIFIED",
+  "slide": "UNVERIFIED",
+  "pdf": "UNVERIFIED",
+  "talkback": "UNVERIFIED",
+  "notes": "Physical-device evidence must be recorded against the exact executable SHA. Automated CI must never overwrite this file."
+}

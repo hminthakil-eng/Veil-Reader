@@ -2,14 +2,7 @@ name: Storage Instrumentation
 
 on:
   pull_request:
-    paths:
-      - "app/src/main/java/com/veilreader/app/data/**"
-      - "app/src/androidTest/**"
-      - "app/schemas/**"
-      - "app/build.gradle.kts"
-      - "build.gradle.kts"
-      - ".github/workflows/storage-instrumentation.yml"
-      - "tools/run_android_ci_emulator.sh"
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   workflow_dispatch:
 
 permissions:

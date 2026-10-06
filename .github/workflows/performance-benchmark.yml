@@ -3,23 +3,7 @@ name: Performance Benchmarks
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - "app/src/main/java/com/veilreader/app/ui/VeilApp.kt"
-      - "app/src/main/java/com/veilreader/app/ui/reader/**"
-      - "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt"
-      - "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt"
-      - "app/src/main/java/com/veilreader/app/data/**"
-      - "app/src/main/AndroidManifest.xml"
-      - "app/build.gradle.kts"
-      - "benchmark/**"
-      - "performance/**"
-      - "tools/check_performance_*.py"
-      - "tools/snapshot_performance.py"
-      - "tools/build_performance_dashboard.py"
-      - "tools/run_android_ci_emulator.sh"
-      - "tools/verify_release_artifact.py"
-      - "tools/test_release_artifact.py"
-      - ".github/workflows/performance-benchmark.yml"
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   push:
     branches: [ "main" ]
     paths:

@@ -1371,4 +1371,15 @@
     <string name="library_reading_filter">READING STATE</string>
     <string name="library_shelf_all">All volumes</string>
     <string name="library_reading_filter_selection">Reading state: %1$s. Count: %2$d.</string>
+    <string name="settings_debug_material_engine_title">Canonical GPU Material Page Engine</string>
+    <string name="settings_debug_material_engine_description">Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification.</string>
+    <string name="settings_debug_material_force_title">Force canonical GPU Paper review mode</string>
+    <string name="settings_debug_material_force_subtitle">Temporarily forces Paged + Paper for material review without changing normal debug engine availability.</string>
+    <string name="settings_debug_material_review_label">Review material</string>
+    <string name="settings_debug_material_glossy">Glossy</string>
+    <string name="settings_debug_material_matte_book">Matte book</string>
+    <string name="settings_debug_material_parchment">Parchment</string>
+    <string name="settings_debug_material_papyrus">Papyrus</string>
+    <string name="settings_debug_material_manuscript">Manuscript</string>
+    <string name="settings_debug_material_note">Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets the canonical GPU renderer.</string>
 </resources>

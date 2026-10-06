@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,9 +88,7 @@ fun MangaHubScreen(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val context = LocalContext.current
-    val adaptiveClass = adaptiveClassFor(
-        LocalConfiguration.current.screenWidthDp.toFloat()
-    )
+    val adaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
     val compactLayout = adaptiveClass == VeilAdaptiveClass.COMPACT
     val mangaBooks = remember(books) {
         books

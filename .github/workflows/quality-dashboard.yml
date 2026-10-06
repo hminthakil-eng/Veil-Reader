@@ -1,0 +1,86 @@
+name: Quality Dashboard
+
+on:
+  pull_request:
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+  workflow_run:
+    workflows:
+      - Android CI
+      - Storage Instrumentation
+      - Performance Benchmarks
+      - Dependency Review
+      - Dependency Baseline
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to inspect; defaults to the selected ref SHA"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: quality-dashboard-${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Resolve target SHA
+        id: target
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
+          INPUT_SHA: ${{ inputs.sha }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          FALLBACK_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            TARGET_SHA="$WORKFLOW_SHA"
+          elif [ "$EVENT_NAME" = "pull_request" ] && [ -n "$PR_SHA" ]; then
+            TARGET_SHA="$PR_SHA"
+          elif [ -n "$INPUT_SHA" ]; then
+            TARGET_SHA="$INPUT_SHA"
+          else
+            TARGET_SHA="$FALLBACK_SHA"
+          fi
+          echo "sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout exact revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+
+      - name: Test dashboard parser
+        run: python3 tools/test_quality_dashboard.py
+
+      - name: Build SHA-linked dashboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 tools/build_quality_dashboard.py \
+            --repo "$GITHUB_REPOSITORY" \
+            --sha "${{ steps.target.outputs.sha }}" \
+            --physical quality/physical-device-status.json \
+            --wait-seconds 2700 \
+            --poll-seconds 15 \
+            --out-json build/reports/quality-dashboard.json \
+            --out-md build/reports/quality-dashboard.md
+          cat build/reports/quality-dashboard.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload quality evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-quality-dashboard-${{ steps.target.outputs.sha }}
+          path: |
+            build/reports/quality-dashboard.json
+            build/reports/quality-dashboard.md
+          if-no-files-found: error
+          retention-days: 14

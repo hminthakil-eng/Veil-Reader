@@ -1,5 +1,6 @@
 package com.veilreader.app.data.manga
 
+import com.veilreader.app.data.db.MangaChapterSourceEntity
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.manga.library.CanonicalMangaId
 import com.veilreader.app.manga.reader.screen.MangaProductChapter
@@ -21,6 +22,23 @@ import java.util.UUID
  * declares page delivery, it is attached; otherwise the same route remains valid for offline-only
  * loading.
  */
+internal data class MangaReaderSourceSelection(
+    val link: MangaChapterSourceEntity,
+    val sourceId: SourceId
+)
+
+internal fun selectMangaReaderSourceLink(
+    sourceLinks: List<MangaChapterSourceEntity>,
+    canLoadPages: (SourceId) -> Boolean
+): MangaReaderSourceSelection? {
+    val valid = sourceLinks.mapNotNull { link ->
+        runCatching { SourceId(link.sourceId) }
+            .getOrNull()
+            ?.let { MangaReaderSourceSelection(link, it) }
+    }
+    return valid.firstOrNull { canLoadPages(it.sourceId) } ?: valid.firstOrNull()
+}
+
 class RoomMangaSessionRepository(
     database: VeilDatabase,
     private val sourceRegistry: SourceRegistry = SourceRegistry(emptyList()),
@@ -49,25 +67,20 @@ class RoomMangaSessionRepository(
                 )
             }
 
-            val selected = sourceLinks.firstOrNull { link ->
-                val sourceId = runCatching { SourceId(link.sourceId) }.getOrNull()
-                    ?: return@firstOrNull false
+            val selection = selectMangaReaderSourceLink(sourceLinks) { sourceId ->
                 sourceRegistry.find(sourceId)?.supports(MangaSourceCapability.PAGES) == true
-            } ?: sourceLinks.first()
+            } ?: return MangaSessionAdapterResult.Unavailable(
+                MangaSessionUnavailableReason.MISSING_SOURCE_LINK
+            )
 
-            val sourceId = runCatching { SourceId(selected.sourceId) }.getOrElse {
-                return MangaSessionAdapterResult.Unavailable(
-                    MangaSessionUnavailableReason.MISSING_SOURCE_LINK
-                )
-            }
-            val provider = sourceRegistry.find(sourceId)
+            val provider = sourceRegistry.find(selection.sourceId)
                 ?.takeIf { it.supports(MangaSourceCapability.PAGES) }
 
             productChapters += MangaProductChapter(
                 sourceChapter = SourceChapter(
-                    sourceId = sourceId,
-                    mangaKey = selected.mangaKey,
-                    chapterKey = selected.chapterKey,
+                    sourceId = selection.sourceId,
+                    mangaKey = selection.link.mangaKey,
+                    chapterKey = selection.link.chapterKey,
                     title = chapter.title,
                     number = chapter.number,
                     volume = chapter.volume,

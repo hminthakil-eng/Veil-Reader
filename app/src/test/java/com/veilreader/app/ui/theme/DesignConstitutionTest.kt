@@ -227,4 +227,52 @@ class DesignConstitutionTest {
         assertTrue(artifactCaptionFits(120f, 180f, Float.NaN))
     }
 
+    @Test
+    fun `returning phone threshold abbreviates recurring cinematic copy`() {
+        assertTrue(
+            shouldAbbreviateThresholdEntry(
+                hasCurrentBook = true,
+                widthDp = 412f,
+                heightDp = 915,
+                fontScale = 1f
+            )
+        )
+    }
+
+    @Test
+    fun `wide returning threshold may keep full approach when accessibility permits`() {
+        assertFalse(
+            shouldAbbreviateThresholdEntry(
+                hasCurrentBook = true,
+                widthDp = 900f,
+                heightDp = 900,
+                fontScale = 1f
+            )
+        )
+    }
+
+    @Test
+    fun `large text still abbreviates wide returning threshold without shrinking text`() {
+        assertTrue(
+            shouldAbbreviateThresholdEntry(
+                hasCurrentBook = true,
+                widthDp = 900f,
+                heightDp = 900,
+                fontScale = 1.5f
+            )
+        )
+    }
+
+    @Test
+    fun `empty threshold preserves cinematic entrance`() {
+        assertFalse(
+            shouldAbbreviateThresholdEntry(
+                hasCurrentBook = false,
+                widthDp = 412f,
+                heightDp = 915,
+                fontScale = 2f
+            )
+        )
+    }
+
 }

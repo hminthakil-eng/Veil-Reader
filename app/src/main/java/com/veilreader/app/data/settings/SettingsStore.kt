@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -27,7 +28,9 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import com.veilreader.app.domain.decodeReaderTapGrid
 import com.veilreader.app.domain.encodeReaderTapGrid
+import java.io.IOException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
@@ -112,7 +115,15 @@ class SettingsStore(private val context: Context) {
         val legacyGameImported = booleanPreferencesKey("legacy_game_imported")
     }
 
-    val settings: Flow<AppSettings> = context.veilSettingsDataStore.data.map { prefs ->
+    val settings: Flow<AppSettings> = context.veilSettingsDataStore.data
+        .catch { error ->
+            if (error is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw error
+            }
+        }
+        .map { prefs ->
         AppSettings(
             appThemeMode = runCatching {
                 AppThemeMode.valueOf(prefs[Keys.appThemeMode] ?: AppThemeMode.SYSTEM.name)

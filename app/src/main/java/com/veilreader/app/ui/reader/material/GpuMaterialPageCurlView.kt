@@ -270,6 +270,10 @@ internal class GpuMaterialPageCurlView(
             post { onTextureUploadsInvalidated(abandonedGeneration) }
         }
         rendererFailed = false
+        // A recreated EGL context is a fresh failure-reporting attempt. If the previous
+        // context failed and this initialization fails too, the UI must receive another
+        // failure callback instead of remaining stuck in INITIALIZING forever.
+        failureReported = false
         surfaceReadyReported = false
         frameSuccessReportedForGeneration = false
         resetGlHandlesForNewGeneration()

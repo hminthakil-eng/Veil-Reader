@@ -208,6 +208,7 @@ class GameRepository(context: Context) {
     }
 
     fun recordBookFinished() {
+        rollDayIfNeeded()
         totalXp += GamificationEngine.BOOK_FINISH_BONUS
         prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).commit()
         persistCounters(durable = true)
