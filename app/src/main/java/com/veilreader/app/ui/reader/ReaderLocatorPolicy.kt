@@ -27,6 +27,11 @@ internal enum class ReaderLocatorEvent(
         countsPageTurn = false,
         bypassProgressDebounce = false
     ),
+    OPENING_CHECKPOINT(
+        commitsLocator = true,
+        countsPageTurn = false,
+        bypassProgressDebounce = false
+    ),
     RELAYOUT_CHECKPOINT(
         commitsLocator = true,
         countsPageTurn = false,
@@ -61,7 +66,7 @@ internal fun navigatorLocatorEvent(
     isPaperMode: Boolean
 ): ReaderLocatorEvent = when {
     isContinuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
-    isInitialEmission -> ReaderLocatorEvent.FINAL_SNAPSHOT
+    isInitialEmission -> ReaderLocatorEvent.OPENING_CHECKPOINT
     isPaperMode -> ReaderLocatorEvent.NAVIGATOR_POSITION
     else -> ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
 }
