@@ -17,19 +17,7 @@ on:
       - "tools/**"
       - ".github/workflows/android.yml"
   pull_request:
-    paths:
-      - "app/**"
-      - "benchmark/**"
-      - "performance/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle.properties"
-      - "gradle/**"
-      - "gradlew"
-      - "gradlew.bat"
-      - "buildSrc/**"
-      - "tools/**"
-      - ".github/workflows/android.yml"
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   workflow_dispatch:
 
 permissions:
