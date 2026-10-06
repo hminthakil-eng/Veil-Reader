@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -538,7 +539,7 @@ internal fun LibraryArchiveContent(
 
                     if (trimmedQuery.isNotBlank() || collection.isNotEmpty() || seriesFilter.isNotEmpty()) {
                         VeilMicroLabel(
-                            text = stringResource(R.string.library_filtered_volume_count, filtered.size),
+                            text = pluralStringResource(R.plurals.library_filtered_volume_count, filtered.size, filtered.size),
                             modifier = Modifier.padding(horizontal = VeilSpacing.Micro)
                         )
                     }
