@@ -74,13 +74,13 @@ internal fun PdfZoomControls(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            "PDF zoom",
+            "PDF view",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
-        
+
         Text(
-            "Pinch or double-tap the page at any time. These controls give you a reliable manual fallback.",
+            "Keep layout, zoom, and screen brightness close to the page. Pinch and double-tap still work directly on the PDF.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -139,7 +139,10 @@ internal fun PdfZoomControls(
                     view.zoomTo(requested)
                     zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                 },
-                valueRange = minZoom..maxZoom
+                valueRange = minZoom..maxZoom,
+                modifier = Modifier.semantics {
+                    contentDescription = "PDF zoom"
+                }
             )
 
             Row(
@@ -157,13 +160,18 @@ internal fun PdfZoomControls(
                         )
                         view.zoomWithAnimation(requested)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics { contentDescription = "Zoom out" }
                 ) { Text("−") }
                 OutlinedButton(
                     onClick = {
                         view.resetZoomWithAnimation()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) { Text("Reset") }
                 OutlinedButton(
                     onClick = {
@@ -175,7 +183,10 @@ internal fun PdfZoomControls(
                         )
                         view.zoomWithAnimation(requested)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics { contentDescription = "Zoom in" }
                 ) { Text("+") }
             }
 
@@ -189,6 +200,14 @@ internal fun PdfZoomControls(
         }
 
         HorizontalDivider()
+
+        ReaderBrightnessControls(
+            appearance = appearance,
+            onChange = onAppearanceChange
+        )
+
+        HorizontalDivider()
+
         Button(
             onClick = onDone,
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
