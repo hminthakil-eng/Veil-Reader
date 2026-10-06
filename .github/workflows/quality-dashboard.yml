@@ -12,7 +12,8 @@ on:
       - Android CI
       - Storage Instrumentation
       - Performance Benchmarks
-      - Dependency Governance
+      - Dependency Review
+      - Dependency Baseline
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -29,7 +30,7 @@ permissions:
 jobs:
   dashboard:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 35
     steps:
       - name: Resolve target SHA
         id: target
@@ -68,6 +69,8 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --sha "${{ steps.target.outputs.sha }}" \
             --physical quality/physical-device-status.json \
+            --wait-seconds 1800 \
+            --poll-seconds 15 \
             --out-json build/reports/quality-dashboard.json \
             --out-md build/reports/quality-dashboard.md
           cat build/reports/quality-dashboard.md >> "$GITHUB_STEP_SUMMARY"
