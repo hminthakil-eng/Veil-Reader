@@ -135,7 +135,10 @@ class GrayfogCloudDetailTest {
             context.resources.configuration.locales[0]).format(java.util.Date(0L))
         compose.onAllNodesWithText(epochDate, ignoreCase = true).assertCountEquals(0)
         compose.onAllNodesWithText(unknown, ignoreCase = true)[0].performScrollTo().assertIsDisplayed()
-        captureDetail("book-detail-unknown-date", dialog = true)
+        // Keep this contract semantic-only in Robolectric. Native Graphics + Compose
+        // captureToImage on a dialog can abort the whole Gradle test worker inside
+        // Android's JNI graphics bridge even after assertions have passed.
+        // Pixel evidence belongs to the emulator-backed Grayfog capture lane.
     }
 
     @Test @Config(qualifiers = "en-w412dp-h900dp-mdpi")
