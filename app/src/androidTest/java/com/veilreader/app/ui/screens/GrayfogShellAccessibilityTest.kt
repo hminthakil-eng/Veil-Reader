@@ -29,6 +29,8 @@ import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.Bookmark
+import com.veilreader.app.domain.Highlight
 import com.veilreader.app.ui.review.GrayfogReviewContent
 import com.veilreader.app.ui.review.GrayfogReviewFixtures
 import com.veilreader.app.ui.review.GrayfogReviewSurface
@@ -232,6 +234,92 @@ class GrayfogShellAccessibilityTest(
             assertEquals(1, favorites)
         }
         capture("archive-gallery")
+    }
+
+    @Test
+    fun hiddenArchivePopulatedStateHasDirectVisualEvidence() {
+        val localized = localizedContext()
+        val book = Book(
+            id = "hidden-archive-review",
+            title = if (language == "fa") "رصدخانهٔ مه‌آلود" else "The Veiled Observatory",
+            author = if (language == "fa") "بایگان خاکستری" else "Grayfog archivist"
+        )
+        val note = if (language == "fa") {
+            "یادداشتی که باید در بایگانی پنهان بدون ازدحام دیده شود."
+        } else {
+            "A note that must remain visible in the Hidden Archive without duplicate chrome."
+        }
+        val quote = if (language == "fa") {
+            "مه روی رصدخانه آرام گرفت."
+        } else {
+            "The fog settled quietly over the observatory."
+        }
+        present {
+            ArchiveRecordContent(
+                books = listOf(book),
+                highlights = listOf(
+                    Highlight(
+                        id = "hidden-archive-highlight",
+                        bookId = book.id,
+                        quote = quote,
+                        locatorJson = "{\"href\":\"chapter-1\"}",
+                        note = note
+                    )
+                ),
+                bookmarks = listOf(
+                    Bookmark(
+                        id = "hidden-archive-bookmark",
+                        bookId = book.id,
+                        label = if (language == "fa") "نشان رصدخانه" else "Observatory mark",
+                        locatorJson = "{\"href\":\"chapter-1\"}"
+                    )
+                ),
+                readingSessions = emptyList(),
+                readingCycles = emptyList(),
+                passageVisits = emptyList(),
+                onClose = {},
+                onOpenPassage = { _, _ -> },
+                onSaveNote = { _, _ -> },
+                onDeleteHighlight = {},
+                onDeleteBookmark = {}
+            )
+        }
+        compose.onNodeWithText(localized.getString(R.string.archive_title))
+            .assertExists()
+            .assertIsDisplayed()
+        // Capture the untouched first viewport before reachability checks move the
+        // LazyColumn. This is the composition evidence used for density review.
+        capture("hidden-archive-populated-first-viewport")
+        compose.onNodeWithText(note)
+            .performScrollTo()
+            .assertExists()
+            .assertIsDisplayed()
+        // Keep a second capture proving the record remains reachable after scroll.
+        capture("hidden-archive-populated-note-reached")
+    }
+
+    @Test
+    fun hiddenArchiveEmptyStateHasDirectVisualEvidence() {
+        val localized = localizedContext()
+        present {
+            ArchiveRecordContent(
+                books = emptyList(),
+                highlights = emptyList(),
+                bookmarks = emptyList(),
+                readingSessions = emptyList(),
+                readingCycles = emptyList(),
+                passageVisits = emptyList(),
+                onClose = {},
+                onOpenPassage = { _, _ -> },
+                onSaveNote = { _, _ -> },
+                onDeleteHighlight = {},
+                onDeleteBookmark = {}
+            )
+        }
+        compose.onNodeWithText(localized.getString(R.string.archive_title))
+            .assertExists()
+            .assertIsDisplayed()
+        capture("hidden-archive-empty")
     }
 
     private fun capture(surface: String) {

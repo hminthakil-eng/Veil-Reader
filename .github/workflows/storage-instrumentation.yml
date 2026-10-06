@@ -6,6 +6,7 @@ on:
       - "app/src/main/java/com/veilreader/app/data/**"
       - "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt"
       - "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt"
+      - "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt"
       - "app/src/main/java/com/veilreader/app/ui/theme/**"
       - "app/src/androidTest/**"
       - "app/schemas/**"
