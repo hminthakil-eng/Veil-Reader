@@ -52,6 +52,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         db.close()
         File(context.filesDir, "publications").deleteRecursively()
         File(context.filesDir, "covers").deleteRecursively()
+        File(context.filesDir, "reader-recovery-v1").deleteRecursively()
     }
 
     @Test
