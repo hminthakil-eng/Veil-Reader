@@ -38,8 +38,14 @@ python3 - /tmp/veil-reader-crash-seed.json <<'PY'
 import json, sys
 with open(sys.argv[1], "r", encoding="utf-8") as fh:
     payload = json.load(fh)
-if payload.get("status") != "checkpointed" or payload.get("sequence") != 1:
+if payload.get("status") != "checkpointed":
     raise SystemExit(f"invalid seed evidence: {payload}")
+if payload.get("sequence") != 32 or payload.get("commitCount") != 32:
+    raise SystemExit(f"fault commit series incomplete: {payload}")
+latency = payload.get("checkpointWriteLatencyUs") or {}
+for key in ("p50", "p95", "max"):
+    if not isinstance(latency.get(key), int) or latency[key] < 0:
+        raise SystemExit(f"invalid checkpoint latency evidence: {payload}")
 PY
 
 "$ADB" -s "$SERIAL" shell am start -W -n "$COMPONENT"   --es "veil.reader.crashRecovery.mode" "verify" >/dev/null
@@ -68,10 +74,16 @@ expected = {
     "checkpointRecovered": True,
     "roomAfterWasDestination": True,
     "checkpointCleared": True,
+    "commitCount": 32,
 }
 if payload.get("status") != "pass":
     raise SystemExit(f"reader crash recovery failed: {payload}")
-if payload.get("details") != expected:
-    raise SystemExit(f"unexpected reader crash recovery evidence: {payload}")
+details = payload.get("details") or {}
+for key, value in expected.items():
+    if details.get(key) != value:
+        raise SystemExit(f"unexpected reader crash recovery evidence: {payload}")
+latency = details.get("checkpointWriteLatencyUs") or {}
+if not (0 <= latency.get("p50", -1) <= latency.get("p95", -1) <= latency.get("max", -1)):
+    raise SystemExit(f"invalid checkpoint latency ordering: {payload}")
 print("Reader crash recovery fault injection passed:", json.dumps(payload, sort_keys=True))
 PY
