@@ -7,6 +7,7 @@ import com.veilreader.app.domain.Book
 import java.io.File
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -101,6 +102,34 @@ class ReaderCrashRecoveryStoreInstrumentedTest {
                 checkpoint
             )
         )
+    }
+
+    @Test
+    fun checkpoint_stripsPublicationTextAndTitleBeforeDiskWrite() {
+        val secret = "DO_NOT_PERSIST_PUBLICATION_PROSE"
+        store.write(
+            checkpoint(
+                sequence = 9L,
+                locatorJson =
+                    """{"href":"chapter.xhtml","title":"Private chapter heading","locations":{"progression":0.4},"text":{"highlight":"$secret","before":"private before","after":"private after"}}"""
+            )
+        )
+
+        val restored = store.read(BOOK_ID) ?: error("checkpoint missing")
+        val locator = org.json.JSONObject(restored.locatorJson)
+        assertFalse(locator.has("text"))
+        assertFalse(locator.has("title"))
+        assertEquals("chapter.xhtml", locator.getString("href"))
+
+        val rawFile = File(context.filesDir, "reader-recovery-v1")
+            .listFiles()
+            ?.firstOrNull { it.name.endsWith(".json") }
+            ?: error("checkpoint file missing")
+        val raw = rawFile.readText()
+        assertFalse(raw.contains(secret))
+        assertFalse(raw.contains("Private chapter heading"))
+        assertFalse(raw.contains("private before"))
+        assertFalse(raw.contains("private after"))
     }
 
     @Test
