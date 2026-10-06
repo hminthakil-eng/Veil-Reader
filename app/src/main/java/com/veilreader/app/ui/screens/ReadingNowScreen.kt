@@ -1188,17 +1188,17 @@ private fun ReadingPulse(
             ReadingPulseValue(
                 value = stringResource(R.string.profile_stat_streak_value, profile.streakDays),
                 label = stringResource(R.string.profile_stat_current_streak),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(0.9f)
             )
             ReadingPulseValue(
                 value = formatReadingTime(profile.minutesRead),
                 label = stringResource(R.string.threshold_stat_reading),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1.2f)
             )
             ReadingPulseValue(
                 value = "${profile.booksFinished}",
                 label = stringResource(R.string.profile_stat_finished),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(0.9f)
             )
         }
     }
@@ -1209,10 +1209,12 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             value,
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            maxLines = 2,
+            softWrap = true,
+            overflow = TextOverflow.Clip
         )
         VeilMicroLabel(
             text = label,
