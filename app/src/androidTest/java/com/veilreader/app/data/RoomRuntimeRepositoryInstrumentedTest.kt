@@ -611,6 +611,81 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun semanticReaderCommit_bypassesDebounce_supersedesPendingScroll_andPreservesOrder() = runBlocking<Unit> {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "semantic-commit-book",
+                title = "Semantic Commit",
+                author = "Durability",
+                totalPages = 100,
+                sourceUri = "file:///semantic-commit.epub"
+            )
+        )
+
+        val sqlite = db.openHelper.writableDatabase
+        sqlite.execSQL("CREATE TABLE semantic_progress_write_probe (writes INTEGER NOT NULL)")
+        sqlite.execSQL("INSERT INTO semantic_progress_write_probe(writes) VALUES (0)")
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER semantic_progress_write_counter
+            AFTER UPDATE OF progress, pagesRead, locatorJson, finished ON books
+            BEGIN
+                UPDATE semantic_progress_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+
+        val lease = repository.beginReaderProgressSession(
+            bookId = "semantic-commit-book",
+            sessionId = "semantic-session"
+        )
+
+        val scroll = repository.saveReaderProgress(
+            lease = lease,
+            progression = 0.40,
+            locatorJson = "{\"href\":\"chapter-scroll.xhtml\"}",
+            sequence = 1L,
+            bypassDebounce = false
+        )
+        assertTrue(scroll.accepted)
+
+        val committedTurn = repository.saveReaderProgress(
+            lease = lease,
+            progression = 0.41,
+            locatorJson = "{\"href\":\"chapter-turn.xhtml\"}",
+            sequence = 2L,
+            bypassDebounce = true
+        )
+        assertTrue(committedTurn.accepted)
+
+        val stale = repository.saveReaderProgress(
+            lease = lease,
+            progression = 0.39,
+            locatorJson = "{\"href\":\"chapter-stale.xhtml\"}",
+            sequence = 1L,
+            bypassDebounce = true
+        )
+        assertFalse(stale.accepted)
+
+        repository.flushWrites()
+
+        sqlite.query("SELECT writes FROM semantic_progress_write_probe").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+        }
+
+        val stored = db.books().findEntity("semantic-commit-book")
+            ?: error("semantic commit book missing")
+        assertEquals(0.41f, stored.progress)
+        assertEquals(41, stored.pagesRead)
+        assertEquals("{\"href\":\"chapter-turn.xhtml\"}", stored.locatorJson)
+        assertFalse(stored.finished)
+
+        repository.endReaderProgressSession(lease)
+    }
+
+    @Test
     fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
