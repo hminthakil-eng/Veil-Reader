@@ -773,6 +773,7 @@ fun VeilApp(
 
         val locatorOverride = route.locatorOverrideJson
         val readerCheckpoint = route.readerLocatorCheckpointJson
+        val crashRecoveryCheckpoint = library.loadReaderCrashRecoveryCheckpoint(book)
 
         activeReturnLocatorJson = locatorOverride?.let { requested ->
             book.locatorJson
@@ -798,6 +799,7 @@ fun VeilApp(
 
         val initialLocatorJson = com.veilreader.app.ui.navigation.chooseReaderRestoreLocator(
             explicitOverrideJson = locatorOverride,
+            crashRecoveryCheckpointJson = crashRecoveryCheckpoint?.locatorJson,
             readerCheckpointJson = readerCheckpoint,
             durableLocatorJson = book.locatorJson
         )
@@ -855,11 +857,17 @@ fun VeilApp(
                 return@LaunchedEffect
             }
 
-            val recoveryLocator = locatorOverride ?: readerCheckpoint
+            val recoveryLocator =
+                locatorOverride ?: crashRecoveryCheckpoint?.locatorJson ?: readerCheckpoint
             if (recoveryLocator != null) {
                 val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
                 val recoveredProgress =
-                    opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
+                    opened.initialLocator?.locations?.totalProgression
+                        ?: crashRecoveryCheckpoint
+                            ?.takeIf { it.locatorJson == recoveryLocator }
+                            ?.progression
+                            ?.toDouble()
+                        ?: book.progress.toDouble()
                 val recoveryOutcome = library.saveReaderOpenRecoveryProgress(
                     bookId = targetId,
                     sessionId = openRequestId,
