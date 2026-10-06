@@ -36,6 +36,21 @@ internal data class ReaderCrashRecoveryCheckpoint(
 }
 
 /**
+ * Crash recovery needs structural navigation coordinates, never publication prose.
+ *
+ * Readium locators may carry a `text` excerpt and a human-readable `title`. Neither is required
+ * to restore the semantic position, so the emergency journal strips both before touching disk.
+ */
+internal fun sanitizeReaderCrashRecoveryLocatorJson(locatorJson: String): String? =
+    runCatching {
+        val json = JSONObject(locatorJson)
+        require(json.optString("href").isNotBlank()) { "Reader locator href is missing." }
+        json.remove("text")
+        json.remove("title")
+        json.toString()
+    }.getOrNull()
+
+/**
  * A checkpoint is authoritative only while it is strictly newer than Room's progress timestamp.
  *
  * Equal timestamps mean the corresponding progress write has already reached Room. We deliberately
@@ -55,6 +70,9 @@ internal class ReaderCrashRecoveryStore(context: Context) {
     @Synchronized
     fun write(checkpoint: ReaderCrashRecoveryCheckpoint) {
         require(checkpoint.isValid()) { "Invalid Reader crash-recovery checkpoint." }
+        val safeLocatorJson = requireNotNull(
+            sanitizeReaderCrashRecoveryLocatorJson(checkpoint.locatorJson)
+        ) { "Reader crash-recovery locator is not structurally safe." }
         if (!root.exists() && !root.mkdirs() && !root.isDirectory) {
             error("Unable to create Reader crash-recovery directory.")
         }
@@ -66,7 +84,7 @@ internal class ReaderCrashRecoveryStore(context: Context) {
             .put("sessionId", checkpoint.sessionId)
             .put("writerEpoch", checkpoint.writerEpoch)
             .put("sequence", checkpoint.sequence)
-            .put("locatorJson", checkpoint.locatorJson)
+            .put("locatorJson", safeLocatorJson)
             .put("progression", checkpoint.progression.toDouble())
             .put("committedAtEpochMs", checkpoint.committedAtEpochMs)
             .toString()
@@ -108,12 +126,18 @@ internal class ReaderCrashRecoveryStore(context: Context) {
             check(json.optInt("version", -1) == FORMAT_VERSION) {
                 "Unsupported Reader crash-recovery checkpoint version."
             }
+            val rawLocatorJson = json.getString("locatorJson")
+            val safeLocatorJson = sanitizeReaderCrashRecoveryLocatorJson(rawLocatorJson)
+                ?: error("Invalid Reader crash-recovery locator payload.")
+            check(rawLocatorJson == safeLocatorJson) {
+                "Reader crash-recovery payload contained non-recovery publication metadata."
+            }
             ReaderCrashRecoveryCheckpoint(
                 bookId = json.getString("bookId"),
                 sessionId = json.getString("sessionId"),
                 writerEpoch = json.getLong("writerEpoch"),
                 sequence = json.getLong("sequence"),
-                locatorJson = json.getString("locatorJson"),
+                locatorJson = safeLocatorJson,
                 progression = json.getDouble("progression").toFloat(),
                 committedAtEpochMs = json.getLong("committedAtEpochMs")
             ).also { checkpoint ->
