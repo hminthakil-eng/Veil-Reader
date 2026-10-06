@@ -2,15 +2,7 @@ name: Dependency Baseline
 
 on:
   pull_request:
-    paths:
-      - "app/**"
-      - "benchmark/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle.properties"
-      - "gradle/**"
-      - ".github/dependabot.yml"
-      - ".github/workflows/dependency-baseline.yml"
+    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   push:
     branches: [ "grand-forge/arena-app-hardening-v1", "main" ]
     paths:
