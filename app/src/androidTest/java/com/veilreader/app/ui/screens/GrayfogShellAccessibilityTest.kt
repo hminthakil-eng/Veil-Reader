@@ -104,6 +104,17 @@ class GrayfogShellAccessibilityTest(
         present {
             GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY, highContrast = highContrast)
         }
+        val initialRecord = GrayfogReviewFixtures.books.first()
+        val initialRecordNode = compose.onNode(
+            hasText(initialRecord.title) and !hasSetTextAction()
+        )
+        if (scale == 1f) {
+            initialRecordNode.assertIsDisplayed()
+        } else {
+            // Accessibility text owns space; large text must remain reachable, not be shrunk
+            // merely to preserve the standard-density first viewport.
+            initialRecordNode.assertExists()
+        }
         val label = localized.getString(R.string.library_search_hint)
         val search = compose.onNode(hasContentDescription(label) and hasSetTextAction())
         search.performScrollTo().assertHeightIsAtLeast(48.dp)

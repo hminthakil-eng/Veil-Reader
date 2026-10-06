@@ -458,7 +458,13 @@
     <string name="reader_publisher_override_note">سبک ناشر می‌تواند تنظیمات پیشرفتهٔ قلم را بازنویسی کند. با تغییر یک کنترل، مالکیت همان تنظیم به Veil منتقل می‌شود.</string>
 
     <string name="common_reset">بازنشانی</string>
-    <string name="library_filtered_volume_count">%1$d کتاب</string>
+    <plurals name="library_filtered_volume_count">
+        <item quantity="one">%1$d کتاب</item>
+        <item quantity="other">%1$d کتاب</item>
+    </plurals>
+    <string name="library_filters">فیلترها</string>
+    <string name="library_hide_filters">بستن فیلترها</string>
+    <string name="library_filters_active">فیلترها · %1$d</string>
     <string name="library_collection">مجموعه</string>
     <string name="library_all_collections">همهٔ مجموعه‌ها</string>
     <string name="library_sort_books">مرتب‌سازی کتاب‌ها: %1$s</string>

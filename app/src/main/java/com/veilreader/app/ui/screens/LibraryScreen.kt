@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -166,6 +167,7 @@ internal fun LibraryArchiveContent(
     var viewModeName by rememberSaveable { mutableStateOf(initialViewMode.name) }
     val viewMode = libraryViewModeFromStored(viewModeName)
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
+    var secondaryFiltersExpanded by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
     var seriesMenu by remember { mutableStateOf(false) }
@@ -352,6 +354,18 @@ internal fun LibraryArchiveContent(
     val detailBook = detailBookId?.let(booksById::get)
     val filterActive = trimmedQuery.isNotBlank() || shelf != "All" ||
         collection.isNotEmpty() || seriesFilter.isNotEmpty()
+    val retrievalModified = libraryRetrievalModified(
+        query = trimmedQuery,
+        shelf = shelf,
+        collection = collection,
+        series = seriesFilter,
+        sort = sort
+    )
+    val secondaryFilterCount = librarySecondaryFilterCount(
+        collection = collection,
+        series = seriesFilter,
+        sort = sort
+    )
     val shelfLabels = LibraryShelfLabels(
         filteredArchive = stringResource(R.string.library_group_filtered),
         matchingVolumes = stringResource(R.string.library_group_matching),
@@ -392,13 +406,15 @@ internal fun LibraryArchiveContent(
                 seed = books.size * 31 + collections.size * 7,
                 timePhase = archiveTimePhase
             ),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(if (viewMode == LibraryViewMode.INDEX) 0.dp else VeilSpacing.md),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Content),
+        verticalArrangement = Arrangement.spacedBy(
+            if (viewMode == LibraryViewMode.INDEX) 0.dp else VeilSpacing.Content
+        ),
         contentPadding = PaddingValues(
             start = archiveLayout.horizontalPaddingDp.dp,
             end = archiveLayout.horizontalPaddingDp.dp,
-            top = VeilSpacing.xs,
-            bottom = 24.dp
+            top = VeilSpacing.Micro,
+            bottom = VeilSpacing.Section
         )
     ) {
         item(key = "library:heading", span = { GridItemSpan(maxLineSpan) }) {
@@ -408,7 +424,7 @@ internal fun LibraryArchiveContent(
                     isImporting = isImporting,
                     onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
                     onOpenSettings = onOpenSettings,
-                    retrievalActive = query.isNotBlank()
+                    retrievalActive = retrievalModified
                 )
             }
         }
@@ -465,11 +481,10 @@ internal fun LibraryArchiveContent(
             }
         }
 
-        item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
+        item(key = "library:retrieval", span = { GridItemSpan(maxLineSpan) }) {
             Column(
-                Modifier
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
             ) {
                 LibraryReadingFilter(
                     selected = shelf,
@@ -481,196 +496,224 @@ internal fun LibraryArchiveContent(
                         LibraryReadingFilterOption("Deep Shelf", stringResource(R.string.library_shelf_deep), memoryState.deepShelfBookIds.size),
                         LibraryReadingFilterOption("Unread", stringResource(R.string.library_shelf_unread), books.count { !it.finished && it.progress <= 0f })
                     ),
-                    onSelect = { shelf = it }
+                    onSelect = { shelf = it },
+                    compact = true
                 )
-            }
-        }
-
-        item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
-            Column(
-                Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                BrassRule(Modifier.fillMaxWidth())
-                ViewModeToggle(mode = viewMode, onChange = { viewModeName = it.name })
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Inline),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
                 ) {
-                    // The reading-state disclosure already gives its exact count.
-                    // Report a second count only when retrieval further narrows that set.
-                    if (trimmedQuery.isNotBlank() || collection.isNotEmpty() || seriesFilter.isNotEmpty()) {
-                        VeilMicroLabel(
-                            text = stringResource(R.string.library_filtered_volume_count, filtered.size),
-                            modifier = Modifier.padding(end = 4.dp)
+                    ViewModeToggle(
+                        mode = viewMode,
+                        onChange = { viewModeName = it.name }
+                    )
+
+                    TextButton(
+                        onClick = { secondaryFiltersExpanded = !secondaryFiltersExpanded },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = VeilSpacing.Cluster),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = if (secondaryFilterCount > 0) {
+                                VeilPalette.Brass
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    ) {
+                        FilterIcon(Modifier.size(18.dp), LocalContentColor.current)
+                        Spacer(Modifier.width(VeilSpacing.Inline))
+                        Text(
+                            when {
+                                secondaryFilterCount > 0 ->
+                                    stringResource(R.string.library_filters_active, secondaryFilterCount)
+                                secondaryFiltersExpanded ->
+                                    stringResource(R.string.library_hide_filters)
+                                else ->
+                                    stringResource(R.string.library_filters)
+                            },
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
 
-                    if (collections.isNotEmpty()) {
-                        Box {
-                            TextButton(
-                                onClick = { collectionMenu = true },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(horizontal = 10.dp)
-                            ) {
-                                val collectionLabel =
-                                    if (collection.isBlank()) stringResource(R.string.library_collection) else collection
-                                Text(
-                                    collectionLabel,
-                                    style = MaterialTheme.typography.labelMedium.withVeilContentScript(collectionLabel),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = collectionMenu,
-                                onDismissRequest = { collectionMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.library_all_collections)) },
-                                    onClick = { collection = ""; collectionMenu = false }
-                                )
-                                collections.forEach { label ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                label,
-                                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(label)
-                                            )
-                                        },
-                                        onClick = { collection = label; collectionMenu = false }
-                                    )
-                                }
-                            }
-                        }
+                    if (trimmedQuery.isNotBlank() || collection.isNotEmpty() || seriesFilter.isNotEmpty()) {
+                        VeilMicroLabel(
+                            text = pluralStringResource(R.plurals.library_filtered_volume_count, filtered.size, filtered.size),
+                            modifier = Modifier.padding(horizontal = VeilSpacing.Micro)
+                        )
                     }
 
-                    if (wingState.seriesWings.isNotEmpty()) {
-                        Box {
-                            TextButton(
-                                onClick = { seriesMenu = true },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(horizontal = VeilSpacing.sm)
-                            ) {
-                                Text(
-                                    stringResource(R.string.library_group_series),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = seriesMenu,
-                                onDismissRequest = { seriesMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.library_all_series)) },
-                                    onClick = { seriesFilter = ""; seriesMenu = false }
-                                )
-                                wingState.seriesWings.forEach { wing ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                wing.name,
-                                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(wing.name)
-                                            )
-                                        },
-                                        onClick = {
-                                            seriesFilter = wing.name
-                                            collection = ""
-                                            seriesMenu = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Box {
-                        val sortLabel = when (sort) {
-                            "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
-                            "Title" -> stringResource(R.string.library_sort_title)
-                            "Author" -> stringResource(R.string.library_sort_author)
-                            "Series" -> stringResource(R.string.library_sort_series)
-                            "Progress" -> stringResource(R.string.library_sort_progress)
-                            else -> stringResource(R.string.library_sort_recent)
-                        }
-                        val sortDescription = stringResource(R.string.library_sort_books, sortLabel)
-                        TextButton(
-                            onClick = { sortMenu = true },
-                            modifier = Modifier
-                                .heightIn(min = 48.dp)
-                                .semantics { contentDescription = sortDescription },
-                            shape = MaterialTheme.shapes.extraSmall,
-                            contentPadding = PaddingValues(horizontal = 10.dp)
-                        ) {
-                            Text(
-                                sortLabel,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = sortMenu,
-                            onDismissRequest = { sortMenu = false }
-                        ) {
-                            listOf(
-                                "Recent" to R.string.library_sort_recent,
-                                "Archive Depth" to R.string.library_sort_archive_depth,
-                                "Title" to R.string.library_sort_title,
-                                "Author" to R.string.library_sort_author,
-                                "Series" to R.string.library_sort_series,
-                                "Progress" to R.string.library_sort_progress
-                            ).forEach { (key, labelRes) ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(labelRes)) },
-                                    onClick = { sort = key; sortMenu = false }
-                                )
-                            }
-                        }
-                    }
-
-                    if (seriesFilter.isNotEmpty()) {
-                        OutlinedButton(
-                            onClick = { seriesFilter = "" },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                            shape = MaterialTheme.shapes.extraSmall,
-                            contentPadding = PaddingValues(horizontal = 10.dp),
-                            border = BorderStroke(
-                                1.dp,
-                                VeilPalette.Brass.copy(alpha = 0.44f)
-                            )
-                        ) {
-                            val seriesFilterLabel = stringResource(R.string.library_series_filter, seriesFilter)
-                            Text(
-                                seriesFilterLabel,
-                                style = MaterialTheme.typography.labelMedium.withVeilContentScript(seriesFilterLabel),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    if (
-                        trimmedQuery.isNotBlank() ||
-                        shelf != "All" ||
-                        collection.isNotEmpty() ||
-                        seriesFilter.isNotEmpty()
-                    ) {
+                    if (retrievalModified) {
                         TextButton(
                             onClick = {
                                 query = ""
                                 shelf = "All"
                                 collection = ""
                                 seriesFilter = ""
+                                sort = "Recent"
                             },
-                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            contentPadding = PaddingValues(horizontal = VeilSpacing.Inline),
                             colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
                         ) {
-                            Text(stringResource(R.string.common_reset), style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                stringResource(R.string.common_reset),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+
+                if (secondaryFiltersExpanded) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Inline),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
+                    ) {
+                        if (collections.isNotEmpty()) {
+                            Box {
+                                TextButton(
+                                    onClick = { collectionMenu = true },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    contentPadding = PaddingValues(horizontal = VeilSpacing.Cluster)
+                                ) {
+                                    val collectionLabel =
+                                        if (collection.isBlank()) {
+                                            stringResource(R.string.library_collection)
+                                        } else {
+                                            collection
+                                        }
+                                    Text(
+                                        collectionLabel,
+                                        style = MaterialTheme.typography.labelMedium.withVeilContentScript(collectionLabel),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = collectionMenu,
+                                    onDismissRequest = { collectionMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.library_all_collections)) },
+                                        onClick = {
+                                            collection = ""
+                                            collectionMenu = false
+                                        }
+                                    )
+                                    collections.forEach { label ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    label,
+                                                    style = MaterialTheme.typography.bodyLarge.withVeilContentScript(label)
+                                                )
+                                            },
+                                            onClick = {
+                                                collection = label
+                                                collectionMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (wingState.seriesWings.isNotEmpty()) {
+                            Box {
+                                TextButton(
+                                    onClick = { seriesMenu = true },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    contentPadding = PaddingValues(horizontal = VeilSpacing.Cluster)
+                                ) {
+                                    val seriesLabel =
+                                        seriesFilter.ifBlank { stringResource(R.string.library_group_series) }
+                                    Text(
+                                        seriesLabel,
+                                        style = MaterialTheme.typography.labelMedium.withVeilContentScript(seriesLabel),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = seriesMenu,
+                                    onDismissRequest = { seriesMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.library_all_series)) },
+                                        onClick = {
+                                            seriesFilter = ""
+                                            seriesMenu = false
+                                        }
+                                    )
+                                    wingState.seriesWings.forEach { wing ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    wing.name,
+                                                    style = MaterialTheme.typography.bodyLarge.withVeilContentScript(wing.name)
+                                                )
+                                            },
+                                            onClick = {
+                                                seriesFilter = wing.name
+                                                collection = ""
+                                                seriesMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Box {
+                            val sortLabel = when (sort) {
+                                "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
+                                "Title" -> stringResource(R.string.library_sort_title)
+                                "Author" -> stringResource(R.string.library_sort_author)
+                                "Series" -> stringResource(R.string.library_sort_series)
+                                "Progress" -> stringResource(R.string.library_sort_progress)
+                                else -> stringResource(R.string.library_sort_recent)
+                            }
+                            val sortDescription = stringResource(R.string.library_sort_books, sortLabel)
+                            TextButton(
+                                onClick = { sortMenu = true },
+                                modifier = Modifier
+                                    .heightIn(min = 48.dp)
+                                    .semantics { contentDescription = sortDescription },
+                                shape = MaterialTheme.shapes.extraSmall,
+                                contentPadding = PaddingValues(horizontal = VeilSpacing.Cluster)
+                            ) {
+                                Text(
+                                    sortLabel,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = sortMenu,
+                                onDismissRequest = { sortMenu = false }
+                            ) {
+                                listOf(
+                                    "Recent" to R.string.library_sort_recent,
+                                    "Archive Depth" to R.string.library_sort_archive_depth,
+                                    "Title" to R.string.library_sort_title,
+                                    "Author" to R.string.library_sort_author,
+                                    "Series" to R.string.library_sort_series,
+                                    "Progress" to R.string.library_sort_progress
+                                ).forEach { (key, labelRes) ->
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(labelRes)) },
+                                        onClick = {
+                                            sort = key
+                                            sortMenu = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -2150,16 +2193,30 @@ private fun LibraryHeader(
             .clip(MaterialTheme.shapes.extraSmall)
     ) {
         val compact = maxWidth < 560.dp
-        val condensed = retrievalActive || com.veilreader.app.ui.theme.condenseRealmApproach(
-            LocalDensity.current.fontScale, with(LocalDensity.current) {
+        val fontScale = LocalDensity.current.fontScale
+        val windowHeightDp = with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
-        })
+        }
+        val condensed = com.veilreader.app.ui.theme.shouldCondenseArchiveHeader(
+            bookCount = bookCount,
+            retrievalActive = retrievalActive,
+            fontScale = fontScale,
+            heightDp = windowHeightDp
+        )
         val headerHeight = if (condensed) 0.dp else if (compact) 112.dp else 144.dp
         val adjacent = com.veilreader.app.ui.theme.useArchitecturalPair(
-            maxWidth.value - VeilSpacing.md.value * 2f, LocalDensity.current.fontScale)
+            maxWidth.value - VeilSpacing.Content.value * 2f,
+            fontScale
+        )
+        val inlineActions = com.veilreader.app.ui.theme.shouldInlineCondensedArchiveActions(
+            adjacentLayout = adjacent,
+            condensed = condensed,
+            compactLayout = compact,
+            fontScale = fontScale
+        )
         @Composable fun HeaderActions(modifier: Modifier = Modifier) {
             FlowRow(
-                modifier = modifier.fillMaxWidth(),
+                modifier = modifier,
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm, Alignment.End),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
@@ -2258,19 +2315,33 @@ private fun LibraryHeader(
 
 
             Column(
-                Modifier.fillMaxWidth().padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = VeilSpacing.Content,
+                        vertical = if (condensed) VeilSpacing.Inline else VeilSpacing.Cluster
+                    ),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.Inline)
             ) {
-                if (adjacent) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-                        verticalAlignment = Alignment.CenterVertically) {
+                if (inlineActions) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.Content),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         HeaderIdentity(Modifier.weight(1f))
-                        HeaderActions(Modifier.width((com.veilreader.app.ui.theme.VeilComposition.InstrumentActionsReadableWidthDp *
-                            LocalDensity.current.fontScale.coerceAtLeast(1f)).dp))
+                        HeaderActions(
+                            Modifier.widthIn(
+                                max = (
+                                    com.veilreader.app.ui.theme.VeilComposition.InstrumentActionsReadableWidthDp *
+                                        fontScale.coerceAtLeast(1f)
+                                    ).dp
+                            )
+                        )
                     }
                 } else {
                     HeaderIdentity()
-                    HeaderActions()
+                    HeaderActions(Modifier.fillMaxWidth())
                 }
             }
         }
@@ -2417,16 +2488,18 @@ internal data class LibraryReadingFilterOption(val id: String, val label: String
 internal fun LibraryReadingFilter(
     selected: String,
     options: List<LibraryReadingFilterOption>,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
     val current = options.firstOrNull { it.id == selected } ?: options.firstOrNull() ?: return
     val formatNumber = rememberVeilIntegerFormatter()
     val stateLabel = stringResource(R.string.library_reading_filter)
     val currentDescription = stringResource(R.string.library_reading_filter_selection, current.label, current.count)
-    val condensedCaption = LocalDensity.current.fontScale >=
+    val condensedCaption = compact || LocalDensity.current.fontScale >=
         com.veilreader.app.ui.theme.VeilComposition.ControlCaptionCondenseFontScale
-    Box(Modifier.fillMaxWidth()) {
+    Box(modifier.fillMaxWidth()) {
         Surface(
             onClick = { expanded = true },
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
@@ -2437,8 +2510,13 @@ internal fun LibraryReadingFilter(
             tonalElevation = 0.dp,
             shadowElevation = 0.dp
         ) {
-            Column(Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
-                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                Modifier.padding(
+                    horizontal = VeilSpacing.Content,
+                    vertical = if (compact) VeilSpacing.Inline else VeilSpacing.Cluster
+                ),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.Micro)
+            ) {
                 if (!condensedCaption) VeilMicroLabel(stateLabel, strong = true)
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
@@ -3096,16 +3174,22 @@ internal fun BookLibraryTile(
             BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                 // Reading text may need a full column at 200%; the physical book object
                 // need not grow to fill that column and push its own identity offscreen.
-                val objectWidth = if (largeText) maxWidth.coerceAtMost(
-                    com.veilreader.app.ui.theme.VeilComposition.GalleryLargeTextCoverMaxWidthDp.dp
-                ) else maxWidth
-                Box(Modifier.width(objectWidth).aspectRatio(0.69f)
-                    .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.sm)) {
+                val objectWidth = com.veilreader.app.ui.theme.galleryBookObjectWidthDp(
+                    availableWidthDp = maxWidth.value,
+                    fontScale = LocalDensity.current.fontScale
+                ).dp
+                Box(
+                    Modifier
+                        .width(objectWidth)
+                        .aspectRatio(0.69f)
+                        .padding(horizontal = VeilSpacing.Inline, vertical = VeilSpacing.Inline)
+                ) {
                     BookCover(
                         title = displayTitle,
                         subtitle = book.author,
                         imagePath = book.coverCachePath,
                         artifact = artifact,
+                        showGeneratedCaption = false,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -3129,18 +3213,18 @@ internal fun BookLibraryTile(
 
             Column(
                 modifier = Modifier.padding(
-                    start = VeilSpacing.sm,
-                    end = VeilSpacing.sm,
-                    top = VeilSpacing.sm,
-                    bottom = 4.dp
+                    start = VeilSpacing.Cluster,
+                    end = VeilSpacing.Cluster,
+                    top = VeilSpacing.Inline,
+                    bottom = VeilSpacing.Micro
                 ),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.Micro)
             ) {
                 Text(
                     displayTitle,
                     style = MaterialTheme.typography.titleMedium.withVeilContentScript(displayTitle),
                     color = VeilPalette.Moon,
-                    minLines = if (largeText) 1 else 2,
+                    minLines = 1,
                     maxLines = if (largeText) 3 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3149,8 +3233,8 @@ internal fun BookLibraryTile(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     color = VeilMaterials.TextSecondary,
                     style = MaterialTheme.typography.labelMedium.withVeilContentScript(book.author.ifBlank { stringResource(R.string.common_unknown_author) }),
-                    minLines = if (largeText) 1 else 2,
-                    maxLines = 2,
+                    minLines = 1,
+                    maxLines = if (largeText) 2 else 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
@@ -3201,28 +3285,23 @@ internal fun BookLibraryTile(
                     )
             )
 
-            FlowRow(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
-                    .padding(start = 4.dp, end = 2.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                    .padding(horizontal = VeilSpacing.Micro),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                IconButton(
                     onClick = onDetails,
                     modifier = Modifier
-                        .then(if (largeText) Modifier.fillMaxWidth() else Modifier.widthIn(min = 48.dp))
-                        .heightIn(min = 48.dp)
-                        .semantics {
-                            contentDescription = detailsLabel
-                        },
-                    contentPadding = PaddingValues(horizontal = 6.dp),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = VeilPalette.Brass
-                    )
+                        .size(48.dp)
+                        .semantics { contentDescription = detailsLabel }
                 ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.library_archive_record_button)
+                    EllipsisIcon(
+                        modifier = Modifier.size(17.dp),
+                        tint = VeilPalette.Brass
                     )
                 }
 
@@ -3230,9 +3309,7 @@ internal fun BookLibraryTile(
                     onClick = onFavorite,
                     modifier = Modifier
                         .size(48.dp)
-                        .semantics {
-                            contentDescription = favoriteLabel
-                        }
+                        .semantics { contentDescription = favoriteLabel }
                 ) {
                     FavoriteIcon(book.favorite, Modifier.size(15.dp))
                 }
