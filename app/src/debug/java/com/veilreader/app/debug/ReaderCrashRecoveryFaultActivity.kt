@@ -17,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import kotlin.math.ceil
 
 /**
  * Debug-only external fault injector used by CI.
@@ -220,7 +221,8 @@ class ReaderCrashRecoveryFaultActivity : Activity() {
 
     private fun percentile(sorted: List<Long>, quantile: Double): Long {
         require(sorted.isNotEmpty())
-        val index = ((sorted.size - 1) * quantile).toInt().coerceIn(0, sorted.lastIndex)
+        require(quantile > 0.0 && quantile <= 1.0)
+        val index = (ceil(quantile * sorted.size).toInt() - 1).coerceIn(0, sorted.lastIndex)
         return sorted[index]
     }
 
