@@ -119,6 +119,7 @@ class ReaderLocatorPolicyTest {
         )
         assertTrue(relayout.commitsLocator)
         assertFalse(relayout.countsPageTurn)
+        assertFalse(relayout.bypassProgressDebounce)
 
         val userTurn = readerObservedLocatorEvent(
             programmaticNavigationSettled = false,
@@ -145,6 +146,7 @@ class ReaderLocatorPolicyTest {
     fun semanticCommitsBypassProgressDebounce_butScrollAndObservationsRemainCoalesced() {
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.bypassProgressDebounce)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.bypassProgressDebounce)
+        assertFalse(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.bypassProgressDebounce)
 
         assertTrue(ReaderLocatorEvent.NAVIGATOR_PAGE_TURN.bypassProgressDebounce)
         assertTrue(ReaderLocatorEvent.PAPER_COMMIT.bypassProgressDebounce)
@@ -191,6 +193,10 @@ class ReaderLocatorPolicyTest {
 
         assertTrue(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.countsPageTurn)
+
+        assertTrue(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.commitsLocator)
+        assertFalse(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.countsPageTurn)
+        assertFalse(ReaderLocatorEvent.RELAYOUT_CHECKPOINT.bypassProgressDebounce)
 
         assertTrue(ReaderLocatorEvent.NAVIGATOR_PAGE_TURN.commitsLocator)
         assertTrue(ReaderLocatorEvent.NAVIGATOR_PAGE_TURN.countsPageTurn)
