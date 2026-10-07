@@ -1,0 +1,52 @@
+name: Temporary TTS Device APK
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/arena-app-hardening-v1
+
+permissions:
+  contents: read
+
+jobs:
+  build-tts-device-apk:
+    if: github.head_ref == 'grand-forge/tts-background-completion-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Verify source contracts
+        run: |
+          sh tools/verify-canonical-paper.sh
+          sh tools/test-policy.sh
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Record exact source
+        run: |
+          mkdir -p build/device-apk
+          cp app/build/outputs/apk/debug/app-debug.apk build/device-apk/Veil-Reader-TTS-device-test.apk
+          git rev-parse HEAD > build/device-apk/SOURCE_SHA.txt
+          sha256sum build/device-apk/Veil-Reader-TTS-device-test.apk > build/device-apk/APK_SHA256.txt
+
+      - name: Upload device-test package
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-tts-device-test
+          path: build/device-apk/
+          if-no-files-found: error
+          retention-days: 2
