@@ -12,6 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -27,9 +31,11 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
+import com.veilreader.app.ui.reader.tts.selectOfflineTtsVoice
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilContentScript
 import java.util.Locale
 
 /**
@@ -74,18 +80,9 @@ internal fun ReaderListeningMode(
         if (showAdvanced) showAdvanced = false else onDone()
     }
 
-    val activeLanguage = publicationLanguage
-        ?.let(Locale::forLanguageTag)
-        ?.takeUnless { it.language.isBlank() || it.language == "und" }
     val preferredVoiceId = settings.preferredVoiceId(publicationLanguage)
-    val currentVoice = remember(voices, preferredVoiceId, activeLanguage) {
-        val offline = voices.filter { it.installed && !it.requiresNetwork }
-        offline.firstOrNull { it.id == preferredVoiceId }
-            ?: offline.firstOrNull { voice ->
-                activeLanguage != null &&
-                    Locale.forLanguageTag(voice.languageTag).language == activeLanguage.language
-            }
-            ?: offline.firstOrNull()
+    val currentVoice = remember(voices, preferredVoiceId, publicationLanguage) {
+        publicationLanguage?.let { selectOfflineTtsVoice(voices, it, preferredVoiceId) }
     }
     val previousLabel = stringResourceCompat(R.string.tts_previous_segment)
     val nextLabel = stringResourceCompat(R.string.tts_next_segment)
@@ -169,7 +166,7 @@ internal fun ReaderListeningMode(
 
             Text(
                 book.title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmall.withVeilContentScript(book.title),
                 color = VeilPalette.Moon,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
@@ -178,7 +175,7 @@ internal fun ReaderListeningMode(
             if (book.author.isNotBlank()) {
                 Text(
                     book.author,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.withVeilContentScript(book.author),
                     color = VeilMaterials.TextSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -186,7 +183,7 @@ internal fun ReaderListeningMode(
             }
 
             Surface(
-                modifier = Modifier.fillMaxWidth().widthIn(max = 620.dp),
+                modifier = Modifier.widthIn(max = 620.dp).fillMaxWidth(),
                 color = VeilPalette.Archive.copy(alpha = 0.72f),
                 shape = MaterialTheme.shapes.medium,
                 tonalElevation = 0.dp
@@ -203,7 +200,7 @@ internal fun ReaderListeningMode(
                     )
                     Text(
                         chapterLabel,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.withVeilContentScript(chapterLabel),
                         color = VeilPalette.Moon,
                         textAlign = TextAlign.Center,
                         maxLines = 3,
@@ -218,7 +215,7 @@ internal fun ReaderListeningMode(
                             )
                             Text(
                                 spoken,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(spoken),
                                 color = VeilPalette.Moon.copy(alpha = 0.92f),
                                 textAlign = TextAlign.Start,
                                 maxLines = 7,
@@ -236,7 +233,7 @@ internal fun ReaderListeningMode(
             }
 
             Row(
-                Modifier.fillMaxWidth().widthIn(max = 520.dp),
+                Modifier.widthIn(max = 520.dp).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -313,11 +310,12 @@ internal fun ReaderListeningMode(
                 }
             }
 
+            val number = rememberVeilNumberFormatter()
             val speedPresets = listOf(0.8, 1.0, 1.25, 1.5, 2.0, 3.0)
             Row(
                 Modifier
-                    .fillMaxWidth()
                     .widthIn(max = 620.dp)
+                    .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
@@ -327,14 +325,15 @@ internal fun ReaderListeningMode(
                         onClick = {
                             onSettingsChange(settings.copy(speed = speed))
                         },
-                        label = { Text("${speed}×") }
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        label = { Text("${number(speed)}×") }
                     )
                 }
             }
 
             Surface(
                 onClick = { showAdvanced = true },
-                modifier = Modifier.fillMaxWidth().widthIn(max = 620.dp),
+                modifier = Modifier.widthIn(max = 620.dp).fillMaxWidth(),
                 color = VeilPalette.Archive.copy(alpha = 0.86f),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -350,7 +349,11 @@ internal fun ReaderListeningMode(
                         )
                         Text(
                             currentVoice?.let { friendlyVoiceName(it.id) }
-                                ?: stringResourceCompat(R.string.tts_voice_automatic),
+                                ?: stringResourceCompat(
+                                    if (preferredVoiceId != null)
+                                        R.string.tts_preferred_voice_unavailable
+                                    else R.string.tts_voice_automatic
+                                ),
                             style = MaterialTheme.typography.titleMedium,
                             color = VeilPalette.Moon,
                             maxLines = 2,
@@ -375,7 +378,7 @@ internal fun ReaderListeningMode(
             if (listeningPositionAvailable) {
                 TextButton(
                     onClick = onSyncListeningPosition,
-                    modifier = Modifier.fillMaxWidth().widthIn(max = 620.dp).heightIn(min = 48.dp)
+                    modifier = Modifier.widthIn(max = 620.dp).fillMaxWidth().heightIn(min = 48.dp)
                 ) {
                     Text(stringResourceCompat(R.string.tts_go_to_listening_position))
                 }
@@ -384,6 +387,7 @@ internal fun ReaderListeningMode(
             if (problemLabel != null) {
                 Text(
                     problemLabel,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center
@@ -403,41 +407,48 @@ internal fun ReaderListeningMode(
         }
 
         if (showAdvanced) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(VeilPalette.Ink.copy(alpha = 0.88f))
-                    .systemBarsPadding()
-                    .padding(VeilSpacing.md),
-                contentAlignment = Alignment.Center
+            Dialog(
+                onDismissRequest = { showAdvanced = false },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
             ) {
-                ReaderTtsControls(
-                    state = state,
-                    supported = supported,
-                    settings = settings,
-                    startPending = startPending,
-                    startFailed = startFailed,
-                    publicationLanguage = publicationLanguage,
-                    voiceCatalogSupported = voiceCatalogSupported,
-                    voices = voices,
-                    voiceCatalogLoading = voiceCatalogLoading,
-                    voiceCatalogProblem = voiceCatalogProblem,
-                    previewProblem = previewProblem,
-                    sleepDeadlineEpochMs = sleepDeadlineEpochMs,
-                    onSetSleepTimer = onSetSleepTimer,
-                    listeningPositionAvailable = listeningPositionAvailable,
-                    onSyncListeningPosition = onSyncListeningPosition,
-                    onStart = onStart,
-                    onResume = onResume,
-                    onPause = onPause,
-                    onPrevious = onPrevious,
-                    onNext = onNext,
-                    onStop = onStop,
-                    onRefreshVoices = onRefreshVoices,
-                    onPreviewVoice = onPreviewVoice,
-                    onSettingsChange = onSettingsChange,
-                    onDone = { showAdvanced = false }
-                )
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(VeilPalette.Ink.copy(alpha = 0.88f))
+                        .systemBarsPadding()
+                        .padding(VeilSpacing.md),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(Modifier.widthIn(max = 620.dp).fillMaxWidth()) {
+                        ReaderTtsControls(
+                            state = state,
+                            supported = supported,
+                            settings = settings,
+                            startPending = startPending,
+                            startFailed = startFailed,
+                            publicationLanguage = publicationLanguage,
+                            voiceCatalogSupported = voiceCatalogSupported,
+                            voices = voices,
+                            voiceCatalogLoading = voiceCatalogLoading,
+                            voiceCatalogProblem = voiceCatalogProblem,
+                            previewProblem = previewProblem,
+                            sleepDeadlineEpochMs = sleepDeadlineEpochMs,
+                            onSetSleepTimer = onSetSleepTimer,
+                            listeningPositionAvailable = listeningPositionAvailable,
+                            onSyncListeningPosition = onSyncListeningPosition,
+                            onStart = onStart,
+                            onResume = onResume,
+                            onPause = onPause,
+                            onPrevious = onPrevious,
+                            onNext = onNext,
+                            onStop = onStop,
+                            onRefreshVoices = onRefreshVoices,
+                            onPreviewVoice = onPreviewVoice,
+                            onSettingsChange = onSettingsChange,
+                            onDone = { showAdvanced = false }
+                        )
+                    }
+                }
             }
         }
     }

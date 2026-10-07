@@ -557,11 +557,12 @@ fun ReaderNotebook(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass
                                     )
+                                    val bookmarkLabel = bookmark.label.ifBlank {
+                                        stringResource(R.string.reader_notebook_saved_place)
+                                    }
                                     Text(
-                                        bookmark.label.ifBlank {
-                                            stringResource(R.string.reader_notebook_saved_place)
-                                        },
-                                        style = MaterialTheme.typography.titleSmall,
+                                        bookmarkLabel,
+                                        style = MaterialTheme.typography.titleSmall.withVeilContentScript(bookmarkLabel),
                                         color = VeilPalette.Moon
                                     )
                                     ReaderNotebookActionRail(
@@ -714,13 +715,16 @@ fun ReaderNotebook(
                                     locator.title?.takeIf { it.isNotBlank() }?.let {
                                         Text(
                                             it,
-                                            style = MaterialTheme.typography.titleSmall,
+                                            style = MaterialTheme.typography.titleSmall.withVeilContentScript(it),
                                             color = VeilPalette.Moon
                                         )
                                     }
+                                    val snippet = searchSnippet(
+                                        locator, stringResource(R.string.reader_notebook_search_match)
+                                    )
                                     Text(
-                                        searchSnippet(locator, stringResource(R.string.reader_notebook_search_match)),
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        snippet,
+                                        style = MaterialTheme.typography.bodyMedium.withVeilContentScript(snippet),
                                         color = VeilPalette.Mist.copy(alpha = 0.88f)
                                     )
                                     TextButton(

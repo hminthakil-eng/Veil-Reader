@@ -84,15 +84,21 @@ internal data class ReaderTtsNeuralBenchmark(
         require(firstAudioLatencyMs >= 0L)
         require(synthesisDurationMs >= 0L)
         require(generatedAudioDurationMs >= 0L)
-        require(averageRealtimeFactor >= 0.0)
+        require(averageRealtimeFactor.isFinite() && averageRealtimeFactor >= 0.0)
         peakRssBytes?.let { require(it >= 0L) }
     }
 
     fun passesInteractiveGate(
         maxFirstAudioLatencyMs: Long = 1_200L,
         maxRealtimeFactor: Double = 0.85
-    ): Boolean =
-        completed &&
+    ): Boolean {
+        require(maxFirstAudioLatencyMs >= 0L)
+        require(maxRealtimeFactor.isFinite() && maxRealtimeFactor > 0.0)
+        // A completed flag and an optimistic reported ratio are not audio evidence.
+        return completed && inputCharacters > 0 &&
+            synthesisDurationMs > 0L && generatedAudioDurationMs > 0L &&
             firstAudioLatencyMs <= maxFirstAudioLatencyMs &&
-            averageRealtimeFactor <= maxRealtimeFactor
+            averageRealtimeFactor <= maxRealtimeFactor &&
+            synthesisDurationMs.toDouble() / generatedAudioDurationMs <= maxRealtimeFactor
+    }
 }

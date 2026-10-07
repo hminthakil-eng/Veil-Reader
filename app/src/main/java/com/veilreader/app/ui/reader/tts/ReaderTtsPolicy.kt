@@ -56,12 +56,7 @@ internal fun selectOfflineTtsVoice(
     preferredId: String? = null
 ): ReaderTtsVoice? {
     val language = Locale.forLanguageTag(languageTag)
-    if (language.language.isBlank() || language.language == "und") return null
-    val candidates = voices.filter { voice ->
-        val locale = Locale.forLanguageTag(voice.languageTag)
-        voice.installed && !voice.requiresNetwork && locale.language == language.language &&
-            (language.script.isBlank() || locale.script.isBlank() || language.script == locale.script)
-    }
+    val candidates = eligibleOfflineTtsVoices(voices, languageTag)
     if (preferredId != null) {
         // A persisted explicit choice is a contract. Never silently swap it for another voice.
         return candidates.firstOrNull { it.id == preferredId }
@@ -71,6 +66,20 @@ internal fun selectOfflineTtsVoice(
             it.languageTag.equals(language.toLanguageTag(), ignoreCase = true)
         }.thenByDescending { it.quality }.thenBy { it.id }
     ).firstOrNull()
+}
+
+/** Shared eligibility for playback, settings and previews; UI must not invent a fallback. */
+internal fun eligibleOfflineTtsVoices(
+    voices: List<ReaderTtsVoice>,
+    languageTag: String
+): List<ReaderTtsVoice> {
+    val language = Locale.forLanguageTag(languageTag)
+    if (language.language.isBlank() || language.language == "und") return emptyList()
+    return voices.filter { voice ->
+        val locale = Locale.forLanguageTag(voice.languageTag)
+        voice.installed && !voice.requiresNetwork && locale.language == language.language &&
+            (language.script.isBlank() || locale.script.isBlank() || language.script == locale.script)
+    }
 }
 
 /** A native synthesis request must fit Android's UTF-16 limit without splitting a surrogate pair. */

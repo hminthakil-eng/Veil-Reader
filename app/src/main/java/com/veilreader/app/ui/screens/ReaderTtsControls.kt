@@ -23,6 +23,8 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
+import com.veilreader.app.ui.reader.tts.eligibleOfflineTtsVoices
+import com.veilreader.app.ui.reader.tts.selectOfflineTtsVoice
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
 
@@ -304,13 +306,7 @@ private fun ReaderTtsVoicePicker(
             .sorted()
     }
     val preferredInitial = remember(publicationLanguage, languages) {
-        val requested = publicationLanguage
-            ?.let(Locale::forLanguageTag)
-            ?.language
-            ?.takeIf { it.isNotBlank() }
-        languages.firstOrNull {
-            Locale.forLanguageTag(it).language == requested
-        } ?: languages.firstOrNull()
+        readerTtsPickerLanguage(publicationLanguage, languages)
     }
     var selectedLanguage by remember(preferredInitial) {
         mutableStateOf(preferredInitial)
@@ -350,9 +346,7 @@ private fun ReaderTtsVoicePicker(
     }
 
     val currentLocale = Locale.forLanguageTag(selected)
-    val currentVoices = offlineVoices.filter {
-        Locale.forLanguageTag(it.languageTag).language == currentLocale.language
-    }
+    val currentVoices = eligibleOfflineTtsVoices(offlineVoices, selected)
     val preferredVoice = settings.preferredVoiceId(selected)
     val selectedVoice = currentVoices.firstOrNull { it.id == preferredVoice }
 
@@ -393,7 +387,11 @@ private fun ReaderTtsVoicePicker(
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
         ) {
             Text(
-                selectedVoice?.id ?: stringResource(R.string.tts_voice_automatic),
+                selectedVoice?.id ?: stringResource(
+                    if (preferredVoice != null) R.string.tts_preferred_voice_unavailable
+                    else if (currentVoices.isEmpty()) R.string.tts_missing_voice
+                    else R.string.tts_voice_automatic
+                ),
                 maxLines = 2
             )
         }
@@ -430,7 +428,7 @@ private fun ReaderTtsVoicePicker(
         }
     }
 
-    val previewVoice = selectedVoice ?: currentVoices.firstOrNull()
+    val previewVoice = selectOfflineTtsVoice(currentVoices, selected, preferredVoice)
     if (previewVoice != null) {
         val sample = when (currentLocale.language) {
             "fa" -> stringResource(R.string.tts_preview_sample_fa)
