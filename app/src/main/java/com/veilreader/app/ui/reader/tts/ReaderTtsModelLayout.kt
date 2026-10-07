@@ -144,7 +144,6 @@ private fun requiredComponents(
     )
     ReaderTtsNeuralModelFamily.MATCHA -> setOf(
         ReaderTtsModelComponent.ACOUSTIC_MODEL,
-        ReaderTtsModelComponent.VOCODER,
         ReaderTtsModelComponent.TOKENS
     )
     ReaderTtsNeuralModelFamily.KOKORO,
