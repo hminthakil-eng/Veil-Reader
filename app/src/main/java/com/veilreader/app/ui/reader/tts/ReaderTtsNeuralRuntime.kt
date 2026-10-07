@@ -21,6 +21,7 @@ internal enum class ReaderTtsNeuralModelFamily {
     VITS_PIPER,
     MATCHA,
     KOKORO,
+    ZIPVOICE,
     KITTEN,
     SUPERTONIC,
     POCKET
@@ -56,6 +57,7 @@ internal object SherpaOnnxTtsCandidate {
         ReaderTtsNeuralModelFamily.VITS_PIPER,
         ReaderTtsNeuralModelFamily.MATCHA,
         ReaderTtsNeuralModelFamily.KOKORO,
+        ReaderTtsNeuralModelFamily.ZIPVOICE,
         ReaderTtsNeuralModelFamily.KITTEN,
         ReaderTtsNeuralModelFamily.SUPERTONIC,
         ReaderTtsNeuralModelFamily.POCKET
