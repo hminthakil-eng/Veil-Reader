@@ -7,11 +7,16 @@ class ReaderTtsPolicyTest {
     @Test
     fun malformedSettingsCannotPassNonfiniteOrInvalidValuesToAndroid() {
         for (bad in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
-            val safe = ReaderTtsPreferences(bad, bad, "und", " ").normalized()
+            val safe = ReaderTtsPreferences(
+                speed = bad,
+                pitch = bad,
+                languageTag = "und",
+                preferredVoiceIds = mapOf("und" to " ")
+            ).normalized()
             assertEquals(1f, safe.speed, 0f)
             assertEquals(1f, safe.pitch, 0f)
             assertNull(safe.languageTag)
-            assertNull(safe.preferredVoiceId)
+            assertTrue(safe.preferredVoiceIds.isEmpty())
         }
         assertEquals(0.5f, ReaderTtsPreferences(speed = -1f).normalized().speed, 0f)
         assertEquals(3f, ReaderTtsPreferences(speed = 99f).normalized().speed, 0f)
@@ -33,9 +38,22 @@ class ReaderTtsPolicyTest {
             voice("network", "en-US", network = true), voice("gone", "en-US", installed = false))
         assertEquals("en-exact", selectOfflineTtsVoice(voices, "en-US")?.id)
         assertEquals("en-high", selectOfflineTtsVoice(voices, "en-US", "en-high")?.id)
-        assertEquals("en-exact", selectOfflineTtsVoice(voices, "en-US", "network")?.id)
-        assertEquals("en-exact", selectOfflineTtsVoice(voices, "en-US", "gone")?.id)
+        assertNull(selectOfflineTtsVoice(voices, "en-US", "network"))
+        assertNull(selectOfflineTtsVoice(voices, "en-US", "gone"))
         assertEquals("en-exact", selectOfflineTtsVoice(voices.reversed(), "en-US")?.id)
+    }
+
+    @Test
+    fun languageAwarePreferencesKeepPersianAndEnglishVoicesIndependent() {
+        val prefs = ReaderTtsPreferences(
+            preferredVoiceIds = mapOf(
+                "fa-IR" to "fa-local",
+                "en-US" to "en-local"
+            )
+        ).normalized()
+        assertEquals("fa-local", prefs.preferredVoiceId("fa-AF"))
+        assertEquals("en-local", prefs.preferredVoiceId("en-GB"))
+        assertNull(prefs.preferredVoiceId("ar"))
     }
 
     @Test
