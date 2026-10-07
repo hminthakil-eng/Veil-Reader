@@ -290,6 +290,12 @@ internal class ReaderTtsMediaPlayer(
         return Futures.immediateVoidFuture()
     }
 
+    fun activeSegmentText(): String? =
+        sessionState.activeText
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.take(4_096)
+
     fun updateVoicePreferences(preferredVoiceIds: Map<String, String>) {
         val request = currentRequest ?: return
         val updatedPreferences = request.preferences.copy(
