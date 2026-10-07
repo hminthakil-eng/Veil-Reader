@@ -84,8 +84,17 @@ internal class ReaderTtsMediaPlayer(
         val playlist = if (book == null) {
             emptyList()
         } else {
+            val chapterTitle = sessionState.sourceLocator?.title
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
             val metadata = MediaMetadata.Builder()
-                .setTitle(book.title)
+                .setTitle(
+                    if (chapterTitle == null) {
+                        book.title
+                    } else {
+                        "${book.title} — $chapterTitle"
+                    }
+                )
                 .setArtist(book.author)
                 .build()
             val item = MediaItem.Builder()
@@ -234,8 +243,14 @@ internal class ReaderTtsMediaPlayer(
 
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
         desiredPlayWhenReady = playWhenReady
-        if (playWhenReady) session?.resume() else session?.pause()
+        // Publish playWhenReady first. MediaSessionService can then promote itself to a media
+        // foreground service before AndroidReaderTtsBackend asks Android 15+ for audio focus.
         invalidateState()
+        if (playWhenReady) {
+            session?.resume()
+        } else {
+            session?.pause()
+        }
         return Futures.immediateVoidFuture()
     }
 
