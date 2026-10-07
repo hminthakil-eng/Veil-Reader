@@ -106,6 +106,8 @@ import com.veilreader.app.ui.reader.tts.readerCanPlayForegroundTts
 import com.veilreader.app.ui.reader.tts.readerCanCompleteTtsStart
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
+import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
+import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
 import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -3827,6 +3829,25 @@ fun ReaderScreen(
             ?: ttsSession?.state
             ?: remember { kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState()) }
         val speechState by speechStateSource.collectAsStateWithLifecycle()
+        val voiceCatalogSource = ttsServiceController?.voices
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<List<ReaderTtsVoice>>(emptyList())
+            }
+        val voiceCatalog by voiceCatalogSource.collectAsStateWithLifecycle()
+        val voiceCatalogLoadingSource = ttsServiceController?.voiceCatalogLoading
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
+        val voiceCatalogLoading by voiceCatalogLoadingSource.collectAsStateWithLifecycle()
+        val voiceCatalogProblemSource = ttsServiceController?.voiceCatalogProblem
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsProblem?>(null)
+            }
+        val voiceCatalogProblem by voiceCatalogProblemSource.collectAsStateWithLifecycle()
+        val previewProblemSource = ttsServiceController?.previewProblem
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsProblem?>(null)
+            }
+        val previewProblem by previewProblemSource.collectAsStateWithLifecycle()
+
         fun dismissSpeechControls() {
             ttsStartSerial += 1
             ttsStartJob?.cancel()
@@ -3840,6 +3861,21 @@ fun ReaderScreen(
                 settings = speechSettingsState.value,
                 startPending = ttsStartPending,
                 startFailed = ttsStartFailed,
+                publicationLanguage = publicationLanguage,
+                voiceCatalogSupported = ttsServiceController != null,
+                voices = voiceCatalog,
+                voiceCatalogLoading = voiceCatalogLoading,
+                voiceCatalogProblem = voiceCatalogProblem,
+                previewProblem = previewProblem,
+                onRefreshVoices = { ttsServiceController?.refreshVoiceCatalog() },
+                onPreviewVoice = { languageTag, voiceId, sample ->
+                    ttsServiceController?.previewVoice(
+                        languageTag = languageTag,
+                        voiceId = voiceId,
+                        sample = sample,
+                        settings = speechSettingsState.value
+                    )
+                },
                 onStart = {
                     val nav = latestNavigator.value as? EpubNavigatorFragment
                     if (
