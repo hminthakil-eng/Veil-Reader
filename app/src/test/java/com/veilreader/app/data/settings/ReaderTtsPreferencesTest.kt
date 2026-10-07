@@ -19,7 +19,7 @@ class ReaderTtsPreferencesTest {
     }
 
     @Test
-    fun preferredOfflineVoicesRoundTripAndMalformedJsonIsIgnored() {
+    fun preferredOfflineVoicesRoundTripAndMalformedPayloadIsIgnored() {
         val encoded = encodeReaderTtsPreferredVoices(
             mapOf("fa-IR" to "fa-local", "en-US" to "en-local")
         )
