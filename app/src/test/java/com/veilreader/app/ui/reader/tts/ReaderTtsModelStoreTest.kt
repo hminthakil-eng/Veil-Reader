@@ -210,6 +210,53 @@ class ReaderTtsModelStoreTest {
         }
     }
 
+    @Test
+    fun payloadCapacityProbeNeverEvictsWorkingModels() {
+        val root = createTempDirectory("veil-tts-growth-budget").toFile()
+        val download = createTempDirectory("veil-tts-growth-download").toFile()
+        try {
+            val store = ReaderTtsModelStore(root, budgetBytes = 4_096)
+            val first = install(store, download, "first", ByteArray(2_048) { 1 }, 10L)
+            val second = install(store, download, "second", ByteArray(2_048) { 2 }, 20L)
+
+            assertFalse(
+                store.ensureCapacityForModelGrowth(
+                    first,
+                    additionalBytes = 2_048L
+                )
+            )
+            assertTrue(first.directory.exists())
+            assertTrue(second.directory.exists())
+            assertEquals(4_096L, store.usedBytes())
+        } finally {
+            root.deleteRecursively()
+            download.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun cleanupStagingRemovesRootAndOrphanedPayloadStaging() {
+        val root = createTempDirectory("veil-tts-staging-cleanup").toFile()
+        try {
+            val store = ReaderTtsModelStore(root, budgetBytes = 8_192)
+            File(root, ".staging-download-crash").apply {
+                mkdirs()
+                resolve("partial").writeBytes(byteArrayOf(1))
+            }
+            val model = File(root, "fa-model-1.0").apply { mkdirs() }
+            File(model, ".payload-staging-123").apply {
+                mkdirs()
+                resolve("partial.onnx").writeBytes(byteArrayOf(1))
+            }
+
+            assertEquals(2, store.cleanupStaging())
+            assertFalse(File(root, ".staging-download-crash").exists())
+            assertFalse(File(model, ".payload-staging-123").exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     private fun install(
         store: ReaderTtsModelStore,
         download: File,
