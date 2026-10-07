@@ -4,10 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
 import org.junit.Test
-import org.readium.r2.shared.publication.Locator
-import org.readium.r2.shared.util.Url
-import org.readium.r2.shared.util.mediatype.MediaType
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class ReaderTtsPlaybackContractTest {
     @Test
     fun appPrivateRequestRoundTripsAndNormalizesPreferences() {
@@ -73,5 +75,5 @@ class ReaderTtsPlaybackContractTest {
     }
 
     private fun locatorJson(href: String = "chapter.xhtml"): String =
-        Locator(requireNotNull(Url(href)), MediaType.XHTML).toJSON().toString()
+        """{"href":"$href","type":"application/xhtml+xml","locations":{}}"""
 }
