@@ -60,7 +60,7 @@ internal class ReaderTtsModelStore(
             val finalDirectory = File(root, safe.installDirectoryName())
             val existingBytes = finalDirectory
                 .takeIf(File::isDirectory)
-                ?.let(::directoryBytes)
+                ?.let(::modelBytes)
                 ?: 0L
             if (!makeRoomFor(
                     incomingBytes = safe.expectedBytes,
@@ -149,7 +149,7 @@ internal class ReaderTtsModelStore(
         return root.listFiles()
             .orEmpty()
             .filter { it.isDirectory && !it.name.startsWith(".staging-") }
-            .sumOf(::directoryBytes)
+            .sumOf(::modelBytes)
     }
 
     @Synchronized
@@ -194,7 +194,7 @@ internal class ReaderTtsModelStore(
             )
 
         for (candidate in candidates) {
-            val bytes = directoryBytes(candidate)
+            val bytes = modelBytes(candidate)
             if (candidate.deleteRecursively()) {
                 current = (current - bytes).coerceAtLeast(0L)
                 if (current + incomingBytes <= budgetBytes) return true
@@ -250,10 +250,11 @@ internal class ReaderTtsModelStore(
             ?.coerceAtLeast(0L)
             ?: directory.lastModified().coerceAtLeast(0L)
 
-    private fun directoryBytes(directory: File): Long =
-        directory.walkTopDown()
-            .filter(File::isFile)
-            .sumOf(File::length)
+    private fun modelBytes(directory: File): Long =
+        File(directory, ARCHIVE_NAME)
+            .takeIf(File::isFile)
+            ?.length()
+            ?: 0L
 
     private companion object {
         const val ARCHIVE_NAME = "model.package"
