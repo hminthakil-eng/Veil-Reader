@@ -36,14 +36,24 @@ internal data class ReaderTtsProviderDescriptor(
     }
 }
 
+internal data class ReaderTtsProviderReadiness(
+    val localNeuralGateEnabled: Boolean = false,
+    val localNeuralModelInstalled: Boolean = false,
+    val localNeuralRuntimeAvailable: Boolean = false,
+    val networkGateEnabled: Boolean = false,
+    val networkConfigured: Boolean = false,
+    val networkConsentGranted: Boolean = false
+)
+
 /**
  * Canonical provider registry for the staged rollout.
  *
- * Only Android system TTS is executable today. Local neural and network providers are deliberately
- * present as unavailable descriptors so UI and persistence can evolve without pretending that an
- * engine is ready before model/license/privacy/device gates pass.
+ * Availability is fail-closed. A provider becomes selectable only when every gate that protects
+ * its privacy, runtime and model requirements has explicitly passed.
  */
-internal fun readerTtsProviderCatalog(): List<ReaderTtsProviderDescriptor> = listOf(
+internal fun readerTtsProviderCatalog(
+    readiness: ReaderTtsProviderReadiness = ReaderTtsProviderReadiness()
+): List<ReaderTtsProviderDescriptor> = listOf(
     ReaderTtsProviderDescriptor(
         kind = ReaderTtsProviderKind.SYSTEM,
         id = "android-system",
@@ -61,8 +71,16 @@ internal fun readerTtsProviderCatalog(): List<ReaderTtsProviderDescriptor> = lis
         kind = ReaderTtsProviderKind.LOCAL_NEURAL,
         id = "sherpa-local",
         displayName = "Veil Neural Voice",
-        available = false,
-        unavailableReason = "Local neural models are not installed yet.",
+        available =
+            readiness.localNeuralGateEnabled &&
+                readiness.localNeuralModelInstalled &&
+                readiness.localNeuralRuntimeAvailable,
+        unavailableReason = when {
+            !readiness.localNeuralGateEnabled -> "Local neural listening is still under review."
+            !readiness.localNeuralModelInstalled -> "Local neural models are not installed yet."
+            !readiness.localNeuralRuntimeAvailable -> "The local neural runtime is unavailable."
+            else -> null
+        },
         capabilities = ReaderTtsProviderCapabilities(
             offline = true,
             streaming = true,
@@ -75,8 +93,17 @@ internal fun readerTtsProviderCatalog(): List<ReaderTtsProviderDescriptor> = lis
         kind = ReaderTtsProviderKind.NETWORK,
         id = "network-opt-in",
         displayName = "Connected voice",
-        available = false,
-        unavailableReason = "Connected synthesis is not configured.",
+        available =
+            readiness.networkGateEnabled &&
+                readiness.networkConfigured &&
+                readiness.networkConsentGranted,
+        unavailableReason = when {
+            !readiness.networkGateEnabled -> "Connected synthesis is disabled."
+            !readiness.networkConfigured -> "Connected synthesis is not configured."
+            !readiness.networkConsentGranted ->
+                "Publication text sharing has not been explicitly approved."
+            else -> null
+        },
         capabilities = ReaderTtsProviderCapabilities(
             offline = false,
             streaming = true,
