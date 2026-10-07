@@ -30,6 +30,8 @@ internal fun ReaderTtsControls(
     onStart: () -> Unit,
     onResume: () -> Unit,
     onPause: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
     onStop: () -> Unit,
     onSettingsChange: (ReaderTtsSettings) -> Unit,
     onDone: () -> Unit
@@ -66,6 +68,33 @@ internal fun ReaderTtsControls(
             } else if (state.phase == ReaderTtsPhase.PAUSED) {
                 TextButton(onClick = onResume, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                     Text(stringResource(R.string.tts_play))
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                TextButton(
+                    onClick = onPrevious,
+                    enabled = state.phase !in setOf(
+                        ReaderTtsPhase.STOPPED,
+                        ReaderTtsPhase.CLOSED,
+                        ReaderTtsPhase.FAILED
+                    ),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.tts_previous_segment))
+                }
+                TextButton(
+                    onClick = onNext,
+                    enabled = state.phase !in setOf(
+                        ReaderTtsPhase.STOPPED,
+                        ReaderTtsPhase.CLOSED,
+                        ReaderTtsPhase.FAILED
+                    ),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.tts_next_segment))
                 }
             }
             TextButton(onClick = onStop, enabled = startPending || state.phase !in setOf(ReaderTtsPhase.STOPPED, ReaderTtsPhase.CLOSED),
