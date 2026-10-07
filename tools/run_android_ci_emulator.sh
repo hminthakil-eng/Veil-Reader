@@ -203,6 +203,7 @@ case "$MODE" in
     PACKAGE="com.veilreader.app"
     COMPONENT="${PACKAGE}/.debug.ReaderDurabilityProbeActivity"
     RESULT_FILE="files/reader-durability-probe-result.txt"
+    REPLAY_GUARD_FILE="files/reader-durability-probe-replay-guard.txt"
     REPORT="build/reports/reader-durability-fault-injection.txt"
     MARKER_LOG="build/reports/reader-durability-marker.log"
     CYCLES="${VEIL_DURABILITY_CYCLES:-18}"
@@ -225,6 +226,10 @@ case "$MODE" in
 
     probe_clear_result() {
       "$ADB" -s "$SERIAL" shell run-as "$PACKAGE" rm -f "$RESULT_FILE" >/dev/null 2>&1 || true
+    }
+
+    probe_clear_replay_guard() {
+      "$ADB" -s "$SERIAL" shell run-as "$PACKAGE" rm -f "$REPLAY_GUARD_FILE" >/dev/null 2>&1 || true
     }
 
     probe_read_result() {
@@ -254,7 +259,7 @@ case "$MODE" in
       timeout 20 "$ADB" -s "$SERIAL" shell am start -W -n "$COMPONENT" "$@" >/dev/null
     }
 
-    probe_commit_then_force_stop() {
+    probe_commit_then_self_kill() {
       local token="$1"
       shift
       local marker_file="$TEMP_ROOT/reader-durability-marker-$token.log"
@@ -267,12 +272,17 @@ case "$MODE" in
       "$ADB" -s "$SERIAL" logcat -v brief -s VeilDurabilityProbe:I '*:S' >"$marker_file" 2>&1 &
       logcat_pid="$!"
 
-      "$ADB" -s "$SERIAL" shell am start -n "$COMPONENT" "$@" >/dev/null
+      # The debug probe kills its own process immediately after onLocatorUpdate() returns.
+      # adb/logcat only observes the boundary; it no longer controls when the crash happens.
+      "$ADB" -s "$SERIAL" shell am start -n "$COMPONENT" "$@" >/dev/null 2>&1 || true
 
       for _ in $(seq 1 250); do
         if grep -Fq "$marker" "$marker_file" 2>/dev/null; then
           grep -F "$marker" "$marker_file" | tail -1 >>"$MARKER_LOG"
-          "$ADB" -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null
+
+          # Cleanup only: the semantic crash has already been requested inside the app process.
+          # force-stop prevents ActivityManager from restoring the no-history debug probe.
+          "$ADB" -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
           kill "$logcat_pid" >/dev/null 2>&1 || true
           wait "$logcat_pid" 2>/dev/null || true
 
@@ -282,7 +292,7 @@ case "$MODE" in
             fi
             sleep 0.01
           done
-          echo "FAIL phase=commit:$token error=force_stop_did_not_kill_process" | tee -a "$REPORT" >&2
+          echo "FAIL phase=commit:$token error=process_survived_self_kill_cleanup" | tee -a "$REPORT" >&2
           return 1
         fi
 
@@ -293,13 +303,13 @@ case "$MODE" in
           echo "$result" | tee -a "$REPORT" >&2
           return 1
         fi
-        sleep 0.02
+        sleep 0.01
       done
 
       kill "$logcat_pid" >/dev/null 2>&1 || true
       wait "$logcat_pid" 2>/dev/null || true
       [[ -f "$marker_file" ]] && cat "$marker_file" >>"$MARKER_LOG"
-      echo "FAIL phase=commit:$token error=commit_ready_timeout" | tee -a "$REPORT" >&2
+      echo "FAIL phase=commit:$token error=self_kill_marker_timeout" | tee -a "$REPORT" >&2
       return 1
     }
 
@@ -332,7 +342,8 @@ case "$MODE" in
       sleep 0.05
 
       probe_clear_result
-      probe_commit_then_force_stop "$token" \
+      probe_clear_replay_guard
+      probe_commit_then_self_kill "$token" \
         --es probe_action commit_and_kill \
         --es probe_event "$event" \
         --es probe_session_id "session-$token" \
@@ -349,7 +360,7 @@ case "$MODE" in
       echo "PASS scenario=$scenario cycle=$cycle event=$event expected=$expected" >>"$REPORT"
     }
 
-    # 6 scenarios x 18 default cycles = 108 abrupt-process samples on each exact SHA.
+    # 6 scenarios x 18 default cycles = 108 self-SIGKILL samples on each exact SHA.
     for cycle in $(seq 1 "$CYCLES"); do
       run_durability_case page-forward page 0.20 0.21 destination "$cycle"
       run_durability_case page-backward page 0.60 0.59 destination "$cycle"
