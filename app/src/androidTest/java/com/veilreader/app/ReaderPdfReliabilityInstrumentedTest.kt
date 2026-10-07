@@ -92,7 +92,12 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForDocumentsUi()
 
         clickDescription("Show roots")
-        clickText("Downloads")
+        // PDF rows created through MediaStore.Downloads are classified by Android's
+        // MediaDocumentsProvider on API 35. EPUB remains in DownloadsProvider, but a PDF can be
+        // absent from the Downloads root even though the file exists at /Download and is indexed.
+        // Select the provider root that actually owns document-class media instead of asserting a
+        // provider-internal classification unrelated to Veil's SAF import contract.
+        clickText("Documents")
         clickText("VeilReaderQa.pdf")
 
         waitForPackage(target.packageName)
