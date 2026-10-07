@@ -20,7 +20,10 @@ class ReaderTtsPlaybackContractTest {
                 speed = 99f,
                 pitch = -4f,
                 languageTag = " fa-IR ",
-                preferredVoiceId = "voice-fa"
+                preferredVoiceIds = mapOf(
+                    "fa-IR" to "voice-fa",
+                    "en-US" to "voice-en"
+                )
             )
         ).normalized()
 
@@ -30,7 +33,8 @@ class ReaderTtsPlaybackContractTest {
         assertEquals(3f, restored!!.preferences.speed, 0f)
         assertEquals(0.5f, restored.preferences.pitch, 0f)
         assertEquals("fa-IR", restored.preferences.languageTag)
-        assertEquals("voice-fa", restored.preferences.preferredVoiceId)
+        assertEquals("voice-fa", restored.preferences.preferredVoiceId("fa-IR"))
+        assertEquals("voice-en", restored.preferences.preferredVoiceId("en-GB"))
     }
 
     @Test
