@@ -812,7 +812,8 @@ fun VeilApp(
         val candidate =
             when {
                 crashRecoverySelected -> {
-                    val restoredProgress = crashCheckpoint.progression.toFloat().coerceIn(0f, 1f)
+                    val recovery = requireNotNull(crashCheckpoint)
+                    val restoredProgress = recovery.progression.toFloat().coerceIn(0f, 1f)
                     book.copy(
                         progress = restoredProgress,
                         pagesRead =
@@ -822,10 +823,10 @@ fun VeilApp(
                             } else {
                                 book.pagesRead
                             },
-                        locatorJson = crashCheckpoint.locatorJson,
+                        locatorJson = recovery.locatorJson,
                         lastOpenedAtEpochMs = maxOf(
                             book.lastOpenedAtEpochMs,
-                            crashCheckpoint.committedAtEpochMs
+                            recovery.committedAtEpochMs
                         ),
                         finished = book.finished || restoredProgress >= 0.995f
                     )
