@@ -1346,11 +1346,13 @@
     <string name="reader_selection_lookup">جست‌وجوی واژه</string>
     <string name="reader_lookup_failed">هیچ برنامهٔ نصب‌شده‌ای برای جست‌وجوی متن انتخاب‌شده در دسترس نیست.</string>
     <string name="tts_title">خواندن با صدا</string>
-    <string name="tts_intro">متنِ نمایان با صدای آفلاینِ نصب‌شدهٔ اندروید خوانده می‌شود. با خروج از کتاب‌خوان، پخش مکث می‌کند.</string>
+    <string name="tts_intro">با صداهای آفلاینِ نصب‌شدهٔ اندروید گوش بده. کنترل پخش همیشه صریحاً در اختیار تو می‌ماند.</string>
     <string name="tts_start">شروع از متن قابل‌مشاهده</string>
     <string name="tts_play">پخش</string>
     <string name="tts_pause">مکث</string>
     <string name="tts_stop">توقف</string>
+    <string name="tts_previous_segment">بخش قبلی</string>
+    <string name="tts_next_segment">بخش بعدی</string>
     <string name="tts_speed">سرعت گفتار</string>
     <string name="tts_pitch">زیر و بمی صدا</string>
     <string name="tts_preparing">در حال آماده‌سازی صدا…</string>
