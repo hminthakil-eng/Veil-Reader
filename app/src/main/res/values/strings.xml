@@ -1403,4 +1403,10 @@
     <string name="settings_debug_material_papyrus">Papyrus</string>
     <string name="settings_debug_material_manuscript">Manuscript</string>
     <string name="settings_debug_material_note">Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets the canonical GPU renderer.</string>
+    <string name="tts_listening_mode_title">Listening</string>
+    <string name="tts_listening_mode_subtitle">Listening stays separate from your reading place.</string>
+    <string name="tts_listening_mode_close">Return to book</string>
+    <string name="tts_listening_mode_position">Listening position</string>
+    <string name="tts_listening_mode_settings">Voice &amp; settings</string>
+
 </resources>
