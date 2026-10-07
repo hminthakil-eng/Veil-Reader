@@ -160,7 +160,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             ),
             Bundle().apply {
                 putString(
-                    "preferred_voices_json",
+                    ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON,
                     ReaderTtsPlaybackRequest.encodePreferredVoices(
                         safe.preferredVoiceIds
                     )
