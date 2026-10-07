@@ -19,6 +19,7 @@ internal sealed interface ReaderTtsModelPrepareResult {
         INSTALLED_ARCHIVE_MISSING,
         EXTRACTION_REJECTED,
         LAYOUT_REJECTED,
+        STORAGE_BUDGET,
         IO_ERROR
     }
 }
@@ -31,6 +32,7 @@ internal sealed interface ReaderTtsModelPrepareResult {
  * to "payload". An already-valid payload is reused and never rewritten on app start.
  */
 internal class ReaderTtsModelPreparer(
+    private val modelStore: ReaderTtsModelStore,
     private val extractor: ReaderTtsModelArchiveExtractor = ReaderTtsModelArchiveExtractor()
 ) {
     @Synchronized
@@ -39,11 +41,6 @@ internal class ReaderTtsModelPreparer(
         layout: ReaderTtsModelLayout,
         nowEpochMs: Long = System.currentTimeMillis()
     ): ReaderTtsModelPrepareResult {
-        if (!installed.archive.isFile) {
-            return ReaderTtsModelPrepareResult.Rejected(
-                ReaderTtsModelPrepareResult.Reason.INSTALLED_ARCHIVE_MISSING
-            )
-        }
         val safeLayout = layout.normalizedOrNull()
             ?: return ReaderTtsModelPrepareResult.Rejected(
                 ReaderTtsModelPrepareResult.Reason.LAYOUT_REJECTED
@@ -65,6 +62,22 @@ internal class ReaderTtsModelPreparer(
             )
         }
 
+        if (!installed.archive.isFile) {
+            return ReaderTtsModelPrepareResult.Rejected(
+                ReaderTtsModelPrepareResult.Reason.INSTALLED_ARCHIVE_MISSING
+            )
+        }
+        if (
+            !modelStore.ensureCapacityForModelGrowth(
+                installed,
+                installed.packageInfo.maxExpandedBytes
+            )
+        ) {
+            return ReaderTtsModelPrepareResult.Rejected(
+                ReaderTtsModelPrepareResult.Reason.STORAGE_BUDGET
+            )
+        }
+
         return try {
             cleanupStaging(modelDirectory)
             val staging = File(
@@ -73,7 +86,13 @@ internal class ReaderTtsModelPreparer(
             )
             if (staging.exists()) staging.deleteRecursively()
 
-            when (extractor.extractTarBz2(installed.archive, staging)) {
+            when (
+                extractor.extractTarBz2(
+                    archive = installed.archive,
+                    destination = staging,
+                    maxExpandedBytesOverride = installed.packageInfo.maxExpandedBytes
+                )
+            ) {
                 is ReaderTtsArchiveExtractResult.Success -> Unit
                 is ReaderTtsArchiveExtractResult.Rejected -> {
                     staging.deleteRecursively()
