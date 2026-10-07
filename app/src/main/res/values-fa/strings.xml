@@ -1403,4 +1403,10 @@
     <string name="settings_debug_material_papyrus">پاپیروس</string>
     <string name="settings_debug_material_manuscript">دست‌نوشته</string>
     <string name="settings_debug_material_note">حالت بازبینی، Paged + Paper را اجباری می‌کند. این بیلد هیچ موتور قدیمی یا جایگزین Canvas برای ورق‌زدن ندارد و بازبینی Paper همیشه رندرر مرجع GPU را هدف می‌گیرد.</string>
+    <string name="tts_listening_mode_title">حالت شنیدن</string>
+    <string name="tts_listening_mode_subtitle">موقعیت شنیدن از جای مطالعه جدا می‌ماند.</string>
+    <string name="tts_listening_mode_close">بازگشت به کتاب</string>
+    <string name="tts_listening_mode_position">موقعیت شنیدن</string>
+    <string name="tts_listening_mode_settings">صدا و تنظیمات</string>
+
 </resources>
