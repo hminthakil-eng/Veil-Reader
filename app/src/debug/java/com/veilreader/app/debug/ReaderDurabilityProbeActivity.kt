@@ -16,6 +16,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.json.JSONObject
 
 /**
  * Debug-only process-death probe for Reader locator durability.
@@ -190,7 +191,10 @@ class ReaderDurabilityProbeActivity : Activity() {
         val effectiveProgress = crashCheckpoint?.progression ?: stored.progress.toDouble()
         val source = if (crashCheckpoint != null) "crash_checkpoint" else "room"
 
-        val locatorMatches = effectiveLocator == locator(expectedKey)
+        // Check semantic location, not equivalent JSON slash escaping or key ordering.
+        val recoveredLocator = effectiveLocator?.let(::JSONObject)
+        val locatorMatches = recoveredLocator?.optString("href") == "$expectedKey.xhtml" &&
+            recoveredLocator.optString("type") == "application/xhtml+xml"
         val progressMatches = abs(effectiveProgress - expectedProgress) <= EPSILON
         if (!locatorMatches || !progressMatches) {
             writeResult(
