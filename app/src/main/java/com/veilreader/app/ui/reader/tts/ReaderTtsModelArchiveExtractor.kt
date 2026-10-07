@@ -57,8 +57,17 @@ internal class ReaderTtsModelArchiveExtractor(
 ) {
     fun extractTarBz2(
         archive: File,
-        destination: File
+        destination: File,
+        maxExpandedBytesOverride: Long? = null
     ): ReaderTtsArchiveExtractResult {
+        val effectiveExpandedLimit = maxExpandedBytesOverride
+            ?.takeIf { it > 0L }
+            ?.let { minOf(it, limits.maxExpandedBytes) }
+            ?: limits.maxExpandedBytes
+        val effectiveSingleFileLimit = minOf(
+            limits.maxSingleFileBytes,
+            effectiveExpandedLimit
+        )
         if (!archive.isFile) {
             return ReaderTtsArchiveExtractResult.Rejected(
                 ReaderTtsArchiveExtractResult.Reason.SOURCE_MISSING
@@ -122,14 +131,14 @@ internal class ReaderTtsModelArchiveExtractor(
 
                                 entry.isFile -> {
                                     val declared = entry.size
-                                    if (declared < 0L || declared > limits.maxSingleFileBytes) {
+                                    if (declared < 0L || declared > effectiveSingleFileLimit) {
                                         return rejectAndClean(
                                             destination,
                                             ReaderTtsArchiveExtractResult.Reason.SINGLE_FILE_SIZE_LIMIT
                                         )
                                     }
                                     if (
-                                        declared > limits.maxExpandedBytes - expandedBytes
+                                        declared > effectiveExpandedLimit - expandedBytes
                                     ) {
                                         return rejectAndClean(
                                             destination,
@@ -161,13 +170,13 @@ internal class ReaderTtsModelArchiveExtractor(
 
                                             fileBytes += read.toLong()
                                             expandedBytes += read.toLong()
-                                            if (fileBytes > limits.maxSingleFileBytes) {
+                                            if (fileBytes > effectiveSingleFileLimit) {
                                                 return rejectAndClean(
                                                     destination,
                                                     ReaderTtsArchiveExtractResult.Reason.SINGLE_FILE_SIZE_LIMIT
                                                 )
                                             }
-                                            if (expandedBytes > limits.maxExpandedBytes) {
+                                            if (expandedBytes > effectiveExpandedLimit) {
                                                 return rejectAndClean(
                                                     destination,
                                                     ReaderTtsArchiveExtractResult.Reason.EXPANDED_SIZE_LIMIT
