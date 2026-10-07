@@ -49,7 +49,10 @@ class ReaderTtsModelPackageTest {
                 ),
                 verifyReaderTtsModelFile(
                     file,
-                    manifest.copy(expectedBytes = bytes.size.toLong() + 1L)
+                    manifest.copy(
+                        expectedBytes = bytes.size.toLong() + 1L,
+                        maxExpandedBytes = bytes.size.toLong() + 1L
+                    )
                 )
             )
         } finally {
