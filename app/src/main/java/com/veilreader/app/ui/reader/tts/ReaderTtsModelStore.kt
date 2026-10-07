@@ -197,6 +197,9 @@ internal class ReaderTtsModelStore(
         additionalBytes: Long
     ): Boolean {
         if (additionalBytes < 0L) return false
+        if (!recoverInterruptedTransactions()) return false
+        cleanupStaging()
+
         val canonicalRoot = runCatching { root.canonicalFile }.getOrNull() ?: return false
         val canonicalDirectory = runCatching { model.directory.canonicalFile }.getOrNull()
             ?: return false
@@ -206,22 +209,39 @@ internal class ReaderTtsModelStore(
         ) {
             return false
         }
-        val currentBytes = modelBytes(canonicalDirectory)
-        return makeRoomFor(
-            incomingBytes = currentBytes + additionalBytes,
-            replacingBytes = currentBytes,
-            protectedDirectory = canonicalDirectory
-        )
+
+        // Capacity probing must never evict a working model. Extraction can still fail after this
+        // point, so destructive LRU eviction here would turn a failed preparation into data loss.
+        val stableBytes = usedBytes()
+        return additionalBytes <= (budgetBytes - stableBytes).coerceAtLeast(0L)
     }
 
     @Synchronized
     fun cleanupStaging(): Int {
         if (!root.isDirectory) return 0
         var removed = 0
-        root.listFiles()
-            .orEmpty()
+        val children = root.listFiles().orEmpty()
+
+        children
             .filter { it.isDirectory && it.name.startsWith(".staging-") }
             .forEach { if (it.deleteRecursively()) removed += 1 }
+
+        children
+            .filter {
+                it.isDirectory &&
+                    !it.name.startsWith(".staging-") &&
+                    !it.name.startsWith(INSTALL_TRANSACTION_PREFIX)
+            }
+            .forEach { modelDirectory ->
+                modelDirectory.listFiles()
+                    .orEmpty()
+                    .filter {
+                        it.isDirectory &&
+                            it.name.startsWith(PAYLOAD_STAGING_PREFIX)
+                    }
+                    .forEach { if (it.deleteRecursively()) removed += 1 }
+            }
+
         return removed
     }
 
@@ -238,14 +258,20 @@ internal class ReaderTtsModelStore(
         if (!root.exists()) return true
         if (!root.isDirectory) return false
 
-        return root.listFiles()
+        var allRecovered = true
+        root.listFiles()
             .orEmpty()
             .filter {
                 it.isDirectory &&
                     it.name.startsWith(INSTALL_TRANSACTION_PREFIX)
             }
             .sortedBy { it.name }
-            .all(::recoverInstallTransaction)
+            .forEach { transaction ->
+                if (!recoverInstallTransaction(transaction)) {
+                    allRecovered = false
+                }
+            }
+        return allRecovered
     }
 
     private fun planEvictions(
