@@ -94,7 +94,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.metrics:metrics-performance:1.0.0")
     // Media3 owns background TTS system integration: MediaSession, notification and media buttons.
-    implementation("androidx.media3:media3-session:1.10.0")
+    implementation("androidx.media3:media3-session:1.11.1")
     implementation("com.irurueta:irurueta-android-glutils:1.1.11")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
