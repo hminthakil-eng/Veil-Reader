@@ -59,6 +59,7 @@ class ReaderDurabilityProbeActivity : Activity() {
 
         ensureFixtureFile()
         val repository = LocalLibraryRepository(applicationContext)
+        repository.clearReaderCrashCheckpoint(BOOK_ID)
         repository.addImportedBook(
             Book(
                 id = BOOK_ID,
@@ -177,20 +178,49 @@ class ReaderDurabilityProbeActivity : Activity() {
         val repository = LocalLibraryRepository(applicationContext)
         repository.flushWrites()
         val stored = awaitBook(repository)
+        val crashCheckpoint = repository.loadReaderCrashCheckpoint(stored)
+        val effectiveLocator = crashCheckpoint?.locatorJson ?: stored.locatorJson
+        val effectiveProgress = crashCheckpoint?.progression ?: stored.progress.toDouble()
+        val source = if (crashCheckpoint != null) "crash_checkpoint" else "room"
 
-        val locatorMatches = stored.locatorJson == locator(expectedKey)
-        val progressMatches = abs(stored.progress.toDouble() - expectedProgress) <= EPSILON
+        val locatorMatches = effectiveLocator == locator(expectedKey)
+        val progressMatches = abs(effectiveProgress - expectedProgress) <= EPSILON
         if (!locatorMatches || !progressMatches) {
             writeResult(
-                "FAIL action=verify expectedKey=$expectedKey actualLocator=${sanitize(stored.locatorJson)} " +
-                    "expectedProgress=$expectedProgress actualProgress=${stored.progress}"
+                "FAIL action=verify source=$source expectedKey=$expectedKey " +
+                    "actualLocator=${sanitize(effectiveLocator)} expectedProgress=$expectedProgress " +
+                    "actualProgress=$effectiveProgress roomProgress=${stored.progress}"
             )
             finishAndRemoveTask()
             return
         }
 
+        // Prove recovery converges back to the single long-term Room source of truth.
+        if (crashCheckpoint != null) {
+            val recovery = repository.saveReaderOpenRecoveryProgress(
+                bookId = BOOK_ID,
+                sessionId = "verify-recovery-${crashCheckpoint.sequence}",
+                progression = crashCheckpoint.progression,
+                locatorJson = crashCheckpoint.locatorJson
+            )
+            check(recovery.accepted) { "Crash checkpoint could not be reconciled into Room" }
+            repository.flushWrites()
+            val reconciled = requireNotNull(repository.getBook(BOOK_ID))
+            check(reconciled.locatorJson == crashCheckpoint.locatorJson) {
+                "Room did not receive recovered locator"
+            }
+            check(
+                abs(reconciled.progress.toDouble() - crashCheckpoint.progression) <= EPSILON
+            ) {
+                "Room did not receive recovered progression"
+            }
+            check(repository.loadReaderCrashCheckpoint(reconciled) == null) {
+                "Crash checkpoint remained authoritative after Room caught up"
+            }
+        }
+
         writeResult(
-            "PASS action=verify key=$expectedKey progress=${stored.progress}"
+            "PASS action=verify source=$source key=$expectedKey progress=$effectiveProgress"
         )
         finishAndRemoveTask()
     }
