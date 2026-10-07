@@ -50,7 +50,8 @@ class ReaderTtsControlsAccessibilityTest {
                         ReaderTtsControls(
                             state = ReaderTtsState(ReaderTtsPhase.PLAYING), supported = true,
                             settings = ReaderTtsSettings(), startPending = false, startFailed = false,
-                            onStart = {}, onResume = {}, onPause = {}, onPrevious = {}, onNext = {},\n                            onStop = { stops++ },
+                            onStart = {}, onResume = {}, onPause = {},
+                            onPrevious = {}, onNext = {}, onStop = { stops++ },
                             onSettingsChange = {}, onDone = { closes++ }
                         )
                     }
