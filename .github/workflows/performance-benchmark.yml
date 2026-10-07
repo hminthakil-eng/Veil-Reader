@@ -3,7 +3,7 @@ name: Performance Benchmarks
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   push:
     branches: [ "main" ]
     paths:

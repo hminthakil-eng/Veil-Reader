@@ -187,7 +187,7 @@ class ReaderTtsSessionTest {
         val session = ReaderTtsSession({ source {} }, { backend }, "en", { true }, StandardTestDispatcher(testScheduler))
         try {
             session.start(locator()); runCurrent()
-            backend.onInterruption?.invoke(); runCurrent()
+            backend.onInterruption?.invoke(ReaderTtsInterruption.BECOMING_NOISY); runCurrent()
             assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
             advanceTimeBy(2000); runCurrent()
             assertEquals(1, backend.requests.size)
@@ -223,6 +223,206 @@ class ReaderTtsSessionTest {
         assertEquals(ReaderTtsPhase.CLOSED, session.state.value.phase)
     }
 
+    @Test
+    fun pausedRecoveryLoadDoesNotBindOrAutoplayUntilExplicitResume() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend },
+            "fa-IR",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            val start = locator()
+            session.load(start, ReaderTtsPreferences(speed = 1.25f), autoplay = false)
+            runCurrent()
+
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(start, session.state.value.sourceLocator)
+            assertEquals(0, backend.initializations)
+            assertTrue(backend.requests.isEmpty())
+
+            session.resume()
+            runCurrent()
+            assertEquals(1, backend.initializations)
+            assertEquals("first", backend.requests.single().text)
+            assertEquals(1.25f, backend.requests.single().preferences.speed)
+        } finally {
+            session.close()
+        }
+    }
+
+    @Test
+    fun nextDuringPreparingSkipsPendingCurrentSegmentBeforeResumingSpeech() = runTest {
+        val backend = FakeBackend()
+        val firstRead = CompletableDeferred<ReaderTtsUtterance?>()
+        var reads = 0
+        val first = locator("first.xhtml")
+        val second = locator("second.xhtml")
+        val session = ReaderTtsSession(
+            {
+                object : ReaderTtsContent {
+                    override suspend fun next(): ReaderTtsUtterance? =
+                        when (reads++) {
+                            0 -> firstRead.await()
+                            1 -> ReaderTtsUtterance("second", "en", second)
+                            else -> null
+                        }
+                }
+            },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(first)
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PREPARING, session.state.value.phase)
+
+            session.next()
+            runCurrent()
+            firstRead.complete(ReaderTtsUtterance("first", "en", first))
+            runCurrent()
+
+            assertEquals(2, reads)
+            assertEquals("second", backend.requests.single().text)
+            assertEquals(second, session.state.value.sourceLocator)
+        } finally {
+            firstRead.complete(null)
+            session.close()
+        }
+    }
+
+    @Test
+    fun nextFromFreshPausedRecoverySkipsCurrentSegmentAndPreviousReturnsToIt() = runTest {
+        val backend = FakeBackend()
+        var index = 0
+        val locators = listOf(
+            locator("first.xhtml"),
+            locator("second.xhtml"),
+            locator("third.xhtml")
+        )
+        val session = ReaderTtsSession(
+            {
+                object : ReaderTtsContent {
+                    override suspend fun next(): ReaderTtsUtterance? =
+                        locators.getOrNull(index)?.let { target ->
+                            ReaderTtsUtterance(
+                                text = listOf("first", "second", "third")[index++],
+                                languageTag = "en",
+                                locator = target
+                            )
+                        }
+                }
+            },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.load(locators.first(), autoplay = false)
+            session.next()
+            runCurrent()
+
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(locators[1], session.state.value.sourceLocator)
+            assertTrue(backend.requests.isEmpty())
+
+            session.previous()
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(locators[0], session.state.value.sourceLocator)
+            assertTrue(backend.requests.isEmpty())
+        } finally {
+            session.close()
+        }
+    }
+
+    @Test
+    fun transientAudioFocusLossStopsSpeechWithoutAbandonAndResumesSameSegment() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PLAYING, session.state.value.phase)
+            assertEquals("first", backend.requests.single().text)
+
+            backend.onInterruption?.invoke(ReaderTtsInterruption.TRANSIENT_FOCUS)
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PREPARING, session.state.value.phase)
+            assertEquals(1, backend.preserveFocusStops)
+
+            backend.onFocusGained?.invoke()
+            runCurrent()
+            assertEquals(2, backend.requests.size)
+            assertEquals("first", backend.requests[1].text)
+        } finally {
+            session.close()
+        }
+    }
+
+    @Test
+    fun userPauseDuringTransientFocusLossCancelsAutomaticResume() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            backend.onInterruption?.invoke(ReaderTtsInterruption.TRANSIENT_FOCUS)
+            runCurrent()
+
+            session.pause()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            backend.onFocusGained?.invoke()
+            runCurrent()
+
+            assertEquals(1, backend.requests.size)
+            assertTrue(backend.abandonFocusStops >= 1)
+        } finally {
+            session.close()
+        }
+    }
+
+    @Test
+    fun activeSemanticTextIsAvailableForListeningUiButStaysInMemoryOnly() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+
+            assertEquals("first", session.state.value.activeText)
+            session.pause()
+            assertEquals("first", session.state.value.activeText)
+            session.stop()
+            assertNull(session.state.value.activeText)
+        } finally {
+            session.close()
+        }
+    }
+
     private fun source(onRead: () -> Unit) = object : ReaderTtsContent {
         var index = 0
         override suspend fun next(): ReaderTtsUtterance? {
@@ -230,21 +430,32 @@ class ReaderTtsSessionTest {
             return listOf("first", "second").getOrNull(index++)?.let { ReaderTtsUtterance(it, null, locator()) }
         }
     }
-    private fun locator() = Locator(requireNotNull(Url("chapter.xhtml")), MediaType.XHTML)
+    private fun locator(href: String = "chapter.xhtml") =
+        Locator(requireNotNull(Url(href)), MediaType.XHTML)
     private class FakeBackend : ReaderTtsBackend {
         data class Request(val text: String, val preferences: ReaderTtsPreferences, val completion: CompletableDeferred<ReaderTtsProblem?> = CompletableDeferred())
         override val voices = emptyList<ReaderTtsVoice>()
-        override var onInterruption: (() -> Unit)? = null
+        override var onInterruption: ((ReaderTtsInterruption) -> Unit)? = null
+        override var onFocusGained: (() -> Unit)? = null
         var initializations = 0
         var initialization = CompletableDeferred<ReaderTtsProblem?>().apply { complete(null) }
         val requests = mutableListOf<Request>()
         var stops = 0
+        var preserveFocusStops = 0
+        var abandonFocusStops = 0
         var closes = 0
         override suspend fun initialize(): ReaderTtsProblem? { initializations += 1; return initialization.await() }
         override suspend fun speak(text: String, languageTag: String, preferences: ReaderTtsPreferences): ReaderTtsProblem? {
             val request = Request(text, preferences); requests += request; return request.completion.await()
         }
-        override fun stop() { stops += 1 }
-        override fun close() { closes += 1; onInterruption = null }
+        override fun stop(abandonAudioFocus: Boolean) {
+            stops += 1
+            if (abandonAudioFocus) abandonFocusStops += 1 else preserveFocusStops += 1
+        }
+        override fun close() {
+            closes += 1
+            onInterruption = null
+            onFocusGained = null
+        }
     }
 }

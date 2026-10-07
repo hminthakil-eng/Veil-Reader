@@ -93,8 +93,14 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.metrics:metrics-performance:1.0.0")
+    // Media3 owns background TTS system integration: MediaSession, notification and media buttons.
+    implementation("androidx.media3:media3-session:1.11.1")
     implementation("com.irurueta:irurueta-android-glutils:1.1.11")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
+    // Neural TTS model packages ship as tar.bz2 upstream. Extraction is fail-closed in
+    // ReaderTtsModelArchiveExtractor: no links, no traversal, bounded entry count/expanded bytes.
+    implementation("org.apache.commons:commons-compress:1.28.0")
 
     // Production local persistence.
     implementation("androidx.room:room-runtime:2.8.5")

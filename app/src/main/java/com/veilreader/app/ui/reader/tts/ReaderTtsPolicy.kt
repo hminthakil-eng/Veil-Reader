@@ -6,7 +6,7 @@ internal data class ReaderTtsPreferences(
     val speed: Float = 1f,
     val pitch: Float = 1f,
     val languageTag: String? = null,
-    val preferredVoiceId: String? = null
+    val preferredVoiceIds: Map<String, String> = emptyMap()
 ) {
     fun normalized(): ReaderTtsPreferences = copy(
         speed = if (speed.isFinite()) speed.coerceIn(0.5f, 3f) else 1f,
@@ -14,8 +14,31 @@ internal data class ReaderTtsPreferences(
         languageTag = languageTag?.trim()?.takeIf { it.length <= 64 }
             ?.let(Locale::forLanguageTag)?.takeUnless { it.language.isBlank() || it.language == "und" }
             ?.toLanguageTag(),
-        preferredVoiceId = preferredVoiceId?.trim()?.takeIf { it.isNotBlank() && it.length <= 256 }
+        preferredVoiceIds = preferredVoiceIds.entries.asSequence()
+            .mapNotNull { (rawLanguage, rawVoice) ->
+                val locale = Locale.forLanguageTag(rawLanguage.trim())
+                val language = locale.takeUnless {
+                    it.language.isBlank() || it.language == "und"
+                }?.toLanguageTag() ?: return@mapNotNull null
+                val voice = rawVoice.trim()
+                    .takeIf { it.isNotEmpty() && it.length <= 256 }
+                    ?: return@mapNotNull null
+                language to voice
+            }
+            .distinctBy { it.first }
+            .take(16)
+            .toMap()
     )
+
+    fun preferredVoiceId(languageTag: String): String? {
+        val locale = Locale.forLanguageTag(languageTag)
+        if (locale.language.isBlank() || locale.language == "und") return null
+        val safe = normalized().preferredVoiceIds
+        return safe[locale.toLanguageTag()]
+            ?: safe.entries.firstOrNull {
+                Locale.forLanguageTag(it.key).language == locale.language
+            }?.value
+    }
 }
 
 internal data class ReaderTtsVoice(
@@ -39,12 +62,15 @@ internal fun selectOfflineTtsVoice(
         voice.installed && !voice.requiresNetwork && locale.language == language.language &&
             (language.script.isBlank() || locale.script.isBlank() || language.script == locale.script)
     }
-    return candidates.firstOrNull { it.id == preferredId }
-        ?: candidates.sortedWith(
-            compareByDescending<ReaderTtsVoice> {
-                it.languageTag.equals(language.toLanguageTag(), ignoreCase = true)
-            }.thenByDescending { it.quality }.thenBy { it.id }
-        ).firstOrNull()
+    if (preferredId != null) {
+        // A persisted explicit choice is a contract. Never silently swap it for another voice.
+        return candidates.firstOrNull { it.id == preferredId }
+    }
+    return candidates.sortedWith(
+        compareByDescending<ReaderTtsVoice> {
+            it.languageTag.equals(language.toLanguageTag(), ignoreCase = true)
+        }.thenByDescending { it.quality }.thenBy { it.id }
+    ).firstOrNull()
 }
 
 /** A native synthesis request must fit Android's UTF-16 limit without splitting a surrogate pair. */
@@ -63,7 +89,16 @@ internal fun ttsChunkEnd(text: String, start: Int, maximum: Int): Int {
     return end
 }
 
-internal enum class ReaderTtsProblem { UNSUPPORTED, NO_ENGINE, NO_OFFLINE_VOICE, AUDIO_FOCUS, SYNTHESIS, CONTENT, TIMEOUT }
+internal enum class ReaderTtsProblem {
+    UNSUPPORTED,
+    NO_ENGINE,
+    NO_OFFLINE_VOICE,
+    PREFERRED_VOICE_UNAVAILABLE,
+    AUDIO_FOCUS,
+    SYNTHESIS,
+    CONTENT,
+    TIMEOUT
+}
 internal enum class ReaderTtsPhase { STOPPED, PREPARING, PLAYING, PAUSED, ENDED, FAILED, CLOSED }
 
 internal fun readerCanPlayForegroundTts(
