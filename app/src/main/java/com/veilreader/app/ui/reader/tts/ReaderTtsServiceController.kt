@@ -2,12 +2,14 @@ package com.veilreader.app.ui.reader.tts
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.Bundle
 import androidx.core.content.ContextCompat
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import com.veilreader.app.domain.ReaderTtsSettings
 import java.util.concurrent.atomic.AtomicBoolean
@@ -21,9 +23,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * Releasing this controller never stops background speech. Playback lifetime belongs to
  * [ReaderTtsPlaybackService], which is the reason screen lock/activity recreation can be safe.
  */
-@UnstableApi
+@OptIn(UnstableApi::class)
 internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     private val application = context.applicationContext
+    private val mainExecutor = ContextCompat.getMainExecutor(application)
     private val closed = AtomicBoolean(false)
     private val controllerFuture = MediaController.Builder(
         application,
@@ -38,6 +41,19 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     private val mutableState = MutableStateFlow(ReaderTtsState())
     val state: StateFlow<ReaderTtsState> = mutableState.asStateFlow()
+
+    private val mutableVoices = MutableStateFlow<List<ReaderTtsVoice>>(emptyList())
+    val voices: StateFlow<List<ReaderTtsVoice>> = mutableVoices.asStateFlow()
+
+    private val mutableVoiceCatalogLoading = MutableStateFlow(false)
+    val voiceCatalogLoading: StateFlow<Boolean> = mutableVoiceCatalogLoading.asStateFlow()
+
+    private val mutableVoiceCatalogProblem = MutableStateFlow<ReaderTtsProblem?>(null)
+    val voiceCatalogProblem: StateFlow<ReaderTtsProblem?> =
+        mutableVoiceCatalogProblem.asStateFlow()
+
+    private val mutablePreviewProblem = MutableStateFlow<ReaderTtsProblem?>(null)
+    val previewProblem: StateFlow<ReaderTtsProblem?> = mutablePreviewProblem.asStateFlow()
 
     val connected: Boolean
         get() = controller != null && !closed.get()
@@ -57,12 +73,13 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 controller = connectedController
                 connectedController.addListener(playerListener)
                 syncState(connectedController)
+                refreshVoiceCatalog()
                 pendingStart?.also {
                     pendingStart = null
                     start(it.bookId, it.locatorJson, it.settings)
                 }
             },
-            ContextCompat.getMainExecutor(application)
+            mainExecutor
         )
     }
 
@@ -102,7 +119,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         target.sendCustomCommand(
             SessionCommand(
                 ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY,
-                android.os.Bundle.EMPTY
+                Bundle.EMPTY
             ),
             request.toBundle()
         )
@@ -131,9 +148,93 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     fun updateSettings(settings: ReaderTtsSettings) {
         val safe = settings.normalized()
-        controller?.playbackParameters = PlaybackParameters(
+        val target = controller ?: return
+        target.playbackParameters = PlaybackParameters(
             safe.speed.toFloat(),
             safe.pitch.toFloat()
+        )
+        target.sendCustomCommand(
+            SessionCommand(
+                ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES,
+                Bundle.EMPTY
+            ),
+            Bundle().apply {
+                putString(
+                    "preferred_voices_json",
+                    ReaderTtsPlaybackRequest.encodePreferredVoices(
+                        safe.preferredVoiceIds
+                    )
+                )
+            }
+        )
+    }
+
+    fun refreshVoiceCatalog() {
+        val target = controller ?: return
+        if (mutableVoiceCatalogLoading.value) return
+        mutableVoiceCatalogLoading.value = true
+        mutableVoiceCatalogProblem.value = null
+        val resultFuture = target.sendCustomCommand(
+            SessionCommand(
+                ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES,
+                Bundle.EMPTY
+            ),
+            Bundle.EMPTY
+        )
+        resultFuture.addListener(
+            {
+                if (closed.get()) return@addListener
+                val result = runCatching { resultFuture.get() }.getOrNull()
+                mutableVoiceCatalogLoading.value = false
+                if (result == null || result.resultCode != SessionResult.RESULT_SUCCESS) {
+                    mutableVoiceCatalogProblem.value =
+                        result?.extras?.problemOrNull() ?: ReaderTtsProblem.NO_ENGINE
+                    return@addListener
+                }
+                mutableVoices.value = ReaderTtsPlaybackRequest.decodeVoiceCatalog(
+                    result.extras.getString(
+                        ReaderTtsPlaybackRequest.EXTRA_VOICES_JSON
+                    )
+                )
+                mutableVoiceCatalogProblem.value = null
+            },
+            mainExecutor
+        )
+    }
+
+    fun previewVoice(
+        languageTag: String,
+        voiceId: String,
+        sample: String,
+        settings: ReaderTtsSettings
+    ) {
+        val target = controller ?: return
+        val safe = settings.normalized()
+        mutablePreviewProblem.value = null
+        val resultFuture = target.sendCustomCommand(
+            SessionCommand(
+                ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE,
+                Bundle.EMPTY
+            ),
+            Bundle().apply {
+                putString(ReaderTtsPlaybackRequest.EXTRA_LANGUAGE_TAG, languageTag)
+                putString(ReaderTtsPlaybackRequest.EXTRA_VOICE_ID, voiceId)
+                putString(ReaderTtsPlaybackRequest.EXTRA_SAMPLE, sample)
+                putFloat("speed", safe.speed.toFloat())
+                putFloat("pitch", safe.pitch.toFloat())
+            }
+        )
+        resultFuture.addListener(
+            {
+                if (closed.get()) return@addListener
+                val result = runCatching { resultFuture.get() }.getOrNull()
+                mutablePreviewProblem.value = when {
+                    result == null -> ReaderTtsProblem.NO_ENGINE
+                    result.resultCode == SessionResult.RESULT_SUCCESS -> null
+                    else -> result.extras.problemOrNull() ?: ReaderTtsProblem.SYNTHESIS
+                }
+            },
+            mainExecutor
         )
     }
 
@@ -178,6 +279,12 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             problem = null
         )
     }
+
+    private fun Bundle.problemOrNull(): ReaderTtsProblem? =
+        getString(ReaderTtsPlaybackRequest.EXTRA_PROBLEM)
+            ?.let { raw ->
+                runCatching { ReaderTtsProblem.valueOf(raw) }.getOrNull()
+            }
 
     private data class PendingStart(
         val bookId: String,
