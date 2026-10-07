@@ -18,6 +18,7 @@ internal data class ReaderTtsModelPackage(
     val languageTag: String,
     val displayName: String,
     val expectedBytes: Long,
+    val maxExpandedBytes: Long = expectedBytes,
     val sha256: String,
     val licenseSpdx: String,
     val licenseUrl: String,
@@ -41,6 +42,7 @@ internal data class ReaderTtsModelPackage(
         val safeLicenseUrl = licenseUrl.trim().takeIf(::isHttpsUrl) ?: return null
         val safeSourceUrl = sourceUrl.trim().takeIf(::isHttpsUrl) ?: return null
         if (expectedBytes !in MIN_MODEL_BYTES..MAX_MODEL_BYTES) return null
+        if (maxExpandedBytes !in expectedBytes..MAX_EXPANDED_MODEL_BYTES) return null
 
         return copy(
             id = safeId,
@@ -65,6 +67,7 @@ internal data class ReaderTtsModelPackage(
         val SHA256_REGEX = Regex("[0-9a-fA-F]{64}")
         const val MIN_MODEL_BYTES = 1_024L
         const val MAX_MODEL_BYTES = 2L * 1024L * 1024L * 1024L
+        const val MAX_EXPANDED_MODEL_BYTES = 4L * 1024L * 1024L * 1024L
 
         fun isHttpsUrl(value: String): Boolean =
             value.startsWith("https://", ignoreCase = true) &&
