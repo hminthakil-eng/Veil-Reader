@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -465,6 +466,6 @@ private fun ReaderTtsVoicePicker(
 @Composable
 private fun displayLanguage(languageTag: String): String {
     val locale = Locale.forLanguageTag(languageTag)
-    val display = locale.getDisplayName(Locale.getDefault())
+    val display = locale.getDisplayName(LocalLocale.current.platformLocale)
     return display.takeIf { it.isNotBlank() } ?: languageTag
 }
