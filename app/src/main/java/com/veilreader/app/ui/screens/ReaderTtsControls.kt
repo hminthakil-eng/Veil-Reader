@@ -39,6 +39,8 @@ internal fun ReaderTtsControls(
     voiceCatalogLoading: Boolean = false,
     voiceCatalogProblem: ReaderTtsProblem? = null,
     previewProblem: ReaderTtsProblem? = null,
+    listeningPositionAvailable: Boolean = false,
+    onSyncListeningPosition: () -> Unit = {},
     onStart: () -> Unit,
     onResume: () -> Unit,
     onPause: () -> Unit,
@@ -84,6 +86,19 @@ internal fun ReaderTtsControls(
                     stringResource(R.string.tts_preparing),
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
+            }
+
+            if (listeningPositionAvailable) {
+                Text(
+                    stringResource(R.string.tts_listening_position_hint),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(
+                    onClick = onSyncListeningPosition,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.tts_go_to_listening_position))
+                }
             }
 
             if (voiceCatalogSupported) {
