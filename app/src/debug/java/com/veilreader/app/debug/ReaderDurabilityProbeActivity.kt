@@ -241,7 +241,8 @@ class ReaderDurabilityProbeActivity : Activity() {
         const val TOTAL_PAGES = 1_000
         const val EPSILON = 0.000_01
 
-        const val RESULT_FILE = "reader-durability-probe-result.txt"\n        const val PROBE_LOG_TAG = "VeilDurabilityProbe"
+        const val RESULT_FILE = "reader-durability-probe-result.txt"
+        const val PROBE_LOG_TAG = "VeilDurabilityProbe"
 
         const val EXTRA_ACTION = "probe_action"
         const val EXTRA_EVENT = "probe_event"
