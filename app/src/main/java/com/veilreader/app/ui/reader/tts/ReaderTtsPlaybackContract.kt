@@ -17,9 +17,14 @@ internal data class ReaderTtsPlaybackRequest(
         val id = bookId.trim().takeIf { it.isNotEmpty() && it.length <= MAX_BOOK_ID_LENGTH }
             ?: return null
         val locator = locatorJson.trim().takeIf {
-            it.isNotEmpty() && it.length <= MAX_LOCATOR_JSON_LENGTH
+            it.length in 2..MAX_LOCATOR_JSON_LENGTH &&
+                it.first() == '{' &&
+                it.last() == '}'
         } ?: return null
-        if (runCatching { JSONObject(locator) }.isFailure) return null
+        val locatorObject = runCatching { JSONObject(locator) }.getOrNull() ?: return null
+        // Readium Locator JSON must identify a resource. Reject syntactically JSON-shaped garbage
+        // before it can become a service-owned publication request.
+        if (locatorObject.optString("href").isBlank()) return null
         return copy(
             bookId = id,
             locatorJson = locator,
@@ -103,9 +108,15 @@ internal data class ReaderTtsCheckpoint(
             val request = ReaderTtsPlaybackRequest.fromJson(json.getJSONObject("request"))
                 ?: return@runCatching null
             val locator = json.optString("locator_json")
-                .takeIf { it.isNotBlank() && it.length <= 32 * 1024 }
+                .takeIf {
+                    it.length in 2..32 * 1024 &&
+                        it.first() == '{' &&
+                        it.last() == '}'
+                }
                 ?: return@runCatching null
-            if (runCatching { JSONObject(locator) }.isFailure) return@runCatching null
+            val locatorObject = runCatching { JSONObject(locator) }.getOrNull()
+                ?: return@runCatching null
+            if (locatorObject.optString("href").isBlank()) return@runCatching null
             val phase = runCatching {
                 ReaderTtsPhase.valueOf(json.optString("phase"))
             }.getOrDefault(ReaderTtsPhase.PAUSED)
