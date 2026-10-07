@@ -98,6 +98,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         // Select the provider root that actually owns document-class media instead of asserting a
         // provider-internal classification unrelated to Veil's SAF import contract.
         clickText("Documents")
+        clickText("Download")
         clickText("VeilReaderQa.pdf")
 
         waitForPackage(target.packageName)
