@@ -254,6 +254,48 @@ class ReaderTtsSessionTest {
     }
 
     @Test
+    fun nextDuringPreparingSkipsPendingCurrentSegmentBeforeResumingSpeech() = runTest {
+        val backend = FakeBackend()
+        val firstRead = CompletableDeferred<ReaderTtsUtterance?>()
+        var reads = 0
+        val first = locator("first.xhtml")
+        val second = locator("second.xhtml")
+        val session = ReaderTtsSession(
+            {
+                object : ReaderTtsContent {
+                    override suspend fun next(): ReaderTtsUtterance? =
+                        when (reads++) {
+                            0 -> firstRead.await()
+                            1 -> ReaderTtsUtterance("second", "en", second)
+                            else -> null
+                        }
+                }
+            },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(first)
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PREPARING, session.state.value.phase)
+
+            session.next()
+            runCurrent()
+            firstRead.complete(ReaderTtsUtterance("first", "en", first))
+            runCurrent()
+
+            assertEquals(2, reads)
+            assertEquals("second", backend.requests.single().text)
+            assertEquals(second, session.state.value.sourceLocator)
+        } finally {
+            firstRead.complete(null)
+            session.close()
+        }
+    }
+
+    @Test
     fun nextFromFreshPausedRecoverySkipsCurrentSegmentAndPreviousReturnsToIt() = runTest {
         val backend = FakeBackend()
         var index = 0
