@@ -3866,8 +3866,12 @@ fun ReaderScreen(
             ttsStartPending = false
             showTts = false
         }
-        Dialog(onDismissRequest = ::dismissSpeechControls) {
-            ReaderTtsControls(
+        Dialog(
+            onDismissRequest = ::dismissSpeechControls,
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            ReaderListeningMode(
+                book = opened.book,
                 state = speechState,
                 supported = ttsSession != null || ttsServiceController != null,
                 settings = speechSettingsState.value,
