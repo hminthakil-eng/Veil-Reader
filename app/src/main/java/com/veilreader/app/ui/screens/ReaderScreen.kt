@@ -105,6 +105,7 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPreferences
 import com.veilreader.app.ui.reader.tts.readerCanPlayForegroundTts
 import com.veilreader.app.ui.reader.tts.readerCanCompleteTtsStart
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
+import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpoint
 import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
@@ -3847,6 +3848,14 @@ fun ReaderScreen(
                 kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsProblem?>(null)
             }
         val previewProblem by previewProblemSource.collectAsStateWithLifecycle()
+        val checkpointSource = ttsServiceController?.checkpoint
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsCheckpoint?>(null)
+            }
+        val listeningCheckpoint by checkpointSource.collectAsStateWithLifecycle()
+        val activeListeningCheckpoint = listeningCheckpoint?.takeIf {
+            it.request.bookId == opened.book.id
+        }
 
         fun dismissSpeechControls() {
             ttsStartSerial += 1
@@ -3867,6 +3876,52 @@ fun ReaderScreen(
                 voiceCatalogLoading = voiceCatalogLoading,
                 voiceCatalogProblem = voiceCatalogProblem,
                 previewProblem = previewProblem,
+                listeningPositionAvailable = activeListeningCheckpoint != null,
+                onSyncListeningPosition = {
+                    val checkpoint = activeListeningCheckpoint
+                    if (checkpoint != null) {
+                        scope.launch syncListeningPosition@{
+                            val nav = latestNavigator.value ?: return@syncListeningPosition
+                            if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                                return@syncListeningPosition
+                            }
+                            val target = runCatching {
+                                Locator.fromJSON(JSONObject(checkpoint.locatorJson))
+                            }.getOrNull() ?: return@syncListeningPosition
+                            val origin = nav.currentLocator.value
+                            val targetIdentity = target.toReaderNavigationIdentity()
+                            if (
+                                !shouldStartReaderIdentityJump(
+                                    origin = origin.toReaderNavigationIdentity(),
+                                    target = targetIdentity
+                                )
+                            ) {
+                                showTts = false
+                                return@syncListeningPosition
+                            }
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            game.rebasePagePacing()
+                            val token = beginProgrammaticNavigation(
+                                originLocatorJson =
+                                    origin.toVeilPersistedJson(opened.format),
+                                targetIdentity = targetIdentity
+                            )
+                            if (
+                                nav.go(
+                                    target,
+                                    animated = shouldAnimateReaderJump(
+                                        latestReducedMotion.value
+                                    )
+                                )
+                            ) {
+                                showTts = false
+                            } else {
+                                cancelProgrammaticNavigation(token)
+                                readerMessage = savedLocationFailedMessage
+                            }
+                        }
+                    }
+                },
                 onRefreshVoices = { ttsServiceController?.refreshVoiceCatalog() },
                 onPreviewVoice = { languageTag, voiceId, sample ->
                     ttsServiceController?.previewVoice(
