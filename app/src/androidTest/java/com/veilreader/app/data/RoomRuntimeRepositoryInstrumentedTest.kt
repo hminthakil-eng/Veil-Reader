@@ -52,6 +52,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         db.close()
         File(context.filesDir, "publications").deleteRecursively()
         File(context.filesDir, "covers").deleteRecursively()
+        File(context.filesDir, "reader-recovery").deleteRecursively()
     }
 
     @Test
@@ -681,6 +682,82 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(41, stored.pagesRead)
         assertEquals("{\"href\":\"chapter-turn.xhtml\"}", stored.locatorJson)
         assertFalse(stored.finished)
+
+        repository.endReaderProgressSession(lease)
+    }
+
+    @Test
+    fun semanticCheckpoint_bridgesAsyncRoomWindow_andClearsOnlyAfterRoomCatchesUp() = runBlocking<Unit> {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "crash-journal-book",
+                title = "Crash Journal",
+                author = "Durability",
+                totalPages = 100,
+                sourceUri = "file:///crash-journal.epub",
+                locatorJson = """{"href":"origin.xhtml"}""",
+                progress = 0.20f,
+                lastOpenedAtEpochMs = 100L
+            )
+        )
+        repository.flushWrites()
+
+        val lease = repository.beginReaderProgressSession(
+            bookId = "crash-journal-book",
+            sessionId = "crash-session"
+        )
+
+        assertTrue(
+            repository.saveReaderProgress(
+                lease = lease,
+                progression = 0.205,
+                locatorJson = """{"href":"scroll.xhtml"}""",
+                sequence = 1L,
+                nowEpochMs = 101L,
+                bypassDebounce = false
+            ).accepted
+        )
+        assertNull(
+            repository.loadReaderCrashCheckpoint(
+                requireNotNull(repository.getBook("crash-journal-book"))
+            )
+        )
+
+        val semantic = repository.saveReaderProgress(
+            lease = lease,
+            progression = 0.21,
+            locatorJson =
+                """{"href":"destination.xhtml","text":{"highlight":"must not enter recovery journal"}}""",
+            sequence = 2L,
+            nowEpochMs = 101L,
+            bypassDebounce = true
+        )
+        assertTrue(semantic.accepted)
+        assertTrue(semantic.crashCheckpointDurable)
+        assertTrue((semantic.crashCheckpointLatencyNanos ?: -1L) >= 0L)
+
+        val checkpoint = requireNotNull(
+            repository.loadReaderCrashCheckpoint(
+                requireNotNull(repository.getBook("crash-journal-book"))
+            )
+        )
+        assertEquals("crash-session", checkpoint.sessionId)
+        assertEquals(2L, checkpoint.sequence)
+        assertEquals(0.21, checkpoint.progression, 0.000_001)
+        assertTrue(checkpoint.locatorJson.contains("destination.xhtml"))
+        assertFalse(checkpoint.locatorJson.contains("must not enter recovery journal"))
+
+        val durableBeforeFlush = requireNotNull(db.books().findEntity("crash-journal-book"))
+        assertEquals("""{"href":"origin.xhtml"}""", durableBeforeFlush.locatorJson)
+        assertEquals(0.20f, durableBeforeFlush.progress, 0.000_001f)
+
+        repository.flushWrites()
+
+        val durableAfterFlush = requireNotNull(db.books().findEntity("crash-journal-book"))
+        assertTrue(durableAfterFlush.locatorJson.orEmpty().contains("destination.xhtml"))
+        assertEquals(0.21f, durableAfterFlush.progress, 0.000_001f)
+        assertNull(repository.loadReaderCrashCheckpoint(durableAfterFlush.toDomain()))
 
         repository.endReaderProgressSession(lease)
     }
