@@ -1001,12 +1001,14 @@ class LocalLibraryRepository internal constructor(
         return withContext(Dispatchers.IO) {
             val durableBook = database.books().findWithCollections(book.id)?.toDomain()
                 ?: return@withContext null
-            readerCrashCheckpointStore.read(book.id)
-                ?.takeIf { checkpoint -> checkpoint.isNewerThanRoom(durableBook) }
-                ?: run {
-                    readerCrashCheckpointStore.clear(book.id)
-                    null
-                }
+            val checkpoint = readerCrashCheckpointStore.read(book.id)
+            if (checkpoint?.isNewerThanRoom(durableBook) == true) {
+                checkpoint
+            } else {
+                // Another semantic turn may replace this record after the read.
+                checkpoint?.let(readerCrashCheckpointStore::clearIfMatches)
+                null
+            }
         }
     }
 

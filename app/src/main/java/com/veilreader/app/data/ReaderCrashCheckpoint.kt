@@ -5,6 +5,8 @@ import android.os.StrictMode
 import android.os.SystemClock
 import android.util.AtomicFile
 import com.veilreader.app.domain.Book
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
@@ -90,15 +92,13 @@ internal class ReaderCrashCheckpointStore(
         val id = bookId.trim()
         if (id.isEmpty()) return null
         val file = fileFor(id)
-        if (!file.exists()) return null
         val atomic = AtomicFile(file)
 
         val checkpoint = runCatching {
-            if (file.length() !in 1..MAX_RECORD_BYTES.toLong()) return@runCatching null
             val bytes = atomic.openRead().use { input ->
-                input.readBytes(MAX_RECORD_BYTES + 1)
-            }
-            if (bytes.isEmpty() || bytes.size > MAX_RECORD_BYTES) return@runCatching null
+                readBoundedReaderCheckpoint(input, MAX_RECORD_BYTES)
+            } ?: return@runCatching null
+            if (bytes.isEmpty()) return@runCatching null
             decodeReaderCrashCheckpoint(String(bytes, StandardCharsets.UTF_8))
                 ?.takeIf { it.bookId == id }
         }.getOrNull()
@@ -274,3 +274,17 @@ private const val MAX_SESSION_CHARS = 512
 private const val MAX_LOCATOR_CHARS = 128 * 1024
 private const val MAX_CHECKPOINT_JSON_CHARS = 192 * 1024
 private const val PROGRESS_EPSILON = 0.000_01
+
+
+/** A capacity hint to readBytes is not a size limit; stop before allocating an oversized record. */
+internal fun readBoundedReaderCheckpoint(input: InputStream, maxBytes: Int): ByteArray? {
+    require(maxBytes > 0)
+    val output = ByteArrayOutputStream(minOf(maxBytes, 8_192))
+    val buffer = ByteArray(minOf(maxBytes, 8_192))
+    while (true) {
+        val count = input.read(buffer)
+        if (count < 0) return output.toByteArray()
+        if (count > maxBytes - output.size()) return null
+        output.write(buffer, 0, count)
+    }
+}

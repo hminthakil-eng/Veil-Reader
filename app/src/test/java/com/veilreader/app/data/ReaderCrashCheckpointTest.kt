@@ -15,6 +15,14 @@ import org.robolectric.annotation.Config
 class ReaderCrashCheckpointTest {
 
     @Test
+    fun recoveryReadActuallyBoundsBytesRatherThanOnlySettingCapacity() {
+        val exact = byteArrayOf(1, 2, 3)
+        assertTrue(exact.contentEquals(readBoundedReaderCheckpoint(exact.inputStream(), 3)))
+        assertNull(readBoundedReaderCheckpoint(byteArrayOf(1, 2, 3, 4).inputStream(), 3))
+        assertTrue(requireNotNull(readBoundedReaderCheckpoint(byteArrayOf().inputStream(), 3)).isEmpty())
+    }
+
+    @Test
     fun checkpointCodecStripsPublicationTextAndRoundTripsRecoveryMetadata() {
         val encoded = encodeReaderCrashCheckpoint(
             ReaderCrashCheckpoint(

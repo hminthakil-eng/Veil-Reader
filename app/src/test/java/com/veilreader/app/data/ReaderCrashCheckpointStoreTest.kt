@@ -31,6 +31,18 @@ class ReaderCrashCheckpointStoreTest {
     }
 
     @Test
+    fun legacyAtomicBackupIsRecoveredEvenWhenBaseFileIsMissing() {
+        val first = checkpoint(1, 100, "legacy.xhtml")
+        assertTrue(store.write(first).durable)
+        val root = java.io.File(RuntimeEnvironment.getApplication().filesDir, "reader-recovery")
+        val base = requireNotNull(root.listFiles()).single { it.name.endsWith(".json") }
+        base.copyTo(java.io.File(base.path + ".bak"), overwrite = true)
+        assertTrue(base.delete())
+        assertEquals("legacy.xhtml", org.json.JSONObject(
+            requireNotNull(store.read(first.bookId)).locatorJson).getString("href"))
+    }
+
+    @Test
     fun anOlderRoomWriteCannotClearANewerCheckpoint() {
         val newer = checkpoint(2, 101, "backward.xhtml").copy(progression = 0.19)
         assertTrue(store.write(newer).durable)
