@@ -3,8 +3,8 @@ set -euo pipefail
 
 MODE="${1:-}"
 case "$MODE" in
-  storage|performance) ;;
-  *) echo "Usage: $0 {storage|performance}" >&2; exit 2 ;;
+  storage|performance|durability) ;;
+  *) echo "Usage: $0 {storage|performance|durability}" >&2; exit 2 ;;
 esac
 
 SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
@@ -195,6 +195,149 @@ case "$MODE" in
     run_benchmark_class com.veilreader.benchmark.StartupBenchmark startup
     run_benchmark_class com.veilreader.benchmark.ReaderFrameSmokeBenchmark reader-frame-smoke
     ;;
+
+  durability)
+    run_gradle :app:installDebug --stacktrace
+    assert_emulator_alive
+
+    PACKAGE="com.veilreader.app"
+    COMPONENT="${PACKAGE}/.debug.ReaderDurabilityProbeActivity"
+    RESULT_FILE="files/reader-durability-probe-result.txt"
+    REPORT="build/reports/reader-durability-fault-injection.txt"
+    CYCLES="${VEIL_DURABILITY_CYCLES:-18}"
+    [[ "$CYCLES" =~ ^[1-9][0-9]*$ ]] || {
+      echo "VEIL_DURABILITY_CYCLES must be a positive integer." >&2
+      exit 2
+    }
+
+    "$ADB" -s "$SERIAL" shell pm clear "$PACKAGE" >/dev/null
+    : >"$REPORT"
+    {
+      echo "Veil Reader semantic locator process-death fault injection"
+      echo "sha=$(git rev-parse HEAD)"
+      echo "api=$("$ADB" -s "$SERIAL" shell getprop ro.build.version.sdk | tr -d '\\r')"
+      echo "model=$("$ADB" -s "$SERIAL" shell getprop ro.product.model | tr -d '\\r')"
+      echo "cycles_per_scenario=$CYCLES"
+      echo "started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    } >>"$REPORT"
+
+    probe_clear_result() {
+      "$ADB" -s "$SERIAL" shell run-as "$PACKAGE" rm -f "$RESULT_FILE" >/dev/null 2>&1 || true
+    }
+
+    probe_read_result() {
+      "$ADB" -s "$SERIAL" exec-out run-as "$PACKAGE" cat "$RESULT_FILE" 2>/dev/null | tr -d '\\r' || true
+    }
+
+    probe_wait_result() {
+      local phase="$1"
+      local result=""
+      for _ in $(seq 1 150); do
+        result="$(probe_read_result)"
+        if [[ "$result" == PASS* ]]; then
+          echo "$result" >>"$REPORT"
+          return 0
+        fi
+        if [[ "$result" == FAIL* ]]; then
+          echo "$result" | tee -a "$REPORT" >&2
+          return 1
+        fi
+        sleep 0.1
+      done
+      echo "FAIL phase=$phase error=result_timeout" | tee -a "$REPORT" >&2
+      return 1
+    }
+
+    probe_start() {
+      timeout 20 "$ADB" -s "$SERIAL" shell am start -W -n "$COMPONENT" "$@" >/dev/null
+    }
+
+    probe_wait_for_death() {
+      local result=""
+      for _ in $(seq 1 120); do
+        if [[ -z "$("$ADB" -s "$SERIAL" shell pidof "$PACKAGE" 2>/dev/null | tr -d '\\r')" ]]; then
+          return 0
+        fi
+        result="$(probe_read_result)"
+        if [[ "$result" == FAIL* ]]; then
+          echo "$result" | tee -a "$REPORT" >&2
+          return 1
+        fi
+        sleep 0.05
+      done
+      result="$(probe_read_result)"
+      [[ -n "$result" ]] && echo "$result" | tee -a "$REPORT" >&2
+      echo "FAIL phase=commit error=process_survived_abrupt_kill" | tee -a "$REPORT" >&2
+      return 1
+    }
+
+    run_durability_case() {
+      local scenario="$1"
+      local event="$2"
+      local origin_progress="$3"
+      local destination_progress="$4"
+      local expected="$5"
+      local cycle="$6"
+
+      local token="${scenario}-${cycle}"
+      local origin_key="${token}-origin"
+      local destination_key="${token}-destination"
+      local expected_progress="$destination_progress"
+      local expected_key="$destination_key"
+      if [[ "$expected" == "origin" ]]; then
+        expected_progress="$origin_progress"
+        expected_key="$origin_key"
+      fi
+
+      "$ADB" -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
+      probe_clear_result
+      probe_start \
+        --es probe_action seed \
+        --es probe_origin_progress "$origin_progress" \
+        --es probe_origin_key "$origin_key"
+      probe_wait_result "seed:$token"
+      "$ADB" -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null
+      sleep 0.05
+
+      probe_clear_result
+      set +e
+      timeout 20 "$ADB" -s "$SERIAL" shell am start -W -n "$COMPONENT" \
+        --es probe_action commit_and_kill \
+        --es probe_event "$event" \
+        --es probe_session_id "session-$token" \
+        --es probe_destination_progress "$destination_progress" \
+        --es probe_destination_key "$destination_key" \
+        >/dev/null 2>&1
+      set -e
+      probe_wait_for_death
+
+      probe_clear_result
+      probe_start \
+        --es probe_action verify \
+        --es probe_expected_progress "$expected_progress" \
+        --es probe_expected_key "$expected_key"
+      probe_wait_result "verify:$token"
+
+      echo "PASS scenario=$scenario cycle=$cycle event=$event expected=$expected" >>"$REPORT"
+    }
+
+    # 6 scenarios x 18 default cycles = 108 abrupt-process samples on each exact SHA.
+    for cycle in $(seq 1 "$CYCLES"); do
+      run_durability_case page-forward page 0.20 0.21 destination "$cycle"
+      run_durability_case page-backward page 0.60 0.59 destination "$cycle"
+      run_durability_case paper-commit paper 0.30 0.31 destination "$cycle"
+      run_durability_case paper-preview-cancel preview 0.40 0.41 origin "$cycle"
+      run_durability_case jump-commit jump 0.50 0.75 destination "$cycle"
+      run_durability_case final-snapshot final 0.80 0.81 destination "$cycle"
+    done
+
+    {
+      echo "completed_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      echo "result=PASS"
+      echo "samples=$((CYCLES * 6))"
+    } >>"$REPORT"
+    ;;
+
 esac
 
 assert_emulator_alive
