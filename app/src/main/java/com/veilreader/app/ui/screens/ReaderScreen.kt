@@ -163,6 +163,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
@@ -2445,190 +2446,228 @@ fun ReaderScreen(
         // Preference changes must never race a half-committed page gesture.
         // This effect is already suspend-capable, so require Readium's currentLocator
         // to settle back to the preview origin before capturing a handoff or reflowing.
-        rendererPreferencesSettling = true
-        val paperHadPendingTurn =
-            paperInputListener?.hasPendingTurn() == true
-        val slideHadPendingTurn =
-            slideInputListener?.hasPendingTurn() == true
-        val paperSettled =
-            !paperHadPendingTurn ||
-                paperInputListener?.cancelPendingTurnAndAwait() == true ||
-                paperInputListener?.hasPendingTurn() != true
-        val slideSettled =
-            !slideHadPendingTurn ||
-                slideInputListener?.cancelPendingTurnAndAwait() == true ||
-                slideInputListener?.hasPendingTurn() != true
-        if (!paperSettled || !slideSettled) {
-            paperInputListener?.forceCancelPendingTurn()
-            slideInputListener?.forceCancelPendingTurn()
-            rendererPreferencesSettling = false
-            readerMessage = appearanceApplyFailedMessage
-            ReaderTrace.event(
-                "appearance_submit_blocked_unsettled_preview",
-                bookId = opened.book.id,
-                sessionId = readerSessionInstanceId
-            )
-            if (requestedSource != previousAccepted) {
-                onReaderAppearanceChange(previousAccepted)
-            }
-            if (requestedSpread != previousPresentedSpread) {
-                activeFixedLayoutSpread = previousPresentedSpread
-                onFixedLayoutSpreadChange(previousPresentedSpread)
-            }
-            return@LaunchedEffect
-        }
-
-        val captured = if (captureModeHandoff) {
-            (nav as? OverflowableNavigator)
-                ?.publicationView
-                ?.let(readerModeHandoffState::capture) == true
-        } else {
-            readerModeHandoffState.clearImmediately()
-            false
-        }
-
-        game.rebasePagePacing()
-        readerViewModel.onUserInteraction(readerSessionInstanceId)
         val traceDetails =
             "format=${opened.format} theme=${requested.theme} " +
                 "publisherStyles=${requested.publisherStyles} " +
                 "scroll=${requested.scroll} " +
                 "pageTurn=${requested.pageTurnStyle} " +
                 "spread=$activeFixedLayoutSpread"
-        ReaderTrace.event(
-            "appearance_submit_requested",
-            bookId = opened.book.id,
-            sessionId = readerViewModel.traceSessionId(),
-            details = traceDetails
-        )
-
+        rendererPreferencesSettling = true
         try {
-            if (epubRelayoutRisk) {
-                val epubNavigator = nav as? EpubNavigatorFragment
-                val rendererLocator = nav.currentLocator.value
-                val staleSourceJson = rendererLocator.toVeilPersistedJson(opened.format)
-                val preciseSourceLocator = try {
-                    epubNavigator?.firstVisibleElementLocator()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    null
-                }
-                val anchor = try {
-                    val positions = withContext(Dispatchers.IO) {
-                        opened.publication.positions()
-                    }
-                    stableEpubPositionAnchor(rendererLocator, positions)
-                        ?.withEpubCssSelectorFrom(preciseSourceLocator)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    null
-                }
-                if (anchor != null) {
-                    recordLocator(anchor, ReaderLocatorEvent.FINAL_SNAPSHOT)
-                    pendingEpubRelayoutSourceJson = staleSourceJson
-                    pendingEpubRelayoutAnchor = anchor
-                    ReaderTrace.event(
-                        "locator_relayout_anchor_committed",
-                        bookId = opened.book.id,
-                        sessionId = readerSessionInstanceId,
-                        details = "position=${anchor.locations.position}"
-                    )
-                }
-            }
-
-            if (fixedLayoutSpreadChanged) {
-                recordLocator(
-                    nav.currentLocator.value,
-                    ReaderLocatorEvent.FINAL_SNAPSHOT
+            val paperHadPendingTurn =
+                paperInputListener?.hasPendingTurn() == true
+            val slideHadPendingTurn =
+                slideInputListener?.hasPendingTurn() == true
+            val paperSettled =
+                !paperHadPendingTurn ||
+                    withTimeoutOrNull(READER_PREVIEW_SETTLE_TIMEOUT_MS) {
+                        paperInputListener?.cancelPendingTurnAndAwait()
+                    } == true ||
+                    paperInputListener?.hasPendingTurn() != true
+            val slideSettled =
+                !slideHadPendingTurn ||
+                    withTimeoutOrNull(READER_PREVIEW_SETTLE_TIMEOUT_MS) {
+                        slideInputListener?.cancelPendingTurnAndAwait()
+                    } == true ||
+                    slideInputListener?.hasPendingTurn() != true
+            if (!paperSettled || !slideSettled) {
+                paperInputListener?.forceCancelPendingTurn()
+                slideInputListener?.forceCancelPendingTurn()
+                rendererPreferencesSettling = false
+                readerMessage = appearanceApplyFailedMessage
+                ReaderTrace.event(
+                    "appearance_submit_blocked_unsettled_preview",
+                    bookId = opened.book.id,
+                    sessionId = readerSessionInstanceId
                 )
-            }
-
-            when (opened.format) {
-                BookFormat.EPUB ->
-                    (nav as? EpubNavigatorFragment)
-                        ?.submitPreferences(
-                            requested.toEpubPreferences(
-                                fixedLayoutSpread = requestedSpread
-                            )
-                        )
-
-                BookFormat.PDF -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val pdfNavigator = nav as? PdfiumNavigatorFragment
-                    pdfNavigator?.submitPreferences(requested.toPdfiumPreferences())
+                if (requestedSource != previousAccepted) {
+                    onReaderAppearanceChange(previousAccepted)
                 }
-
-                else -> Unit
+                if (requestedSpread != previousPresentedSpread) {
+                    activeFixedLayoutSpread = previousPresentedSpread
+                    onFixedLayoutSpreadChange(previousPresentedSpread)
+                }
+                return@LaunchedEffect
             }
 
-            val settleFrames = readerPreferenceSettleFrames(
-                previousMode = previousPresented.navigationMode,
-                requestedMode = requested.navigationMode,
-                fixedLayoutSpreadChanged = fixedLayoutSpreadChanged
-            )
-            repeat(settleFrames) {
-                delay(VeilMotion.FRAME_SETTLE_MS)
-            }
-
-            if (
-                shouldRefreshPendingEpubRelayout(
+            if (!readerRendererPreferencesChanged(
                     format = opened.format,
-                    hasPendingAnchor = pendingEpubRelayoutSourceJson != null
+                    previous = previousPresented,
+                    requested = requested,
+                    previousSpread = previousPresentedSpread,
+                    requestedSpread = requestedSpread
                 )
             ) {
-                val refreshed = try {
-                    (nav as? EpubNavigatorFragment)?.firstVisibleElementLocator()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    null
-                }
-                if (refreshed != null) {
-                    val refreshedCheckpoint =
-                        pendingEpubRelayoutAnchor?.withEpubCssSelectorFrom(refreshed)
-                            ?: refreshed
-                    recordLocator(refreshedCheckpoint, ReaderLocatorEvent.FINAL_SNAPSHOT)
-                    pendingEpubRelayoutSourceJson = null
-                    pendingEpubRelayoutAnchor = null
-                    ReaderTrace.event(
-                        "locator_relayout_refreshed",
-                        bookId = opened.book.id,
-                        sessionId = readerSessionInstanceId,
-                        details =
-                            "position=${refreshedCheckpoint.locations.position} " +
-                                "progress=${refreshedCheckpoint.locations.totalProgression}"
-                    )
-                }
-            }
-
-            if (fixedLayoutSpreadChanged) {
-                recordLocator(
-                    nav.currentLocator.value,
-                    ReaderLocatorEvent.FINAL_SNAPSHOT
+                // Paper/Slide/None share Readium's paged preferences. Applying the same
+                // renderer preferences can wait for a layout that will never change.
+                // Finish any preview first, then switch the Veil input and GPU together.
+                presentedReaderAppearance = requested
+                acceptedReaderAppearance = requestedSource
+                presentedFixedLayoutSpread = requestedSpread
+                paperCurlState.invalidateSnapshotSource()
+                readerModeHandoffState.clearImmediately()
+                rendererPreferencesSettling = false
+                ReaderTrace.event(
+                    "appearance_veil_only_applied",
+                    bookId = opened.book.id,
+                    sessionId = readerSessionInstanceId,
+                    details = "pageTurn=${requested.pageTurnStyle}"
                 )
+                return@LaunchedEffect
             }
 
-            // Switch Veil-owned visuals/input only after the renderer has had time to paint.
-            presentedReaderAppearance = requested
-            acceptedReaderAppearance = requestedSource
-            presentedFixedLayoutSpread = requestedSpread
-            paperCurlState.invalidateSnapshotSource()
-            if (captured) {
-                readerModeHandoffState.release(reducedMotion)
+            val captured = if (captureModeHandoff) {
+                (nav as? OverflowableNavigator)
+                    ?.publicationView
+                    ?.let(readerModeHandoffState::capture) == true
+            } else {
+                readerModeHandoffState.clearImmediately()
+                false
             }
 
+            game.rebasePagePacing()
+            readerViewModel.onUserInteraction(readerSessionInstanceId)
             ReaderTrace.event(
-                "appearance_submit_returned",
+                "appearance_submit_requested",
                 bookId = opened.book.id,
                 sessionId = readerViewModel.traceSessionId(),
                 details = traceDetails
             )
-        } catch (cancelled: CancellationException) {
-            readerModeHandoffState.clearImmediately()
-            throw cancelled
+
+            withTimeoutOrNull(READER_APPEARANCE_APPLY_TIMEOUT_MS) {
+                if (epubRelayoutRisk) {
+                    val epubNavigator = nav as? EpubNavigatorFragment
+                    val rendererLocator = nav.currentLocator.value
+                    val staleSourceJson = rendererLocator.toVeilPersistedJson(opened.format)
+                    val preciseSourceLocator = try {
+                        withTimeoutOrNull(READER_LOCATOR_QUERY_TIMEOUT_MS) {
+                            epubNavigator?.firstVisibleElementLocator()
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                    val anchor = try {
+                        val positions = withContext(Dispatchers.IO) {
+                            opened.publication.positions()
+                        }
+                        stableEpubPositionAnchor(rendererLocator, positions)
+                            ?.withEpubCssSelectorFrom(preciseSourceLocator)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (anchor != null) {
+                        recordLocator(anchor, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                        pendingEpubRelayoutSourceJson = staleSourceJson
+                        pendingEpubRelayoutAnchor = anchor
+                        ReaderTrace.event(
+                            "locator_relayout_anchor_committed",
+                            bookId = opened.book.id,
+                            sessionId = readerSessionInstanceId,
+                            details = "position=${anchor.locations.position}"
+                        )
+                    }
+                }
+
+                if (fixedLayoutSpreadChanged) {
+                    recordLocator(
+                        nav.currentLocator.value,
+                        ReaderLocatorEvent.FINAL_SNAPSHOT
+                    )
+                }
+
+                when (opened.format) {
+                    BookFormat.EPUB ->
+                        (nav as? EpubNavigatorFragment)
+                            ?.submitPreferences(
+                                requested.toEpubPreferences(
+                                    fixedLayoutSpread = requestedSpread
+                                )
+                            )
+
+                    BookFormat.PDF -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val pdfNavigator = nav as? PdfiumNavigatorFragment
+                        pdfNavigator?.submitPreferences(requested.toPdfiumPreferences())
+                    }
+
+                    else -> Unit
+                }
+
+                val settleFrames = readerPreferenceSettleFrames(
+                    previousMode = previousPresented.navigationMode,
+                    requestedMode = requested.navigationMode,
+                    fixedLayoutSpreadChanged = fixedLayoutSpreadChanged
+                )
+                repeat(settleFrames) {
+                    delay(VeilMotion.FRAME_SETTLE_MS)
+                }
+
+                if (
+                    shouldRefreshPendingEpubRelayout(
+                        format = opened.format,
+                        hasPendingAnchor = pendingEpubRelayoutSourceJson != null
+                    )
+                ) {
+                    val refreshed = try {
+                        withTimeoutOrNull(READER_LOCATOR_QUERY_TIMEOUT_MS) {
+                            (nav as? EpubNavigatorFragment)?.firstVisibleElementLocator()
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (refreshed != null) {
+                        val refreshedCheckpoint =
+                            pendingEpubRelayoutAnchor?.withEpubCssSelectorFrom(refreshed)
+                                ?: refreshed
+                        recordLocator(refreshedCheckpoint, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                        pendingEpubRelayoutSourceJson = null
+                        pendingEpubRelayoutAnchor = null
+                        ReaderTrace.event(
+                            "locator_relayout_refreshed",
+                            bookId = opened.book.id,
+                            sessionId = readerSessionInstanceId,
+                            details =
+                                "position=${refreshedCheckpoint.locations.position} " +
+                                    "progress=${refreshedCheckpoint.locations.totalProgression}"
+                        )
+                    }
+                }
+
+                if (fixedLayoutSpreadChanged) {
+                    recordLocator(
+                        nav.currentLocator.value,
+                        ReaderLocatorEvent.FINAL_SNAPSHOT
+                    )
+                }
+
+                // Switch Veil-owned visuals/input only after the renderer has had time to paint.
+                presentedReaderAppearance = requested
+                acceptedReaderAppearance = requestedSource
+                presentedFixedLayoutSpread = requestedSpread
+                paperCurlState.invalidateSnapshotSource()
+                if (captured) {
+                    readerModeHandoffState.release(reducedMotion)
+                }
+
+                ReaderTrace.event(
+                    "appearance_submit_returned",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId(),
+                    details = traceDetails
+                )
+                true
+            } ?: error("Reader appearance application timed out")
         } catch (error: Exception) {
+            if (error is CancellationException) {
+                readerModeHandoffState.clearImmediately()
+                throw error
+            }
             pendingEpubRelayoutSourceJson = null
             pendingEpubRelayoutAnchor = null
             readerModeHandoffState.clearImmediately()
@@ -4101,6 +4140,24 @@ internal fun readerPreferencesNeedSubmission(
         previousAccepted != requestedSource ||
         previousSpread != requestedSpread
 
+// Compare what Readium receives, rather than Veil-only animation/material options.
+@OptIn(ExperimentalReadiumApi::class)
+internal fun readerRendererPreferencesChanged(
+    format: BookFormat,
+    previous: ReaderAppearance,
+    requested: ReaderAppearance,
+    previousSpread: ReaderFixedLayoutSpread,
+    requestedSpread: ReaderFixedLayoutSpread
+): Boolean = when (format) {
+    BookFormat.EPUB -> previous.toEpubPreferences(previousSpread) !=
+        requested.toEpubPreferences(requestedSpread)
+    BookFormat.PDF -> previous.toPdfiumPreferences() != requested.toPdfiumPreferences()
+    else -> false
+}
+
+private const val READER_APPEARANCE_APPLY_TIMEOUT_MS = 6_000L
+private const val READER_LOCATOR_QUERY_TIMEOUT_MS = 1_000L
+private const val READER_PREVIEW_SETTLE_TIMEOUT_MS = 2_000L
 private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
 private const val READER_VIEWPORT_REFLOW_QUIET_MS = 650L
 

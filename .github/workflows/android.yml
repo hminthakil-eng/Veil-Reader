@@ -92,14 +92,14 @@ jobs:
       - name: Compile performance harness
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
-      - name: Upload APK for manual runs only
-        if: github.event_name == 'workflow_dispatch'
+      - name: Upload debug APK for verified pull requests and manual runs
+        if: success() && (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request')
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: Upload verification reports on failure only
         if: failure()

@@ -131,3 +131,13 @@
 - تطبیق پیکسلی اجرای فعلی، instrumentation، benchmark native، نصب APK و مطالعهٔ واقعی انجام نشده‌اند. فایل `quality/physical-device-status.json` همچنان UNVERIFIED باقی می‌ماند.
 
 برای ختم هر ردیف جدول، وجود کد کافی نیست: رفتار کامل + دادهٔ درست + هویت تصویری + دسترس‌پذیری + شواهد همان SHA لازم است. پیشرفت این نوبت «اصلاح انجام‌شده در سورس، در انتظار تأیید» است.
+
+
+## P0: Paper activation / frozen input (2026-10-07)
+
+- User reports the supplied debug APK neither turns a page nor displays the Paper debug label. APK includes the GPU engine and runtime debug rollout; this does not establish a GPU rendering failure.
+- Avoid re-submitting identical Readium preferences on Veil-only Paper/Slide/None switches. Compare mapped EPUB/PDF preferences, settle outstanding previews, then publish the visual/input mode together.
+- Bound preview completion (2 seconds per engine), optional precise-locator queries (1 second), and renderer application (6 seconds). Always release the input lock, including lifecycle cancellation before preference submission.
+- Preserve acquired-buffer acknowledgement and one navigation owner. No fake curl or slide substitution.
+- Regression coverage: Paper activation skips identical renderer preferences; scroll, typography, theme and spread changes still submit. Existing initial-attach, preview ownership and canonical Paper tests remain required.
+- Debug APK is uploaded after successful PR CI for device validation. Device acceptance remains open: reflowable EPUB, Paper activation, forward/back turns, cancellation, rapid mode changes, position continuity, background/resume. No on-device success is claimed.
