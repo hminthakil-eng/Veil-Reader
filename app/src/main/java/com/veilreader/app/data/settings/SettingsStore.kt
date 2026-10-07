@@ -29,6 +29,8 @@ import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import com.veilreader.app.domain.decodeReaderTapGrid
 import com.veilreader.app.domain.encodeReaderTapGrid
 import java.io.IOException
+import java.net.URLDecoder
+import java.net.URLEncoder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -99,6 +101,7 @@ class SettingsStore(private val context: Context) {
         val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
         val ttsSpeed = doublePreferencesKey("reader_tts_speed")
         val ttsPitch = doublePreferencesKey("reader_tts_pitch")
+        val ttsPreferredVoices = stringPreferencesKey("reader_tts_preferred_voices")
         val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
         val focusGuideLastActiveMode = stringPreferencesKey("reader_focus_guide_last_active_mode")
         val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
@@ -322,6 +325,12 @@ class SettingsStore(private val context: Context) {
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.ttsSpeed] = normalized.speed
             prefs[Keys.ttsPitch] = normalized.pitch
+            if (normalized.preferredVoiceIds.isEmpty()) {
+                prefs.remove(Keys.ttsPreferredVoices)
+            } else {
+                prefs[Keys.ttsPreferredVoices] =
+                    encodeReaderTtsPreferredVoices(normalized.preferredVoiceIds)
+            }
         }
     }
 
@@ -439,6 +448,56 @@ internal fun decodeReaderTtsPreferences(prefs: Preferences): ReaderTtsSettings {
     val values = prefs.asMap()
     return ReaderTtsSettings(
         speed = values[doublePreferencesKey("reader_tts_speed")] as? Double ?: 1.0,
-        pitch = values[doublePreferencesKey("reader_tts_pitch")] as? Double ?: 1.0
+        pitch = values[doublePreferencesKey("reader_tts_pitch")] as? Double ?: 1.0,
+        preferredVoiceIds = decodeReaderTtsPreferredVoices(
+            values[stringPreferencesKey("reader_tts_preferred_voices")] as? String
+        )
     ).normalized()
 }
+
+private const val READER_TTS_VOICE_CODEC_PREFIX = "v1:"
+
+internal fun encodeReaderTtsPreferredVoices(values: Map<String, String>): String {
+    val payload = values.entries
+        .asSequence()
+        .mapNotNull { (rawLanguage, rawVoice) ->
+            val language = rawLanguage.trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val voice = rawVoice.trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            language to voice
+        }
+        .sortedBy { it.first }
+        .joinToString("&") { (language, voice) ->
+            "${encodeTtsVoiceComponent(language)}=${encodeTtsVoiceComponent(voice)}"
+        }
+    return READER_TTS_VOICE_CODEC_PREFIX + payload
+}
+
+internal fun decodeReaderTtsPreferredVoices(raw: String?): Map<String, String> {
+    if (raw.isNullOrBlank() || !raw.startsWith(READER_TTS_VOICE_CODEC_PREFIX)) {
+        return emptyMap()
+    }
+    val payload = raw.removePrefix(READER_TTS_VOICE_CODEC_PREFIX)
+    if (payload.isBlank()) return emptyMap()
+
+    return buildMap {
+        payload.split('&').forEach { entry ->
+            val separator = entry.indexOf('=')
+            if (separator <= 0 || separator == entry.lastIndex) return@forEach
+            val language = decodeTtsVoiceComponent(entry.substring(0, separator))
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return@forEach
+            val voice = decodeTtsVoiceComponent(entry.substring(separator + 1))
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return@forEach
+            put(language, voice)
+        }
+    }
+}
+
+private fun encodeTtsVoiceComponent(value: String): String =
+    URLEncoder.encode(value, Charsets.UTF_8.name())
+
+private fun decodeTtsVoiceComponent(value: String): String? =
+    runCatching { URLDecoder.decode(value, Charsets.UTF_8.name()) }.getOrNull()

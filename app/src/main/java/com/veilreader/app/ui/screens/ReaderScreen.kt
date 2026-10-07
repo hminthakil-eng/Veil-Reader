@@ -84,6 +84,8 @@ import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.diagnostics.ReaderPerformanceMetrics
 import com.veilreader.app.diagnostics.ReaderTrace
+import com.veilreader.app.feature.VeilFeatureGates
+import com.veilreader.app.feature.VeilRiskyFeature
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
@@ -103,6 +105,10 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPreferences
 import com.veilreader.app.ui.reader.tts.readerCanPlayForegroundTts
 import com.veilreader.app.ui.reader.tts.readerCanCompleteTtsStart
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
+import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpoint
+import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
+import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
+import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
 import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -1108,15 +1114,49 @@ fun ReaderScreen(
             accessibilityActive = readerHardwareAccessibilityActive(accessibilityManager)
         )
     }
-    val ttsSession = remember(opened.book.id, readerSessionInstanceId, lifecycle) {
-        val ownerId = readerSessionInstanceId
-        createReadiumReaderTtsSession(activity.applicationContext, opened) {
-            latestReaderSessionInstanceId.value == ownerId && latestTtsCanPlay.value()
+    val backgroundTtsEnabled = remember {
+        VeilFeatureGates.enabled(
+            VeilRiskyFeature.BACKGROUND_TTS,
+            debugReview = BuildConfig.DEBUG
+        )
+    }
+    val ttsSession = remember(
+        opened.book.id,
+        readerSessionInstanceId,
+        lifecycle,
+        backgroundTtsEnabled
+    ) {
+        if (backgroundTtsEnabled) {
+            null
+        } else {
+            val ownerId = readerSessionInstanceId
+            createReadiumReaderTtsSession(activity.applicationContext, opened) {
+                latestReaderSessionInstanceId.value == ownerId && latestTtsCanPlay.value()
+            }
         }
     }
-    DisposableEffect(ttsSession, lifecycle) {
+    val ttsServiceController = remember(
+        opened.book.id,
+        readerSessionInstanceId,
+        backgroundTtsEnabled
+    ) {
+        if (backgroundTtsEnabled && opened.format == BookFormat.EPUB) {
+            ReaderTtsServiceController(activity.applicationContext)
+        } else {
+            null
+        }
+    }
+    DisposableEffect(ttsServiceController) {
+        onDispose {
+            ttsServiceController?.close()
+        }
+    }
+    DisposableEffect(ttsSession, lifecycle, backgroundTtsEnabled) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+            if (
+                !backgroundTtsEnabled &&
+                (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP)
+            ) {
                 ttsStartSerial += 1
                 ttsStartJob?.cancel()
                 ttsStartPending = false
@@ -3157,7 +3197,7 @@ fun ReaderScreen(
                         }
                     }
 
-                    if (ttsSession != null) {
+                    if (ttsSession != null || ttsServiceController != null) {
                         TextButton(
                             onClick = {
                                 readerViewModel.onUserInteraction(readerSessionInstanceId)
@@ -3786,30 +3826,142 @@ fun ReaderScreen(
     }
 
     if (showTts) {
-        val speechState by (ttsSession?.state ?: remember { kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState()) })
-            .collectAsStateWithLifecycle()
+        val speechStateSource = ttsServiceController?.state
+            ?: ttsSession?.state
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState()) }
+        val speechState by speechStateSource.collectAsStateWithLifecycle()
+        val voiceCatalogSource = ttsServiceController?.voices
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<List<ReaderTtsVoice>>(emptyList())
+            }
+        val voiceCatalog by voiceCatalogSource.collectAsStateWithLifecycle()
+        val voiceCatalogLoadingSource = ttsServiceController?.voiceCatalogLoading
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
+        val voiceCatalogLoading by voiceCatalogLoadingSource.collectAsStateWithLifecycle()
+        val voiceCatalogProblemSource = ttsServiceController?.voiceCatalogProblem
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsProblem?>(null)
+            }
+        val voiceCatalogProblem by voiceCatalogProblemSource.collectAsStateWithLifecycle()
+        val previewProblemSource = ttsServiceController?.previewProblem
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsProblem?>(null)
+            }
+        val previewProblem by previewProblemSource.collectAsStateWithLifecycle()
+        val checkpointSource = ttsServiceController?.checkpoint
+            ?: remember {
+                kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsCheckpoint?>(null)
+            }
+        val listeningCheckpoint by checkpointSource.collectAsStateWithLifecycle()
+        val activeListeningCheckpoint = listeningCheckpoint?.takeIf {
+            it.request.bookId == opened.book.id
+        }
+        val sleepDeadlineSource = ttsServiceController?.sleepDeadlineEpochMs
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow<Long?>(null) }
+        val sleepDeadlineEpochMs by sleepDeadlineSource.collectAsStateWithLifecycle()
+
+        val activeSegmentSource = ttsServiceController?.activeSegmentText
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow<String?>(null) }
+        val activeSegmentText by activeSegmentSource.collectAsStateWithLifecycle()
+
         fun dismissSpeechControls() {
             ttsStartSerial += 1
             ttsStartJob?.cancel()
             ttsStartPending = false
             showTts = false
         }
-        Dialog(onDismissRequest = ::dismissSpeechControls) {
-            ReaderTtsControls(
+        Dialog(
+            onDismissRequest = ::dismissSpeechControls,
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            ReaderListeningMode(
+                book = opened.book,
                 state = speechState,
-                supported = ttsSession != null,
+                activeText = activeSegmentText,
+                supported = ttsSession != null || ttsServiceController != null,
                 settings = speechSettingsState.value,
                 startPending = ttsStartPending,
                 startFailed = ttsStartFailed,
+                publicationLanguage = publicationLanguage,
+                voiceCatalogSupported = ttsServiceController != null,
+                voices = voiceCatalog,
+                voiceCatalogLoading = voiceCatalogLoading,
+                voiceCatalogProblem = voiceCatalogProblem,
+                previewProblem = previewProblem,
+                sleepDeadlineEpochMs = sleepDeadlineEpochMs,
+                onSetSleepTimer = { minutes ->
+                    ttsServiceController?.setSleepTimer(minutes)
+                },
+                listeningPositionAvailable = activeListeningCheckpoint != null,
+                onSyncListeningPosition = {
+                    val checkpoint = activeListeningCheckpoint
+                    if (checkpoint != null) {
+                        scope.launch syncListeningPosition@{
+                            val nav = latestNavigator.value ?: return@syncListeningPosition
+                            if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                                return@syncListeningPosition
+                            }
+                            val target = runCatching {
+                                Locator.fromJSON(JSONObject(checkpoint.locatorJson))
+                            }.getOrNull() ?: return@syncListeningPosition
+                            val origin = nav.currentLocator.value
+                            val targetIdentity = target.toReaderNavigationIdentity()
+                            if (
+                                !shouldStartReaderIdentityJump(
+                                    origin = origin.toReaderNavigationIdentity(),
+                                    target = targetIdentity
+                                )
+                            ) {
+                                showTts = false
+                                return@syncListeningPosition
+                            }
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            game.rebasePagePacing()
+                            val token = beginProgrammaticNavigation(
+                                originLocatorJson =
+                                    origin.toVeilPersistedJson(opened.format),
+                                targetIdentity = targetIdentity
+                            )
+                            if (
+                                nav.go(
+                                    target,
+                                    animated = shouldAnimateReaderJump(
+                                        latestReducedMotion.value
+                                    )
+                                )
+                            ) {
+                                showTts = false
+                            } else {
+                                cancelProgrammaticNavigation(token)
+                                readerMessage = savedLocationFailedMessage
+                            }
+                        }
+                    }
+                },
+                onRefreshVoices = { ttsServiceController?.refreshVoiceCatalog() },
+                onPreviewVoice = { languageTag, voiceId, sample ->
+                    ttsServiceController?.previewVoice(
+                        languageTag = languageTag,
+                        voiceId = voiceId,
+                        sample = sample,
+                        settings = speechSettingsState.value
+                    )
+                },
                 onStart = {
                     val nav = latestNavigator.value as? EpubNavigatorFragment
-                    if (nav != null && ttsSession != null && !ttsStartPending) {
+                    if (
+                        nav != null &&
+                        (ttsSession != null || ttsServiceController != null) &&
+                        !ttsStartPending
+                    ) {
                         val requestSerial = ++ttsStartSerial
                         ttsStartPending = true
                         ttsStartFailed = false
                         ttsStartJob = scope.launch {
                             try {
-                                val locator = kotlinx.coroutines.withTimeout(5_000L) { nav.firstVisibleElementLocator() }
+                                val locator = kotlinx.coroutines.withTimeout(5_000L) {
+                                    nav.firstVisibleElementLocator()
+                                }
                                 if (readerCanCompleteTtsStart(
                                     expectedOwnerId = readerSessionInstanceId,
                                     currentOwnerId = latestReaderSessionInstanceId.value,
@@ -3819,11 +3971,25 @@ fun ReaderScreen(
                                     requestSerial = requestSerial,
                                     currentSerial = ttsStartSerial
                                 )) {
-                                    if (locator == null) ttsStartFailed = true
-                                    else ttsSession.start(locator, ReaderTtsPreferences(
-                                        speed = latestTtsSettings.value.speed.toFloat(),
-                                        pitch = latestTtsSettings.value.pitch.toFloat()
-                                    ))
+                                    if (locator == null) {
+                                        ttsStartFailed = true
+                                    } else if (ttsServiceController != null) {
+                                        ttsServiceController.start(
+                                            bookId = opened.book.id,
+                                            locatorJson = locator.toJSON().toString(),
+                                            settings = latestTtsSettings.value
+                                        )
+                                    } else {
+                                        ttsSession?.start(
+                                            locator,
+                                            ReaderTtsPreferences(
+                                                speed = latestTtsSettings.value.speed.toFloat(),
+                                                pitch = latestTtsSettings.value.pitch.toFloat(),
+                                                preferredVoiceIds =
+                                                    latestTtsSettings.value.preferredVoiceIds
+                                            )
+                                        )
+                                    }
                                 }
                             } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
                                 if (requestSerial == ttsStartSerial) ttsStartFailed = true
@@ -3837,18 +4003,31 @@ fun ReaderScreen(
                         }
                     }
                 },
-                onResume = { ttsSession?.resume() },
-                onPause = { ttsSession?.pause() },
+                onResume = { ttsServiceController?.resume() ?: ttsSession?.resume() },
+                onPause = { ttsServiceController?.pause() ?: ttsSession?.pause() },
+                onPrevious = {
+                    ttsServiceController?.previous() ?: ttsSession?.previous()
+                },
+                onNext = {
+                    ttsServiceController?.next() ?: ttsSession?.next()
+                },
                 onStop = {
                     ttsStartSerial += 1
                     ttsStartJob?.cancel()
                     ttsStartPending = false
-                    ttsSession?.stop()
+                    ttsServiceController?.stop() ?: ttsSession?.stop()
                 },
                 onSettingsChange = { updated ->
                     speechSettingsState.update(updated)
                     onTtsSettingsChange(updated)
-                    ttsSession?.updatePreferences(ReaderTtsPreferences(updated.speed.toFloat(), updated.pitch.toFloat()))
+                    ttsServiceController?.updateSettings(updated)
+                        ?: ttsSession?.updatePreferences(
+                            ReaderTtsPreferences(
+                                speed = updated.speed.toFloat(),
+                                pitch = updated.pitch.toFloat(),
+                                preferredVoiceIds = updated.preferredVoiceIds
+                            )
+                        )
                 },
                 onDone = ::dismissSpeechControls
             )

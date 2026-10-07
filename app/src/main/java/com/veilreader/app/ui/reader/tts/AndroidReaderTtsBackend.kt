@@ -28,10 +28,12 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     private var initializationGeneration = 0L
     private var receiverRegistered = false
     private var focusHeld = false
+    private var resumeOnFocusGain = false
     private var requestSequence = 0L
     private var activeRequestId: String? = null
     private var activeContinuation: CancellableContinuation<ReaderTtsProblem?>? = null
-    override var onInterruption: (() -> Unit)? = null
+    override var onInterruption: ((ReaderTtsInterruption) -> Unit)? = null
+    override var onFocusGained: (() -> Unit)? = null
     override var voices: List<ReaderTtsVoice> = emptyList()
         private set
 
@@ -41,17 +43,40 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
         .setWillPauseWhenDucked(true)
         .setOnAudioFocusChangeListener({ change ->
-            if (change < 0 && !closed) {
-                onInterruption?.invoke()
-                stop()
+            if (closed) return@setOnAudioFocusChangeListener
+            when (change) {
+                AudioManager.AUDIOFOCUS_GAIN -> {
+                    focusHeld = true
+                    if (resumeOnFocusGain) {
+                        resumeOnFocusGain = false
+                        onFocusGained?.invoke()
+                    }
+                }
+
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                    focusHeld = false
+                    resumeOnFocusGain = activeRequestId != null
+                    if (resumeOnFocusGain) {
+                        onInterruption?.invoke(ReaderTtsInterruption.TRANSIENT_FOCUS)
+                    }
+                }
+
+                AudioManager.AUDIOFOCUS_LOSS -> {
+                    focusHeld = false
+                    resumeOnFocusGain = false
+                    if (activeRequestId != null) {
+                        onInterruption?.invoke(ReaderTtsInterruption.PERMANENT_FOCUS)
+                    }
+                }
             }
         }, handler).build()
 
     private val noisy = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (!closed && intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
-                onInterruption?.invoke()
-                stop()
+                resumeOnFocusGain = false
+                onInterruption?.invoke(ReaderTtsInterruption.BECOMING_NOISY)
             }
         }
     }
@@ -116,8 +141,13 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             voice.name, voice.locale.toLanguageTag(), voice.quality, voice.isNetworkConnectionRequired,
             TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in voice.features.orEmpty()
         ) }
-        val chosen = selectOfflineTtsVoice(metadata, languageTag, safe.preferredVoiceId)
-            ?: return ReaderTtsProblem.NO_OFFLINE_VOICE
+        val preferredVoiceId = safe.preferredVoiceId(languageTag)
+        val chosen = selectOfflineTtsVoice(metadata, languageTag, preferredVoiceId)
+            ?: return if (preferredVoiceId != null) {
+                ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
+            } else {
+                ReaderTtsProblem.NO_OFFLINE_VOICE
+            }
         val nativeVoice = available.firstOrNull { it.name == chosen.id }
             ?: return ReaderTtsProblem.NO_OFFLINE_VOICE
         if (target.setVoice(nativeVoice) != TextToSpeech.SUCCESS ||
@@ -164,8 +194,8 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
         override fun onStop(utteranceId: String?, interrupted: Boolean) {
             handler.post {
                 if (activeRequestId == utteranceId) {
-                    onInterruption?.invoke()
-                    stop()
+                    resumeOnFocusGain = false
+                    onInterruption?.invoke(ReaderTtsInterruption.PERMANENT_FOCUS)
                 }
             }
         }
@@ -186,17 +216,20 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
         engine?.stop()
     }
 
-    override fun stop() {
+    override fun stop(abandonAudioFocus: Boolean) {
         checkMainThread()
         val continuation = activeContinuation
         activeRequestId = null
         activeContinuation = null
         continuation?.cancel()
         runCatching { engine?.stop() }
-        runCatching { audio?.abandonAudioFocusRequest(focus) }
-        focusHeld = false
-        if (receiverRegistered) runCatching { application.unregisterReceiver(noisy) }
-        receiverRegistered = false
+        if (abandonAudioFocus) {
+            resumeOnFocusGain = false
+            runCatching { audio?.abandonAudioFocusRequest(focus) }
+            focusHeld = false
+            if (receiverRegistered) runCatching { application.unregisterReceiver(noisy) }
+            receiverRegistered = false
+        }
     }
 
     override fun close() {
@@ -205,6 +238,7 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
         closed = true
         stop()
         onInterruption = null
+        onFocusGained = null
         handler.removeCallbacksAndMessages(null)
         releaseEngine()
         voices = emptyList()
