@@ -248,7 +248,7 @@ internal fun ReaderTtsControls(
             )
             Slider(
                 value = settings.speed.toFloat(),
-                valueRange = 0.5f..2f,
+                valueRange = 0.5f..3f,
                 onValueChange = {
                     onSettingsChange(settings.copy(speed = it.toDouble()))
                 },
