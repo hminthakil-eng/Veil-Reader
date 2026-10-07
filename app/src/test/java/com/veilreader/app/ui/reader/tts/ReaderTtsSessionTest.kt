@@ -187,7 +187,7 @@ class ReaderTtsSessionTest {
         val session = ReaderTtsSession({ source {} }, { backend }, "en", { true }, StandardTestDispatcher(testScheduler))
         try {
             session.start(locator()); runCurrent()
-            backend.onInterruption?.invoke(); runCurrent()
+            backend.onInterruption?.invoke(ReaderTtsInterruption.BECOMING_NOISY); runCurrent()
             assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
             advanceTimeBy(2000); runCurrent()
             assertEquals(1, backend.requests.size)
