@@ -66,6 +66,10 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     private val mutablePreviewProblem = MutableStateFlow<ReaderTtsProblem?>(null)
     val previewProblem: StateFlow<ReaderTtsProblem?> = mutablePreviewProblem.asStateFlow()
 
+    private val mutableSleepDeadlineEpochMs = MutableStateFlow<Long?>(null)
+    val sleepDeadlineEpochMs: StateFlow<Long?> =
+        mutableSleepDeadlineEpochMs.asStateFlow()
+
     val connected: Boolean
         get() = controller != null && !closed.get()
 
@@ -90,6 +94,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 connectedController.addListener(playerListener)
                 syncState(connectedController)
                 refreshVoiceCatalog()
+                refreshSleepTimer()
                 pendingStart?.also {
                     pendingStart = null
                     start(it.bookId, it.locatorJson, it.settings)
@@ -182,6 +187,60 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                     )
                 )
             }
+        )
+    }
+
+    fun setSleepTimer(minutes: Int) {
+        val target = controller ?: return
+        val resultFuture = target.sendCustomCommand(
+            SessionCommand(
+                ReaderTtsPlaybackRequest.ACTION_SET_SLEEP_TIMER,
+                Bundle.EMPTY
+            ),
+            Bundle().apply {
+                putInt(ReaderTtsPlaybackRequest.EXTRA_SLEEP_MINUTES, minutes)
+            }
+        )
+        resultFuture.addListener(
+            {
+                if (closed.get()) return@addListener
+                val result = runCatching { resultFuture.get() }.getOrNull()
+                if (result?.resultCode == SessionResult.RESULT_SUCCESS) {
+                    mutableSleepDeadlineEpochMs.value =
+                        result.extras.getLong(
+                            ReaderTtsPlaybackRequest.EXTRA_SLEEP_DEADLINE_EPOCH_MS,
+                            0L
+                        ).takeIf { it > System.currentTimeMillis() }
+                }
+            },
+            mainExecutor
+        )
+    }
+
+    fun refreshSleepTimer() {
+        val target = controller ?: return
+        val resultFuture = target.sendCustomCommand(
+            SessionCommand(
+                ReaderTtsPlaybackRequest.ACTION_QUERY_SLEEP_TIMER,
+                Bundle.EMPTY
+            ),
+            Bundle.EMPTY
+        )
+        resultFuture.addListener(
+            {
+                if (closed.get()) return@addListener
+                val result = runCatching { resultFuture.get() }.getOrNull()
+                mutableSleepDeadlineEpochMs.value =
+                    if (result?.resultCode == SessionResult.RESULT_SUCCESS) {
+                        result.extras.getLong(
+                            ReaderTtsPlaybackRequest.EXTRA_SLEEP_DEADLINE_EPOCH_MS,
+                            0L
+                        ).takeIf { it > System.currentTimeMillis() }
+                    } else {
+                        null
+                    }
+            },
+            mainExecutor
         )
     }
 
