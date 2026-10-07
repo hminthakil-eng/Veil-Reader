@@ -99,6 +99,7 @@ class SettingsStore(private val context: Context) {
         val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
         val ttsSpeed = doublePreferencesKey("reader_tts_speed")
         val ttsPitch = doublePreferencesKey("reader_tts_pitch")
+        val ttsPreferredVoices = stringPreferencesKey("reader_tts_preferred_voices")
         val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
         val focusGuideLastActiveMode = stringPreferencesKey("reader_focus_guide_last_active_mode")
         val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
@@ -322,6 +323,12 @@ class SettingsStore(private val context: Context) {
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.ttsSpeed] = normalized.speed
             prefs[Keys.ttsPitch] = normalized.pitch
+            if (normalized.preferredVoiceIds.isEmpty()) {
+                prefs.remove(Keys.ttsPreferredVoices)
+            } else {
+                prefs[Keys.ttsPreferredVoices] =
+                    encodeReaderTtsPreferredVoices(normalized.preferredVoiceIds)
+            }
         }
     }
 
@@ -439,6 +446,30 @@ internal fun decodeReaderTtsPreferences(prefs: Preferences): ReaderTtsSettings {
     val values = prefs.asMap()
     return ReaderTtsSettings(
         speed = values[doublePreferencesKey("reader_tts_speed")] as? Double ?: 1.0,
-        pitch = values[doublePreferencesKey("reader_tts_pitch")] as? Double ?: 1.0
+        pitch = values[doublePreferencesKey("reader_tts_pitch")] as? Double ?: 1.0,
+        preferredVoiceIds = decodeReaderTtsPreferredVoices(
+            values[stringPreferencesKey("reader_tts_preferred_voices")] as? String
+        )
     ).normalized()
+}
+
+internal fun encodeReaderTtsPreferredVoices(values: Map<String, String>): String {
+    val json = JSONObject()
+    values.toSortedMap().forEach { (languageTag, voiceId) ->
+        json.put(languageTag, voiceId)
+    }
+    return json.toString()
+}
+
+internal fun decodeReaderTtsPreferredVoices(raw: String?): Map<String, String> {
+    if (raw.isNullOrBlank()) return emptyMap()
+    val json = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyMap()
+    return buildMap {
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val language = keys.next()
+            val voice = json.optString(language).takeIf { it.isNotBlank() } ?: continue
+            put(language, voice)
+        }
+    }
 }
