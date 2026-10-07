@@ -70,13 +70,19 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     val sleepDeadlineEpochMs: StateFlow<Long?> =
         mutableSleepDeadlineEpochMs.asStateFlow()
 
+    private val mutableActiveSegmentText = MutableStateFlow<String?>(null)
+    val activeSegmentText: StateFlow<String?> = mutableActiveSegmentText.asStateFlow()
+
     val connected: Boolean
         get() = controller != null && !closed.get()
 
     init {
         scope.launch {
             checkpointStore.checkpoints.collect { latest ->
-                if (!closed.get()) mutableCheckpoint.value = latest
+                if (!closed.get()) {
+                    mutableCheckpoint.value = latest
+                    refreshActiveSegment()
+                }
             }
         }
         controllerFuture.addListener(
@@ -93,6 +99,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 controller = connectedController
                 connectedController.addListener(playerListener)
                 syncState(connectedController)
+                refreshActiveSegment()
                 refreshVoiceCatalog()
                 refreshSleepTimer()
                 pendingStart?.also {
@@ -244,6 +251,33 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         )
     }
 
+    fun refreshActiveSegment() {
+        val target = controller ?: return
+        val resultFuture = target.sendCustomCommand(
+            SessionCommand(
+                ReaderTtsPlaybackRequest.ACTION_QUERY_ACTIVE_SEGMENT,
+                Bundle.EMPTY
+            ),
+            Bundle.EMPTY
+        )
+        resultFuture.addListener(
+            {
+                if (closed.get()) return@addListener
+                val result = runCatching { resultFuture.get() }.getOrNull()
+                mutableActiveSegmentText.value =
+                    if (result?.resultCode == SessionResult.RESULT_SUCCESS) {
+                        result.extras
+                            .getString(ReaderTtsPlaybackRequest.EXTRA_ACTIVE_SEGMENT_TEXT)
+                            ?.trim()
+                            ?.takeIf { it.isNotEmpty() }
+                    } else {
+                        null
+                    }
+            },
+            mainExecutor
+        )
+    }
+
     fun refreshVoiceCatalog() {
         val target = controller ?: return
         if (mutableVoiceCatalogLoading.value) return
@@ -316,6 +350,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         pendingStart = null
+        mutableActiveSegmentText.value = null
         controller?.removeListener(playerListener)
         controller = null
         MediaController.releaseFuture(controllerFuture)
@@ -358,6 +393,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             phase = phase,
             problem = player.playerError?.extras?.problemOrNull()
         )
+        refreshActiveSegment()
     }
 
     private fun Bundle.problemOrNull(): ReaderTtsProblem? =
