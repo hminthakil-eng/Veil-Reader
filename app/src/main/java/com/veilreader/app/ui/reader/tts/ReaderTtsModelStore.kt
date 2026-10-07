@@ -153,6 +153,29 @@ internal class ReaderTtsModelStore(
     }
 
     @Synchronized
+    fun ensureCapacityForModelGrowth(
+        model: ReaderTtsInstalledModel,
+        additionalBytes: Long
+    ): Boolean {
+        if (additionalBytes < 0L) return false
+        val canonicalRoot = runCatching { root.canonicalFile }.getOrNull() ?: return false
+        val canonicalDirectory = runCatching { model.directory.canonicalFile }.getOrNull()
+            ?: return false
+        if (
+            canonicalDirectory.parentFile != canonicalRoot ||
+            !canonicalDirectory.isDirectory
+        ) {
+            return false
+        }
+        val currentBytes = modelBytes(canonicalDirectory)
+        return makeRoomFor(
+            incomingBytes = currentBytes + additionalBytes,
+            replacingBytes = currentBytes,
+            protectedDirectory = canonicalDirectory
+        )
+    }
+
+    @Synchronized
     fun cleanupStaging(): Int {
         if (!root.isDirectory) return 0
         var removed = 0
@@ -233,6 +256,7 @@ internal class ReaderTtsModelStore(
                 appendLine("language=${safe.languageTag}")
                 appendLine("name=${safe.displayName}")
                 appendLine("bytes=${safe.expectedBytes}")
+                appendLine("max_expanded_bytes=${safe.maxExpandedBytes}")
                 appendLine("sha256=${safe.sha256}")
                 appendLine("license=${safe.licenseSpdx}")
                 appendLine("license_url=${safe.licenseUrl}")
@@ -250,16 +274,36 @@ internal class ReaderTtsModelStore(
             ?.coerceAtLeast(0L)
             ?: directory.lastModified().coerceAtLeast(0L)
 
-    private fun modelBytes(directory: File): Long =
-        File(directory, ARCHIVE_NAME)
+    private fun modelBytes(directory: File): Long {
+        var bytes = File(directory, ARCHIVE_NAME)
             .takeIf(File::isFile)
             ?.length()
             ?: 0L
+
+        File(directory, PAYLOAD_DIRECTORY)
+            .takeIf(File::isDirectory)
+            ?.walkTopDown()
+            ?.filter(File::isFile)
+            ?.forEach { bytes += it.length() }
+
+        directory.listFiles()
+            .orEmpty()
+            .filter { it.isDirectory && it.name.startsWith(PAYLOAD_STAGING_PREFIX) }
+            .forEach { staging ->
+                staging.walkTopDown()
+                    .filter(File::isFile)
+                    .forEach { bytes += it.length() }
+            }
+
+        return bytes
+    }
 
     private companion object {
         const val ARCHIVE_NAME = "model.package"
         const val METADATA_NAME = "model.meta"
         const val LAST_USED_NAME = "last_used"
+        const val PAYLOAD_DIRECTORY = "payload"
+        const val PAYLOAD_STAGING_PREFIX = ".payload-staging-"
         const val DEFAULT_BUDGET_BYTES = 1024L * 1024L * 1024L
     }
 }
