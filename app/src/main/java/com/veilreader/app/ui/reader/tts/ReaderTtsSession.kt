@@ -57,6 +57,7 @@ internal class ReaderTtsSession(
     private var playJob: Job? = null
     private var monitorJob: Job? = null
     private var serial = 0L
+    private var resumeAfterTransientFocusLoss = false
     private var closed = false
 
     fun start(
@@ -125,7 +126,8 @@ internal class ReaderTtsSession(
                 pendingRead = null
                 val engine = backend ?: backendFactory().also {
                     backend = it
-                    it.onInterruption = ::pause
+                    it.onInterruption = ::handleInterruption
+                    it.onFocusGained = ::handleFocusGained
                 }
                 val problem = withTimeout(initializationTimeoutMs.coerceAtLeast(1L)) {
                     engine.initialize()
@@ -298,7 +300,8 @@ internal class ReaderTtsSession(
 
     fun pause() {
         if (closed) return
-        cancelPlaybackOnly()
+        resumeAfterTransientFocusLoss = false
+        cancelPlaybackOnly(abandonAudioFocus = true)
         if (
             mutableState.value.phase == ReaderTtsPhase.PLAYING ||
             mutableState.value.phase == ReaderTtsPhase.PREPARING
@@ -320,6 +323,7 @@ internal class ReaderTtsSession(
         serial += 1
         scope.cancel()
         backend?.onInterruption = null
+        backend?.onFocusGained = null
         backend?.close()
         backend = null
         mutableState.value = ReaderTtsState(ReaderTtsPhase.CLOSED)
@@ -329,22 +333,59 @@ internal class ReaderTtsSession(
         scope.coroutineContext[Job]?.join()
     }
 
-    private fun cancelPlaybackOnly() {
+    private fun cancelPlaybackOnly(abandonAudioFocus: Boolean = true) {
         serial += 1
         monitorJob?.cancel()
         monitorJob = null
         playJob?.cancel()
         playJob = null
-        backend?.stop()
+        backend?.stop(abandonAudioFocus)
     }
 
     private fun resetSource() {
-        cancelPlaybackOnly()
+        resumeAfterTransientFocusLoss = false
+        cancelPlaybackOnly(abandonAudioFocus = true)
         pendingRead?.cancel()
         pendingRead = null
         content = null
         current = null
         completedHistory.clear()
+    }
+
+    private fun handleInterruption(interruption: ReaderTtsInterruption) {
+        if (closed) return
+        when (interruption) {
+            ReaderTtsInterruption.TRANSIENT_FOCUS -> {
+                val wasActive =
+                    mutableState.value.phase == ReaderTtsPhase.PLAYING ||
+                        mutableState.value.phase == ReaderTtsPhase.PREPARING
+                resumeAfterTransientFocusLoss = wasActive
+                cancelPlaybackOnly(abandonAudioFocus = false)
+                if (wasActive) {
+                    // Keep play intent visible to MediaSessionService while Android owns focus.
+                    // This avoids the WebNovel-style failure where narration keeps advancing
+                    // silently during a call, while still allowing exact semantic resume.
+                    mutableState.value = mutableState.value.copy(
+                        phase = ReaderTtsPhase.PREPARING,
+                        problem = null
+                    )
+                }
+            }
+
+            ReaderTtsInterruption.PERMANENT_FOCUS,
+            ReaderTtsInterruption.BECOMING_NOISY -> pause()
+        }
+    }
+
+    private fun handleFocusGained() {
+        if (closed || !resumeAfterTransientFocusLoss) return
+        resumeAfterTransientFocusLoss = false
+        scope.launch {
+            playJob?.join()
+            if (!closed && content != null && canPlay()) {
+                resume()
+            }
+        }
     }
 
     private suspend fun nextContent(): ReaderTtsUtterance? {
