@@ -5,6 +5,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -109,7 +110,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         ): ListenableFuture<SessionResult> {
             if (controller.packageName != packageName) {
                 return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_PERMISSION_DENIED)
+                    SessionResult(SessionError.ERROR_PERMISSION_DENIED)
                 )
             }
 
@@ -118,7 +119,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                 ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED -> {
                     val request = ReaderTtsPlaybackRequest.fromBundle(args)
                         ?: return Futures.immediateFuture(
-                            SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                            SessionResult(SessionError.ERROR_BAD_VALUE)
                         )
                     player.loadRequest(
                         request,
@@ -156,11 +157,11 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             )
             val normalized = normalizedTtsSleepMinutes(minutes)
                 ?: return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                    SessionResult(SessionError.ERROR_BAD_VALUE)
                 )
             if (normalized > 0 && player.mediaItemCount <= 0) {
                 return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_INVALID_STATE)
+                    SessionResult(SessionError.ERROR_INVALID_STATE)
                 )
             }
 
@@ -230,7 +231,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     if (problem != null) {
                         future.set(
                             SessionResult(
-                                SessionResult.RESULT_ERROR_SESSION_SETUP_REQUIRED,
+                                SessionError.ERROR_SESSION_SETUP_REQUIRED,
                                 Bundle().apply {
                                     putString(
                                         ReaderTtsPlaybackRequest.EXTRA_PROBLEM,
@@ -256,7 +257,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     }
                 } catch (_: Exception) {
                     future.set(
-                        SessionResult(SessionResult.RESULT_ERROR_UNKNOWN)
+                        SessionResult(SessionError.ERROR_UNKNOWN)
                     )
                 } finally {
                     backend.close()
@@ -268,7 +269,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         private fun previewVoice(args: Bundle): ListenableFuture<SessionResult> {
             if (player.isPlaying) {
                 return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_INVALID_STATE)
+                    SessionResult(SessionError.ERROR_INVALID_STATE)
                 )
             }
 
@@ -277,14 +278,14 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() && it.length <= 64 }
                 ?: return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                    SessionResult(SessionError.ERROR_BAD_VALUE)
                 )
             val voiceId = args
                 .getString(ReaderTtsPlaybackRequest.EXTRA_VOICE_ID)
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() && it.length <= 256 }
                 ?: return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                    SessionResult(SessionError.ERROR_BAD_VALUE)
                 )
             val sample = args
                 .getString(ReaderTtsPlaybackRequest.EXTRA_SAMPLE)
@@ -292,7 +293,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                 ?.takeIf { it.isNotEmpty() }
                 ?.take(240)
                 ?: return Futures.immediateFuture(
-                    SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                    SessionResult(SessionError.ERROR_BAD_VALUE)
                 )
 
             val speed = args.getFloat("speed", 1f)
@@ -331,7 +332,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     } else {
                         future.set(
                             SessionResult(
-                                SessionResult.RESULT_ERROR_SESSION_SETUP_REQUIRED,
+                                SessionError.ERROR_SESSION_SETUP_REQUIRED,
                                 Bundle().apply {
                                     putString(
                                         ReaderTtsPlaybackRequest.EXTRA_PROBLEM,
@@ -342,7 +343,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                         )
                     }
                 } catch (_: Exception) {
-                    future.set(SessionResult(SessionResult.RESULT_ERROR_UNKNOWN))
+                    future.set(SessionResult(SessionError.ERROR_UNKNOWN))
                 } finally {
                     backend.close()
                 }
