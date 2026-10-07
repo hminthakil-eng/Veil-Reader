@@ -84,6 +84,8 @@ import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.diagnostics.ReaderPerformanceMetrics
 import com.veilreader.app.diagnostics.ReaderTrace
+import com.veilreader.app.feature.VeilFeatureGates
+import com.veilreader.app.feature.VeilRiskyFeature
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
@@ -103,6 +105,7 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPreferences
 import com.veilreader.app.ui.reader.tts.readerCanPlayForegroundTts
 import com.veilreader.app.ui.reader.tts.readerCanCompleteTtsStart
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
+import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
 import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
