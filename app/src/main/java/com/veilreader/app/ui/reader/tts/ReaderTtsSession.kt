@@ -171,7 +171,7 @@ internal class ReaderTtsSession(
                         fail(result)
                         return@launch
                     }
-                    rememberCompleted(utterance.locator)
+                    rememberVisited(utterance.locator)
                     current = null
                 }
             } catch (_: TimeoutCancellationException) {
@@ -204,8 +204,15 @@ internal class ReaderTtsSession(
         if (closed || content == null) return
         val continuePlaying = mutableState.value.phase in
             setOf(ReaderTtsPhase.PLAYING, ReaderTtsPhase.PREPARING)
+        val active = current
         cancelPlaybackOnly()
-        current = null
+
+        // If an utterance is already materialized, skipping means advancing beyond it. Keep its
+        // semantic locator so Previous can reverse the explicit skip even when it was interrupted.
+        if (active != null) {
+            rememberVisited(active.locator)
+            current = null
+        }
 
         if (continuePlaying) {
             resume()
@@ -215,6 +222,13 @@ internal class ReaderTtsSession(
         val ownerSerial = ++serial
         playJob = scope.launch {
             try {
+                // A freshly restored paused session has not materialized its first segment yet.
+                // Consume that current semantic segment before selecting the following one.
+                if (active == null) {
+                    val skipped = nextContent()
+                    pendingRead = null
+                    skipped?.let { rememberVisited(it.locator) }
+                }
                 val next = nextContent()
                 if (ownerSerial != serial || closed) return@launch
                 pendingRead = null
@@ -332,7 +346,7 @@ internal class ReaderTtsSession(
         return read.await()
     }
 
-    private fun rememberCompleted(locator: Locator) {
+    private fun rememberVisited(locator: Locator) {
         if (completedHistory.peekLast() == locator) return
         completedHistory.addLast(locator)
         while (completedHistory.size > MAX_HISTORY) completedHistory.removeFirst()
