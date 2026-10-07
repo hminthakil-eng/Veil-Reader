@@ -106,6 +106,7 @@ internal class ReaderTtsSession(
 
     fun resume() {
         if (closed || playJob?.isActive == true || content == null || !canPlay()) return
+        resumeAfterTransientFocusLoss = false
         val ownerSerial = ++serial
         mutableState.value = mutableState.value.copy(
             phase = ReaderTtsPhase.PREPARING,
