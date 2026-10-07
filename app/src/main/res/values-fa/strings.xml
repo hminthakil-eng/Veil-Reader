@@ -1372,6 +1372,10 @@
     <string name="tts_preview_failed">پیش‌شنوی صدا پخش نشد.</string>
     <string name="tts_listening_position_hint">موقعیت شنیدن جدا از موقعیت مطالعه نگه داشته می‌شود و بدون اجازه جای مطالعه را تغییر نمی‌دهد.</string>
     <string name="tts_go_to_listening_position">رفتن به موقعیت شنیدن</string>
+    <string name="tts_sleep_timer">تایمر خواب</string>
+    <string name="tts_sleep_timer_off">خاموش</string>
+    <string name="tts_sleep_timer_active">تایمر فعال است</string>
+    <string name="tts_sleep_timer_minutes">%1$d دقیقه</string>
     <string name="tts_preview_sample_fa">این صدا برای خواندن کتاب در ویل ریدر استفاده می‌شود.</string>
     <string name="tts_preview_sample_ar">سيُستخدم هذا الصوت لقراءة الكتاب في فيل ريدر.</string>
     <string name="tts_preview_sample_default">This voice will read your book in Veil Reader.</string>
