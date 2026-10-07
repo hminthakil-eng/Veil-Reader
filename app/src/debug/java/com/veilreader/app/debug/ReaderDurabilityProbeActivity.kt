@@ -12,7 +12,9 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import java.io.File
 import kotlin.math.abs
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 /**
  * Debug-only process-death probe for Reader locator durability.
@@ -96,9 +98,7 @@ class ReaderDurabilityProbeActivity : Activity() {
 
         val repository = LocalLibraryRepository(applicationContext)
         repository.flushWrites()
-        val current = requireNotNull(repository.getBook(BOOK_ID)) {
-            "Probe book missing before commit"
-        }
+        val current = awaitBook(repository)
 
         val viewModel = ReaderViewModel(
             library = repository,
@@ -146,9 +146,7 @@ class ReaderDurabilityProbeActivity : Activity() {
 
         val repository = LocalLibraryRepository(applicationContext)
         repository.flushWrites()
-        val stored = requireNotNull(repository.getBook(BOOK_ID)) {
-            "Probe book missing after process death"
-        }
+        val stored = awaitBook(repository)
 
         val locatorMatches = stored.locatorJson == locator(expectedKey)
         val progressMatches = abs(stored.progress.toDouble() - expectedProgress) <= EPSILON
@@ -166,6 +164,13 @@ class ReaderDurabilityProbeActivity : Activity() {
         )
         finishAndRemoveTask()
     }
+
+    private suspend fun awaitBook(repository: LocalLibraryRepository): Book =
+        withTimeout(5_000L) {
+            repository.books
+                .first { books -> books.any { it.id == BOOK_ID } }
+                .first { it.id == BOOK_ID }
+        }
 
     private fun requiredString(name: String): String =
         requireNotNull(intent.getStringExtra(name)) { "Missing extra: $name" }
