@@ -39,6 +39,8 @@ internal fun ReaderTtsControls(
     voiceCatalogLoading: Boolean = false,
     voiceCatalogProblem: ReaderTtsProblem? = null,
     previewProblem: ReaderTtsProblem? = null,
+    sleepDeadlineEpochMs: Long? = null,
+    onSetSleepTimer: (Int) -> Unit = {},
     listeningPositionAvailable: Boolean = false,
     onSyncListeningPosition: () -> Unit = {},
     onStart: () -> Unit,
@@ -184,6 +186,57 @@ internal fun ReaderTtsControls(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
             ) {
                 Text(stringResource(R.string.tts_stop))
+            }
+
+            var sleepMenu by remember { mutableStateOf(false) }
+            Text(
+                stringResource(R.string.tts_sleep_timer),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Box(Modifier.fillMaxWidth()) {
+                TextButton(
+                    onClick = { sleepMenu = true },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(
+                        if (
+                            sleepDeadlineEpochMs != null &&
+                            sleepDeadlineEpochMs > System.currentTimeMillis()
+                        ) {
+                            stringResource(R.string.tts_sleep_timer_active)
+                        } else {
+                            stringResource(R.string.tts_sleep_timer_off)
+                        }
+                    )
+                }
+                DropdownMenu(
+                    expanded = sleepMenu,
+                    onDismissRequest = { sleepMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.tts_sleep_timer_off)) },
+                        onClick = {
+                            onSetSleepTimer(0)
+                            sleepMenu = false
+                        }
+                    )
+                    listOf(15, 30, 45, 60).forEach { minutes ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(
+                                        R.string.tts_sleep_timer_minutes,
+                                        minutes
+                                    )
+                                )
+                            },
+                            onClick = {
+                                onSetSleepTimer(minutes)
+                                sleepMenu = false
+                            }
+                        )
+                    }
+                }
             }
 
             val number = rememberVeilNumberFormatter()
