@@ -215,8 +215,8 @@ case "$MODE" in
     {
       echo "Veil Reader semantic locator process-death fault injection"
       echo "sha=$(git rev-parse HEAD)"
-      echo "api=$("$ADB" -s "$SERIAL" shell getprop ro.build.version.sdk | tr -d '\\r')"
-      echo "model=$("$ADB" -s "$SERIAL" shell getprop ro.product.model | tr -d '\\r')"
+      echo "api=$("$ADB" -s "$SERIAL" shell getprop ro.build.version.sdk | tr -d '\r')"
+      echo "model=$("$ADB" -s "$SERIAL" shell getprop ro.product.model | tr -d '\r')"
       echo "cycles_per_scenario=$CYCLES"
       echo "started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     } >>"$REPORT"
@@ -226,7 +226,7 @@ case "$MODE" in
     }
 
     probe_read_result() {
-      "$ADB" -s "$SERIAL" exec-out run-as "$PACKAGE" cat "$RESULT_FILE" 2>/dev/null | tr -d '\\r' || true
+      "$ADB" -s "$SERIAL" exec-out run-as "$PACKAGE" cat "$RESULT_FILE" 2>/dev/null | tr -d '\r' || true
     }
 
     probe_wait_result() {
@@ -255,7 +255,7 @@ case "$MODE" in
     probe_wait_for_death() {
       local result=""
       for _ in $(seq 1 120); do
-        if [[ -z "$("$ADB" -s "$SERIAL" shell pidof "$PACKAGE" 2>/dev/null | tr -d '\\r')" ]]; then
+        if [[ -z "$("$ADB" -s "$SERIAL" shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
           return 0
         fi
         result="$(probe_read_result)"
