@@ -851,6 +851,7 @@ class LocalLibraryRepository internal constructor(
     suspend fun locatorJsonsForBook(bookId: String): Set<String> = orderedWrite {
         buildSet {
             database.books().findWithCollections(bookId)?.book?.locatorJson?.let(::add)
+            readerCrashCheckpointStore.read(bookId)?.locatorJson?.let(::add)
             database.bookmarks().listAll()
                 .filter { it.bookId == bookId }
                 .forEach { add(it.locatorJson) }
