@@ -27,7 +27,7 @@ import kotlinx.coroutines.withTimeout
  * enumerating voices and previewing a voice are app-private custom commands, so another controller
  * cannot ask Veil to expose publication text or probe the user's installed TTS inventory.
  */
-@UnstableApi
+@androidx.annotation.OptIn(UnstableApi::class)
 class ReaderTtsPlaybackService : MediaSessionService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var player: ReaderTtsMediaPlayer
