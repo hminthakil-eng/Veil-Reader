@@ -38,7 +38,7 @@ internal data class ReaderTtsPlaybackRequest(
         putFloat(KEY_SPEED, preferences.speed)
         putFloat(KEY_PITCH, preferences.pitch)
         putString(KEY_LANGUAGE_TAG, preferences.languageTag)
-        putString(KEY_VOICE_ID, preferences.preferredVoiceId)
+        putString(KEY_PREFERRED_VOICES, encodePreferredVoices(preferences.preferredVoiceIds))
     }
 
     fun toJson(): JSONObject = JSONObject()
@@ -47,7 +47,7 @@ internal data class ReaderTtsPlaybackRequest(
         .put(KEY_SPEED, preferences.speed.toDouble())
         .put(KEY_PITCH, preferences.pitch.toDouble())
         .put(KEY_LANGUAGE_TAG, preferences.languageTag)
-        .put(KEY_VOICE_ID, preferences.preferredVoiceId)
+        .put(KEY_PREFERRED_VOICES, encodePreferredVoices(preferences.preferredVoiceIds))
 
     companion object {
         const val ACTION_LOAD_AND_PLAY = "com.veilreader.app.tts.LOAD_AND_PLAY"
@@ -58,10 +58,31 @@ internal data class ReaderTtsPlaybackRequest(
         private const val KEY_SPEED = "speed"
         private const val KEY_PITCH = "pitch"
         private const val KEY_LANGUAGE_TAG = "language_tag"
-        private const val KEY_VOICE_ID = "voice_id"
+        private const val KEY_PREFERRED_VOICES = "preferred_voices_json"
 
         private const val MAX_BOOK_ID_LENGTH = 256
         private const val MAX_LOCATOR_JSON_LENGTH = 32 * 1024
+
+        private fun encodePreferredVoices(values: Map<String, String>): String {
+            val json = JSONObject()
+            values.toSortedMap().forEach { (language, voiceId) ->
+                json.put(language, voiceId)
+            }
+            return json.toString()
+        }
+
+        private fun decodePreferredVoices(raw: String?): Map<String, String> {
+            if (raw.isNullOrBlank()) return emptyMap()
+            val json = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyMap()
+            return buildMap {
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val language = keys.next()
+                    val voiceId = json.optString(language).takeIf { it.isNotBlank() } ?: continue
+                    put(language, voiceId)
+                }
+            }
+        }
 
         fun fromBundle(bundle: Bundle): ReaderTtsPlaybackRequest? =
             ReaderTtsPlaybackRequest(
@@ -71,7 +92,9 @@ internal data class ReaderTtsPlaybackRequest(
                     speed = bundle.getFloat(KEY_SPEED, 1f),
                     pitch = bundle.getFloat(KEY_PITCH, 1f),
                     languageTag = bundle.getString(KEY_LANGUAGE_TAG),
-                    preferredVoiceId = bundle.getString(KEY_VOICE_ID)
+                    preferredVoiceIds = decodePreferredVoices(
+                        bundle.getString(KEY_PREFERRED_VOICES)
+                    )
                 )
             ).normalized()
 
@@ -83,7 +106,9 @@ internal data class ReaderTtsPlaybackRequest(
                     speed = json.optDouble(KEY_SPEED, 1.0).toFloat(),
                     pitch = json.optDouble(KEY_PITCH, 1.0).toFloat(),
                     languageTag = json.optString(KEY_LANGUAGE_TAG).takeIf { it.isNotBlank() },
-                    preferredVoiceId = json.optString(KEY_VOICE_ID).takeIf { it.isNotBlank() }
+                    preferredVoiceIds = decodePreferredVoices(
+                        json.optString(KEY_PREFERRED_VOICES).takeIf { it.isNotBlank() }
+                    )
                 )
             ).normalized()
     }
