@@ -84,7 +84,8 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             locatorJson = locatorJson,
             preferences = ReaderTtsPreferences(
                 speed = safeSettings.speed.toFloat(),
-                pitch = safeSettings.pitch.toFloat()
+                pitch = safeSettings.pitch.toFloat(),
+                preferredVoiceIds = safeSettings.preferredVoiceIds
             )
         ).normalized() ?: run {
             mutableState.value = ReaderTtsState(
