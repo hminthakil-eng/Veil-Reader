@@ -116,8 +116,13 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             voice.name, voice.locale.toLanguageTag(), voice.quality, voice.isNetworkConnectionRequired,
             TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in voice.features.orEmpty()
         ) }
-        val chosen = selectOfflineTtsVoice(metadata, languageTag, safe.preferredVoiceId)
-            ?: return ReaderTtsProblem.NO_OFFLINE_VOICE
+        val preferredVoiceId = safe.preferredVoiceId(languageTag)
+        val chosen = selectOfflineTtsVoice(metadata, languageTag, preferredVoiceId)
+            ?: return if (preferredVoiceId != null) {
+                ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
+            } else {
+                ReaderTtsProblem.NO_OFFLINE_VOICE
+            }
         val nativeVoice = available.firstOrNull { it.name == chosen.id }
             ?: return ReaderTtsProblem.NO_OFFLINE_VOICE
         if (target.setVoice(nativeVoice) != TextToSpeech.SUCCESS ||
