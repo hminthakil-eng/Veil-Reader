@@ -42,6 +42,7 @@ import java.util.Locale
 internal fun ReaderListeningMode(
     book: Book,
     state: ReaderTtsState,
+    activeText: String? = null,
     supported: Boolean,
     settings: ReaderTtsSettings,
     startPending: Boolean,
@@ -208,6 +209,22 @@ internal fun ReaderListeningMode(
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
+                    activeText
+                        ?.trim()
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.let { spoken ->
+                            HorizontalDivider(
+                                color = VeilPalette.Brass.copy(alpha = 0.22f)
+                            )
+                            Text(
+                                spoken,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = VeilPalette.Moon.copy(alpha = 0.92f),
+                                textAlign = TextAlign.Start,
+                                maxLines = 7,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     if (state.phase == ReaderTtsPhase.PREPARING || startPending) {
                         LinearProgressIndicator(
                             modifier = Modifier.fillMaxWidth(),
