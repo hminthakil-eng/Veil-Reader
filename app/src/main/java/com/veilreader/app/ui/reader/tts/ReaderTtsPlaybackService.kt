@@ -8,20 +8,22 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Sole lifetime owner for background listening.
  *
- * External media controllers receive ordinary transport controls only. Loading a publication is an
- * app-private custom command, so another controller cannot ask Veil to expose or synthesize an
- * arbitrary book/locator.
+ * External media controllers receive ordinary transport controls only. Loading a publication,
+ * enumerating voices and previewing a voice are app-private custom commands, so another controller
+ * cannot ask Veil to expose publication text or probe the user's installed TTS inventory.
  */
-@UnstableApi
+@OptIn(UnstableApi::class)
 class ReaderTtsPlaybackService : MediaSessionService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var player: ReaderTtsMediaPlayer
@@ -61,6 +63,8 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     base.availableSessionCommands.buildUpon()
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED, Bundle.EMPTY))
+                        .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES, Bundle.EMPTY))
+                        .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE, Bundle.EMPTY))
                         .build()
                 )
                 .setAvailablePlayerCommands(base.availablePlayerCommands)
@@ -78,21 +82,149 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     SessionResult(SessionResult.RESULT_ERROR_PERMISSION_DENIED)
                 )
             }
-            val request = ReaderTtsPlaybackRequest.fromBundle(args)
+
+            return when (customCommand.customAction) {
+                ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY,
+                ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED -> {
+                    val request = ReaderTtsPlaybackRequest.fromBundle(args)
+                        ?: return Futures.immediateFuture(
+                            SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                        )
+                    player.loadRequest(
+                        request,
+                        autoplay = customCommand.customAction ==
+                            ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY
+                    )
+                    Futures.immediateFuture(
+                        SessionResult(SessionResult.RESULT_SUCCESS)
+                    )
+                }
+
+                ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices()
+                ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE -> previewVoice(args)
+                else -> super.onCustomCommand(session, controller, customCommand, args)
+            }
+        }
+
+        private fun queryVoices(): ListenableFuture<SessionResult> {
+            val future = SettableFuture.create<SessionResult>()
+            serviceScope.launch {
+                val backend = AndroidReaderTtsBackend(applicationContext)
+                try {
+                    val problem = withTimeoutOrNull(5_000L) {
+                        backend.initialize()
+                    } ?: ReaderTtsProblem.TIMEOUT
+                    if (problem != null) {
+                        future.set(
+                            SessionResult(
+                                SessionResult.RESULT_ERROR_SESSION_SETUP_REQUIRED,
+                                Bundle().apply {
+                                    putString(
+                                        ReaderTtsPlaybackRequest.EXTRA_PROBLEM,
+                                        problem.name
+                                    )
+                                }
+                            )
+                        )
+                    } else {
+                        future.set(
+                            SessionResult(
+                                SessionResult.RESULT_SUCCESS,
+                                Bundle().apply {
+                                    putString(
+                                        ReaderTtsPlaybackRequest.EXTRA_VOICES_JSON,
+                                        ReaderTtsPlaybackRequest.encodeVoiceCatalog(
+                                            backend.voices
+                                        )
+                                    )
+                                }
+                            )
+                        )
+                    }
+                } catch (_: Exception) {
+                    future.set(
+                        SessionResult(SessionResult.RESULT_ERROR_UNKNOWN)
+                    )
+                } finally {
+                    backend.close()
+                }
+            }
+            return future
+        }
+
+        private fun previewVoice(args: Bundle): ListenableFuture<SessionResult> {
+            if (player.isPlaying) {
+                return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_ERROR_INVALID_STATE)
+                )
+            }
+
+            val language = args
+                .getString(ReaderTtsPlaybackRequest.EXTRA_LANGUAGE_TAG)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() && it.length <= 64 }
                 ?: return Futures.immediateFuture(
                     SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
                 )
-            return when (customCommand.customAction) {
-                ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY -> {
-                    player.loadRequest(request, autoplay = true)
-                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            val voiceId = args
+                .getString(ReaderTtsPlaybackRequest.EXTRA_VOICE_ID)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() && it.length <= 256 }
+                ?: return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                )
+            val sample = args
+                .getString(ReaderTtsPlaybackRequest.EXTRA_SAMPLE)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?.take(240)
+                ?: return Futures.immediateFuture(
+                    SessionResult(SessionResult.RESULT_ERROR_BAD_VALUE)
+                )
+
+            val speed = args.getFloat("speed", 1f)
+            val pitch = args.getFloat("pitch", 1f)
+            val future = SettableFuture.create<SessionResult>()
+            serviceScope.launch {
+                val backend = AndroidReaderTtsBackend(applicationContext)
+                try {
+                    val initProblem = withTimeoutOrNull(5_000L) {
+                        backend.initialize()
+                    } ?: ReaderTtsProblem.TIMEOUT
+                    val problem = initProblem ?: withTimeoutOrNull(15_000L) {
+                        backend.speak(
+                            text = sample,
+                            languageTag = language,
+                            preferences = ReaderTtsPreferences(
+                                speed = speed,
+                                pitch = pitch,
+                                preferredVoiceIds = mapOf(language to voiceId)
+                            )
+                        )
+                    } ?: ReaderTtsProblem.TIMEOUT
+
+                    if (problem == null) {
+                        future.set(SessionResult(SessionResult.RESULT_SUCCESS))
+                    } else {
+                        future.set(
+                            SessionResult(
+                                SessionResult.RESULT_ERROR_SESSION_SETUP_REQUIRED,
+                                Bundle().apply {
+                                    putString(
+                                        ReaderTtsPlaybackRequest.EXTRA_PROBLEM,
+                                        problem.name
+                                    )
+                                }
+                            )
+                        )
+                    }
+                } catch (_: Exception) {
+                    future.set(SessionResult(SessionResult.RESULT_ERROR_UNKNOWN))
+                } finally {
+                    backend.close()
                 }
-                ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED -> {
-                    player.loadRequest(request, autoplay = false)
-                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-                }
-                else -> super.onCustomCommand(session, controller, customCommand, args)
             }
+            return future
         }
     }
 }
