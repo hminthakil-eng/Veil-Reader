@@ -17,4 +17,27 @@ class ReaderTtsPreferencesTest {
             doublePreferencesKey("reader_tts_pitch") to -1.0
         )))
     }
+
+    @Test
+    fun preferredOfflineVoicesRoundTripAndMalformedJsonIsIgnored() {
+        val encoded = encodeReaderTtsPreferredVoices(
+            mapOf("fa-IR" to "fa-local", "en-US" to "en-local")
+        )
+        val decoded = decodeReaderTtsPreferences(
+            preferencesOf(
+                stringPreferencesKey("reader_tts_preferred_voices") to encoded
+            )
+        )
+        assertEquals("fa-local", decoded.preferredVoiceId("fa-AF"))
+        assertEquals("en-local", decoded.preferredVoiceId("en-GB"))
+
+        assertEquals(
+            ReaderTtsSettings(),
+            decodeReaderTtsPreferences(
+                preferencesOf(
+                    stringPreferencesKey("reader_tts_preferred_voices") to "not-json"
+                )
+            )
+        )
+    }
 }
