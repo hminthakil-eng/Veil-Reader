@@ -214,7 +214,11 @@ internal class ReaderTtsSession(
             current = null
         }
 
-        if (continuePlaying) {
+        // When the current utterance is already materialized the iterator is already positioned
+        // after it, so continuing playback can resume immediately. During PREPARING, however, the
+        // pending read still represents the current semantic segment and must be consumed/skipped
+        // before speech resumes.
+        if (continuePlaying && active != null) {
             resume()
             return
         }
@@ -222,8 +226,8 @@ internal class ReaderTtsSession(
         val ownerSerial = ++serial
         playJob = scope.launch {
             try {
-                // A freshly restored paused session has not materialized its first segment yet.
-                // Consume that current semantic segment before selecting the following one.
+                // A freshly restored paused session or a PREPARING session has not materialized its
+                // first segment yet. Consume that current semantic segment before selecting Next.
                 if (active == null) {
                     val skipped = nextContent()
                     pendingRead = null
@@ -240,6 +244,13 @@ internal class ReaderTtsSession(
                         phase = ReaderTtsPhase.PAUSED,
                         sourceLocator = next.locator
                     )
+                }
+                if (continuePlaying && next != null) {
+                    // Clear this transition job before resume(); resume refuses to create a second
+                    // owner while playJob is active. It increments serial, so finally cannot clear
+                    // the newly-created playback job.
+                    playJob = null
+                    resume()
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
