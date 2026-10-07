@@ -5,6 +5,7 @@
         <!-- Debug-only adb probe. Never merged into the release manifest. -->
         <activity
             android:name=".debug.ReaderDurabilityProbeActivity"
+            android:enabled="false"
             android:exported="true"
             android:excludeFromRecents="true"
             android:noHistory="true"

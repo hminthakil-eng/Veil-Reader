@@ -213,6 +213,9 @@ case "$MODE" in
     }
 
     "$ADB" -s "$SERIAL" shell pm clear "$PACKAGE" >/dev/null
+    # The distributed debug APK leaves the process-kill probe disabled. Only this
+    # isolated emulator run explicitly enables the component after clearing QA data.
+    "$ADB" -s "$SERIAL" shell pm enable "$COMPONENT" >/dev/null
     : >"$REPORT"
     : >"$MARKER_LOG"
     {
