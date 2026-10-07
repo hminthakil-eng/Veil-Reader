@@ -988,15 +988,19 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    suspend fun loadReaderCrashCheckpoint(book: Book): ReaderCrashCheckpoint? =
-        withContext(Dispatchers.IO) {
+    suspend fun loadReaderCrashCheckpoint(book: Book): ReaderCrashCheckpoint? {
+        initialized.await()
+        return withContext(Dispatchers.IO) {
+            val durableBook = database.books().findWithCollections(book.id)?.toDomain()
+                ?: return@withContext null
             readerCrashCheckpointStore.read(book.id)
-                ?.takeIf { checkpoint -> checkpoint.isNewerThanRoom(book) }
+                ?.takeIf { checkpoint -> checkpoint.isNewerThanRoom(durableBook) }
                 ?: run {
                     readerCrashCheckpointStore.clear(book.id)
                     null
                 }
         }
+    }
 
     internal fun clearReaderCrashCheckpoint(bookId: String) {
         readerCrashCheckpointStore.clear(bookId)
