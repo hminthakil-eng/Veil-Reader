@@ -19,6 +19,25 @@ class VeilFeatureGatesTest {
     }
 
     @Test
+    fun ttsExperimentalProviders_neverLeakIntoReleaseAndNetworkStaysClosedInDebug() {
+        assertFalse(VeilFeatureGates.releaseEnabled(VeilRiskyFeature.LOCAL_NEURAL_TTS))
+        assertFalse(VeilFeatureGates.releaseEnabled(VeilRiskyFeature.NETWORK_TTS))
+        assertEquals(
+            true,
+            VeilFeatureGates.enabled(
+                VeilRiskyFeature.LOCAL_NEURAL_TTS,
+                debugReview = true
+            )
+        )
+        assertFalse(
+            VeilFeatureGates.enabled(
+                VeilRiskyFeature.NETWORK_TTS,
+                debugReview = true
+            )
+        )
+    }
+
+    @Test
     fun materialPageReleaseDefault_matchesCentralGate() {
         assertEquals(
             VeilFeatureGates.releaseEnabled(VeilRiskyFeature.GPU_MATERIAL_PAGE),
