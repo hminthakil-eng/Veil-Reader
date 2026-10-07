@@ -267,6 +267,17 @@ internal class ReaderTtsMediaPlayer(
         return Futures.immediateVoidFuture()
     }
 
+    fun updateVoicePreferences(preferredVoiceIds: Map<String, String>) {
+        val request = currentRequest ?: return
+        val updatedPreferences = request.preferences.copy(
+            preferredVoiceIds = preferredVoiceIds
+        ).normalized()
+        currentRequest = request.copy(preferences = updatedPreferences)
+        session?.updatePreferences(updatedPreferences)
+        invalidateState()
+        scope.launch { persistCheckpoint(sessionState) }
+    }
+
     override fun handleSetPlaybackParameters(
         playbackParameters: PlaybackParameters
     ): ListenableFuture<*> {
