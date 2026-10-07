@@ -996,7 +996,7 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    suspend fun loadReaderCrashCheckpoint(book: Book): ReaderCrashCheckpoint? {
+    internal suspend fun loadReaderCrashCheckpoint(book: Book): ReaderCrashCheckpoint? {
         initialized.await()
         return withContext(Dispatchers.IO) {
             val durableBook = database.books().findWithCollections(book.id)?.toDomain()
