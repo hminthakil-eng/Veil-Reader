@@ -4,6 +4,7 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
 import android.os.Process
+import android.util.Log
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.domain.Book
@@ -11,6 +12,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import java.io.File
+import java.util.concurrent.CountDownLatch
 import kotlin.math.abs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -136,8 +138,14 @@ class ReaderDurabilityProbeActivity : Activity() {
             }
         }
 
-        // Deliberately do not call onPause(), close(), flushWrites(), finish(), or write a marker.
-        Process.killProcess(Process.myPid())
+        // Signal the external adb driver at the first instruction after the Reader event returns.
+        // Do not finish, pause, close, or flush here. The Activity stays foreground-blocked until
+        // adb force-stops the process, preventing ActivityManager from auto-restarting this Intent.
+        Log.i(
+            PROBE_LOG_TAG,
+            "COMMIT_READY token=$destinationKey pid=${Process.myPid()} event=$event committed=${commit != null}"
+        )
+        CountDownLatch(1).await()
     }
 
     private suspend fun verify() {
@@ -233,7 +241,7 @@ class ReaderDurabilityProbeActivity : Activity() {
         const val TOTAL_PAGES = 1_000
         const val EPSILON = 0.000_01
 
-        const val RESULT_FILE = "reader-durability-probe-result.txt"
+        const val RESULT_FILE = "reader-durability-probe-result.txt"\n        const val PROBE_LOG_TAG = "VeilDurabilityProbe"
 
         const val EXTRA_ACTION = "probe_action"
         const val EXTRA_EVENT = "probe_event"
