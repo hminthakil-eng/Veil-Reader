@@ -14,7 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 
 /**
  * Sole lifetime owner for background listening.
@@ -110,7 +111,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                 ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE -> previewVoice(args)
                 ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES -> {
                     val preferred = ReaderTtsPlaybackRequest.decodePreferredVoices(
-                        args.getString("preferred_voices_json")
+                        args.getString(ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON)
                     )
                     player.updateVoicePreferences(preferred)
                     Futures.immediateFuture(
@@ -126,9 +127,11 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             serviceScope.launch {
                 val backend = AndroidReaderTtsBackend(applicationContext)
                 try {
-                    val problem = withTimeoutOrNull(5_000L) {
-                        backend.initialize()
-                    } ?: ReaderTtsProblem.TIMEOUT
+                    val problem = try {
+                        withTimeout(5_000L) { backend.initialize() }
+                    } catch (_: TimeoutCancellationException) {
+                        ReaderTtsProblem.TIMEOUT
+                    }
                     if (problem != null) {
                         future.set(
                             SessionResult(
@@ -203,20 +206,30 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             serviceScope.launch {
                 val backend = AndroidReaderTtsBackend(applicationContext)
                 try {
-                    val initProblem = withTimeoutOrNull(5_000L) {
-                        backend.initialize()
-                    } ?: ReaderTtsProblem.TIMEOUT
-                    val problem = initProblem ?: withTimeoutOrNull(15_000L) {
-                        backend.speak(
-                            text = sample,
-                            languageTag = language,
-                            preferences = ReaderTtsPreferences(
-                                speed = speed,
-                                pitch = pitch,
-                                preferredVoiceIds = mapOf(language to voiceId)
-                            )
-                        )
-                    } ?: ReaderTtsProblem.TIMEOUT
+                    val initProblem = try {
+                        withTimeout(5_000L) { backend.initialize() }
+                    } catch (_: TimeoutCancellationException) {
+                        ReaderTtsProblem.TIMEOUT
+                    }
+                    val problem = if (initProblem != null) {
+                        initProblem
+                    } else {
+                        try {
+                            withTimeout(15_000L) {
+                                backend.speak(
+                                    text = sample,
+                                    languageTag = language,
+                                    preferences = ReaderTtsPreferences(
+                                        speed = speed,
+                                        pitch = pitch,
+                                        preferredVoiceIds = mapOf(language to voiceId)
+                                    )
+                                )
+                            }
+                        } catch (_: TimeoutCancellationException) {
+                            ReaderTtsProblem.TIMEOUT
+                        }
+                    }
 
                     if (problem == null) {
                         future.set(SessionResult(SessionResult.RESULT_SUCCESS))
