@@ -65,6 +65,12 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE, Bundle.EMPTY))
+                        .add(
+                            SessionCommand(
+                                ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES,
+                                Bundle.EMPTY
+                            )
+                        )
                         .build()
                 )
                 .setAvailablePlayerCommands(base.availablePlayerCommands)
@@ -102,6 +108,15 @@ class ReaderTtsPlaybackService : MediaSessionService() {
 
                 ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices()
                 ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE -> previewVoice(args)
+                ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES -> {
+                    val preferred = ReaderTtsPlaybackRequest.decodePreferredVoices(
+                        args.getString("preferred_voices_json")
+                    )
+                    player.updateVoicePreferences(preferred)
+                    Futures.immediateFuture(
+                        SessionResult(SessionResult.RESULT_SUCCESS)
+                    )
+                }
                 else -> super.onCustomCommand(session, controller, customCommand, args)
             }
         }
