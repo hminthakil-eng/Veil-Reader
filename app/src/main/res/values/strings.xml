@@ -1346,11 +1346,13 @@
     <string name="reader_selection_lookup">Lookup</string>
     <string name="reader_lookup_failed">No installed app can look up the selected text.</string>
     <string name="tts_title">Read aloud</string>
-    <string name="tts_intro">Read visible text using installed offline Android voices. Speech pauses when you leave the Reader.</string>
+    <string name="tts_intro">Listen using installed offline Android voices. Playback stays under your explicit control.</string>
     <string name="tts_start">Start from visible text</string>
     <string name="tts_play">Play</string>
     <string name="tts_pause">Pause</string>
     <string name="tts_stop">Stop</string>
+    <string name="tts_previous_segment">Previous passage</string>
+    <string name="tts_next_segment">Next passage</string>
     <string name="tts_speed">Speech speed</string>
     <string name="tts_pitch">Voice pitch</string>
     <string name="tts_preparing">Preparing voice…</string>
