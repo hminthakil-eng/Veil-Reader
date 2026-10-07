@@ -115,10 +115,10 @@ internal class ReaderTtsSession(
                 val first = current ?: nextContent()
                 if (ownerSerial != serial || closed) return@launch
                 if (first == null) {
-                    mutableState.value = mutableState.value.copy(
-                        phase = ReaderTtsPhase.ENDED,
-                        problem = null
-                    )
+                    // An initial empty source is not a successfully completed listening session.
+                    // Preserve the established contract so unsupported/empty publications remain
+                    // actionable instead of looking like an instant normal ending.
+                    fail(ReaderTtsProblem.UNSUPPORTED)
                     return@launch
                 }
                 current = first
