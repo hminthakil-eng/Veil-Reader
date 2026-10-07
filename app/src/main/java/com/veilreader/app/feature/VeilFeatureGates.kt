@@ -10,15 +10,20 @@ internal enum class VeilRiskyFeature {
     GPU_MATERIAL_PAGE,
     LIVE_MANGA_SOURCES,
     ANDROIDX_PDF_EDITOR,
-    CLOUD_SYNC
+    CLOUD_SYNC,
+    BACKGROUND_TTS
 }
 
 internal object VeilFeatureGates {
+    fun enabled(feature: VeilRiskyFeature, debugReview: Boolean = false): Boolean =
+        releaseEnabled(feature) || (debugReview && feature == VeilRiskyFeature.BACKGROUND_TTS)
+
     fun releaseEnabled(feature: VeilRiskyFeature): Boolean =
         when (feature) {
             VeilRiskyFeature.GPU_MATERIAL_PAGE -> false
             VeilRiskyFeature.LIVE_MANGA_SOURCES -> false
             VeilRiskyFeature.ANDROIDX_PDF_EDITOR -> false
             VeilRiskyFeature.CLOUD_SYNC -> false
+            VeilRiskyFeature.BACKGROUND_TTS -> false
         }
 }
