@@ -55,6 +55,8 @@ internal data class ReaderTtsPlaybackRequest(
         const val ACTION_LOAD_PAUSED = "com.veilreader.app.tts.LOAD_PAUSED"
         const val ACTION_QUERY_VOICES = "com.veilreader.app.tts.QUERY_VOICES"
         const val ACTION_PREVIEW_VOICE = "com.veilreader.app.tts.PREVIEW_VOICE"
+        const val ACTION_UPDATE_VOICE_PREFERENCES =
+            "com.veilreader.app.tts.UPDATE_VOICE_PREFERENCES"
 
         const val EXTRA_VOICES_JSON = "voices_json"
         const val EXTRA_LANGUAGE_TAG = "language_tag"
@@ -112,7 +114,7 @@ internal data class ReaderTtsPlaybackRequest(
             }
         }
 
-        private fun encodePreferredVoices(values: Map<String, String>): String {
+        fun encodePreferredVoices(values: Map<String, String>): String {
             val json = JSONObject()
             values.toSortedMap().forEach { (language, voiceId) ->
                 json.put(language, voiceId)
@@ -120,7 +122,7 @@ internal data class ReaderTtsPlaybackRequest(
             return json.toString()
         }
 
-        private fun decodePreferredVoices(raw: String?): Map<String, String> {
+        fun decodePreferredVoices(raw: String?): Map<String, String> {
             if (raw.isNullOrBlank()) return emptyMap()
             val json = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyMap()
             return buildMap {
