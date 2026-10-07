@@ -97,7 +97,9 @@ internal class ReaderTtsMediaPlayer(
                     .setMediaItem(item)
                     .setMediaMetadata(metadata)
                     .setDurationUs(C.TIME_UNSET)
-                    .setIsSeekable(true)
+                    // TTS position is semantic Readium content, not a trustworthy media clock.
+                    // Do not expose a fake scrubber; previous/next remain semantic commands.
+                    .setIsSeekable(false)
                     .build()
             )
         }
