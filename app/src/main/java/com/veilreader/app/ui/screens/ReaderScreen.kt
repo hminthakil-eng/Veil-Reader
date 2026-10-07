@@ -3877,7 +3877,9 @@ fun ReaderScreen(
                                             locator,
                                             ReaderTtsPreferences(
                                                 speed = latestTtsSettings.value.speed.toFloat(),
-                                                pitch = latestTtsSettings.value.pitch.toFloat()
+                                                pitch = latestTtsSettings.value.pitch.toFloat(),
+                                                preferredVoiceIds =
+                                                    latestTtsSettings.value.preferredVoiceIds
                                             )
                                         )
                                     }
@@ -3914,8 +3916,9 @@ fun ReaderScreen(
                     ttsServiceController?.updateSettings(updated)
                         ?: ttsSession?.updatePreferences(
                             ReaderTtsPreferences(
-                                updated.speed.toFloat(),
-                                updated.pitch.toFloat()
+                                speed = updated.speed.toFloat(),
+                                pitch = updated.pitch.toFloat(),
+                                preferredVoiceIds = updated.preferredVoiceIds
                             )
                         )
                 },
