@@ -23,7 +23,12 @@ import org.readium.r2.shared.publication.Locator
 internal data class ReaderTtsState(
     val phase: ReaderTtsPhase = ReaderTtsPhase.STOPPED,
     val problem: ReaderTtsProblem? = null,
-    val sourceLocator: Locator? = null
+    val sourceLocator: Locator? = null,
+    /**
+     * App-private active semantic text for the dedicated Listening Mode only.
+     * Never persist this field and never publish it through MediaMetadata.
+     */
+    val activeText: String? = null
 )
 
 /**
@@ -164,7 +169,8 @@ internal class ReaderTtsSession(
                         ?: Locale.getDefault().toLanguageTag()
                     mutableState.value = ReaderTtsState(
                         phase = ReaderTtsPhase.PLAYING,
-                        sourceLocator = utterance.locator
+                        sourceLocator = utterance.locator,
+                        activeText = utterance.text.take(MAX_ACTIVE_TEXT_LENGTH)
                     )
                     val result = withTimeout(utteranceTimeoutMs.coerceAtLeast(1L)) {
                         engine.speak(utterance.text, language, preferences)
@@ -245,7 +251,8 @@ internal class ReaderTtsSession(
                 } else {
                     ReaderTtsState(
                         phase = ReaderTtsPhase.PAUSED,
-                        sourceLocator = next.locator
+                        sourceLocator = next.locator,
+                        activeText = next.text.take(MAX_ACTIVE_TEXT_LENGTH)
                     )
                 }
                 if (continuePlaying && next != null) {
@@ -415,5 +422,6 @@ internal class ReaderTtsSession(
 
     private companion object {
         const val MAX_HISTORY = 128
+        const val MAX_ACTIVE_TEXT_LENGTH = 4_096
     }
 }
