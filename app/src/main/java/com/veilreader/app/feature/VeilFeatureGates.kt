@@ -10,7 +10,8 @@ internal enum class VeilRiskyFeature {
     GPU_MATERIAL_PAGE,
     LIVE_MANGA_SOURCES,
     ANDROIDX_PDF_EDITOR,
-    CLOUD_SYNC
+    CLOUD_SYNC,
+    BACKGROUND_TTS
 }
 
 internal object VeilFeatureGates {
@@ -20,5 +21,6 @@ internal object VeilFeatureGates {
             VeilRiskyFeature.LIVE_MANGA_SOURCES -> false
             VeilRiskyFeature.ANDROIDX_PDF_EDITOR -> false
             VeilRiskyFeature.CLOUD_SYNC -> false
+            VeilRiskyFeature.BACKGROUND_TTS -> false
         }
 }
