@@ -83,7 +83,15 @@ internal fun validateReaderTtsModelLayout(
         )
 
     for ((component, relativePath) in safe.components) {
-        val target = runCatching { File(canonicalRoot, relativePath).canonicalFile }.getOrNull()
+        val rawTarget = File(canonicalRoot, relativePath)
+        if (Files.isSymbolicLink(rawTarget.toPath())) {
+            return ReaderTtsModelLayoutValidation.Rejected(
+                ReaderTtsModelLayoutValidation.Reason.SYMBOLIC_LINK,
+                component
+            )
+        }
+
+        val target = runCatching { rawTarget.canonicalFile }.getOrNull()
             ?: return ReaderTtsModelLayoutValidation.Rejected(
                 ReaderTtsModelLayoutValidation.Reason.UNSAFE_COMPONENT_PATH,
                 component
@@ -95,13 +103,6 @@ internal fun validateReaderTtsModelLayout(
             )
         }
 
-        val rawTarget = File(canonicalRoot, relativePath)
-        if (Files.isSymbolicLink(rawTarget.toPath())) {
-            return ReaderTtsModelLayoutValidation.Rejected(
-                ReaderTtsModelLayoutValidation.Reason.SYMBOLIC_LINK,
-                component
-            )
-        }
         if (!rawTarget.exists()) {
             return ReaderTtsModelLayoutValidation.Rejected(
                 ReaderTtsModelLayoutValidation.Reason.MISSING_COMPONENT,
