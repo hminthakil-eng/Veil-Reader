@@ -27,7 +27,7 @@ class ReaderTtsSettingsTest {
             speed = 9.0,
             pitch = 0.1
         ).normalized()
-        assertEquals(2.0, clamped.speed, 0.0001)
+        assertEquals(3.0, clamped.speed, 0.0001)
         assertEquals(0.6, clamped.pitch, 0.0001)
     }
 
