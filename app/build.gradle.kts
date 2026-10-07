@@ -98,6 +98,10 @@ dependencies {
     implementation("com.irurueta:irurueta-android-glutils:1.1.11")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
+    // Neural TTS model packages ship as tar.bz2 upstream. Extraction is fail-closed in
+    // ReaderTtsModelArchiveExtractor: no links, no traversal, bounded entry count/expanded bytes.
+    implementation("org.apache.commons:commons-compress:1.28.0")
+
     // Production local persistence.
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")

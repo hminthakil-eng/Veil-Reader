@@ -2,7 +2,9 @@ package com.veilreader.app.ui.reader.tts
 
 import java.io.File
 import java.security.MessageDigest
+import java.nio.file.Files
 import kotlin.io.path.createTempDirectory
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -112,6 +114,146 @@ class ReaderTtsModelStoreTest {
         } finally {
             root.deleteRecursively()
             download.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun preparedCrashTransactionRollsBackPublishedReplacementAndRestoresEvictions() {
+        val root = createTempDirectory("veil-tts-store").toFile()
+        val download = createTempDirectory("veil-tts-download").toFile()
+        try {
+            val store = ReaderTtsModelStore(root, budgetBytes = 8_192)
+            val oldBytes = ByteArray(2_048) { 11 }
+            val victimBytes = ByteArray(2_048) { 12 }
+            val old = install(store, download, "replace-me", oldBytes, 10L)
+            val victim = install(store, download, "victim", victimBytes, 20L)
+
+            val transaction = File(
+                root,
+                ".install-txn-replace-me-1.0-99"
+            ).apply { mkdirs() }
+            File(transaction, "state").writeText(
+                "phase=prepared\n" +
+                    "final=" + old.directory.name + "\n" +
+                    "had_replacement=true\n"
+            )
+
+            Files.move(
+                old.directory.toPath(),
+                File(transaction, "replacement").toPath()
+            )
+            val evictions = File(transaction, "evictions").apply { mkdirs() }
+            Files.move(
+                victim.directory.toPath(),
+                File(evictions, victim.directory.name).toPath()
+            )
+
+            val uncommitted = File(root, old.directory.name).apply { mkdirs() }
+            File(uncommitted, "model.package").writeBytes(ByteArray(2_048) { 99 })
+
+            assertTrue(store.recoverInterruptedTransactions())
+            assertFalse(transaction.exists())
+            assertTrue(old.directory.isDirectory)
+            assertTrue(victim.directory.isDirectory)
+            assertArrayEquals(
+                oldBytes,
+                File(old.directory, "model.package").readBytes()
+            )
+            assertArrayEquals(
+                victimBytes,
+                File(victim.directory, "model.package").readBytes()
+            )
+        } finally {
+            root.deleteRecursively()
+            download.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun publishedCrashTransactionKeepsNewModelAndDiscardsRollbackCopies() {
+        val root = createTempDirectory("veil-tts-store").toFile()
+        val download = createTempDirectory("veil-tts-download").toFile()
+        try {
+            val store = ReaderTtsModelStore(root, budgetBytes = 8_192)
+            val activeBytes = ByteArray(2_048) { 21 }
+            val active = install(store, download, "active", activeBytes, 10L)
+
+            val transaction = File(
+                root,
+                ".install-txn-active-1.0-100"
+            ).apply { mkdirs() }
+            File(transaction, "state").writeText(
+                "phase=published\n" +
+                    "final=" + active.directory.name + "\n" +
+                    "had_replacement=true\n"
+            )
+            File(transaction, "replacement").apply {
+                mkdirs()
+                resolve("model.package").writeBytes(ByteArray(2_048) { 22 })
+            }
+            File(transaction, "evictions").resolve("old-victim").apply {
+                mkdirs()
+                resolve("model.package").writeBytes(ByteArray(2_048) { 23 })
+            }
+
+            assertTrue(store.recoverInterruptedTransactions())
+            assertTrue(active.directory.isDirectory)
+            assertArrayEquals(
+                activeBytes,
+                File(active.directory, "model.package").readBytes()
+            )
+            assertFalse(transaction.exists())
+            assertFalse(File(root, "old-victim").exists())
+        } finally {
+            root.deleteRecursively()
+            download.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun payloadCapacityProbeNeverEvictsWorkingModels() {
+        val root = createTempDirectory("veil-tts-growth-budget").toFile()
+        val download = createTempDirectory("veil-tts-growth-download").toFile()
+        try {
+            val store = ReaderTtsModelStore(root, budgetBytes = 4_096)
+            val first = install(store, download, "first", ByteArray(2_048) { 1 }, 10L)
+            val second = install(store, download, "second", ByteArray(2_048) { 2 }, 20L)
+
+            assertFalse(
+                store.ensureCapacityForModelGrowth(
+                    first,
+                    additionalBytes = 2_048L
+                )
+            )
+            assertTrue(first.directory.exists())
+            assertTrue(second.directory.exists())
+            assertEquals(4_096L, store.usedBytes())
+        } finally {
+            root.deleteRecursively()
+            download.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun cleanupStagingRemovesRootAndOrphanedPayloadStaging() {
+        val root = createTempDirectory("veil-tts-staging-cleanup").toFile()
+        try {
+            val store = ReaderTtsModelStore(root, budgetBytes = 8_192)
+            File(root, ".staging-download-crash").apply {
+                mkdirs()
+                resolve("partial").writeBytes(byteArrayOf(1))
+            }
+            val model = File(root, "fa-model-1.0").apply { mkdirs() }
+            File(model, ".payload-staging-123").apply {
+                mkdirs()
+                resolve("partial.onnx").writeBytes(byteArrayOf(1))
+            }
+
+            assertEquals(2, store.cleanupStaging())
+            assertFalse(File(root, ".staging-download-crash").exists())
+            assertFalse(File(model, ".payload-staging-123").exists())
+        } finally {
+            root.deleteRecursively()
         }
     }
 
