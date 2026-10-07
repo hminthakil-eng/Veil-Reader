@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Bundle
 import androidx.core.content.ContextCompat
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -277,6 +278,10 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             controller?.let(::syncState)
         }
+
+        override fun onPlayerError(error: PlaybackException) {
+            controller?.let(::syncState)
+        }
     }
 
     private fun syncState(player: Player) {
@@ -292,7 +297,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         }
         mutableState.value = mutableState.value.copy(
             phase = phase,
-            problem = null
+            problem = player.playerError?.extras?.problemOrNull()
         )
     }
 
