@@ -399,6 +399,30 @@ class ReaderTtsSessionTest {
         }
     }
 
+    @Test
+    fun activeSemanticTextIsAvailableForListeningUiButStaysInMemoryOnly() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend },
+            "en",
+            { true },
+            StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+
+            assertEquals("first", session.state.value.activeText)
+            session.pause()
+            assertEquals("first", session.state.value.activeText)
+            session.stop()
+            assertNull(session.state.value.activeText)
+        } finally {
+            session.close()
+        }
+    }
+
     private fun source(onRead: () -> Unit) = object : ReaderTtsContent {
         var index = 0
         override suspend fun next(): ReaderTtsUtterance? {
