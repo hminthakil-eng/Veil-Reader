@@ -79,6 +79,68 @@ class ReadiumTtsContentTest {
     }
 
     @Test
+    fun readiumSentenceTokenizerCreatesNaturalUtteranceBoundaries() = runBlocking {
+        val url = requireNotNull(Url("sentences.xhtml"))
+        val publication = Publication.Builder(
+            manifest = Manifest(
+                metadata = Metadata(languages = listOf("en")),
+                readingOrder = listOf(Link(url, MediaType.XHTML))
+            ),
+            container = SingleResourceContainer(
+                url,
+                StringResource(
+                    """
+                    <html xmlns="http://www.w3.org/1999/xhtml"><body>
+                    <p id="sentences" lang="en">First sentence. Second sentence! Third sentence?</p>
+                    </body></html>
+                    """.trimIndent()
+                )
+            ),
+            servicesBuilder = Publication.ServicesBuilder(
+                content = DefaultContentService.createFactory(
+                    listOf(HtmlResourceContentIterator.Factory())
+                )
+            )
+        ).build()
+
+        try {
+            val start = Locator(
+                url,
+                MediaType.XHTML,
+                locations = Locator.Locations(
+                    otherLocations = mapOf("cssSelector" to "#sentences")
+                )
+            )
+            val source = requireNotNull(
+                ReadiumTtsContent.create(
+                    publication = publication,
+                    start = start,
+                    maximumLength = 1000
+                )
+            )
+            val utterances = buildList {
+                while (true) {
+                    add(source.next() ?: break)
+                }
+            }
+
+            assertEquals(
+                listOf("First sentence.", "Second sentence!", "Third sentence?"),
+                utterances.map { it.text }
+            )
+            assertTrue(utterances.all { it.languageTag == "en" })
+            assertTrue(
+                utterances.all {
+                    (it.locator.locations.otherLocations["cssSelector"] as? String)
+                        ?.isNotBlank() == true
+                }
+            )
+        } finally {
+            publication.close()
+        }
+    }
+
+    @Test
     fun progressionWithoutSelectorHasOnlyResourceBoundaryPrecision() = runBlocking {
         val publication = publication()
         try {
