@@ -13,7 +13,12 @@ import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import com.veilreader.app.domain.ReaderTtsSettings
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -27,6 +32,8 @@ import kotlinx.coroutines.flow.asStateFlow
 internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     private val application = context.applicationContext
     private val mainExecutor = ContextCompat.getMainExecutor(application)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val checkpointStore = ReaderTtsCheckpointStore(application)
     private val closed = AtomicBoolean(false)
     private val controllerFuture = MediaController.Builder(
         application,
@@ -41,6 +48,9 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     private val mutableState = MutableStateFlow(ReaderTtsState())
     val state: StateFlow<ReaderTtsState> = mutableState.asStateFlow()
+
+    private val mutableCheckpoint = MutableStateFlow<ReaderTtsCheckpoint?>(null)
+    val checkpoint: StateFlow<ReaderTtsCheckpoint?> = mutableCheckpoint.asStateFlow()
 
     private val mutableVoices = MutableStateFlow<List<ReaderTtsVoice>>(emptyList())
     val voices: StateFlow<List<ReaderTtsVoice>> = mutableVoices.asStateFlow()
@@ -59,6 +69,11 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         get() = controller != null && !closed.get()
 
     init {
+        scope.launch {
+            checkpointStore.checkpoints.collect { latest ->
+                if (!closed.get()) mutableCheckpoint.value = latest
+            }
+        }
         controllerFuture.addListener(
             {
                 if (closed.get()) return@addListener
@@ -244,6 +259,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         controller?.removeListener(playerListener)
         controller = null
         MediaController.releaseFuture(controllerFuture)
+        scope.cancel()
     }
 
     private val playerListener = object : Player.Listener {
