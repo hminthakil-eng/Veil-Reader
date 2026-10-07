@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.reader.tts
 
 import java.io.File
+import java.nio.file.Files
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -54,6 +55,42 @@ class ReaderTtsSharedRuntimeAssetsTest {
             )
         } finally {
             root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun sharedAssetSymlinkInPathIsRejectedBeforeCanonicalTraversal() {
+        val root = createTempDirectory("veil-matcha-shared-link").toFile()
+        val outside = createTempDirectory("veil-matcha-shared-outside").toFile()
+        try {
+            File(outside, "vocos-22khz-univ.onnx").writeBytes(byteArrayOf(1, 2, 3))
+            val link = File(root, "linked").toPath()
+            val symlinkCreated = runCatching {
+                Files.createSymbolicLink(link, outside.toPath())
+            }.isSuccess
+            if (!symlinkCreated) return
+
+            val bundle = ReaderTtsSharedRuntimeAssets(
+                root = root,
+                components = mapOf(
+                    ReaderTtsSharedRuntimeAsset.MATCHA_VOCODER to
+                        "linked/vocos-22khz-univ.onnx"
+                )
+            )
+
+            assertEquals(
+                ReaderTtsSharedAssetsValidation.Rejected(
+                    ReaderTtsSharedAssetsValidation.Reason.SYMBOLIC_LINK,
+                    ReaderTtsSharedRuntimeAsset.MATCHA_VOCODER
+                ),
+                validateReaderTtsSharedRuntimeAssets(
+                    ReaderTtsNeuralModelFamily.MATCHA,
+                    bundle
+                )
+            )
+        } finally {
+            root.deleteRecursively()
+            outside.deleteRecursively()
         }
     }
 
