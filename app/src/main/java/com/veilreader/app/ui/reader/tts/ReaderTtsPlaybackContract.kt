@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.reader.tts
 
 import android.os.Bundle
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -52,6 +53,14 @@ internal data class ReaderTtsPlaybackRequest(
     companion object {
         const val ACTION_LOAD_AND_PLAY = "com.veilreader.app.tts.LOAD_AND_PLAY"
         const val ACTION_LOAD_PAUSED = "com.veilreader.app.tts.LOAD_PAUSED"
+        const val ACTION_QUERY_VOICES = "com.veilreader.app.tts.QUERY_VOICES"
+        const val ACTION_PREVIEW_VOICE = "com.veilreader.app.tts.PREVIEW_VOICE"
+
+        const val EXTRA_VOICES_JSON = "voices_json"
+        const val EXTRA_LANGUAGE_TAG = "language_tag"
+        const val EXTRA_VOICE_ID = "voice_id"
+        const val EXTRA_SAMPLE = "sample"
+        const val EXTRA_PROBLEM = "problem"
 
         private const val KEY_BOOK_ID = "book_id"
         private const val KEY_LOCATOR_JSON = "locator_json"
@@ -62,6 +71,46 @@ internal data class ReaderTtsPlaybackRequest(
 
         private const val MAX_BOOK_ID_LENGTH = 256
         private const val MAX_LOCATOR_JSON_LENGTH = 32 * 1024
+
+
+        fun encodeVoiceCatalog(voices: List<ReaderTtsVoice>): String {
+            val array = JSONArray()
+            voices
+                .sortedWith(compareBy<ReaderTtsVoice>({ it.languageTag }, { it.id }))
+                .forEach { voice ->
+                    array.put(
+                        JSONObject()
+                            .put("id", voice.id)
+                            .put("language_tag", voice.languageTag)
+                            .put("quality", voice.quality)
+                            .put("requires_network", voice.requiresNetwork)
+                            .put("installed", voice.installed)
+                    )
+                }
+            return array.toString()
+        }
+
+        fun decodeVoiceCatalog(raw: String?): List<ReaderTtsVoice> {
+            if (raw.isNullOrBlank()) return emptyList()
+            val array = runCatching { JSONArray(raw) }.getOrNull() ?: return emptyList()
+            return buildList {
+                for (index in 0 until array.length()) {
+                    val json = array.optJSONObject(index) ?: continue
+                    val id = json.optString("id").trim()
+                    val language = json.optString("language_tag").trim()
+                    if (id.isEmpty() || language.isEmpty()) continue
+                    add(
+                        ReaderTtsVoice(
+                            id = id,
+                            languageTag = language,
+                            quality = json.optInt("quality"),
+                            requiresNetwork = json.optBoolean("requires_network"),
+                            installed = json.optBoolean("installed")
+                        )
+                    )
+                }
+            }
+        }
 
         private fun encodePreferredVoices(values: Map<String, String>): String {
             val json = JSONObject()
