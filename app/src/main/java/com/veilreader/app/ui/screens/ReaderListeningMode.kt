@@ -86,6 +86,22 @@ internal fun ReaderListeningMode(
             }
             ?: offline.firstOrNull()
     }
+    val previousLabel = stringResourceCompat(R.string.tts_previous_segment)
+    val nextLabel = stringResourceCompat(R.string.tts_next_segment)
+    val playLabel = stringResourceCompat(R.string.tts_play)
+    val pauseLabel = stringResourceCompat(R.string.tts_pause)
+    val problemLabel = when {
+        !supported -> stringResourceCompat(R.string.tts_unsupported)
+        startFailed -> stringResourceCompat(R.string.tts_playback_failed)
+        state.problem == ReaderTtsProblem.NO_OFFLINE_VOICE ->
+            stringResourceCompat(R.string.tts_missing_voice)
+        state.problem == ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE ->
+            stringResourceCompat(R.string.tts_preferred_voice_unavailable)
+        state.problem == ReaderTtsProblem.NO_ENGINE ->
+            stringResourceCompat(R.string.tts_initialization_failed)
+        state.problem != null -> stringResourceCompat(R.string.tts_playback_failed)
+        else -> null
+    }
     val chapterLabel = state.sourceLocator?.title
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
@@ -218,7 +234,7 @@ internal fun ReaderListeningMode(
                         .size(64.dp)
                         .semantics {
                             role = Role.Button
-                            contentDescription = "Previous passage"
+                            contentDescription = previousLabel
                         },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp)
@@ -246,7 +262,7 @@ internal fun ReaderListeningMode(
                             contentDescription =
                                 if (state.phase == ReaderTtsPhase.PLAYING ||
                                     state.phase == ReaderTtsPhase.PREPARING
-                                ) "Pause" else "Play"
+                                ) pauseLabel else playLabel
                         },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp)
@@ -271,7 +287,7 @@ internal fun ReaderListeningMode(
                         .size(64.dp)
                         .semantics {
                             role = Role.Button
-                            contentDescription = "Next passage"
+                            contentDescription = nextLabel
                         },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp)
@@ -316,7 +332,7 @@ internal fun ReaderListeningMode(
                             color = VeilPalette.Brass
                         )
                         Text(
-                            currentVoice?.id
+                            currentVoice?.let { friendlyVoiceName(it.id) }
                                 ?: stringResourceCompat(R.string.tts_voice_automatic),
                             style = MaterialTheme.typography.titleMedium,
                             color = VeilPalette.Moon,
@@ -348,9 +364,9 @@ internal fun ReaderListeningMode(
                 }
             }
 
-            if (startFailed || state.problem != null || !supported) {
+            if (problemLabel != null) {
                 Text(
-                    stringResourceCompat(R.string.tts_playback_failed),
+                    problemLabel,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center
@@ -408,6 +424,24 @@ internal fun ReaderListeningMode(
             }
         }
     }
+}
+
+private fun friendlyVoiceName(raw: String): String {
+    val compact = raw
+        .substringAfterLast('#')
+        .substringAfterLast('/')
+        .replace('_', ' ')
+        .replace('-', ' ')
+        .trim()
+    if (compact.isBlank()) return raw
+    return compact
+        .split(Regex("\\s+"))
+        .joinToString(" ") { token ->
+            token.replaceFirstChar { ch ->
+                if (ch.isLowerCase()) ch.titlecase(Locale.ROOT) else ch.toString()
+            }
+        }
+        .take(48)
 }
 
 @Composable
