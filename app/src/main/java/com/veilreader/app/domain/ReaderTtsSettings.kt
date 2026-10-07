@@ -11,7 +11,7 @@ data class ReaderTtsSettings(
         copy(
             speed = speed
                 .takeIf { it.isFinite() }
-                ?.coerceIn(0.50, 2.00)
+                ?.coerceIn(0.50, 3.00)
                 ?: 1.0,
             pitch = pitch
                 .takeIf { it.isFinite() }
