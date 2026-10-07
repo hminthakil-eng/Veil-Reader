@@ -96,6 +96,12 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                                 Bundle.EMPTY
                             )
                         )
+                        .add(
+                            SessionCommand(
+                                ReaderTtsPlaybackRequest.ACTION_QUERY_ACTIVE_SEGMENT,
+                                Bundle.EMPTY
+                            )
+                        )
                         .build()
                 )
                 .setAvailablePlayerCommands(base.availablePlayerCommands)
@@ -146,6 +152,20 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     setSleepTimer(args)
                 ReaderTtsPlaybackRequest.ACTION_QUERY_SLEEP_TIMER ->
                     querySleepTimer()
+                ReaderTtsPlaybackRequest.ACTION_QUERY_ACTIVE_SEGMENT ->
+                    Futures.immediateFuture(
+                        SessionResult(
+                            SessionResult.RESULT_SUCCESS,
+                            Bundle().apply {
+                                player.activeSegmentText()?.let {
+                                    putString(
+                                        ReaderTtsPlaybackRequest.EXTRA_ACTIVE_SEGMENT_TEXT,
+                                        it
+                                    )
+                                }
+                            }
+                        )
+                    )
                 else -> super.onCustomCommand(session, controller, customCommand, args)
             }
         }
