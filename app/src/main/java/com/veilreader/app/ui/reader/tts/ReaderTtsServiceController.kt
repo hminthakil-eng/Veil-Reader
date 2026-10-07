@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Releasing this controller never stops background speech. Playback lifetime belongs to
  * [ReaderTtsPlaybackService], which is the reason screen lock/activity recreation can be safe.
  */
-@UnstableApi
+@androidx.annotation.OptIn(UnstableApi::class)
 internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     private val application = context.applicationContext
     private val mainExecutor = ContextCompat.getMainExecutor(application)
