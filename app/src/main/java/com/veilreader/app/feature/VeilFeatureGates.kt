@@ -15,6 +15,9 @@ internal enum class VeilRiskyFeature {
 }
 
 internal object VeilFeatureGates {
+    fun enabled(feature: VeilRiskyFeature, debugReview: Boolean = false): Boolean =
+        releaseEnabled(feature) || (debugReview && feature == VeilRiskyFeature.BACKGROUND_TTS)
+
     fun releaseEnabled(feature: VeilRiskyFeature): Boolean =
         when (feature) {
             VeilRiskyFeature.GPU_MATERIAL_PAGE -> false
