@@ -31,11 +31,11 @@ class ReaderDurabilityProbeActivity : Activity() {
         val action = intent.getStringExtra(EXTRA_ACTION)
             ?: return failAndFinish("missing_action")
 
-        if (action == ACTION_COMMIT_AND_KILL && blockCommitReplayIfNeeded()) {
-            return
-        }
-
         try {
+            if (action == ACTION_COMMIT_AND_KILL && blockCommitReplayIfNeeded()) {
+                return
+            }
+
             runBlocking {
                 when (action) {
                     ACTION_SEED -> seed()
