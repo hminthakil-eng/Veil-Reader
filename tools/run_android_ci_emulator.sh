@@ -204,6 +204,7 @@ case "$MODE" in
     COMPONENT="${PACKAGE}/.debug.ReaderDurabilityProbeActivity"
     RESULT_FILE="files/reader-durability-probe-result.txt"
     REPORT="build/reports/reader-durability-fault-injection.txt"
+    MARKER_LOG="build/reports/reader-durability-marker.log"
     CYCLES="${VEIL_DURABILITY_CYCLES:-18}"
     [[ "$CYCLES" =~ ^[1-9][0-9]*$ ]] || {
       echo "VEIL_DURABILITY_CYCLES must be a positive integer." >&2
@@ -212,6 +213,7 @@ case "$MODE" in
 
     "$ADB" -s "$SERIAL" shell pm clear "$PACKAGE" >/dev/null
     : >"$REPORT"
+    : >"$MARKER_LOG"
     {
       echo "Veil Reader semantic locator process-death fault injection"
       echo "sha=$(git rev-parse HEAD)"
