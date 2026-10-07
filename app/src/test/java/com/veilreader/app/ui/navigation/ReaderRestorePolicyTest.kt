@@ -12,6 +12,32 @@ class ReaderRestorePolicyTest {
     }
 
     @Test
+    fun explicitOverride_winsOverCrashCheckpoint() {
+        assertEquals(
+            "explicit",
+            chooseReaderRestoreLocator(
+                explicitOverrideJson = "explicit",
+                readerCheckpointJson = "saved",
+                durableLocatorJson = "durable",
+                crashCheckpointJson = "crash"
+            )
+        )
+    }
+
+    @Test
+    fun crashCheckpoint_winsOverSavedStateAndOlderDurableLocator() {
+        assertEquals(
+            "crash",
+            chooseReaderRestoreLocator(
+                explicitOverrideJson = null,
+                readerCheckpointJson = "saved",
+                durableLocatorJson = "durable",
+                crashCheckpointJson = "crash"
+            )
+        )
+    }
+
+    @Test
     fun processCheckpoint_winsOverOlderDurableLocator() {
         assertEquals("checkpoint", chooseReaderRestoreLocator(null, "checkpoint", "durable"))
     }

@@ -1409,4 +1409,6 @@
     <string name="tts_listening_mode_position">موقعیت شنیدن</string>
     <string name="tts_listening_mode_settings">صدا و تنظیمات</string>
 
+    <string name="reader_notebook_searching">در حال جست‌وجو…</string>
+    <string name="reader_notebook_search_timed_out">جست‌وجو بیش از حد طول کشید. عبارت را دقیق‌تر کنید و دوباره تلاش کنید.</string>
 </resources>

@@ -2560,7 +2560,7 @@ fun ReaderScreen(
                         null
                     }
                     if (anchor != null) {
-                        recordLocator(anchor, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                        recordLocator(anchor, ReaderLocatorEvent.RELAYOUT_CHECKPOINT)
                         pendingEpubRelayoutSourceJson = staleSourceJson
                         pendingEpubRelayoutAnchor = anchor
                         ReaderTrace.event(
@@ -2575,7 +2575,7 @@ fun ReaderScreen(
                 if (fixedLayoutSpreadChanged) {
                     recordLocator(
                         nav.currentLocator.value,
-                        ReaderLocatorEvent.FINAL_SNAPSHOT
+                        ReaderLocatorEvent.RELAYOUT_CHECKPOINT
                     )
                 }
 
@@ -2625,7 +2625,7 @@ fun ReaderScreen(
                         val refreshedCheckpoint =
                             pendingEpubRelayoutAnchor?.withEpubCssSelectorFrom(refreshed)
                                 ?: refreshed
-                        recordLocator(refreshedCheckpoint, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                        recordLocator(refreshedCheckpoint, ReaderLocatorEvent.RELAYOUT_CHECKPOINT)
                         pendingEpubRelayoutSourceJson = null
                         pendingEpubRelayoutAnchor = null
                         ReaderTrace.event(
@@ -2642,7 +2642,7 @@ fun ReaderScreen(
                 if (fixedLayoutSpreadChanged) {
                     recordLocator(
                         nav.currentLocator.value,
-                        ReaderLocatorEvent.FINAL_SNAPSHOT
+                        ReaderLocatorEvent.RELAYOUT_CHECKPOINT
                     )
                 }
 
@@ -2821,7 +2821,7 @@ fun ReaderScreen(
                             )
                         ) {
                             latestNavigator.value?.currentLocator?.value?.let { locator ->
-                                recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                                recordLocator(locator, ReaderLocatorEvent.RELAYOUT_CHECKPOINT)
                             }
                             viewportRelayoutPending = false
                             viewportRelayoutJob = null

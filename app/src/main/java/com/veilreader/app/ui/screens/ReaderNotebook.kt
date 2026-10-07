@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.selectable
@@ -16,6 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,6 +41,7 @@ import com.veilreader.app.ui.theme.usesArabicScript
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
@@ -237,6 +244,7 @@ fun ReaderNotebook(
     var bookSearchErrorRes by remember(readerSessionInstanceId) { mutableStateOf<Int?>(null) }
     var bookSearchLimited by remember(readerSessionInstanceId) { mutableStateOf(false) }
     var searchingBook by remember(readerSessionInstanceId) { mutableStateOf(false) }
+    var submittedBookSearchQuery by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
 
     val chapters = remember(opened.book.id, readerSessionInstanceId) {
         fun flatten(links: List<Link>, depth: Int): List<Pair<Link, Int>> =
@@ -247,64 +255,82 @@ fun ReaderNotebook(
         query.isBlank() || it.quote.contains(query.trim(), true) || it.note.contains(query.trim(), true)
     }
 
+    fun cancelBookSearch() {
+        searchSerial += 1
+        searchJob?.cancel()
+        searchJob = null
+        searchingBook = false
+        submittedBookSearchQuery = null
+        bookSearchResults = emptyList()
+        bookSearchLimited = false
+        bookSearchErrorRes = null
+    }
+
     fun runBookSearch() {
         val term = bookSearchQuery.trim()
         if (term.length < 2 || searchingBook) return
         searchJob?.cancel()
         val requestSerial = ++searchSerial
+        searchingBook = true
+        submittedBookSearchQuery = term
         searchJob = scope.launch {
-            searchingBook = true
             bookSearchErrorRes = null
             bookSearchLimited = false
             bookSearchResults = emptyList()
             try {
-                val iterator = opened.publication.search(term)
-                if (iterator == null) {
-                    if (requestSerial == searchSerial) {
-                        bookSearchErrorRes = R.string.reader_notebook_search_unavailable
+                val completed = withTimeoutOrNull(READER_BOOK_SEARCH_TIMEOUT_MS) {
+                    val iterator = opened.publication.search(term)
+                    if (iterator == null) {
+                        if (requestSerial == searchSerial) {
+                            bookSearchErrorRes = R.string.reader_notebook_search_unavailable
+                        }
+                        return@withTimeoutOrNull true
                     }
-                    return@launch
-                }
-                try {
-                    val found = ArrayList<Locator>(
-                        READER_SEARCH_RESULT_LIMIT + 1
-                    )
-                    var failed = false
-                    while (
-                        requestSerial == searchSerial &&
-                        !failed &&
-                        found.size <= READER_SEARCH_RESULT_LIMIT
-                    ) {
-                        var pageLocators: List<Locator>? = null
-                        var reachedEnd = false
-                        iterator.next()
-                            .onSuccess { page ->
-                                if (page == null) {
-                                    reachedEnd = true
-                                } else {
-                                    pageLocators = page.locators
+                    try {
+                        val found = ArrayList<Locator>(
+                            READER_SEARCH_RESULT_LIMIT + 1
+                        )
+                        var failed = false
+                        while (
+                            requestSerial == searchSerial &&
+                            !failed &&
+                            found.size <= READER_SEARCH_RESULT_LIMIT
+                        ) {
+                            var pageLocators: List<Locator>? = null
+                            var reachedEnd = false
+                            iterator.next()
+                                .onSuccess { page ->
+                                    if (page == null) {
+                                        reachedEnd = true
+                                    } else {
+                                        pageLocators = page.locators
+                                    }
                                 }
-                            }
-                            .onFailure {
-                                failed = true
-                                if (requestSerial == searchSerial) {
-                                    bookSearchErrorRes =
-                                        R.string.reader_notebook_search_failed
+                                .onFailure {
+                                    failed = true
+                                    if (requestSerial == searchSerial) {
+                                        bookSearchErrorRes =
+                                            R.string.reader_notebook_search_failed
+                                    }
                                 }
-                            }
 
-                        if (failed || reachedEnd || requestSerial != searchSerial) break
-                        val remaining =
-                            READER_SEARCH_RESULT_LIMIT + 1 - found.size
-                        found += pageLocators.orEmpty().take(remaining)
+                            if (failed || reachedEnd || requestSerial != searchSerial) break
+                            val remaining =
+                                READER_SEARCH_RESULT_LIMIT + 1 - found.size
+                            found += pageLocators.orEmpty().take(remaining)
+                        }
+                        if (requestSerial != searchSerial) return@withTimeoutOrNull true
+                        bookSearchLimited =
+                            found.size > READER_SEARCH_RESULT_LIMIT
+                        bookSearchResults =
+                            found.take(READER_SEARCH_RESULT_LIMIT)
+                    } finally {
+                        iterator.close()
                     }
-                    if (requestSerial != searchSerial) return@launch
-                    bookSearchLimited =
-                        found.size > READER_SEARCH_RESULT_LIMIT
-                    bookSearchResults =
-                        found.take(READER_SEARCH_RESULT_LIMIT)
-                } finally {
-                    iterator.close()
+                    true
+                }
+                if (completed == null && requestSerial == searchSerial) {
+                    bookSearchErrorRes = R.string.reader_notebook_search_timed_out
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -442,17 +468,11 @@ fun ReaderNotebook(
                         value = bookSearchQuery,
                         onValueChange = { value ->
                             bookSearchQuery = value
-                            if (searchingBook) {
-                                searchSerial += 1
-                                searchJob?.cancel()
-                                searchJob = null
-                                searchingBook = false
-                                bookSearchResults = emptyList()
-                                bookSearchLimited = false
-                                bookSearchErrorRes = null
-                            }
+                            cancelBookSearch()
                         },
                         label = { Text(stringResource(R.string.reader_notebook_search_book)) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { runBookSearch() }),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -460,7 +480,16 @@ fun ReaderNotebook(
                         onClick = ::runBookSearch,
                         enabled = bookSearchQuery.trim().length >= 2 && !searchingBook,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                    ) { Text(if (searchingBook) "…" else stringResource(R.string.reader_notebook_find)) }
+                    ) {
+                        Text(stringResource(if (searchingBook) R.string.reader_notebook_searching
+                            else R.string.reader_notebook_find))
+                    }
+                    if (searchingBook) {
+                        TextButton(onClick = ::cancelBookSearch,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                            Text(stringResource(R.string.common_cancel))
+                        }
+                    }
                 }
             }
 
@@ -684,9 +713,16 @@ fun ReaderNotebook(
                             }
                         }
                         bookSearchErrorRes?.let { messageRes ->
-                            item { Text(stringResource(messageRes), color = MaterialTheme.colorScheme.error) }
+                            item { Text(stringResource(messageRes), color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                         }
-                        if (!searchingBook && bookSearchErrorRes == null && bookSearchQuery.isNotBlank() && bookSearchResults.isEmpty()) {
+                        if (shouldShowReaderSearchNoMatches(
+                                query = bookSearchQuery,
+                                submittedQuery = submittedBookSearchQuery,
+                                searching = searchingBook,
+                                failed = bookSearchErrorRes != null,
+                                hasResults = bookSearchResults.isNotEmpty()
+                            )) {
                             item {
                                 Text(
                                     stringResource(R.string.reader_notebook_no_search_matches),
@@ -764,8 +800,8 @@ fun ReaderNotebook(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
@@ -927,8 +963,8 @@ fun ReaderNotebook(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 520.dp),
+                        .widthIn(max = 520.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
@@ -1077,3 +1113,15 @@ private fun searchSnippet(locator: Locator, fallback: String): String {
         if (after.isNotBlank()) append(' ').append(after).append("…")
     }.ifBlank { locator.title ?: fallback }
 }
+
+
+private const val READER_BOOK_SEARCH_TIMEOUT_MS = 30_000L
+
+internal fun shouldShowReaderSearchNoMatches(
+    query: String,
+    submittedQuery: String?,
+    searching: Boolean,
+    failed: Boolean,
+    hasResults: Boolean
+): Boolean = query.trim().length >= 2 && submittedQuery == query.trim() &&
+    !searching && !failed && !hasResults
