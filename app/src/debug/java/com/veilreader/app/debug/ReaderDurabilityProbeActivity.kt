@@ -28,6 +28,13 @@ class ReaderDurabilityProbeActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Only an authorized adb run-as session can create this app-private capability.
+        // Keep it outside OS backup so debug APK users cannot inherit an enabled probe.
+        if (!File(noBackupFilesDir, ENABLE_FILE).isFile) {
+            finishAndRemoveTask()
+            return
+        }
+
         val action = intent.getStringExtra(EXTRA_ACTION)
             ?: return failAndFinish("missing_action")
 
@@ -293,6 +300,7 @@ class ReaderDurabilityProbeActivity : Activity() {
         const val TOTAL_PAGES = 1_000
         const val EPSILON = 0.000_01
 
+        const val ENABLE_FILE = "reader-durability-probe-enabled"
         const val RESULT_FILE = "reader-durability-probe-result.txt"
         const val REPLAY_GUARD_FILE = "reader-durability-probe-replay-guard.txt"
         const val PROBE_LOG_TAG = "VeilDurabilityProbe"

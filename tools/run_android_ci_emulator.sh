@@ -213,9 +213,10 @@ case "$MODE" in
     }
 
     "$ADB" -s "$SERIAL" shell pm clear "$PACKAGE" >/dev/null
-    # The distributed debug APK leaves the process-kill probe disabled. Only this
-    # isolated emulator run explicitly enables the component after clearing QA data.
-    "$ADB" -s "$SERIAL" shell pm enable "$COMPONENT" >/dev/null
+    # The APK's process-kill entry point is inert without this private, non-backed-up
+    # capability. Shell cannot toggle components on API 35; adb run-as can create it.
+    "$ADB" -s "$SERIAL" shell run-as "$PACKAGE" mkdir -p no_backup
+    "$ADB" -s "$SERIAL" shell run-as "$PACKAGE" touch no_backup/reader-durability-probe-enabled
     : >"$REPORT"
     : >"$MARKER_LOG"
     {
