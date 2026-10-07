@@ -3856,6 +3856,9 @@ fun ReaderScreen(
         val activeListeningCheckpoint = listeningCheckpoint?.takeIf {
             it.request.bookId == opened.book.id
         }
+        val sleepDeadlineSource = ttsServiceController?.sleepDeadlineEpochMs
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow<Long?>(null) }
+        val sleepDeadlineEpochMs by sleepDeadlineSource.collectAsStateWithLifecycle()
 
         fun dismissSpeechControls() {
             ttsStartSerial += 1
@@ -3876,6 +3879,10 @@ fun ReaderScreen(
                 voiceCatalogLoading = voiceCatalogLoading,
                 voiceCatalogProblem = voiceCatalogProblem,
                 previewProblem = previewProblem,
+                sleepDeadlineEpochMs = sleepDeadlineEpochMs,
+                onSetSleepTimer = { minutes ->
+                    ttsServiceController?.setSleepTimer(minutes)
+                },
                 listeningPositionAvailable = activeListeningCheckpoint != null,
                 onSyncListeningPosition = {
                     val checkpoint = activeListeningCheckpoint
