@@ -63,13 +63,14 @@ internal data class ReaderTtsPlaybackRequest(
         const val EXTRA_VOICE_ID = "voice_id"
         const val EXTRA_SAMPLE = "sample"
         const val EXTRA_PROBLEM = "problem"
+        const val EXTRA_PREFERRED_VOICES_JSON = "preferred_voices_json"
 
         private const val KEY_BOOK_ID = "book_id"
         private const val KEY_LOCATOR_JSON = "locator_json"
         private const val KEY_SPEED = "speed"
         private const val KEY_PITCH = "pitch"
         private const val KEY_LANGUAGE_TAG = "language_tag"
-        private const val KEY_PREFERRED_VOICES = "preferred_voices_json"
+        private const val KEY_PREFERRED_VOICES = EXTRA_PREFERRED_VOICES_JSON
 
         private const val MAX_BOOK_ID_LENGTH = 256
         private const val MAX_LOCATOR_JSON_LENGTH = 32 * 1024
