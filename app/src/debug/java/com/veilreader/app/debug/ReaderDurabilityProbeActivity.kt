@@ -12,7 +12,6 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import java.io.File
-import java.util.concurrent.CountDownLatch
 import kotlin.math.abs
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -31,6 +30,10 @@ class ReaderDurabilityProbeActivity : Activity() {
 
         val action = intent.getStringExtra(EXTRA_ACTION)
             ?: return failAndFinish("missing_action")
+
+        if (action == ACTION_COMMIT_AND_KILL && blockCommitReplayIfNeeded()) {
+            return
+        }
 
         try {
             runBlocking {
@@ -138,14 +141,33 @@ class ReaderDurabilityProbeActivity : Activity() {
             }
         }
 
-        // Signal the external adb driver at the first instruction after the Reader event returns.
-        // Do not finish, pause, close, or flush here. The Activity stays foreground-blocked until
-        // adb force-stops the process, preventing ActivityManager from auto-restarting this Intent.
+        // Record evidence, then terminate this process immediately from inside the commit path.
+        // The external adb driver no longer decides when to kill us, removing its polling latency
+        // from the crash window. No pause/close/flush callback is given a chance to rescue the write.
         Log.i(
             PROBE_LOG_TAG,
             "COMMIT_READY token=$destinationKey pid=${Process.myPid()} event=$event committed=${commit != null}"
         )
-        CountDownLatch(1).await()
+        Process.killProcess(Process.myPid())
+        while (true) {
+            Thread.sleep(Long.MAX_VALUE)
+        }
+    }
+
+    private fun blockCommitReplayIfNeeded(): Boolean {
+        val token = intent.getStringExtra(EXTRA_DESTINATION_KEY)
+            ?.takeIf { it.isNotBlank() }
+            ?: return false
+        val guard = File(filesDir, REPLAY_GUARD_FILE)
+        if (guard.takeIf(File::exists)?.readText()?.trim() == token) {
+            Log.i(PROBE_LOG_TAG, "REPLAY_BLOCKED token=$token pid=${Process.myPid()}")
+            finishAndRemoveTask()
+            return true
+        }
+        // Persisted before the semantic event so a system-driven Activity restart cannot execute
+        // the same commit twice after this process kills itself.
+        guard.writeText(token + "\n")
+        return false
     }
 
     private suspend fun verify() {
@@ -242,6 +264,7 @@ class ReaderDurabilityProbeActivity : Activity() {
         const val EPSILON = 0.000_01
 
         const val RESULT_FILE = "reader-durability-probe-result.txt"
+        const val REPLAY_GUARD_FILE = "reader-durability-probe-replay-guard.txt"
         const val PROBE_LOG_TAG = "VeilDurabilityProbe"
 
         const val EXTRA_ACTION = "probe_action"
