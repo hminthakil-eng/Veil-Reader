@@ -206,6 +206,15 @@ internal class ReaderTtsMediaPlayer(
                 )
                 invalidateState()
 
+                // Load before collecting the session's initial STOPPED state. A system Play/Pause
+                // command may arrive while the publication is opening; desiredPlayWhenReady is the
+                // authoritative pending user intent and must not be overwritten by that initial state.
+                speechSession.load(
+                    locator = locator,
+                    requestedPreferences = safe.preferences,
+                    autoplay = desiredPlayWhenReady
+                )
+
                 sessionStateJob = scope.launch {
                     speechSession.state.collectLatest { newState ->
                         if (ownerGeneration != generation || released) return@collectLatest
@@ -217,12 +226,6 @@ internal class ReaderTtsMediaPlayer(
                         persistCheckpoint(newState)
                     }
                 }
-
-                speechSession.load(
-                    locator = locator,
-                    requestedPreferences = safe.preferences,
-                    autoplay = autoplay
-                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
