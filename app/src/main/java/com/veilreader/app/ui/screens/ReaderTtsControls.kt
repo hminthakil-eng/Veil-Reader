@@ -34,6 +34,7 @@ internal fun ReaderTtsControls(
     startPending: Boolean,
     startFailed: Boolean,
     publicationLanguage: String? = null,
+    voiceCatalogSupported: Boolean = false,
     voices: List<ReaderTtsVoice> = emptyList(),
     voiceCatalogLoading: Boolean = false,
     voiceCatalogProblem: ReaderTtsProblem? = null,
@@ -85,26 +86,27 @@ internal fun ReaderTtsControls(
                 )
             }
 
-            if (voiceCatalogLoading) {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
-                Text(
-                    stringResource(R.string.tts_loading_voices),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            } else {
-                ReaderTtsVoicePicker(
-                    settings = settings,
-                    publicationLanguage = publicationLanguage,
-                    voices = voices,
-                    voiceCatalogProblem = voiceCatalogProblem,
-                    previewProblem = previewProblem,
-                    onRefreshVoices = onRefreshVoices,
-                    onPreviewVoice = onPreviewVoice,
-                    onSettingsChange = onSettingsChange
-                )
+            if (voiceCatalogSupported) {
+                if (voiceCatalogLoading) {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                    Text(
+                        stringResource(R.string.tts_loading_voices),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    ReaderTtsVoicePicker(
+                        settings = settings,
+                        publicationLanguage = publicationLanguage,
+                        voices = voices,
+                        voiceCatalogProblem = voiceCatalogProblem,
+                        previewProblem = previewProblem,
+                        onRefreshVoices = onRefreshVoices,
+                        onPreviewVoice = onPreviewVoice,
+                        onSettingsChange = onSettingsChange
+                    )
+                }
+                HorizontalDivider()
             }
-
-            HorizontalDivider()
 
             TextButton(
                 onClick = onStart,
