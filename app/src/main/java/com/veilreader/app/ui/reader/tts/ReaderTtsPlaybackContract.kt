@@ -57,6 +57,8 @@ internal data class ReaderTtsPlaybackRequest(
         const val ACTION_PREVIEW_VOICE = "com.veilreader.app.tts.PREVIEW_VOICE"
         const val ACTION_UPDATE_VOICE_PREFERENCES =
             "com.veilreader.app.tts.UPDATE_VOICE_PREFERENCES"
+        const val ACTION_SET_SLEEP_TIMER = "com.veilreader.app.tts.SET_SLEEP_TIMER"
+        const val ACTION_QUERY_SLEEP_TIMER = "com.veilreader.app.tts.QUERY_SLEEP_TIMER"
 
         const val EXTRA_VOICES_JSON = "voices_json"
         const val EXTRA_LANGUAGE_TAG = "language_tag"
@@ -64,6 +66,8 @@ internal data class ReaderTtsPlaybackRequest(
         const val EXTRA_SAMPLE = "sample"
         const val EXTRA_PROBLEM = "problem"
         const val EXTRA_PREFERRED_VOICES_JSON = "preferred_voices_json"
+        const val EXTRA_SLEEP_MINUTES = "sleep_minutes"
+        const val EXTRA_SLEEP_DEADLINE_EPOCH_MS = "sleep_deadline_epoch_ms"
 
         private const val KEY_BOOK_ID = "book_id"
         private const val KEY_LOCATOR_JSON = "locator_json"
