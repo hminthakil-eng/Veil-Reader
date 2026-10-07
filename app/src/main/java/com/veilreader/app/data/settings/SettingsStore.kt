@@ -29,6 +29,8 @@ import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import com.veilreader.app.domain.decodeReaderTapGrid
 import com.veilreader.app.domain.encodeReaderTapGrid
 import java.io.IOException
+import java.net.URLDecoder
+import java.net.URLEncoder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -453,23 +455,49 @@ internal fun decodeReaderTtsPreferences(prefs: Preferences): ReaderTtsSettings {
     ).normalized()
 }
 
+private const val READER_TTS_VOICE_CODEC_PREFIX = "v1:"
+
 internal fun encodeReaderTtsPreferredVoices(values: Map<String, String>): String {
-    val json = JSONObject()
-    values.toSortedMap().forEach { (languageTag, voiceId) ->
-        json.put(languageTag, voiceId)
-    }
-    return json.toString()
+    val payload = values.entries
+        .asSequence()
+        .mapNotNull { (rawLanguage, rawVoice) ->
+            val language = rawLanguage.trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val voice = rawVoice.trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            language to voice
+        }
+        .sortedBy { it.first }
+        .joinToString("&") { (language, voice) ->
+            "${encodeTtsVoiceComponent(language)}=${encodeTtsVoiceComponent(voice)}"
+        }
+    return READER_TTS_VOICE_CODEC_PREFIX + payload
 }
 
 internal fun decodeReaderTtsPreferredVoices(raw: String?): Map<String, String> {
-    if (raw.isNullOrBlank()) return emptyMap()
-    val json = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyMap()
+    if (raw.isNullOrBlank() || !raw.startsWith(READER_TTS_VOICE_CODEC_PREFIX)) {
+        return emptyMap()
+    }
+    val payload = raw.removePrefix(READER_TTS_VOICE_CODEC_PREFIX)
+    if (payload.isBlank()) return emptyMap()
+
     return buildMap {
-        val keys = json.keys()
-        while (keys.hasNext()) {
-            val language = keys.next()
-            val voice = json.optString(language).takeIf { it.isNotBlank() } ?: continue
+        payload.split('&').forEach { entry ->
+            val separator = entry.indexOf('=')
+            if (separator <= 0 || separator == entry.lastIndex) return@forEach
+            val language = decodeTtsVoiceComponent(entry.substring(0, separator))
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return@forEach
+            val voice = decodeTtsVoiceComponent(entry.substring(separator + 1))
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: return@forEach
             put(language, voice)
         }
     }
 }
+
+private fun encodeTtsVoiceComponent(value: String): String =
+    URLEncoder.encode(value, Charsets.UTF_8.name())
+
+private fun decodeTtsVoiceComponent(value: String): String? =
+    runCatching { URLDecoder.decode(value, Charsets.UTF_8.name()) }.getOrNull()
