@@ -162,6 +162,20 @@ class VeilAppViewModel(
         update { copy(readerLocatorCheckpointJson = null) }
     }
 
+    fun readerCrashCheckpointRecovered(
+        bookId: String,
+        sessionInstanceId: String
+    ) {
+        val current = _route.value
+        if (!current.ownsReader(bookId, sessionInstanceId)) return
+        update {
+            copy(
+                locatorOverrideJson = null,
+                readerLocatorCheckpointJson = null
+            )
+        }
+    }
+
     fun bookOpenFailed(bookId: String, sessionInstanceId: String) {
         if (!_route.value.ownsReader(bookId, sessionInstanceId)) return
         update {
