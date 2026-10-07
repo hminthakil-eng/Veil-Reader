@@ -252,22 +252,52 @@ case "$MODE" in
       timeout 20 "$ADB" -s "$SERIAL" shell am start -W -n "$COMPONENT" "$@" >/dev/null
     }
 
-    probe_wait_for_death() {
+    probe_commit_then_force_stop() {
+      local token="$1"
+      shift
+      local marker_file="$TEMP_ROOT/reader-durability-marker-$token.log"
+      local logcat_pid=""
       local result=""
-      for _ in $(seq 1 120); do
-        if [[ -z "$("$ADB" -s "$SERIAL" shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
-          return 0
+      local marker="COMMIT_READY token=${token}-destination"
+
+      rm -f "$marker_file"
+      "$ADB" -s "$SERIAL" logcat -c
+      "$ADB" -s "$SERIAL" logcat -v brief -s VeilDurabilityProbe:I '*:S' >"$marker_file" 2>&1 &
+      logcat_pid="$!"
+
+      "$ADB" -s "$SERIAL" shell am start -n "$COMPONENT" "$@" >/dev/null
+
+      for _ in $(seq 1 250); do
+        if grep -Fq "$marker" "$marker_file" 2>/dev/null; then
+          grep -F "$marker" "$marker_file" | tail -1 >>"$MARKER_LOG"
+          "$ADB" -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null
+          kill "$logcat_pid" >/dev/null 2>&1 || true
+          wait "$logcat_pid" 2>/dev/null || true
+
+          for _ in $(seq 1 100); do
+            if [[ -z "$("$ADB" -s "$SERIAL" shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
+              return 0
+            fi
+            sleep 0.01
+          done
+          echo "FAIL phase=commit:$token error=force_stop_did_not_kill_process" | tee -a "$REPORT" >&2
+          return 1
         fi
+
         result="$(probe_read_result)"
         if [[ "$result" == FAIL* ]]; then
+          kill "$logcat_pid" >/dev/null 2>&1 || true
+          wait "$logcat_pid" 2>/dev/null || true
           echo "$result" | tee -a "$REPORT" >&2
           return 1
         fi
-        sleep 0.05
+        sleep 0.02
       done
-      result="$(probe_read_result)"
-      [[ -n "$result" ]] && echo "$result" | tee -a "$REPORT" >&2
-      echo "FAIL phase=commit error=process_survived_abrupt_kill" | tee -a "$REPORT" >&2
+
+      kill "$logcat_pid" >/dev/null 2>&1 || true
+      wait "$logcat_pid" 2>/dev/null || true
+      [[ -f "$marker_file" ]] && cat "$marker_file" >>"$MARKER_LOG"
+      echo "FAIL phase=commit:$token error=commit_ready_timeout" | tee -a "$REPORT" >&2
       return 1
     }
 
@@ -300,16 +330,12 @@ case "$MODE" in
       sleep 0.05
 
       probe_clear_result
-      set +e
-      timeout 20 "$ADB" -s "$SERIAL" shell am start -W -n "$COMPONENT" \
+      probe_commit_then_force_stop "$token" \
         --es probe_action commit_and_kill \
         --es probe_event "$event" \
         --es probe_session_id "session-$token" \
         --es probe_destination_progress "$destination_progress" \
-        --es probe_destination_key "$destination_key" \
-        >/dev/null 2>&1
-      set -e
-      probe_wait_for_death
+        --es probe_destination_key "$destination_key"
 
       probe_clear_result
       probe_start \
