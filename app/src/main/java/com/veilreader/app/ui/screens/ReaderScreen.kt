@@ -3860,6 +3860,10 @@ fun ReaderScreen(
             ?: remember { kotlinx.coroutines.flow.MutableStateFlow<Long?>(null) }
         val sleepDeadlineEpochMs by sleepDeadlineSource.collectAsStateWithLifecycle()
 
+        val activeSegmentSource = ttsServiceController?.activeSegmentText
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow<String?>(null) }
+        val activeSegmentText by activeSegmentSource.collectAsStateWithLifecycle()
+
         fun dismissSpeechControls() {
             ttsStartSerial += 1
             ttsStartJob?.cancel()
@@ -3873,6 +3877,7 @@ fun ReaderScreen(
             ReaderListeningMode(
                 book = opened.book,
                 state = speechState,
+                activeText = activeSegmentText,
                 supported = ttsSession != null || ttsServiceController != null,
                 settings = speechSettingsState.value,
                 startPending = ttsStartPending,
