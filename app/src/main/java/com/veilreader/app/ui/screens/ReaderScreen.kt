@@ -3896,6 +3896,12 @@ fun ReaderScreen(
                 },
                 onResume = { ttsServiceController?.resume() ?: ttsSession?.resume() },
                 onPause = { ttsServiceController?.pause() ?: ttsSession?.pause() },
+                onPrevious = {
+                    ttsServiceController?.previous() ?: ttsSession?.previous()
+                },
+                onNext = {
+                    ttsServiceController?.next() ?: ttsSession?.next()
+                },
                 onStop = {
                     ttsStartSerial += 1
                     ttsStartJob?.cancel()
