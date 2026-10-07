@@ -1,10 +1,12 @@
 package com.veilreader.app.ui.reader.tts
 
 import android.content.Context
+import android.os.Bundle
 import android.os.Looper
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.SimpleBasePlayer
@@ -126,6 +128,7 @@ internal class ReaderTtsMediaPlayer(
             .setPlaybackParameters(
                 PlaybackParameters(safePreferences.speed, safePreferences.pitch)
             )
+            .setPlayerError(sessionState.problem?.toPlaybackException())
             .build()
     }
 
@@ -329,6 +332,19 @@ internal class ReaderTtsMediaPlayer(
         )
         invalidateState()
     }
+
+    private fun ReaderTtsProblem.toPlaybackException(): PlaybackException =
+        PlaybackException(
+            "Veil TTS playback failed",
+            null,
+            PlaybackException.ERROR_CODE_UNSPECIFIED,
+            Bundle().apply {
+                putString(
+                    ReaderTtsPlaybackRequest.EXTRA_PROBLEM,
+                    name
+                )
+            }
+        )
 
     private suspend fun persistCheckpoint(state: ReaderTtsState) {
         val request = currentRequest ?: return
