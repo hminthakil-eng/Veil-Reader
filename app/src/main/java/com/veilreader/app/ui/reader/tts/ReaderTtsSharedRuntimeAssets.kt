@@ -86,6 +86,13 @@ internal fun validateReaderTtsSharedRuntimeAssets(
                 asset
             )
         val rawTarget = File(canonicalRoot, relativePath)
+        if (containsSymbolicLink(canonicalRoot, relativePath)) {
+            return ReaderTtsSharedAssetsValidation.Rejected(
+                ReaderTtsSharedAssetsValidation.Reason.SYMBOLIC_LINK,
+                asset
+            )
+        }
+
         val target = runCatching { rawTarget.canonicalFile }.getOrNull()
             ?: return ReaderTtsSharedAssetsValidation.Rejected(
                 ReaderTtsSharedAssetsValidation.Reason.UNSAFE_PATH,
@@ -97,12 +104,6 @@ internal fun validateReaderTtsSharedRuntimeAssets(
         ) {
             return ReaderTtsSharedAssetsValidation.Rejected(
                 ReaderTtsSharedAssetsValidation.Reason.UNSAFE_PATH,
-                asset
-            )
-        }
-        if (Files.isSymbolicLink(rawTarget.toPath())) {
-            return ReaderTtsSharedAssetsValidation.Rejected(
-                ReaderTtsSharedAssetsValidation.Reason.SYMBOLIC_LINK,
                 asset
             )
         }
@@ -127,6 +128,15 @@ internal fun validateReaderTtsSharedRuntimeAssets(
     }
 
     return ReaderTtsSharedAssetsValidation.Valid
+}
+
+private fun containsSymbolicLink(root: File, relativePath: String): Boolean {
+    var current = root
+    relativePath.split('/').forEach { segment ->
+        current = File(current, segment)
+        if (Files.isSymbolicLink(current.toPath())) return true
+    }
+    return false
 }
 
 private fun normalizeSharedAssetPath(rawPath: String): String? {
