@@ -29,4 +29,47 @@ class ReaderTtsProviderTest {
         assertTrue(network.capabilities.sendsPublicationTextOffDevice)
         assertNotNull(network.unavailableReason)
     }
+
+    @Test
+    fun neuralProviderRequiresGateModelAndRuntimeTogether() {
+        val partial = readerTtsProviderCatalog(
+            ReaderTtsProviderReadiness(
+                localNeuralGateEnabled = true,
+                localNeuralModelInstalled = true,
+                localNeuralRuntimeAvailable = false
+            )
+        ).single { it.kind == ReaderTtsProviderKind.LOCAL_NEURAL }
+        assertFalse(partial.available)
+
+        val ready = readerTtsProviderCatalog(
+            ReaderTtsProviderReadiness(
+                localNeuralGateEnabled = true,
+                localNeuralModelInstalled = true,
+                localNeuralRuntimeAvailable = true
+            )
+        ).single { it.kind == ReaderTtsProviderKind.LOCAL_NEURAL }
+        assertTrue(ready.available)
+    }
+
+    @Test
+    fun networkProviderRequiresExplicitConsentEvenWhenConfigured() {
+        val withoutConsent = readerTtsProviderCatalog(
+            ReaderTtsProviderReadiness(
+                networkGateEnabled = true,
+                networkConfigured = true,
+                networkConsentGranted = false
+            )
+        ).single { it.kind == ReaderTtsProviderKind.NETWORK }
+        assertFalse(withoutConsent.available)
+        assertTrue(withoutConsent.capabilities.sendsPublicationTextOffDevice)
+
+        val withConsent = readerTtsProviderCatalog(
+            ReaderTtsProviderReadiness(
+                networkGateEnabled = true,
+                networkConfigured = true,
+                networkConsentGranted = true
+            )
+        ).single { it.kind == ReaderTtsProviderKind.NETWORK }
+        assertTrue(withConsent.available)
+    }
 }
