@@ -8,11 +8,5 @@ internal fun readerTtsPickerLanguage(publicationLanguage: String?, languages: Li
         ?.takeUnless { it.language.isBlank() || it.language == "und" }
         ?: return languages.firstOrNull()
     return languages.firstOrNull { it.equals(requested.toLanguageTag(), ignoreCase = true) }
-        ?: languages.firstOrNull {
-            val candidate = Locale.forLanguageTag(it)
-            candidate.language == requested.language &&
-                (requested.script.isBlank() || candidate.script.isBlank() ||
-                    candidate.script == requested.script)
-        }
         ?: requested.toLanguageTag()
 }

@@ -7,6 +7,9 @@ class ReaderTtsVoicePresentationTest {
     @Test fun exactDialectIsPreserved() {
         assertEquals("en-US", readerTtsPickerLanguage("en-US", listOf("en-GB", "en-US")))
     }
+    @Test fun missingExactDialectKeepsThePublicationRequestForPlaybackRanking() {
+        assertEquals("en-AU", readerTtsPickerLanguage("en-AU", listOf("en-GB", "en-US")))
+    }
     @Test fun missingPublicationVoiceDoesNotPretendAnotherLanguageWorks() {
         assertEquals("fa-IR", readerTtsPickerLanguage("fa-IR", listOf("en-US")))
         assertEquals("fa-IR", readerTtsPickerLanguage("fa-IR", emptyList()))
