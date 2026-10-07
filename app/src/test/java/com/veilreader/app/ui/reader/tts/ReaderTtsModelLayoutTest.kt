@@ -34,7 +34,7 @@ class ReaderTtsModelLayoutTest {
     }
 
     @Test
-    fun matchaLayoutRejectsMissingVocoderBeforeRuntimeConstruction() {
+    fun matchaVoiceLayoutDoesNotDuplicateSharedVocoder() {
         val root = createTempDirectory("veil-layout-matcha").toFile()
         try {
             File(root, "acoustic.onnx").writeBytes(byteArrayOf(1))
@@ -48,11 +48,8 @@ class ReaderTtsModelLayoutTest {
                 )
             )
 
-            assertNull(layout.normalizedOrNull())
             assertEquals(
-                ReaderTtsModelLayoutValidation.Rejected(
-                    ReaderTtsModelLayoutValidation.Reason.INVALID_LAYOUT
-                ),
+                ReaderTtsModelLayoutValidation.Valid,
                 validateReaderTtsModelLayout(root, layout)
             )
         } finally {
