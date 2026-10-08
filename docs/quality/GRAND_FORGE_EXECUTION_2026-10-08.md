@@ -436,3 +436,27 @@ restore and upgrade installation remain pending. No gate promotion or production
 merge. Revert isolated behavior/build commits for rollback; physical status JSON
 remains UNVERIFIED. Full mission still includes ReadingAnchor/exploration,
 foreground listening checkpoint, corpus/RTL/selection/PDF and device performance.
+
+## GF-ANN-003 — durable highlight creation
+
+- Priority/subsystem: P0 annotation acknowledgement and duplicate authority.
+- User impact/observed/root cause: addHighlight published a cached record before
+  queued Room insertion. Failure could leave a phantom highlight; retry could
+  report already highlighted based on that cache. Reader separately flushed the
+  queue but did not remove the failed cached record.
+- Files/implementation: LocalLibraryRepository.kt adds commitSelectionHighlight
+  using the existing ordered Room transaction and exact book/locator/quote query;
+  suspend addHighlight delegates to it. ReaderScreen.kt uses durable created
+  status for acknowledgement, statistics/haptics and duplicate feedback, fenced
+  to the original reader session. Room observation publishes committed data.
+- Reuse: existing queue, DAO and annotation schema; no migration/new engine.
+- Tests: AnnotationDurabilityInstrumentedTest adds direct acknowledgement-boundary,
+  20 concurrent duplicate requests and trigger-injected failure/no phantom cases.
+- Acceptance: returned save already exists in Room; failed insertion never adds
+  visible state; duplicate request returns the same durable passage without a
+  second creation event. Build/instrumentation pending, YELLOW.
+- Risks/dependencies: queue fail-closed behavior unchanged; cancellation may leave
+  a committed record without feedback, and retry resolves the durable duplicate.
+- Performance/accessibility/RTL: one ordered transaction per selection; actual
+  latency/TalkBack/RTL selection unverified. Existing semantic locators retained.
+- Rollback: isolated annotation commit. No gate change.
