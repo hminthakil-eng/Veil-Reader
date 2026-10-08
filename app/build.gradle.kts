@@ -54,6 +54,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = forgeQaBuild
     }
 
     testOptions {
