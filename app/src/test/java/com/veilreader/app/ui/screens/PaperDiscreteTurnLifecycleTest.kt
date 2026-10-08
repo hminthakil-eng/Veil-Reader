@@ -266,10 +266,12 @@ class PaperDiscreteTurnLifecycleTest {
         val fixture = NavigatorFixture().apply { layoutView() }
         val state = PaperCurlState()
         var selected = true
+        val failures = mutableListOf<PaperTurnVisualFailure>()
         val listener = PaperCurlInputListener(fixture.navigator, state,
             isEnabled = { selected && paperRendererCanOwnNavigationInput(false, state.rendererStatus) },
             scope = this, onInteraction = {}, onCommittedTurn = { fixture.commit() },
-            isDragEnabled = { selected && paperRendererCanReserveDrag(false, state.rendererStatus) })
+            isDragEnabled = { selected && paperRendererCanReserveDrag(false, state.rendererStatus) },
+            onVisualFailure = { failures += it })
         try {
             assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
             assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -100f)))
@@ -283,6 +285,7 @@ class PaperDiscreteTurnLifecycleTest {
             assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -400f)))
             assertEquals(1, state.debugBeginAttempts)
             assertEquals(0, fixture.requests)
+            assertEquals(listOf(PaperTurnVisualFailure.SNAPSHOT), failures)
             selected = false
             assertTrue(listener.onDrag(drag(DragEvent.Type.End, -400f)))
             advanceUntilIdle()
@@ -310,8 +313,10 @@ class PaperDiscreteTurnLifecycleTest {
             }
         }
         val owner = CoroutineScope(coroutineContext + clock)
+        val failures = mutableListOf<PaperTurnVisualFailure>()
         val listener = PaperCurlInputListener(fixture.navigator, state, { true }, owner,
-            onInteraction = {}, onCommittedTurn = { fixture.commit() })
+            onInteraction = {}, onCommittedTurn = { fixture.commit() },
+            onVisualFailure = { failures += it })
         try {
             assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
             assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
@@ -322,6 +327,7 @@ class PaperDiscreteTurnLifecycleTest {
             advanceUntilIdle()
             assertEquals(0, fixture.requests)
             assertEquals(0, fixture.commits)
+            assertEquals(listOf(PaperTurnVisualFailure.PRESENTATION), failures)
             assertFalse(state.active)
             assertFalse(listener.hasPendingTurn())
         } finally {
@@ -346,9 +352,10 @@ class PaperDiscreteTurnLifecycleTest {
                 return onFrame(testScheduler.currentTime * 1_000_000L)
             }
         }
+        val failures = mutableListOf<PaperTurnVisualFailure>()
         val listener = PaperCurlInputListener(fixture.navigator, state, { true },
             CoroutineScope(coroutineContext + clock), onInteraction = {},
-            onCommittedTurn = { fixture.commit() })
+            onCommittedTurn = { fixture.commit() }, onVisualFailure = { failures += it })
         try {
             assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
             assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
@@ -363,7 +370,63 @@ class PaperDiscreteTurnLifecycleTest {
             advanceUntilIdle()
             assertEquals(1, fixture.requests)
             assertEquals(1, fixture.commits)
+            assertTrue(failures.isEmpty())
             assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `failed tap capture reports one snapshot failure without leaving pending input`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { layoutView() }
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        val failures = mutableListOf<PaperTurnVisualFailure>()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() },
+            onVisualFailure = { failures += it })
+        try {
+            assertTrue(listener.performDiscreteTurn(PaperTurnDirection.FORWARD))
+            advanceUntilIdle()
+            assertEquals(listOf(PaperTurnVisualFailure.SNAPSHOT), failures)
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `explicit cancellation of an unpresented sheet is not a visual failure`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture()
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val failures = mutableListOf<PaperTurnVisualFailure>()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() },
+            onVisualFailure = { failures += it })
+        try {
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
+            runCurrent()
+            assertTrue(state.active)
+            assertTrue(listener.forceCancelPendingTurn())
+            advanceUntilIdle()
+            assertTrue(failures.isEmpty())
+            assertFalse(listener.hasPendingTurn())
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
         } finally {
             listener.forceCancelPendingTurn()
             state.dispose()

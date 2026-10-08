@@ -416,6 +416,13 @@ fun ReaderScreen(
     val boundaryEndMessage =
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    var paperFailureNotice by remember(readerSessionInstanceId) {
+        mutableStateOf<ReaderPaperFailureNotice?>(null)
+    }
+    val paperSnapshotFailedMessage = stringResource(R.string.reader_paper_snapshot_failed)
+    val paperPresentationFailedMessage = stringResource(R.string.reader_paper_presentation_failed)
+    val paperRendererUnavailableMessage = stringResource(R.string.reader_paper_renderer_unavailable)
+    val paperUseSlideLabel = stringResource(R.string.reader_paper_use_slide)
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
     val performanceRootView = activity.window.decorView
     LaunchedEffect(
@@ -1105,6 +1112,77 @@ fun ReaderScreen(
             readerMessage == message
         ) {
             readerMessage = null
+        }
+    }
+
+    val latestRequestedReaderAppearance = rememberUpdatedState(readerAppearance)
+    val latestReaderAppearanceChange = rememberUpdatedState(onReaderAppearanceChange)
+
+    fun reportPaperVisualFailure(failure: PaperTurnVisualFailure) {
+        if (closeInFlight || !latestReaderSessionReady.value ||
+            !readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            ) || !shouldUsePaperCurlNavigation(opened.format,
+                latestAppearance.value.scroll, latestAppearance.value.pageTurnStyle) ||
+            latestReducedMotion.value) return
+        // Repeated failures of the same kind coalesce while their notice is displayed/queued.
+        if (paperFailureNotice?.failure != failure) {
+            paperFailureNotice = ReaderPaperFailureNotice(failure)
+        }
+    }
+
+    LaunchedEffect(paperCurlState.rendererStatus, presentedReaderAppearance.navigationMode,
+        reducedMotion, readerSessionReady, closeInFlight) {
+        val failure = paperRendererFailureNotice(paperCurlState.rendererStatus)
+        if (failure == null) {
+            if (paperCurlState.rendererStatus ==
+                com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY &&
+                paperFailureNotice?.failure == PaperTurnVisualFailure.RENDERER_UNAVAILABLE) {
+                paperFailureNotice = null
+            }
+            return@LaunchedEffect
+        }
+        if (!MaterialPageEngineRollout.isEnabled() || reducedMotion || closeInFlight ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL) {
+            return@LaunchedEffect
+        }
+        // Ignore transient recovery states; a status/mode change cancels this delay.
+        delay(700L)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            reportPaperVisualFailure(failure)
+        }
+    }
+
+    LaunchedEffect(paperFailureNotice, presentedReaderAppearance.navigationMode,
+        reducedMotion, readerSessionReady, closeInFlight) {
+        val notice = paperFailureNotice ?: return@LaunchedEffect
+        try {
+            if (closeInFlight || !readerSessionReady || reducedMotion ||
+                presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL) {
+                return@LaunchedEffect
+            }
+            val message = when (notice.failure) {
+                PaperTurnVisualFailure.SNAPSHOT -> paperSnapshotFailedMessage
+                PaperTurnVisualFailure.PRESENTATION -> paperPresentationFailedMessage
+                PaperTurnVisualFailure.RENDERER_UNAVAILABLE -> paperRendererUnavailableMessage
+            }
+            val result = snackbarHostState.showSnackbar(message = message,
+                actionLabel = paperUseSlideLabel, withDismissAction = true,
+                duration = SnackbarDuration.Long)
+            val currentAppearance = latestRequestedReaderAppearance.value
+            if (result == SnackbarResult.ActionPerformed && !closeInFlight &&
+                latestReaderSessionReady.value && !latestReducedMotion.value &&
+                readerAsyncResultBelongsToSession(
+                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                    expectedSessionInstanceId = readerSessionInstanceId
+                ) && shouldUsePaperCurlNavigation(opened.format,
+                    currentAppearance.scroll, currentAppearance.pageTurnStyle)) {
+                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                latestReaderAppearanceChange.value(currentAppearance.withPageTurnStyle(PageTurnStyle.SLIDE))
+            }
+        } finally {
+            if (paperFailureNotice === notice) paperFailureNotice = null
         }
     }
 
@@ -2061,6 +2139,7 @@ fun ReaderScreen(
                 PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
+                    onVisualFailure = ::reportPaperVisualFailure,
                     isDragEnabled = {
                         latestReaderSessionReady.value && paperModeSelected() &&
                             paperRendererCanReserveDrag(

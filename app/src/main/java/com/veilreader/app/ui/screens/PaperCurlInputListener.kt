@@ -86,7 +86,8 @@ internal class PaperCurlInputListener(
     private val onInteraction: () -> Unit,
     private val onCommittedTurn: () -> Unit,
     private val onBoundaryHit: (PaperCurlSide) -> Unit = {},
-    private val isDragEnabled: () -> Boolean = isEnabled
+    private val isDragEnabled: () -> Boolean = isEnabled,
+    private val onVisualFailure: (PaperTurnVisualFailure) -> Unit = {}
 ) : InputListener {
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
@@ -209,6 +210,9 @@ internal class PaperCurlInputListener(
             // page turn when GPU/capture readiness is missing.
             invalidateOperation()
             resetDrag()
+            if (!reducedMotion && state.rendererStatus == GpuMaterialPageRendererStatus.READY) {
+                onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
+            }
             return
         }
 
@@ -222,6 +226,7 @@ internal class PaperCurlInputListener(
                         state.clearImmediately()
                         activeOperationGeneration = 0L
                         resetDrag()
+                        onVisualFailure(PaperTurnVisualFailure.PRESENTATION)
                     }
                     return@launchCompletion
                 }
@@ -660,14 +665,20 @@ internal class PaperCurlInputListener(
             spec.side,
             spec.direction
         )
-        if (!visualReady) return false
+        if (!visualReady) {
+            onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
+            return false
+        }
 
         state.updateDrag(event.start, event.offset)
         val operationToken = activeOperationGeneration
         navigationJob = launchPreview {
             if (!state.materialEngine.awaitSheetPresented()) {
                 // An unpresented sheet must never enable the release-time static branch.
-                if (operationIsCurrent(operationToken)) state.clearImmediately()
+                if (operationIsCurrent(operationToken)) {
+                    state.clearImmediately()
+                    onVisualFailure(PaperTurnVisualFailure.PRESENTATION)
+                }
                 return@launchPreview
             }
             if (

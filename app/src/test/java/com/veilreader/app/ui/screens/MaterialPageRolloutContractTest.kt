@@ -129,6 +129,17 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `renderer notices distinguish real unavailability from startup and reduced motion`() {
+        GpuMaterialPageRendererStatus.entries.forEach { status ->
+            val expected = if (status == GpuMaterialPageRendererStatus.FAILED ||
+                status == GpuMaterialPageRendererStatus.UNSUPPORTED) {
+                PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+            } else null
+            assertEquals(expected, paperRendererFailureNotice(status))
+        }
+    }
+
+    @Test
     fun `Reduced Motion keeps functional Paper navigation without a curl visual`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {

@@ -1415,4 +1415,8 @@
 
     <string name="reader_notebook_searching">Searching…</string>
     <string name="reader_notebook_search_timed_out">Search took too long. Refine the phrase and try again.</string>
+    <string name="reader_paper_snapshot_failed">Could not prepare this page for a paper turn. Try again or use Slide.</string>
+    <string name="reader_paper_presentation_failed">The paper turn could not be displayed. Try again or use Slide.</string>
+    <string name="reader_paper_renderer_unavailable">Paper animation is unavailable right now. Simple paging still works; you can use Slide.</string>
+    <string name="reader_paper_use_slide">Use Slide</string>
 </resources>
