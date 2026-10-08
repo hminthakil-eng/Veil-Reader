@@ -24,6 +24,9 @@ internal data class ReaderNavigationTransaction(
     val targetHref: String?,
     val passageVisitLocatorJson: String?,
     val startedAtElapsedMs: Long,
+    val reason: ReaderNavigationReason = ReaderNavigationReason.UNKNOWN,
+    val commitPolicy: ReaderNavigationCommitPolicy =
+        ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT,
     val expectedPdfPage: Int? = null,
     val originPdfPage: Int? = null
 )
@@ -246,6 +249,9 @@ internal class ReaderNavigationTransactionGate(
         targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
         passageVisitLocatorJson: String? = null,
+        reason: ReaderNavigationReason = ReaderNavigationReason.UNKNOWN,
+        commitPolicy: ReaderNavigationCommitPolicy =
+            readerNavigationIntentFor(reason).commitPolicy,
         expectedPdfPage: Int? = null,
         originPdfPage: Int? = null
     ): ReaderNavigationTransaction {
@@ -257,6 +263,8 @@ internal class ReaderNavigationTransactionGate(
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson,
             startedAtElapsedMs = nowElapsedMs,
+            reason = reason,
+            commitPolicy = commitPolicy,
             expectedPdfPage = expectedPdfPage?.takeIf { it > 0 },
             originPdfPage = originPdfPage?.takeIf { it > 0 }
         )
