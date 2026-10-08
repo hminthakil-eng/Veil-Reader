@@ -3289,12 +3289,16 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(start = 6.dp, top = 2.dp, end = 6.dp),
+                    .padding(
+                        start = ReaderVisualGeometry.HudHorizontalInset,
+                        top = ReaderVisualGeometry.HudTopPadding,
+                        end = ReaderVisualGeometry.HudHorizontalInset
+                    ),
                 shape = RoundedCornerShape(
                     topStart = 0.dp,
                     topEnd = 0.dp,
-                    bottomEnd = 10.dp,
-                    bottomStart = 10.dp
+                    bottomEnd = ReaderVisualGeometry.HudCornerRadius,
+                    bottomStart = ReaderVisualGeometry.HudCornerRadius
                 ),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
@@ -3304,8 +3308,8 @@ fun ReaderScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .padding(horizontal = 8.dp),
+                            .heightIn(min = ReaderVisualGeometry.HudTopRowMinHeight)
+                            .padding(horizontal = ReaderVisualGeometry.HudHorizontalInset),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
                     ) {
@@ -3354,7 +3358,7 @@ fun ReaderScreen(
                         progress = { progress.coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(1.dp),
                         color = readerChromeAccent,
-                        trackColor = readerChromeForeground.copy(alpha = 0.10f),
+                        trackColor = readerChromeForeground.copy(alpha = ReaderVisualOpacity.HudProgressTrack),
                         drawStopIndicator = {}
                     )
                 }
@@ -3381,10 +3385,14 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(start = 6.dp, end = 6.dp, bottom = 4.dp),
+                    .padding(
+                        start = ReaderVisualGeometry.HudHorizontalInset,
+                        end = ReaderVisualGeometry.HudHorizontalInset,
+                        bottom = ReaderVisualGeometry.HudBottomPadding
+                    ),
                 shape = RoundedCornerShape(
-                    topStart = 10.dp,
-                    topEnd = 10.dp,
+                    topStart = ReaderVisualGeometry.HudCornerRadius,
+                    topEnd = ReaderVisualGeometry.HudCornerRadius,
                     bottomEnd = 0.dp,
                     bottomStart = 0.dp
                 ),
@@ -3401,7 +3409,7 @@ fun ReaderScreen(
                                 Brush.horizontalGradient(
                                     listOf(
                                         Color.Transparent,
-                                        readerChromeAccent.copy(alpha = 0.42f),
+                                        readerChromeAccent.copy(alpha = ReaderVisualOpacity.HudAccentHairline),
                                         Color.Transparent
                                     )
                                 )
@@ -3412,7 +3420,7 @@ fun ReaderScreen(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.HudControlGap),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         ReaderControl(
@@ -3550,7 +3558,7 @@ fun ReaderScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(top = 56.dp),
+                .padding(top = ReaderVisualGeometry.PreviousLocationTopOffset),
             enter = fadeIn(
                 tween(
                     if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
