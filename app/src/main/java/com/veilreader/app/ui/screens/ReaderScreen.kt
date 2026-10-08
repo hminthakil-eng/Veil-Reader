@@ -163,6 +163,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.runReaderRequestWithDeadline
+import com.veilreader.app.ui.reader.deliverReaderResource
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
@@ -404,6 +407,8 @@ fun ReaderScreen(
     )
     val imageViewerFailedMessage =
         stringResource(R.string.reader_image_viewer_failed)
+    val imageViewerTimeoutMessage = stringResource(R.string.reader_image_viewer_timeout)
+    val imageViewerTooLargeMessage = stringResource(R.string.reader_image_viewer_too_large)
     val appearanceApplyFailedMessage =
         stringResource(R.string.reader_appearance_apply_failed)
     val boundaryBeginningMessage =
@@ -411,6 +416,13 @@ fun ReaderScreen(
     val boundaryEndMessage =
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    var paperFailureNotice by remember(readerSessionInstanceId) {
+        mutableStateOf<ReaderPaperFailureNotice?>(null)
+    }
+    val paperSnapshotFailedMessage = stringResource(R.string.reader_paper_snapshot_failed)
+    val paperPresentationFailedMessage = stringResource(R.string.reader_paper_presentation_failed)
+    val paperRendererUnavailableMessage = stringResource(R.string.reader_paper_renderer_unavailable)
+    val paperUseSlideLabel = stringResource(R.string.reader_paper_use_slide)
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
     val performanceRootView = activity.window.decorView
     LaunchedEffect(
@@ -860,6 +872,12 @@ fun ReaderScreen(
     var imageLoading by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var imageLoadJob by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     var imageLoadSerial by remember(opened.book.id, readerSessionInstanceId) { mutableIntStateOf(0) }
+    fun cancelImageLoad() {
+        imageLoadSerial += 1
+        imageLoadJob?.cancel()
+        imageLoadJob = null
+        imageLoading = false
+    }
     var closeInFlight by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var readerViewportSize by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(IntSize.Zero)
@@ -871,13 +889,9 @@ fun ReaderScreen(
         mutableStateOf<Job?>(null)
     }
 
-    DisposableEffect(imageViewer?.bitmap) {
-        val ownedBitmap = imageViewer?.bitmap
-        onDispose {
-            ownedBitmap
-                ?.takeIf { !it.isRecycled }
-                ?.recycle()
-        }
+    DisposableEffect(imageViewer) {
+        val ownedImage = imageViewer
+        onDispose { ownedImage?.close() }
     }
     DisposableEffect(readerSessionInstanceId) {
         onDispose {
@@ -1098,6 +1112,77 @@ fun ReaderScreen(
             readerMessage == message
         ) {
             readerMessage = null
+        }
+    }
+
+    val latestRequestedReaderAppearance = rememberUpdatedState(readerAppearance)
+    val latestReaderAppearanceChange = rememberUpdatedState(onReaderAppearanceChange)
+
+    fun reportPaperVisualFailure(failure: PaperTurnVisualFailure) {
+        if (closeInFlight || !latestReaderSessionReady.value ||
+            !readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            ) || !shouldUsePaperCurlNavigation(opened.format,
+                latestAppearance.value.scroll, latestAppearance.value.pageTurnStyle) ||
+            latestReducedMotion.value) return
+        // Repeated failures of the same kind coalesce while their notice is displayed/queued.
+        if (paperFailureNotice?.failure != failure) {
+            paperFailureNotice = ReaderPaperFailureNotice(failure)
+        }
+    }
+
+    LaunchedEffect(paperCurlState.rendererStatus, presentedReaderAppearance.navigationMode,
+        reducedMotion, readerSessionReady, closeInFlight) {
+        val failure = paperRendererFailureNotice(paperCurlState.rendererStatus)
+        if (failure == null) {
+            if (paperCurlState.rendererStatus ==
+                com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY &&
+                paperFailureNotice?.failure == PaperTurnVisualFailure.RENDERER_UNAVAILABLE) {
+                paperFailureNotice = null
+            }
+            return@LaunchedEffect
+        }
+        if (!MaterialPageEngineRollout.isEnabled() || reducedMotion || closeInFlight ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL) {
+            return@LaunchedEffect
+        }
+        // Ignore transient recovery states; a status/mode change cancels this delay.
+        delay(700L)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            reportPaperVisualFailure(failure)
+        }
+    }
+
+    LaunchedEffect(paperFailureNotice, presentedReaderAppearance.navigationMode,
+        reducedMotion, readerSessionReady, closeInFlight) {
+        val notice = paperFailureNotice ?: return@LaunchedEffect
+        try {
+            if (closeInFlight || !readerSessionReady || reducedMotion ||
+                presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL) {
+                return@LaunchedEffect
+            }
+            val message = when (notice.failure) {
+                PaperTurnVisualFailure.SNAPSHOT -> paperSnapshotFailedMessage
+                PaperTurnVisualFailure.PRESENTATION -> paperPresentationFailedMessage
+                PaperTurnVisualFailure.RENDERER_UNAVAILABLE -> paperRendererUnavailableMessage
+            }
+            val result = snackbarHostState.showSnackbar(message = message,
+                actionLabel = paperUseSlideLabel, withDismissAction = true,
+                duration = SnackbarDuration.Long)
+            val currentAppearance = latestRequestedReaderAppearance.value
+            if (result == SnackbarResult.ActionPerformed && !closeInFlight &&
+                latestReaderSessionReady.value && !latestReducedMotion.value &&
+                readerAsyncResultBelongsToSession(
+                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                    expectedSessionInstanceId = readerSessionInstanceId
+                ) && shouldUsePaperCurlNavigation(opened.format,
+                    currentAppearance.scroll, currentAppearance.pageTurnStyle)) {
+                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                latestReaderAppearanceChange.value(currentAppearance.withPageTurnStyle(PageTurnStyle.SLIDE))
+            }
+        } finally {
+            if (paperFailureNotice === notice) paperFailureNotice = null
         }
     }
 
@@ -1428,12 +1513,7 @@ fun ReaderScreen(
         }
     }
 
-    BackHandler(enabled = imageLoading) {
-        imageLoadSerial += 1
-        imageLoadJob?.cancel()
-        imageLoadJob = null
-        imageLoading = false
-    }
+    BackHandler(enabled = imageLoading) { cancelImageLoad() }
 
     BackHandler(
         enabled =
@@ -1951,33 +2031,57 @@ fun ReaderScreen(
                     imageLoading = true
                     imageLoadJob = scope.launch {
                         try {
-                            val bytes = opened.publication
-                                .get(image.embeddedLink)
-                                ?.use { resource -> resource.read() }
-                                ?.getOrNull()
-                            val bitmap = bytes?.let { payload ->
-                                withContext(Dispatchers.Default) {
-                                    decodeReaderImage(payload)
+                            runReaderRequestWithDeadline(
+                                timeoutMs = READER_IMAGE_LOAD_TIMEOUT_MS,
+                                onTimeout = {
+                                    if (
+                                        requestSerial == imageLoadSerial &&
+                                        readerAsyncResultBelongsToSession(
+                                            currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                            expectedSessionInstanceId = expectedSessionId
+                                        )
+                                    ) {
+                                        imageLoadSerial += 1
+                                        imageLoading = false
+                                        imageLoadJob = null
+                                        readerMessage = imageViewerTimeoutMessage
+                                    }
                                 }
-                            }
-                            if (
-                                requestSerial != imageLoadSerial ||
-                                !readerAsyncResultBelongsToSession(
-                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                    expectedSessionInstanceId = expectedSessionId
-                                )
                             ) {
-                                bitmap?.takeIf { !it.isRecycled }?.recycle()
-                                return@launch
-                            }
-                            if (bitmap == null) {
-                                readerMessage = imageViewerFailedMessage
-                            } else {
-                                imageViewer = ReaderImageContent(
-                                    bitmap = bitmap,
-                                    caption = image.text
-                                        ?.trim()
-                                        ?.takeIf { it.isNotEmpty() }
+                                val bytes = withContext(Dispatchers.IO) {
+                                    opened.publication.get(image.embeddedLink)
+                                        ?.use { resource -> readReaderImageBytes(resource) }
+                                }
+                                val caption = image.text?.trim()?.takeIf { it.isNotEmpty() }
+                                deliverReaderResource(
+                                    dispatcher = Dispatchers.Default,
+                                    load = {
+                                        bytes?.let { payload ->
+                                            decodeReaderImage(payload)?.let { bitmap ->
+                                                ReaderImageContent(
+                                                    bitmap = bitmap,
+                                                    caption = caption
+                                                )
+                                            }
+                                        }
+                                    },
+                                    accept = { content ->
+                                        when {
+                                            requestSerial != imageLoadSerial ||
+                                                !readerAsyncResultBelongsToSession(
+                                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                    expectedSessionInstanceId = expectedSessionId
+                                                ) -> false
+                                            content == null -> {
+                                                readerMessage = imageViewerFailedMessage
+                                                false
+                                            }
+                                            else -> {
+                                                imageViewer = content
+                                                true
+                                            }
+                                        }
+                                    }
                                 )
                             }
                         } catch (cancelled: CancellationException) {
@@ -1990,7 +2094,11 @@ fun ReaderScreen(
                                     expectedSessionInstanceId = expectedSessionId
                                 )
                             ) {
-                                readerMessage = imageViewerFailedMessage
+                                readerMessage = if (error is ReaderImageTooLargeException) {
+                                    imageViewerTooLargeMessage
+                                } else {
+                                    imageViewerFailedMessage
+                                }
                             }
                         } finally {
                             if (
@@ -2031,6 +2139,14 @@ fun ReaderScreen(
                 PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
+                    onVisualFailure = ::reportPaperVisualFailure,
+                    isDragEnabled = {
+                        latestReaderSessionReady.value && paperModeSelected() &&
+                            paperRendererCanReserveDrag(
+                                reducedMotion = latestReducedMotion.value,
+                                rendererStatus = paperCurlState.rendererStatus
+                            )
+                    },
                     isEnabled = {
                         latestReaderSessionReady.value &&
                             paperRendererOwnsNavigationInput()
@@ -2445,190 +2561,228 @@ fun ReaderScreen(
         // Preference changes must never race a half-committed page gesture.
         // This effect is already suspend-capable, so require Readium's currentLocator
         // to settle back to the preview origin before capturing a handoff or reflowing.
-        rendererPreferencesSettling = true
-        val paperHadPendingTurn =
-            paperInputListener?.hasPendingTurn() == true
-        val slideHadPendingTurn =
-            slideInputListener?.hasPendingTurn() == true
-        val paperSettled =
-            !paperHadPendingTurn ||
-                paperInputListener?.cancelPendingTurnAndAwait() == true ||
-                paperInputListener?.hasPendingTurn() != true
-        val slideSettled =
-            !slideHadPendingTurn ||
-                slideInputListener?.cancelPendingTurnAndAwait() == true ||
-                slideInputListener?.hasPendingTurn() != true
-        if (!paperSettled || !slideSettled) {
-            paperInputListener?.forceCancelPendingTurn()
-            slideInputListener?.forceCancelPendingTurn()
-            rendererPreferencesSettling = false
-            readerMessage = appearanceApplyFailedMessage
-            ReaderTrace.event(
-                "appearance_submit_blocked_unsettled_preview",
-                bookId = opened.book.id,
-                sessionId = readerSessionInstanceId
-            )
-            if (requestedSource != previousAccepted) {
-                onReaderAppearanceChange(previousAccepted)
-            }
-            if (requestedSpread != previousPresentedSpread) {
-                activeFixedLayoutSpread = previousPresentedSpread
-                onFixedLayoutSpreadChange(previousPresentedSpread)
-            }
-            return@LaunchedEffect
-        }
-
-        val captured = if (captureModeHandoff) {
-            (nav as? OverflowableNavigator)
-                ?.publicationView
-                ?.let(readerModeHandoffState::capture) == true
-        } else {
-            readerModeHandoffState.clearImmediately()
-            false
-        }
-
-        game.rebasePagePacing()
-        readerViewModel.onUserInteraction(readerSessionInstanceId)
         val traceDetails =
             "format=${opened.format} theme=${requested.theme} " +
                 "publisherStyles=${requested.publisherStyles} " +
                 "scroll=${requested.scroll} " +
                 "pageTurn=${requested.pageTurnStyle} " +
                 "spread=$activeFixedLayoutSpread"
-        ReaderTrace.event(
-            "appearance_submit_requested",
-            bookId = opened.book.id,
-            sessionId = readerViewModel.traceSessionId(),
-            details = traceDetails
-        )
-
+        rendererPreferencesSettling = true
         try {
-            if (epubRelayoutRisk) {
-                val epubNavigator = nav as? EpubNavigatorFragment
-                val rendererLocator = nav.currentLocator.value
-                val staleSourceJson = rendererLocator.toVeilPersistedJson(opened.format)
-                val preciseSourceLocator = try {
-                    epubNavigator?.firstVisibleElementLocator()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    null
-                }
-                val anchor = try {
-                    val positions = withContext(Dispatchers.IO) {
-                        opened.publication.positions()
-                    }
-                    stableEpubPositionAnchor(rendererLocator, positions)
-                        ?.withEpubCssSelectorFrom(preciseSourceLocator)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    null
-                }
-                if (anchor != null) {
-                    recordLocator(anchor, ReaderLocatorEvent.FINAL_SNAPSHOT)
-                    pendingEpubRelayoutSourceJson = staleSourceJson
-                    pendingEpubRelayoutAnchor = anchor
-                    ReaderTrace.event(
-                        "locator_relayout_anchor_committed",
-                        bookId = opened.book.id,
-                        sessionId = readerSessionInstanceId,
-                        details = "position=${anchor.locations.position}"
-                    )
-                }
-            }
-
-            if (fixedLayoutSpreadChanged) {
-                recordLocator(
-                    nav.currentLocator.value,
-                    ReaderLocatorEvent.FINAL_SNAPSHOT
+            val paperHadPendingTurn =
+                paperInputListener?.hasPendingTurn() == true
+            val slideHadPendingTurn =
+                slideInputListener?.hasPendingTurn() == true
+            val paperSettled =
+                !paperHadPendingTurn ||
+                    withTimeoutOrNull(READER_PREVIEW_SETTLE_TIMEOUT_MS) {
+                        paperInputListener?.cancelPendingTurnAndAwait()
+                    } == true ||
+                    paperInputListener?.hasPendingTurn() != true
+            val slideSettled =
+                !slideHadPendingTurn ||
+                    withTimeoutOrNull(READER_PREVIEW_SETTLE_TIMEOUT_MS) {
+                        slideInputListener?.cancelPendingTurnAndAwait()
+                    } == true ||
+                    slideInputListener?.hasPendingTurn() != true
+            if (!paperSettled || !slideSettled) {
+                paperInputListener?.forceCancelPendingTurn()
+                slideInputListener?.forceCancelPendingTurn()
+                rendererPreferencesSettling = false
+                readerMessage = appearanceApplyFailedMessage
+                ReaderTrace.event(
+                    "appearance_submit_blocked_unsettled_preview",
+                    bookId = opened.book.id,
+                    sessionId = readerSessionInstanceId
                 )
-            }
-
-            when (opened.format) {
-                BookFormat.EPUB ->
-                    (nav as? EpubNavigatorFragment)
-                        ?.submitPreferences(
-                            requested.toEpubPreferences(
-                                fixedLayoutSpread = requestedSpread
-                            )
-                        )
-
-                BookFormat.PDF -> {
-                    @Suppress("UNCHECKED_CAST")
-                    val pdfNavigator = nav as? PdfiumNavigatorFragment
-                    pdfNavigator?.submitPreferences(requested.toPdfiumPreferences())
+                if (requestedSource != previousAccepted) {
+                    onReaderAppearanceChange(previousAccepted)
                 }
-
-                else -> Unit
+                if (requestedSpread != previousPresentedSpread) {
+                    activeFixedLayoutSpread = previousPresentedSpread
+                    onFixedLayoutSpreadChange(previousPresentedSpread)
+                }
+                return@LaunchedEffect
             }
 
-            val settleFrames = readerPreferenceSettleFrames(
-                previousMode = previousPresented.navigationMode,
-                requestedMode = requested.navigationMode,
-                fixedLayoutSpreadChanged = fixedLayoutSpreadChanged
-            )
-            repeat(settleFrames) {
-                delay(VeilMotion.FRAME_SETTLE_MS)
-            }
-
-            if (
-                shouldRefreshPendingEpubRelayout(
+            if (!readerRendererPreferencesChanged(
                     format = opened.format,
-                    hasPendingAnchor = pendingEpubRelayoutSourceJson != null
+                    previous = previousPresented,
+                    requested = requested,
+                    previousSpread = previousPresentedSpread,
+                    requestedSpread = requestedSpread
                 )
             ) {
-                val refreshed = try {
-                    (nav as? EpubNavigatorFragment)?.firstVisibleElementLocator()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    null
-                }
-                if (refreshed != null) {
-                    val refreshedCheckpoint =
-                        pendingEpubRelayoutAnchor?.withEpubCssSelectorFrom(refreshed)
-                            ?: refreshed
-                    recordLocator(refreshedCheckpoint, ReaderLocatorEvent.FINAL_SNAPSHOT)
-                    pendingEpubRelayoutSourceJson = null
-                    pendingEpubRelayoutAnchor = null
-                    ReaderTrace.event(
-                        "locator_relayout_refreshed",
-                        bookId = opened.book.id,
-                        sessionId = readerSessionInstanceId,
-                        details =
-                            "position=${refreshedCheckpoint.locations.position} " +
-                                "progress=${refreshedCheckpoint.locations.totalProgression}"
-                    )
-                }
-            }
-
-            if (fixedLayoutSpreadChanged) {
-                recordLocator(
-                    nav.currentLocator.value,
-                    ReaderLocatorEvent.FINAL_SNAPSHOT
+                // Paper/Slide/None share Readium's paged preferences. Applying the same
+                // renderer preferences can wait for a layout that will never change.
+                // Finish any preview first, then switch the Veil input and GPU together.
+                presentedReaderAppearance = requested
+                acceptedReaderAppearance = requestedSource
+                presentedFixedLayoutSpread = requestedSpread
+                paperCurlState.invalidateSnapshotSource()
+                readerModeHandoffState.clearImmediately()
+                rendererPreferencesSettling = false
+                ReaderTrace.event(
+                    "appearance_veil_only_applied",
+                    bookId = opened.book.id,
+                    sessionId = readerSessionInstanceId,
+                    details = "pageTurn=${requested.pageTurnStyle}"
                 )
+                return@LaunchedEffect
             }
 
-            // Switch Veil-owned visuals/input only after the renderer has had time to paint.
-            presentedReaderAppearance = requested
-            acceptedReaderAppearance = requestedSource
-            presentedFixedLayoutSpread = requestedSpread
-            paperCurlState.invalidateSnapshotSource()
-            if (captured) {
-                readerModeHandoffState.release(reducedMotion)
+            val captured = if (captureModeHandoff) {
+                (nav as? OverflowableNavigator)
+                    ?.publicationView
+                    ?.let(readerModeHandoffState::capture) == true
+            } else {
+                readerModeHandoffState.clearImmediately()
+                false
             }
 
+            game.rebasePagePacing()
+            readerViewModel.onUserInteraction(readerSessionInstanceId)
             ReaderTrace.event(
-                "appearance_submit_returned",
+                "appearance_submit_requested",
                 bookId = opened.book.id,
                 sessionId = readerViewModel.traceSessionId(),
                 details = traceDetails
             )
-        } catch (cancelled: CancellationException) {
-            readerModeHandoffState.clearImmediately()
-            throw cancelled
+
+            withTimeoutOrNull(READER_APPEARANCE_APPLY_TIMEOUT_MS) {
+                if (epubRelayoutRisk) {
+                    val epubNavigator = nav as? EpubNavigatorFragment
+                    val rendererLocator = nav.currentLocator.value
+                    val staleSourceJson = rendererLocator.toVeilPersistedJson(opened.format)
+                    val preciseSourceLocator = try {
+                        withTimeoutOrNull(READER_LOCATOR_QUERY_TIMEOUT_MS) {
+                            epubNavigator?.firstVisibleElementLocator()
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                    val anchor = try {
+                        val positions = withContext(Dispatchers.IO) {
+                            opened.publication.positions()
+                        }
+                        stableEpubPositionAnchor(rendererLocator, positions)
+                            ?.withEpubCssSelectorFrom(preciseSourceLocator)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (anchor != null) {
+                        recordLocator(anchor, ReaderLocatorEvent.RELAYOUT_CHECKPOINT)
+                        pendingEpubRelayoutSourceJson = staleSourceJson
+                        pendingEpubRelayoutAnchor = anchor
+                        ReaderTrace.event(
+                            "locator_relayout_anchor_committed",
+                            bookId = opened.book.id,
+                            sessionId = readerSessionInstanceId,
+                            details = "position=${anchor.locations.position}"
+                        )
+                    }
+                }
+
+                if (fixedLayoutSpreadChanged) {
+                    recordLocator(
+                        nav.currentLocator.value,
+                        ReaderLocatorEvent.RELAYOUT_CHECKPOINT
+                    )
+                }
+
+                when (opened.format) {
+                    BookFormat.EPUB ->
+                        (nav as? EpubNavigatorFragment)
+                            ?.submitPreferences(
+                                requested.toEpubPreferences(
+                                    fixedLayoutSpread = requestedSpread
+                                )
+                            )
+
+                    BookFormat.PDF -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val pdfNavigator = nav as? PdfiumNavigatorFragment
+                        pdfNavigator?.submitPreferences(requested.toPdfiumPreferences())
+                    }
+
+                    else -> Unit
+                }
+
+                val settleFrames = readerPreferenceSettleFrames(
+                    previousMode = previousPresented.navigationMode,
+                    requestedMode = requested.navigationMode,
+                    fixedLayoutSpreadChanged = fixedLayoutSpreadChanged
+                )
+                repeat(settleFrames) {
+                    delay(VeilMotion.FRAME_SETTLE_MS)
+                }
+
+                if (
+                    shouldRefreshPendingEpubRelayout(
+                        format = opened.format,
+                        hasPendingAnchor = pendingEpubRelayoutSourceJson != null
+                    )
+                ) {
+                    val refreshed = try {
+                        withTimeoutOrNull(READER_LOCATOR_QUERY_TIMEOUT_MS) {
+                            (nav as? EpubNavigatorFragment)?.firstVisibleElementLocator()
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (refreshed != null) {
+                        val refreshedCheckpoint =
+                            pendingEpubRelayoutAnchor?.withEpubCssSelectorFrom(refreshed)
+                                ?: refreshed
+                        recordLocator(refreshedCheckpoint, ReaderLocatorEvent.RELAYOUT_CHECKPOINT)
+                        pendingEpubRelayoutSourceJson = null
+                        pendingEpubRelayoutAnchor = null
+                        ReaderTrace.event(
+                            "locator_relayout_refreshed",
+                            bookId = opened.book.id,
+                            sessionId = readerSessionInstanceId,
+                            details =
+                                "position=${refreshedCheckpoint.locations.position} " +
+                                    "progress=${refreshedCheckpoint.locations.totalProgression}"
+                        )
+                    }
+                }
+
+                if (fixedLayoutSpreadChanged) {
+                    recordLocator(
+                        nav.currentLocator.value,
+                        ReaderLocatorEvent.RELAYOUT_CHECKPOINT
+                    )
+                }
+
+                // Switch Veil-owned visuals/input only after the renderer has had time to paint.
+                presentedReaderAppearance = requested
+                acceptedReaderAppearance = requestedSource
+                presentedFixedLayoutSpread = requestedSpread
+                paperCurlState.invalidateSnapshotSource()
+                if (captured) {
+                    readerModeHandoffState.release(reducedMotion)
+                }
+
+                ReaderTrace.event(
+                    "appearance_submit_returned",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId(),
+                    details = traceDetails
+                )
+                true
+            } ?: error("Reader appearance application timed out")
         } catch (error: Exception) {
+            if (error is CancellationException) {
+                readerModeHandoffState.clearImmediately()
+                throw error
+            }
             pendingEpubRelayoutSourceJson = null
             pendingEpubRelayoutAnchor = null
             readerModeHandoffState.clearImmediately()
@@ -2782,7 +2936,7 @@ fun ReaderScreen(
                             )
                         ) {
                             latestNavigator.value?.currentLocator?.value?.let { locator ->
-                                recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                                recordLocator(locator, ReaderLocatorEvent.RELAYOUT_CHECKPOINT)
                             }
                             viewportRelayoutPending = false
                             viewportRelayoutJob = null
@@ -2896,10 +3050,21 @@ fun ReaderScreen(
                     .background(VeilPalette.Ink.copy(alpha = 0.42f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(
-                    color = VeilPalette.Brass,
-                    strokeWidth = 2.dp
-                )
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    CircularProgressIndicator(color = VeilPalette.Brass, strokeWidth = 2.dp)
+                    Text(
+                        stringResource(R.string.reader_image_viewer_loading),
+                        color = VeilPalette.Moon,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Button(onClick = { cancelImageLoad() }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.common_cancel))
+                    }
+                }
             }
         }
 
@@ -4101,6 +4266,24 @@ internal fun readerPreferencesNeedSubmission(
         previousAccepted != requestedSource ||
         previousSpread != requestedSpread
 
+// Compare what Readium receives, rather than Veil-only animation/material options.
+@OptIn(ExperimentalReadiumApi::class)
+internal fun readerRendererPreferencesChanged(
+    format: BookFormat,
+    previous: ReaderAppearance,
+    requested: ReaderAppearance,
+    previousSpread: ReaderFixedLayoutSpread,
+    requestedSpread: ReaderFixedLayoutSpread
+): Boolean = when (format) {
+    BookFormat.EPUB -> previous.toEpubPreferences(previousSpread) !=
+        requested.toEpubPreferences(requestedSpread)
+    BookFormat.PDF -> previous.toPdfiumPreferences() != requested.toPdfiumPreferences()
+    else -> false
+}
+
+private const val READER_APPEARANCE_APPLY_TIMEOUT_MS = 6_000L
+private const val READER_LOCATOR_QUERY_TIMEOUT_MS = 1_000L
+private const val READER_PREVIEW_SETTLE_TIMEOUT_MS = 2_000L
 private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
 private const val READER_VIEWPORT_REFLOW_QUIET_MS = 650L
 

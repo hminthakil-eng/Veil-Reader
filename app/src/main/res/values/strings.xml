@@ -206,7 +206,11 @@
     <!-- Reader feedback and recoverable errors -->
     <string name="reader_image_viewer_title">Illustration</string>
     <string name="reader_image_viewer_close">Close</string>
+    <string name="reader_image_zoom_reset">Fit image</string>
     <string name="reader_image_viewer_hint">Pinch to zoom · drag to inspect</string>
+    <string name="reader_image_viewer_loading">Opening illustration…</string>
+    <string name="reader_image_viewer_timeout">Opening this illustration took too long. You can try again.</string>
+    <string name="reader_image_viewer_too_large">This illustration exceeds the viewer’s size limit.</string>
     <string name="reader_image_viewer_failed">Could not open this illustration.</string>
     <string name="reader_appearance_apply_failed">The reading appearance could not be applied right now.</string>
     <string name="reader_boundary_beginning">Beginning of book.</string>
@@ -1409,4 +1413,10 @@
     <string name="tts_listening_mode_position">Listening position</string>
     <string name="tts_listening_mode_settings">Voice &amp; settings</string>
 
+    <string name="reader_notebook_searching">Searching…</string>
+    <string name="reader_notebook_search_timed_out">Search took too long. Refine the phrase and try again.</string>
+    <string name="reader_paper_snapshot_failed">Could not prepare this page for a paper turn. Try again or use Slide.</string>
+    <string name="reader_paper_presentation_failed">The paper turn could not be displayed. Try again or use Slide.</string>
+    <string name="reader_paper_renderer_unavailable">Paper animation is unavailable right now. Simple paging still works; you can use Slide.</string>
+    <string name="reader_paper_use_slide">Use Slide</string>
 </resources>

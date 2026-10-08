@@ -206,7 +206,11 @@
     <!-- Reader feedback and recoverable errors -->
     <string name="reader_image_viewer_title">تصویر</string>
     <string name="reader_image_viewer_close">بستن</string>
+    <string name="reader_image_zoom_reset">نمایش کامل تصویر</string>
     <string name="reader_image_viewer_hint">برای بزرگ‌نمایی نیشگون بگیرید · برای بررسی جابه‌جا کنید</string>
+    <string name="reader_image_viewer_loading">در حال بازکردن تصویر…</string>
+    <string name="reader_image_viewer_timeout">بازکردن این تصویر بیش از حد طول کشید. می‌توانید دوباره تلاش کنید.</string>
+    <string name="reader_image_viewer_too_large">حجم این تصویر از حد مجاز نمایشگر بیشتر است.</string>
     <string name="reader_image_viewer_failed">باز کردن این تصویر ممکن نشد.</string>
     <string name="reader_appearance_apply_failed">اعمال ظاهر مطالعه در حال حاضر ممکن نشد.</string>
     <string name="reader_boundary_beginning">ابتدای کتاب.</string>
@@ -1409,4 +1413,10 @@
     <string name="tts_listening_mode_position">موقعیت شنیدن</string>
     <string name="tts_listening_mode_settings">صدا و تنظیمات</string>
 
+    <string name="reader_notebook_searching">در حال جست‌وجو…</string>
+    <string name="reader_notebook_search_timed_out">جست‌وجو بیش از حد طول کشید. عبارت را دقیق‌تر کنید و دوباره تلاش کنید.</string>
+    <string name="reader_paper_snapshot_failed">آماده‌کردن این صفحه برای ورق کاغذ ممکن نشد. دوباره تلاش کنید یا از اسلاید استفاده کنید.</string>
+    <string name="reader_paper_presentation_failed">نمایش ورق کاغذ ممکن نشد. دوباره تلاش کنید یا از اسلاید استفاده کنید.</string>
+    <string name="reader_paper_renderer_unavailable">نمایش کاغذ فعلاً در دسترس نیست. ورق‌زدن ساده همچنان کار می‌کند؛ می‌توانید از اسلاید استفاده کنید.</string>
+    <string name="reader_paper_use_slide">استفاده از اسلاید</string>
 </resources>

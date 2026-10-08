@@ -36,6 +36,36 @@ class ReaderTtsNeuralRuntimeTest {
     }
 
     @Test
+    fun emptyOrSilentSamplesCannotPassACompletedBenchmark() {
+        val baseline = validBenchmark()
+        assertFalse(baseline.copy(inputCharacters = 0).passesInteractiveGate())
+        assertFalse(baseline.copy(synthesisDurationMs = 0).passesInteractiveGate())
+        assertFalse(baseline.copy(generatedAudioDurationMs = 0).passesInteractiveGate())
+    }
+
+    @Test
+    fun optimisticReportedRatioCannotHideSlowerThanRealtimeMeasuredDurations() {
+        assertFalse(validBenchmark().copy(
+            synthesisDurationMs = 8_000, generatedAudioDurationMs = 6_000,
+            averageRealtimeFactor = 0.1
+        ).passesInteractiveGate())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun infiniteReportedRatioIsInvalidEvidence() {
+        validBenchmark().copy(averageRealtimeFactor = Double.POSITIVE_INFINITY)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun infiniteGateCannotApproveEveryModel() {
+        validBenchmark().passesInteractiveGate(maxRealtimeFactor = Double.POSITIVE_INFINITY)
+    }
+
+    private fun validBenchmark() = ReaderTtsNeuralBenchmark(
+        "candidate", "en-US", "arm64-v8a", 300, 900, 4_000, 6_000, null, 0.66, true
+    )
+
+    @Test
     fun currentSherpaCandidateCoversTheFamiliesVeilWantsToBenchmark() {
         assertTrue(
             SherpaOnnxTtsCandidate.supportedFamilies.containsAll(

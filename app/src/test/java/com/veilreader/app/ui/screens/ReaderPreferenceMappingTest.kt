@@ -25,6 +25,34 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class ReaderPreferenceMappingTest {
     @Test
+    fun `Paper activation does not resubmit identical paged Readium preferences`() {
+        val before = ReaderAppearance(scroll = false, pageTurnStyle = PageTurnStyle.SLIDE)
+        listOf(PageTurnStyle.PAPER, PageTurnStyle.NONE).forEach { style ->
+            assertFalse(readerRendererPreferencesChanged(
+                com.veilreader.app.domain.BookFormat.EPUB,
+                before, before.copy(pageTurnStyle = style),
+                ReaderFixedLayoutSpread.AUTO, ReaderFixedLayoutSpread.AUTO
+            ))
+        }
+    }
+
+    @Test
+    fun `renderer preference comparison preserves scroll typography and spread changes`() {
+        val before = ReaderAppearance(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
+        listOf(before.copy(scroll = true), before.copy(fontScale = 1.4),
+            before.copy(theme = ReaderTheme.OLED)).forEach { after ->
+            assertTrue(readerRendererPreferencesChanged(
+                com.veilreader.app.domain.BookFormat.EPUB, before, after,
+                ReaderFixedLayoutSpread.AUTO, ReaderFixedLayoutSpread.AUTO
+            ))
+        }
+        assertTrue(readerRendererPreferencesChanged(
+            com.veilreader.app.domain.BookFormat.EPUB, before, before,
+            ReaderFixedLayoutSpread.SINGLE, ReaderFixedLayoutSpread.DUAL
+        ))
+    }
+
+    @Test
     fun `dense reading controls stack for large text and narrow widths`() {
         assertTrue(shouldStackDenseChoices(widthDp = 412, fontScale = 2.0f, optionCount = 2))
         assertTrue(shouldStackDenseChoices(widthDp = 412, fontScale = 1.35f, optionCount = 3))

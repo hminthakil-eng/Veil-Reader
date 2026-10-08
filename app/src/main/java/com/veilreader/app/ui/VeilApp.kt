@@ -714,7 +714,15 @@ fun VeilApp(
         activeReturnRitual = null
         activeReturnLocatorJson = null
 
-        val book = library.getBook(targetId) ?: targetBook
+        val book = try {
+            library.loadBookForReaderOpen(targetId)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            routeViewModel.bookOpenFailed(targetId, openRequestId)
+            showNotice(R.string.notice_open_failed, category = VeilIssueCategory.READER_OPEN)
+            return@LaunchedEffect
+        }
         if (book == null) {
             routeViewModel.bookOpenFailed(targetId, openRequestId)
             showNotice(R.string.notice_book_record_missing, VeilNoticeKind.WARNING)
@@ -773,6 +781,13 @@ fun VeilApp(
 
         val locatorOverride = route.locatorOverrideJson
         val readerCheckpoint = route.readerLocatorCheckpointJson
+        val crashCheckpoint = try {
+            library.loadReaderCrashCheckpoint(book)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
 
         activeReturnLocatorJson = locatorOverride?.let { requested ->
             book.locatorJson
@@ -799,11 +814,38 @@ fun VeilApp(
         val initialLocatorJson = com.veilreader.app.ui.navigation.chooseReaderRestoreLocator(
             explicitOverrideJson = locatorOverride,
             readerCheckpointJson = readerCheckpoint,
-            durableLocatorJson = book.locatorJson
+            durableLocatorJson = book.locatorJson,
+            crashCheckpointJson = crashCheckpoint?.locatorJson
         )
+        val crashRecoverySelected =
+            locatorOverride.isNullOrBlank() &&
+                crashCheckpoint != null &&
+                initialLocatorJson == crashCheckpoint.locatorJson
         val candidate =
-            if (initialLocatorJson == book.locatorJson) book
-            else book.copy(locatorJson = initialLocatorJson)
+            when {
+                crashRecoverySelected -> {
+                    val recovery = requireNotNull(crashCheckpoint)
+                    val restoredProgress = recovery.progression.toFloat().coerceIn(0f, 1f)
+                    book.copy(
+                        progress = restoredProgress,
+                        pagesRead =
+                            if (book.totalPages > 0) {
+                                (book.totalPages * restoredProgress).toInt()
+                                    .coerceIn(0, book.totalPages)
+                            } else {
+                                book.pagesRead
+                            },
+                        locatorJson = recovery.locatorJson,
+                        lastOpenedAtEpochMs = maxOf(
+                            book.lastOpenedAtEpochMs,
+                            recovery.committedAtEpochMs
+                        ),
+                        finished = book.finished || restoredProgress >= 0.995f
+                    )
+                }
+                initialLocatorJson == book.locatorJson -> book
+                else -> book.copy(locatorJson = initialLocatorJson)
+            }
         val opened = readerEngine.openBook(
             book = candidate,
             persistedLocatorJsons = library.locatorJsonsForBook(targetId)
@@ -855,11 +897,18 @@ fun VeilApp(
                 return@LaunchedEffect
             }
 
-            val recoveryLocator = locatorOverride ?: readerCheckpoint
+            val recoveryLocator =
+                locatorOverride
+                    ?: crashCheckpoint?.locatorJson?.takeIf { crashRecoverySelected }
+                    ?: readerCheckpoint
             if (recoveryLocator != null) {
                 val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
                 val recoveredProgress =
-                    opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
+                    opened.initialLocator?.locations?.totalProgression
+                        ?: crashCheckpoint
+                            ?.progression
+                            ?.takeIf { crashRecoverySelected }
+                        ?: book.progress.toDouble()
                 val recoveryOutcome = library.saveReaderOpenRecoveryProgress(
                     bookId = targetId,
                     sessionId = openRequestId,
@@ -916,6 +965,32 @@ fun VeilApp(
                             ) {
                                 showNotice(
                                     R.string.notice_position_save_failed,
+                                    VeilNoticeKind.WARNING
+                                )
+                            }
+                        }
+                    }
+                }
+
+                crashRecoverySelected -> {
+                    scope.launch {
+                        try {
+                            library.flushWrites()
+                            crashCheckpoint?.let(library::clearRecoveredReaderCrashCheckpoint)
+                            routeViewModel.readerCrashCheckpointRecovered(
+                                targetId,
+                                openRequestId
+                            )
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            val currentRoute = routeViewModel.route.value
+                            if (
+                                currentRoute.activeBookId == targetId &&
+                                currentRoute.readerSessionInstanceId == openRequestId
+                            ) {
+                                showNotice(
+                                    R.string.notice_checkpoint_save_failed,
                                     VeilNoticeKind.WARNING
                                 )
                             }
