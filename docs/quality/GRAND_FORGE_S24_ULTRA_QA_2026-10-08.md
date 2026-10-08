@@ -67,3 +67,27 @@ integration and lifecycle behavior but do not replace deterministic fault tests.
 | TalkBack / RTL / large font | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
 | Paper physical / memory / battery | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
 | Audible system/background/neural TTS | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+
+## Next P0 build —3539c9c9 (not the historical APK above)
+
+Build/tests/APK hash pending exact-source CI37761477427. Do not install the
+historical06a APK to verify these new changes. User feedback on that previous
+build was “nothing changed”; the cover screenshot does not validate text/turning.
+
+- Open an actual text chapter. In Appearance, test Auto/Two columns in portrait,
+  landscape, split screen, maximum Veil font size and Android large text. Narrow
+  or large-text layouts should use one column and preserve the saved preference;
+  returning to eligible width should restore it. PDF/fixed-layout should be unchanged.
+- Open Listening Mode with default foreground/system TTS. Its active semantic text
+  should be visible. Select10 minutes: the timer should show active immediately,
+  continue without restarting the current utterance and pause at expiry. Replace
+  with15, or choose Off, to test cancellation without restarting playback.
+- Open a search result/highlight later in the same chapter/position chunk; the
+  navigator should receive the precise target. Identical positions remain no-ops.
+- Paper review: background during idle/visual preparation, return, cancel/commit
+  first turn; repeat. It must preserve ownership and prepare current pixels on
+  resume. A manual visual check is not memory/frame/battery proof.
+- Storage failure feedback and blocked successful close require a safe injected
+  test environment; do not deliberately fill the personal phone's storage.
+
+Physical status for every new item remains UNVERIFIED.

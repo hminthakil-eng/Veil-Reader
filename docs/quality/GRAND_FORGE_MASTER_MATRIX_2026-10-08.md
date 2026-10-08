@@ -15,6 +15,7 @@ Paths below are relative to app/src/main/java/com/veilreader/app unless noted.
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Progress durability | Continuity benchmark | Resume benchmark | Atomic checkpoint + ordered Room | Existing Veil journal | Failure-path/device acceptance | Physical evidence missing | Accepted state survives abrupt kill | P0 | data/LocalLibraryRepository.kt, ui/reader/ReaderViewModel.kt | ReaderCloseDurabilityTest, RoomRuntimeRepositoryInstrumentedTest, fault injection | YELLOW exact06a94b57 CI |
 | Stable publication identity | Ecosystem identity | Import depth | Content fingerprint already exists | Existing Veil import commit | Rename/relink/restore matrix incomplete | End-to-end identity evidence missing | Preserve user data across source changes | P0 | data/LocalLibraryRepository.kt | RoomRuntimeRepositoryInstrumentedTest | YELLOW |
+| Precise navigation targets | Precise passage navigation | Search/bookmark controls | Patched fine-anchor jump admission | Existing Readium navigation | Physical search/highlight target acceptance | Coarse position equality swallowed precise targets | Admit paragraph/viewport jumps; retain tolerant settlement | P0 | ui/reader/ReaderNavigationTransaction.kt | Three new tests, pending CI | YELLOW3539c9c9 |
 | Navigation transactions | Reading continuity | Search/navigation depth | Existing transaction/session gates | Existing Veil ownership model | Complete exploration vs anchor audit | Mixed navigation semantics need characterization | Exploration preserves reading anchor | P0 | ui/reader/ReaderNavigationTransaction.kt, ui/screens/ReaderScreen.kt | ReaderNavigationTransactionTest | YELLOW |
 | Input ownership | Predictable interaction | Gesture flexibility | Single arbiter; static lifetime fixed | Existing Veil arbiter | Stale selection destroy releases new owner | Unconditional false callback | Exact-owner release | P0 | ui/screens/ReaderSelectionActionMode.kt | ReaderSelectionActionModeTest | YELLOW automated pass; device pending |
 | Paper availability | Physical reading benchmark | Transition choice | GPU exists, release disabled | Existing canonical engine | Disabled-mode remap unexplained | Failure notice requires presented Paper | Explicit reason, static mode truthful | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderTransitionAvailabilityTest | YELLOW automated pass; device pending |
@@ -22,6 +23,7 @@ Paths below are relative to app/src/main/java/com/veilreader/app unless noted.
 | Fixed-layout transition | Layout-aware behavior | Format depth | Static paging policy | Existing Veil capability policy | No physical leaf/spread engine | Whole-view capture is not one leaf | Explicit unavailability until correct engine | P0 | ui/screens/ReaderAppearancePolicy.kt | ReaderTransitionAvailabilityTest | HOLD engine |
 | Adaptive columns | Layout maturity | Column customization | New viewport/font-size policy | Existing Readium renderer | Physical output and complete text-measure policy pending | Mapper previously delegated AUTO/TWO without Veil font scale | Single column when text would be cramped; preserve requested setting | P0 | ui/screens/AdaptiveTypesettingPolicy.kt, ReaderScreen.kt | AdaptiveTypesettingPolicyTest (6 cases; CI pending) | YELLOW 1fe42055 pending |
 | Typography/RTL | Typesetting maturity | Advanced settings | Script-aware capability restrictions exist | Readium + Veil policy | Rendered corpus/extreme settings evidence | Permanent output matrix incomplete | Readable language-aware layouts | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderPreferencesTest, rendered fixtures pending | YELLOW |
+| Failed semantic progress | Durable continuity | Resume trust | Failed journal now rejected | Existing AtomicFile/Room | Device storage exhaustion, warning/close UX | Cache/accepted outcome ignored failed journal | Preserve accepted state and allow retry | P0 | data/LocalLibraryRepository.kt, ui/reader/ReaderViewModel.kt, ReaderLocatorPolicy.kt, ui/screens/ReaderScreen.kt | Two Room and three dedup tests, latest CI pending | YELLOW3539c9c9 |
 | Bookmark create | One-action saved place | Notebook depth | Ordered Room commit patched | Existing Bookmark domain | Device/UX and semantic duplicate identity | Earlier optimistic cache acknowledgement | Durable one-action create | P0 | data/LocalLibraryRepository.kt, data/db/Daos.kt, ui/screens/ReaderScreen.kt | AnnotationDurabilityInstrumentedTest (3 creation cases) | YELLOW |
 | Bookmark delete | Reliable saved places | Notebook depth | Ordered deletion patched | Existing Room observer | Device/UX acceptance | Earlier optimistic removal | Retain record on failure | P0 | data/LocalLibraryRepository.kt, ui/VeilApp.kt, ui/screens/ReaderScreen.kt | AnnotationDurabilityInstrumentedTest (2 deletion cases) | YELLOW |
 | Selection/notes | Contextual tools | Notes/highlights | Existing semantic locator + quote | Readium selection/Room | Selection replacement async races; output QA | Multiple async lifecycle owners | Durable stable semantic tools | P0 | ui/screens/ReaderSelectionActionMode.kt, ReaderNotebook.kt | selection/note regressions | YELLOW |
@@ -37,7 +39,7 @@ Paths below are relative to app/src/main/java/com/veilreader/app unless noted.
 
 ## Feature evidence matrix
 
-Current automated evidence is against06a94b57. Older baseline references apply only to b8ec35a1. Physical QA and
+Historical automated evidence below is against06a94b57. New executable3539c9c9 is under verification and does not inherit those results. Older baseline references apply only to b8ec35a1. Physical QA and
 emulator instrumentation are separate columns. No row is GREEN.
 
 | Feature | Implemented | Integrated | Unit | Instrumented | Device | UX | Perf | Release | Status |
@@ -48,6 +50,10 @@ emulator instrumentation are separate columns. No row is GREEN.
 | Selection exact owner | Patched | Existing callback | 3/3 pass | Compiled; UI case not run | Missing | Missing | Constant-time guard; unmeasured | Enabled | YELLOW |
 | Transition availability notice | Patched | Ready Reader snackbar | 3/3 pass | Compiled; notice UI not run | Missing | Missing | No rendering work; unmeasured | Notice enabled | YELLOW |
 | Adaptive reading columns | Patched | Reader initial/apply/close paths | Six new cases, CI pending | Not run | Missing | Missing | Reflow cost unmeasured | Awaiting build | YELLOW |
+| Failed progress checkpoint | Patched | Save/warning/close | Three dedup cases pending | Two failure cases passed at1e81; latest pending | Missing | Missing | Existing journal path; pending metrics | Awaiting current build | YELLOW |
+| Precise jump admission | Patched | Existing jump callers | Three cases pending | Compiling | Missing | Missing | Constant-time; unmeasured | Awaiting current build | YELLOW |
+| Idle Paper preparation lifecycle | Patched | Existing warm effects | Three engine/provider cases pending | Compiling | Missing | Missing | Current benchmark pending | GPU disabled | YELLOW |
+| Foreground timer and listening text | Patched | Default listening path | Four timer cases pending; existing text characterization | Compiling | Missing audible results | Missing | Current smoke is not long-session battery evidence | Awaiting current build | YELLOW |
 | GPU Paper | Substantial | Debug/benchmark | Baseline pass | Simulated evidence | Missing | Missing | No hardware traces | Disabled | BLOCKED |
 | Background TTS | Substantial | Debug review | Baseline pass | Baseline backend | Missing audible playback | Missing | Battery/thermal missing | Disabled | BLOCKED |
 | Neural/network TTS | Partial/gated | Review/adapter | Baseline coverage | Partial | Missing | Missing | Missing | Disabled | HOLD |
@@ -126,3 +132,24 @@ New executable source1fe42055 adds adaptive reflowable EPUB columns and an EN/FA
 settings explanation. [Exact-source CI](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37758765459)
 is pending; previous961/storage163/process36 results do not verify this new code.
 No feature gate promotion, cover replacement or whole-Reader redesign.
+
+## Current P0 continuation verification boundary
+
+Executable3539c9c9da47b394abe77783d4dedc83b1534946 includes adaptive
+columns, failure-safe progress acknowledgement/retry, precise navigation admission,
+lifecycle-fenced prewarming, foreground timer and active Listening Mode text.
+These are independent reversible commits, not a completed whole-app release.
+
+Exact-source checks are running:
+- Android: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37761477427
+- Storage: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37761480606
+- Abrupt process: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37761483780
+- Performance: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37761680929
+
+The earlier1e81f532 storage and process runs passed, but they do not certify
+the later navigation/Paper/TTS source. Intermediate superseded Android runs were
+cancelled; they are not pass evidence or failed test results.
+ReadingAnchor/ExplorationLocator separation remains RED: current Notebook search
+still shares committed programmatic navigation. Paper hardware, audible playback,
+TalkBack/RTL/rendered text, full application journey and release promotion remain
+unaccepted. All seven risky release gates remain false.
