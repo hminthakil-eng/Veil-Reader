@@ -460,3 +460,23 @@ foreground listening checkpoint, corpus/RTL/selection/PDF and device performance
 - Performance/accessibility/RTL: one ordered transaction per selection; actual
   latency/TalkBack/RTL selection unverified. Existing semantic locators retained.
 - Rollback: isolated annotation commit. No gate change.
+
+## GF-SEL-003 — asynchronous selection cleanup ownership
+
+- Priority/subsystem: P0 selection and input reservation.
+- Observed/root cause: action capture awaited currentSelection then unconditionally
+  cleared the navigator; overlay dismissal resolved a later navigator inside its
+  coroutine. A replacement toolbar/source could lose selection to older cleanup.
+- Files/implementation: ReaderSelectionActionMode.kt validates exact toolbar and
+  navigator before querying, after the query and before cleanup; overlay dismissal
+  captures both owners. Only the original toolbar is finished. Existing destroy
+  ownership fence remains. No renderer/toolbar replacement.
+- Tests: ReaderSelectionActionModeTest adds suspended-query replacement, queued
+  dismissal with replaced mode/navigator, and current empty selection cleanup.
+- Acceptance: old query cannot clear a successor; current empty/query-failed
+  selection still dismisses its owned toolbar. Unit/device pending, YELLOW.
+- Risks: renderer-internal clear execution after invocation still needs physical
+  characterization; this patch fences ownership at the API invocation boundary.
+- Reuse/dependencies: Readium selection and existing Android ActionMode callback.
+- Performance/accessibility/RTL: constant-time guards, no extra renderer work;
+  TalkBack/RTL handles unverified. Rollback isolated commit; gates unchanged.
