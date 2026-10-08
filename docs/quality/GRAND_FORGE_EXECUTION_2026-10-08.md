@@ -272,3 +272,24 @@ Reuse the file-level graph and archaeology above; no duplicate roadmap.
 - Status: YELLOW source implementation; renderer readiness/performance remains
   BLOCKED on representative physical hardware.
 - Rollback: revert this notice/policy commit; all seven release gates unchanged.
+
+### GF-PERF-RAW-ARTIFACT — preserve per-scenario raw benchmark data
+
+- Priority/subsystem: P0 / release performance evidence.
+- Observed/evidence: exact06a94b57 artifact11539013553 contains the normalized
+  startup median but only the final combined reader benchmarkData JSON.
+  run_android_ci_emulator.sh preserves each scenario under
+  benchmark/build/perf-results; the upload path omits that directory.
+- Root cause/expected: repeated instrumentation overwrites the shared output
+  filename; archived evidence must retain the scenario copies used by normalization.
+- Implementation/file: add benchmark/build/perf-results/ to the existing
+  .github/workflows/performance-benchmark.yml artifact paths. Reuse the existing
+  snapshot/harness; no benchmark, budget or production behavior changes.
+- Risk: slightly larger debug evidence archive; publication fixtures remain inert.
+- Tests/evidence: inspected actual ZIP entries and script output paths; whitespace
+  validation. The new retention path has not executed yet, so artifact recovery
+  of future raw startup samples remains YELLOW.
+- Performance/accessibility/RTL: CI retention only; no runtime impact.
+- Acceptance/dependencies: next dispatched benchmark artifact includes separate
+  startup/reader raw JSON and supports median/P95/worst-case interpretation.
+- Status/rollback: YELLOW infrastructure patch; revert this one path if needed.
