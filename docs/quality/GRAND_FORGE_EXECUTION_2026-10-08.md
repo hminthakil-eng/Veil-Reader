@@ -363,3 +363,14 @@ waves are not claimed complete.
 - Risks/dependencies: a target elsewhere on the same visible page can still yield a no-op navigator emission; existing timeout remains the safety boundary. This does not implement ReadingAnchor/ExplorationLocator separation, which remains RED.
 - Performance/accessibility/RTL: constant-time identity comparisons; no animation or physical direction changes. Real target focus, reflow/RTL corpus and response metrics pending.
 - Acceptance/status: precise targets reach the navigator while identical anchors are ignored; YELLOW until tests/device acceptance. Rollback: isolated fix commit.
+
+## GF-PAP-004 — lifecycle-fenced idle surface preparation
+
+- Priority/subsystem: P0 Paper readiness/performance and shared Slide buffer lifecycle.
+- Observed/root cause/evidence: idle prewarm effects observed session/mode/preview/revision but not lifecycle. A delayed capture or pause-time state change could prepare buffers after hidden-reader cleanup. Material preparation rechecked revision/viewport after its visual-state wait, but not lifecycle/session ownership.
+- Expected/implementation/files: `ReaderScreen.kt` tracks lifecycle resume in the existing observer, cancels warm effects at pause, releases idle buffers, rechecks resume before allocation and prepares again on resume. `PaperCurlState.kt` forwards a current-source predicate to `MaterialPageEngine.kt`, which validates it before visual readiness, before allocation/capture and before accepting prepared pixels. Existing GL initialization, input reservation, texture leases and physics stay intact.
+- Reuse: current generation/viewport/snapshot fences and idle prewarm; no new engine or fallback.
+- Tests: `MaterialPagePreparationLifecycleTest.kt` exercises attached-but-hidden sources, readiness ownership change with zero capture calls, resumed preparation, and invalidation during capture using a real attached Robolectric View/provider seam. Source guard and reading-policy39 pass; Android tests pending.
+- Acceptance/risks: hidden sessions must not create/retain new warm snapshots; resume earns a fresh current capture. Physical background loops, memory, first-turn latency and GL presentation remain unverified. Default predicate preserves existing non-UI test callers; Reader passes live lifecycle/session ownership.
+- Performance/accessibility/RTL: avoids hidden CPU capture/allocation; no measured improvement yet. No direction/gesture or accessibility navigation changes.
+- Dependencies/status: existing prewarm and upload-lease ownership; YELLOW. GPU release gate remains false. Rollback: isolated lifecycle patch.

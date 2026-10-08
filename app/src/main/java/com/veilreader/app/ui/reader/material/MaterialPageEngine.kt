@@ -302,9 +302,9 @@ internal class MaterialPageEngineState(
         tone = value
     }
 
-    suspend fun prepareSnapshot(view: View): Boolean {
+    suspend fun prepareSnapshot(view: View, isSourceCurrent: () -> Boolean = { true }): Boolean {
         if (
-            active ||
+            !isSourceCurrent() || active ||
             view.width <= 0 ||
             view.height <= 0 ||
             !view.isAttachedToWindow
@@ -333,7 +333,7 @@ internal class MaterialPageEngineState(
             (SystemClock.elapsedRealtimeNanos() - visualWaitStarted)
                 .coerceAtLeast(0L)
         if (
-            active ||
+            !isSourceCurrent() || active ||
             revision != snapshotSourceRevision ||
             widthAtRequest != view.width ||
             heightAtRequest != view.height
@@ -366,7 +366,7 @@ internal class MaterialPageEngineState(
         val ready = capture as? MaterialPageSnapshotCapture.Ready
             ?: return false
         if (
-            active ||
+            !isSourceCurrent() || active ||
             !materialPageSnapshotCaptureIsCurrent(
                 captureRevision = ready.sourceRevision,
                 expectedRevision = snapshotSourceRevision

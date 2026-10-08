@@ -234,6 +234,9 @@ fun ReaderScreen(
         "Veil Reader requires a FragmentActivity host."
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var readerLifecycleResumed by remember(lifecycle, readerSessionInstanceId) {
+        mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
     val scope = rememberCoroutineScope()
     val latestReaderSessionInstanceId = rememberUpdatedState(readerSessionInstanceId)
     val formatPercent = rememberVeilPercentFormatter()
@@ -711,10 +714,11 @@ fun ReaderScreen(
         reducedMotion,
         paperCurlState.active,
         paperCurlState.snapshotSourceRevision,
+        readerLifecycleResumed,
         readerSessionInstanceId
     ) {
         if (
-            !readerSessionReady ||
+            !readerSessionReady || !readerLifecycleResumed ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
             !shouldCapturePaperTurnSnapshot(reducedMotion)
@@ -731,13 +735,19 @@ fun ReaderScreen(
         // the gesture falls back to a fresh immediate capture.
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
-            !paperCurlState.active &&
+            !paperCurlState.active && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
             )
         ) {
-            paperCurlState.prepareSnapshot(nav.publicationView)
+            paperCurlState.prepareSnapshot(nav.publicationView) {
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                    readerAsyncResultBelongsToSession(
+                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                        expectedSessionInstanceId = readerSessionInstanceId
+                    )
+            }
         }
     }
     LaunchedEffect(
@@ -746,10 +756,11 @@ fun ReaderScreen(
         presentedReaderAppearance,
         reducedMotion,
         slidePageState.active,
+        readerLifecycleResumed,
         readerSessionInstanceId
     ) {
         if (
-            !readerSessionReady ||
+            !readerSessionReady || !readerLifecycleResumed ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.SLIDE ||
             reducedMotion
@@ -762,7 +773,7 @@ fun ReaderScreen(
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
-            !slidePageState.active &&
+            !slidePageState.active && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
@@ -1854,6 +1865,7 @@ fun ReaderScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
+                    readerLifecycleResumed = true
                     if (latestReaderSessionReady.value) {
                         readerViewModel.onResume(readerSessionInstanceId)
                     }
@@ -1861,6 +1873,7 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
+                    readerLifecycleResumed = false
                     if (latestReaderSessionReady.value) {
                         // Lifecycle teardown may cancel the composition scope immediately. Restore an
                         // uncommitted preview synchronously before any final locator can be flushed.
