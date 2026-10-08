@@ -74,6 +74,16 @@ object ReaderVisualGeometry {
     val CardRadius = 14.dp
     val SheetTopRadius = 24.dp
 
+    val AppearanceSheetHorizontalPadding = 20.dp
+    val AppearanceSheetTopPadding = 20.dp
+    val AppearanceSheetBottomPadding = 32.dp
+    val AppearanceSectionGap = 18.dp
+    val AppearanceControlGap = 8.dp
+    val AppearanceModeChoiceMinHeight = 64.dp
+    val AppearancePreviewMinHeight = 164.dp
+    val AppearanceThemeCardMinHeight = 96.dp
+    val AppearanceThemeSpecimenMinHeight = 64.dp
+
     val MobileHorizontalMargin = 22.dp
     val MobileHorizontalMarginMin = 14.dp
     val MobileHorizontalMarginMax = 40.dp
