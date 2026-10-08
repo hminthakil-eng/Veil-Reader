@@ -554,10 +554,6 @@ fun ReaderScreen(
         onDispose { navigationTransactionGate.reset() }
     }
 
-    val inputOwnership = remember(opened.book.id, readerSessionInstanceId) {
-        ReaderInputOwnership()
-    }
-
     suspend fun settlePagePreviewsBeforeProgrammaticNavigation(): Boolean {
         val paperHadPendingTurn =
             paperInputListener?.hasPendingTurn() == true
@@ -579,11 +575,10 @@ fun ReaderScreen(
             slideInputListener?.hasPendingTurn() == true -> ReaderInputOwner.SLIDE
             else -> ReaderInputOwner.NONE
         }
-        val previewOwnership = if (previewOwner == ReaderInputOwner.NONE) {
-            inputOwnership
-        } else {
-            ReaderInputOwnership(owner = previewOwner, previewPending = true)
-        }
+        val previewOwnership = ReaderInputOwnership(
+            owner = previewOwner,
+            previewPending = previewOwner != ReaderInputOwner.NONE
+        )
         if (!paperSettled || !slideSettled) {
             paperInputListener?.forceCancelPendingTurn()
             slideInputListener?.forceCancelPendingTurn()
