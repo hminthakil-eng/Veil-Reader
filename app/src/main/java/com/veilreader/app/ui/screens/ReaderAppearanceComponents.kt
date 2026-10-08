@@ -2,6 +2,8 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -15,25 +17,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderReadingMode
+import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.theme.ReaderVisualGeometry
 import com.veilreader.app.ui.theme.ReaderVisualOpacity
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilSpacing
+import org.readium.r2.navigator.preferences.ReadingProgression
 
 /**
  * Presentation-only appearance controls for Reader Sanctuary.
@@ -483,6 +489,214 @@ internal fun ReaderMotionPreview(
                     strokeWidth = stroke,
                     cap = StrokeCap.Round
                 )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ReaderAppearancePreview(
+    appearance: ReaderAppearance,
+    typographyEnabled: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    val (paperArgb, inkArgb) = readiumThemeColors(appearance.theme)
+    val paper = Color(paperArgb)
+    val ink = Color(inkArgb)
+    val previewMargins = if (typographyEnabled) appearance.pageMargins.toFloat() else 1f
+    val previewScale = if (typographyEnabled) appearance.fontScale.toFloat() else 1f
+    val previewLineHeight = if (typographyEnabled) appearance.lineHeight.toFloat() else 1.45f
+    val margin = (14f + 12f * previewMargins).dp
+    val sampleSize = (15f * previewScale).coerceIn(11f, 23f).sp
+    val sampleLineHeight =
+        (sampleSize.value * previewLineHeight).coerceIn(15f, 38f).sp
+    val sampleProgression = if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
+        ReadingProgression.RTL
+    } else {
+        ReadingProgression.LTR
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stackPreviewHeader = shouldStackDenseChoices(
+                    widthDp = maxWidth.value.toInt(),
+                    fontScale = LocalDensity.current.fontScale,
+                    optionCount = 2
+                )
+                if (stackPreviewHeader) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.reader_sample_preview),
+                            strong = true
+                        )
+                        Text(
+                            localizedReaderMotionSummary(appearance),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.reader_sample_preview),
+                            modifier = Modifier.weight(1f),
+                            strong = true
+                        )
+                        Text(
+                            localizedReaderMotionSummary(appearance),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.End
+                        )
+                    }
+                }
+            }
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 150.dp)
+                    .background(paper, RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius))
+                    .border(
+                        1.dp,
+                        if (appearance.theme == ReaderTheme.OLED) {
+                            Color.White.copy(alpha = 0.08f)
+                        } else {
+                            Color(0xFF6E5D42).copy(alpha = 0.24f)
+                        },
+                        RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius)
+                    )
+            ) {
+                ReaderPageAtmosphere(
+                    theme = appearance.theme,
+                    navigationMode = appearance.navigationMode,
+                    paperPatina = appearance.paperPatina.toFloat(),
+                    progress = 0.42f,
+                    progression = sampleProgression,
+                    modifier = Modifier.matchParentSize()
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = margin, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.reader_sample_chapter),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ink.copy(alpha = 0.58f)
+                    )
+                    Text(
+                        stringResource(R.string.reader_sample_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = ink
+                    )
+                    Text(
+                        stringResource(R.string.reader_sample_body),
+                        fontSize = sampleSize,
+                        lineHeight = sampleLineHeight,
+                        color = ink.copy(alpha = 0.92f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun AppearancePreset(
+    label: String,
+    theme: ReaderTheme,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val (paperArgb, inkArgb) = readiumThemeColors(theme)
+    val paper = Color(paperArgb)
+    val ink = Color(inkArgb)
+
+    Surface(
+        modifier = modifier
+            .heightIn(min = 86.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
+        shape = RoundedCornerShape(ReaderVisualGeometry.CardRadius),
+        color = if (selected) {
+            VeilMaterials.ElevatedSurface
+        } else {
+            Color.Transparent
+        },
+        border = BorderStroke(
+            if (selected) 1.5.dp else 1.dp,
+            if (selected) {
+                VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.SelectedBorder)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+            }
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 64.dp)
+                    .background(paper, RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius))
+                    .border(
+                        1.dp,
+                        ink.copy(alpha = 0.18f),
+                        RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius)
+                    )
+            ) {
+                Text(
+                    stringResource(R.string.reader_theme_specimen),
+                    modifier = Modifier.align(Alignment.Center).padding(VeilSpacing.sm),
+                    color = ink,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selected) VeilPalette.Moon
+                    else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                if (selected) {
+                    Text(
+                        "●",
+                        color = VeilPalette.Brass,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }
