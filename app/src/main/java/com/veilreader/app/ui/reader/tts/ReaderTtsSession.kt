@@ -47,7 +47,8 @@ internal class ReaderTtsSession(
     dispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Main.immediate,
     private val initializationTimeoutMs: Long = 5_000L,
     private val utteranceTimeoutMs: Long = 600_000L,
-    private val nowEpochMs: () -> Long = System::currentTimeMillis
+    private val nowEpochMs: () -> Long = System::currentTimeMillis,
+    private val commitCheckpoint: suspend (Locator, ReaderTtsPreferences) -> Unit = { _, _ -> }
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ReaderTtsState())
@@ -68,6 +69,7 @@ internal class ReaderTtsSession(
     private var serial = 0L
     private var resumeAfterTransientFocusLoss = false
     private var closed = false
+    internal val sourceGeneration: Long get() = serial
 
     fun start(
         locator: Locator,
@@ -171,6 +173,18 @@ internal class ReaderTtsSession(
                         ?: utterance.languageTag
                         ?: publicationLanguage
                         ?: Locale.getDefault().toLanguageTag()
+                    try {
+                        withTimeout(initializationTimeoutMs.coerceAtLeast(1L)) {
+                            commitCheckpoint(utterance.locator, preferences)
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        fail(ReaderTtsProblem.STORAGE)
+                        return@launch
+                    }
+                    if (ownerSerial != serial || closed) return@launch
+                    if (!canPlay()) { pause(); return@launch }
                     mutableState.value = ReaderTtsState(
                         phase = ReaderTtsPhase.PLAYING,
                         sourceLocator = utterance.locator,

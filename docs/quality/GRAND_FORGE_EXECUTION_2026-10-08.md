@@ -480,3 +480,34 @@ foreground listening checkpoint, corpus/RTL/selection/PDF and device performance
 - Reuse/dependencies: Readium selection and existing Android ActionMode callback.
 - Performance/accessibility/RTL: constant-time guards, no extra renderer work;
   TalkBack/RTL handles unverified. Rollback isolated commit; gates unchanged.
+
+## GF-TTS-004 — foreground durable listening checkpoint
+
+- Priority/subsystem: P0 independent listening continuity.
+- Observed/root cause: foreground ReaderTtsSession had semantic locators but no
+  checkpoint store; Listening Mode read only the gated service checkpoint.
+- Files/implementation: ReaderForegroundTtsCheckpointController.kt reuses existing
+  DataStore/checkpoint contract, excludes Locator text and acknowledges position
+  only after save. ReaderTtsSession.kt awaits that callback before PLAYING/speak,
+  fences cancellation/generation and reports storage failure. Readium factory
+  passes the callback; ReaderScreen.kt restores matching book paused, declines
+  stale reads after user action/owner replacement, and exposes its saved position.
+  ReaderTtsControls.kt + EN/FA strings provide explicit storage feedback.
+- Tests: three session cases cover commit-before-speech, storage failure and pause
+  during pending save; five controller tests cover private-text exclusion, paused
+  restoration, other-book rejection, delayed owner/stop changes and failed save.
+  ForegroundTtsCheckpointInstrumentedTest checks actual DataStore acknowledgement
+  and read from a new store owner. These are pending CI, not physical verification.
+- Reuse/dependencies: existing DataStore, Readium content, system backend, checkpoint
+  JSON and locator; no new engine/network/database migration.
+- Acceptance: no speech/PLAYING before checkpoint commit; reopen resumes only on
+  explicit user action; saved listening position never commits visual progress.
+- Risks: checkpoint is last-listened publication, not a per-book history; current
+  settings apply on restore. One durable edit per semantic utterance needs latency
+  and long-session device measurement. Actual checkpoint process death, audio,
+  multilingual output and TalkBack remain unverified. Restore failure is explicit.
+- Performance/accessibility/RTL: bounded checkpoint wait; semantic locators preserve
+  direction, stored text excluded. Pause/return are non-gesture controls; audible
+  latency and RTL highlighting acceptance remain pending.
+- Status/rollback: YELLOW, isolated reversible integration; background/neural/
+  network gates unchanged. Do not equate DataStore instance recreation with kill.
