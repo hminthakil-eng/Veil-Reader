@@ -26,8 +26,8 @@ internal fun clampReaderImageTransform(
     val maxY = max(0f, (imageHeight * fit * scale - viewportHeight) / 2f)
     return ReaderImageTransform(
         scale,
-        requested.panX.takeIf { it.isFinite() }?.coerceIn(-maxX, maxX) ?: 0f,
-        requested.panY.takeIf { it.isFinite() }?.coerceIn(-maxY, maxY) ?: 0f
+        if (maxX == 0f) 0f else requested.panX.takeIf { it.isFinite() }?.coerceIn(-maxX, maxX) ?: 0f,
+        if (maxY == 0f) 0f else requested.panY.takeIf { it.isFinite() }?.coerceIn(-maxY, maxY) ?: 0f
     )
 }
 
