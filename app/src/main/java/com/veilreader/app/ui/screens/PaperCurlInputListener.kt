@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
@@ -204,7 +205,7 @@ internal class PaperCurlInputListener(
         // Tap/key turns must obey the same visual transaction as drag turns.
         // Wait for the acquired GPU source buffer before changing Readium underneath
         // it. READY/upload/draw and fixed delays do not prove screen presentation.
-        completionJob = scope.launch(start = CoroutineStart.LAZY) {
+        completionJob = launchCompletion {
             if (visualReady && !reducedMotion) {
                 if (!state.materialEngine.awaitSheetPresented()) {
                     if (operationIsCurrent(operationToken)) {
@@ -212,14 +213,14 @@ internal class PaperCurlInputListener(
                         activeOperationGeneration = 0L
                         resetDrag()
                     }
-                    return@launch
+                    return@launchCompletion
                 }
             }
             if (cancellationRequested || !operationIsCurrent(operationToken) ||
                 !shouldAllowPaperNavigation(reducedMotion, state.rendererStatus, state.active)) {
                 if (state.active) state.clear()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             val accepted = navigate(spec.direction)
@@ -231,13 +232,13 @@ internal class PaperCurlInputListener(
                         origin = originLocator
                     )
             if (!operationIsCurrent(operationToken)) {
-                if (!mayCleanCancelledOperation(operationToken)) return@launch
+                if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                 if (accepted) {
                     navigator.go(originLocator, animated = false)
                 }
                 if (state.active) state.clearImmediately()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
             if (!moved) {
                 if (accepted) {
@@ -249,7 +250,7 @@ internal class PaperCurlInputListener(
                     state.clear()
                 }
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             turnCommitted = true
@@ -372,17 +373,17 @@ internal class PaperCurlInputListener(
                 )
         }
         val operationToken = activeOperationGeneration
-        completionJob = scope.launch(start = CoroutineStart.LAZY) {
+        completionJob = launchCompletion {
             navigationJob?.join()
 
             if (!operationIsCurrent(operationToken)) {
-                if (!mayCleanCancelledOperation(operationToken)) return@launch
+                if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                 if (previewNavigationSucceeded) {
                     restoreDragStart(spec, forceRequest = true)
                 }
                 if (state.active) state.clearImmediately()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             when {
@@ -426,13 +427,13 @@ internal class PaperCurlInputListener(
                         origin = origin
                             )
                     if (!operationIsCurrent(operationToken)) {
-                        if (!mayCleanCancelledOperation(operationToken)) return@launch
+                        if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                         if (accepted) {
                             navigator.go(origin, animated = false)
                         }
                         if (state.active) state.clearImmediately()
                         resetDrag()
-                        return@launch
+                        return@launchCompletion
                     }
                     if (!moved && accepted) {
                         navigator.go(origin, animated = false)
@@ -506,7 +507,7 @@ internal class PaperCurlInputListener(
             return true
         }
         if (completionJob == null) {
-            completionJob = scope.launch(start = CoroutineStart.LAZY) {
+            completionJob = launchCompletion {
                 navigationJob?.join()
                 if (previewNavigationSucceeded) restoreDragStart(spec)
                 state.clear()
@@ -653,8 +654,8 @@ internal class PaperCurlInputListener(
 
         state.updateDrag(event.start, event.offset)
         val operationToken = activeOperationGeneration
-        navigationJob = scope.launch(start = CoroutineStart.LAZY) {
-            if (!state.materialEngine.awaitSheetPresented()) return@launch
+        navigationJob = launchPreview {
+            if (!state.materialEngine.awaitSheetPresented()) return@launchPreview
             if (
                 !cancellationRequested &&
                 operationIsCurrent(operationToken) &&
@@ -670,7 +671,7 @@ internal class PaperCurlInputListener(
                         origin = origin
                             )
                 if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
-                    return@launch
+                    return@launchPreview
                 }
                 if (
                     accepted &&
@@ -801,7 +802,7 @@ internal class PaperCurlInputListener(
         // Readium's overflow StateFlow can lag preference application by a frame;
         // consulting it here creates a split-brain state where the UI says PAPER
         // but the JS drag is not prevented and native swipe wins.
-        isEnabled()
+        isEnabled() && scope.isActive
 
     private fun shouldAnimatePaperVisual(): Boolean =
         state.active
@@ -851,6 +852,49 @@ internal class PaperCurlInputListener(
             PaperTurnDirection.FORWARD -> PaperTurnDirection.BACKWARD
             PaperTurnDirection.BACKWARD -> PaperTurnDirection.FORWARD
         }
+
+    /** A failed/cancelled coroutine must not leave the next gesture permanently busy. */
+    private fun launchCompletion(block: suspend CoroutineScope.() -> Unit): Job {
+        val token = cleanupOperationToken()
+        return scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                block()
+            } finally {
+                releaseInterruptedOperation(token)
+            }
+        }
+    }
+
+    private fun launchPreview(block: suspend CoroutineScope.() -> Unit): Job {
+        val token = cleanupOperationToken()
+        return scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                block()
+            } catch (failure: Throwable) {
+                releaseInterruptedOperation(token)
+                throw failure
+            }
+        }
+    }
+
+    private fun cleanupOperationToken(): Long =
+        activeOperationGeneration.takeIf { it != 0L } ?: cancelledOperationAwaitingCleanup
+
+    private fun releaseInterruptedOperation(token: Long) {
+        // A late finally from the previous gesture must never clear a newer sheet or locator.
+        if (!operationIsCurrent(token) && !mayCleanCancelledOperation(token)) return
+        navigationJob?.cancel()
+        try {
+            if (!turnCommitted) activeDrag?.let { restoreDragStart(it, forceRequest = true) }
+        } finally {
+            try {
+                state.clearImmediately()
+            } finally {
+                activeOperationGeneration = 0L
+                resetDrag()
+            }
+        }
+    }
 
     private fun resetDrag() {
         cancelledOperationAwaitingCleanup = 0L

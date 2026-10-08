@@ -3,11 +3,13 @@ package com.veilreader.app.ui.screens
 import android.view.View
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import java.lang.reflect.Proxy
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -99,17 +101,164 @@ class PaperDiscreteTurnLifecycleTest {
         }
     }
 
+    @Test
+    fun `navigation exception releases busy state and next turn succeeds`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(true, false).forEach { paper ->
+                val errors = mutableListOf<Throwable>()
+                val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler) +
+                    CoroutineExceptionHandler { _, error -> errors += error })
+                try {
+                    val fixture = NavigatorFixture().apply {
+                        settleImmediately = true
+                        failNavigation = true
+                    }
+                    val controls = controls(paper, fixture, owner)
+                    assertTrue(controls.perform())
+                    advanceUntilIdle()
+                    assertEquals(1, errors.size)
+                    assertFalse(controls.pending())
+                    assertEquals(listOf(fixture.origin), fixture.restores)
+                    assertEquals(0, fixture.commits)
+                    fixture.failNavigation = false
+                    assertTrue(controls.perform())
+                    advanceUntilIdle()
+                    assertEquals(2, fixture.requests)
+                    assertEquals(1, fixture.commits)
+                    assertFalse(controls.pending())
+                } finally {
+                    owner.cancel()
+                }
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `commit callback exception releases state without reversing committed page`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(true, false).forEach { paper ->
+                val errors = mutableListOf<Throwable>()
+                val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler) +
+                    CoroutineExceptionHandler { _, error -> errors += error })
+                try {
+                    val fixture = NavigatorFixture().apply {
+                        settleImmediately = true
+                        failCommit = true
+                    }
+                    val controls = controls(paper, fixture, owner)
+                    assertTrue(controls.perform())
+                    advanceUntilIdle()
+                    assertEquals(1, errors.size)
+                    assertFalse(controls.pending())
+                    assertTrue(fixture.restores.isEmpty())
+                    assertEquals(11, fixture.current.value.locations.position)
+                    fixture.failCommit = false
+                    assertTrue(controls.perform())
+                    advanceUntilIdle()
+                    assertEquals(2, fixture.commits)
+                    assertEquals(12, fixture.current.value.locations.position)
+                } finally {
+                    owner.cancel()
+                }
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `owner cancellation releases pending discrete preview and restores origin`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(true, false).forEach { paper ->
+                val fixture = NavigatorFixture()
+                val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+                try {
+                    val controls = controls(paper, fixture, owner)
+                    assertTrue(controls.perform())
+                    runCurrent()
+                    assertTrue(controls.pending())
+                    owner.cancel()
+                    runCurrent()
+                    assertFalse(controls.pending())
+                    assertEquals(listOf(fixture.origin), fixture.restores)
+                    assertEquals(0, fixture.commits)
+                } finally {
+                    owner.cancel()
+                }
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `restoration exception still releases pending state`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(true, false).forEach { paper ->
+                val errors = mutableListOf<Throwable>()
+                val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler) +
+                    CoroutineExceptionHandler { _, error -> errors += error })
+                try {
+                    val fixture = NavigatorFixture().apply {
+                        settleImmediately = true
+                        failNavigation = true
+                        failRestore = true
+                    }
+                    val controls = controls(paper, fixture, owner)
+                    assertTrue(controls.perform())
+                    advanceUntilIdle()
+                    assertFalse(controls.pending())
+                    assertEquals(1, errors.size)
+                    assertEquals(0, fixture.commits)
+                    fixture.failNavigation = false
+                    fixture.failRestore = false
+                    assertTrue(controls.perform())
+                    advanceUntilIdle()
+                    assertEquals(1, fixture.commits)
+                } finally {
+                    owner.cancel()
+                }
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `cancelled owner refuses new operations before taking the input lock`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(true, false).forEach { paper ->
+                val owner = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+                owner.cancel()
+                val fixture = NavigatorFixture()
+                val controls = controls(paper, fixture, owner)
+                assertFalse(controls.perform())
+                assertFalse(controls.pending())
+                assertEquals(0, fixture.requests)
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
     private data class Controls(val perform: () -> Boolean, val pending: () -> Boolean, val cancel: () -> Boolean)
 
     private fun controls(paper: Boolean, fixture: NavigatorFixture, scope: CoroutineScope): Controls {
         return if (paper) {
             val listener = PaperCurlInputListener(fixture.navigator, PaperCurlState(), { true }, scope,
-                isReducedMotion = { true }, onInteraction = {}, onCommittedTurn = { fixture.commits++ })
+                isReducedMotion = { true }, onInteraction = {}, onCommittedTurn = { fixture.commit() })
             Controls({ listener.performDiscreteTurn(PaperTurnDirection.FORWARD) },
                 listener::hasPendingTurn, listener::forceCancelPendingTurn)
         } else {
             val listener = SlideNavigationInputListener(fixture.navigator, SlidePageState(), { true }, scope,
-                isReducedMotion = { true }, onInteraction = {}, onCommittedTurn = { fixture.commits++ })
+                isReducedMotion = { true }, onInteraction = {}, onCommittedTurn = { fixture.commit() })
             Controls({ listener.performDiscreteTurn(PaperTurnDirection.FORWARD) },
                 listener::hasPendingTurn, listener::forceCancelPendingTurn)
         }
@@ -123,6 +272,13 @@ class PaperDiscreteTurnLifecycleTest {
         var settleImmediately = false
         var requests = 0
         var commits = 0
+        var failNavigation = false
+        var failCommit = false
+        var failRestore = false
+        fun commit() {
+            commits++
+            if (failCommit) throw IllegalStateException("commit failure")
+        }
         private val view = View(RuntimeEnvironment.getApplication())
         private val overflow = Proxy.newProxyInstance(javaClass.classLoader,
             arrayOf(OverflowableNavigator.Overflow::class.java)) { _, method, _ ->
@@ -143,9 +299,11 @@ class PaperDiscreteTurnLifecycleTest {
                     requests++
                     if (settleImmediately) current.value = current.value.copy(locations =
                         current.value.locations.copy(position = (current.value.locations.position ?: 10) + 1))
+                    if (failNavigation) throw IllegalStateException("navigation failure")
                     true
                 }
                 "go" -> {
+                    if (failRestore) throw IllegalStateException("restore failure")
                     restores += args!![0] as Locator
                     current.value = args[0] as Locator
                     true
