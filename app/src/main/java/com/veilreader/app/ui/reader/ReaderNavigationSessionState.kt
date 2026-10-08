@@ -64,6 +64,9 @@ internal class ReaderNavigationSessionStateMachine(
      */
     fun mayPersistFinalSnapshot(): Boolean = !state.isExploring
 
+    /** Prevent a relayout/preview from being mistaken for a new reading action. */
+    fun shouldPreserveAnchorOnLifecycle(): Boolean = state.isExploring
+
     /** Layout, opening and jump observations cannot promote a temporary destination. */
     fun mayCommitObservedEvent(event: ReaderLocatorEvent): Boolean =
         !state.isExploring || when (event) {
