@@ -511,3 +511,23 @@ foreground listening checkpoint, corpus/RTL/selection/PDF and device performance
   latency and RTL highlighting acceptance remain pending.
 - Status/rollback: YELLOW, isolated reversible integration; background/neural/
   network gates unchanged. Do not equate DataStore instance recreation with kill.
+
+## GF-TYPE-003 — permanent script/structure corpus
+
+- Priority/subsystem: P0 typography/RTL characterization fixtures.
+- User impact/gap/root cause: only a short English smoke EPUB existed; broad script,
+  structure and extreme-setting assertions had no permanent representative input.
+- Files/implementation: tools/build_typography_fixtures.py generates original,
+  deterministic LTR/RTL EPUBs in qa/fixtures, with script-tagged chapters, bidi
+  isolation, headings/poetry/nested formatting, long paragraph, CJK, symbol/emoji,
+  image/table, contextual footnote and MathML; README defines rendered matrix.
+- Reuse: standard EPUB/Readium renderer and official W3C EPUBCheck5.4.0; no new
+  rendering dependency or proprietary text/assets. Builder uses Python stdlib.
+- Evidence/tests: both EPUBs pass EPUB3.4 validation rules with zero fatals/errors/
+  warnings. Byte determinism checked. This is structural validation only.
+- Acceptance/dependencies: rendered/RTL/large-font/window/selection/audio corpus
+  checks and goldens pending. YELLOW; no capability promotion.
+- Performance/accessibility/RTL/risks: offline bounded assets, alt/caption/table
+  headings/semantic notes; wide tables/MathML intentionally probe unsupported
+  behavior. Stable locators, TTS script routing and real output remain unverified.
+- Rollback: remove isolated fixtures/builder; no application behavior changes.
