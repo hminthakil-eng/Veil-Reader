@@ -84,6 +84,14 @@ object ReaderVisualGeometry {
     val AppearanceThemeCardMinHeight = 96.dp
     val AppearanceThemeSpecimenMinHeight = 64.dp
 
+    val HudHorizontalInset = 8.dp
+    val HudTopPadding = 4.dp
+    val HudBottomPadding = 6.dp
+    val HudCornerRadius = 12.dp
+    val HudTopRowMinHeight = 52.dp
+    val HudControlGap = 4.dp
+    val PreviousLocationTopOffset = 60.dp
+
     val MobileHorizontalMargin = 22.dp
     val MobileHorizontalMarginMin = 14.dp
     val MobileHorizontalMarginMax = 40.dp
@@ -99,6 +107,10 @@ object ReaderVisualOpacity {
     const val InactiveArchiveSurface = 0.66f
     const val SelectedBorder = 0.82f
     const val QuietBorder = 0.22f
+    const val ChromeSurface = 0.94f
+    const val AccessDockSurface = 0.86f
+    const val HudProgressTrack = 0.10f
+    const val HudAccentHairline = 0.36f
 }
 
 /**
