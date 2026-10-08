@@ -1251,7 +1251,21 @@ fun VeilApp(
                 }
             },
             onDeleteHighlight = library::deleteHighlight,
-            onDeleteBookmark = library::deleteBookmark
+            onDeleteBookmark = { id ->
+                scope.launch {
+                    try {
+                        library.deleteBookmark(id)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        showNotice(
+                            R.string.reader_bookmark_delete_failed,
+                            VeilNoticeKind.WARNING,
+                            VeilIssueCategory.PERSISTENCE
+                        )
+                    }
+                }
+            }
         )
     } else if (route.activeChamber == "mirror") {
         ArrodesMirrorScreen(

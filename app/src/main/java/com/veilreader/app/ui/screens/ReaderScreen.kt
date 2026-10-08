@@ -390,6 +390,7 @@ fun ReaderScreen(
     val readerOpenFailedMessage = stringResource(R.string.notice_open_failed)
     val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
     val bookmarkSaveFailedMessage = stringResource(R.string.reader_bookmark_save_failed)
+    val bookmarkDeleteFailedMessage = stringResource(R.string.reader_bookmark_delete_failed)
     val bookmarkDuplicateMessage = stringResource(R.string.reader_bookmark_duplicate)
     val noteSavedMessage = stringResource(R.string.reader_note_saved)
     val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
@@ -3939,7 +3940,22 @@ fun ReaderScreen(
                 readerMessage = noteSavedMessage
             },
             onDeleteHighlight = library::deleteHighlight,
-            onDeleteBookmark = library::deleteBookmark
+            onDeleteBookmark = { id ->
+                val expectedSessionId = readerSessionInstanceId
+                scope.launch {
+                    try {
+                        library.deleteBookmark(id)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        if (readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) readerMessage = bookmarkDeleteFailedMessage
+                    }
+                }
+            }
             )
         }
     }

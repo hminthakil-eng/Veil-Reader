@@ -97,6 +97,39 @@ class AnnotationDurabilityInstrumentedTest {
         assertTrue(repository.bookmarks.value.isEmpty())
     }
 
+    @Test
+    fun bookmarkDeletion_isCommittedBeforeReturn_andIsIdempotent() = runBlocking {
+        importBookmarkBook()
+        repository.addBookmark("bookmark-book", "Saved", "{\"href\":\"delete.xhtml\"}")
+        val id = db.bookmarks().listAll().single().id
+        repository.deleteBookmark(id)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+        repository.deleteBookmark(id)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+    }
+
+    @Test
+    fun rejectedBookmarkDeletion_preservesDurableAndVisibleRecord() = runBlocking {
+        importBookmarkBook()
+        repository.addBookmark("bookmark-book", "Keep", "{\"href\":\"keep.xhtml\"}")
+        val saved = db.bookmarks().listAll().single()
+        repository.bookmarks.first { bookmarks -> bookmarks.any { it.id == saved.id } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_bookmark_delete BEFORE DELETE ON bookmarks " +
+                "BEGIN SELECT RAISE(ABORT, 'injected bookmark deletion failure'); END"
+        )
+
+        var failure: Exception? = null
+        try {
+            repository.deleteBookmark(saved.id)
+        } catch (error: Exception) {
+            failure = error
+        }
+        assertTrue("Deletion failure must reach the caller", failure != null)
+        assertEquals(saved, db.bookmarks().listAll().single())
+        assertEquals(saved.id, repository.bookmarks.value.single().id)
+    }
+
     private suspend fun importBookmarkBook() {
         repository.addImportedBook(
             Book(

@@ -195,3 +195,27 @@ Next P0 graph: bookmark create acknowledgement → bookmark delete acknowledgeme
 → selection mode replacement ownership → progress checkpoint failure
 characterization → navigation/input/Paper regressions → typography/RTL → TTS.
 Reuse the file-level graph and archaeology above; no duplicate roadmap.
+
+### GF-W1-BOOKMARK-ACK-DELETE
+
+- Priority/subsystem/user impact: P0 / local annotation durability; an acknowledged
+  removal can reappear after process death and storage failure hides the saved record.
+- Observed/root cause: deleteBookmark immediately filters the cache, then enqueues
+  deletion. Neither Notebook nor Archive catches persistence failure.
+- Expected/implementation: deletion suspends through existing orderedWrite; Room
+  observation removes the record only after commit. ReaderScreen and VeilApp
+  launch the existing UI callback asynchronously, preserve cancellation and show
+  localized EN/FA failure feedback. Reader feedback is session-fenced.
+- Affected files: LocalLibraryRepository.kt, ReaderScreen.kt, VeilApp.kt,
+  values/strings.xml, values-fa/strings.xml, AnnotationDurabilityInstrumentedTest.kt.
+- Reuse: serialized queue/Room observation/session helper; no new persistence owner.
+- Risks: missing ID is idempotent success; cancellation after enqueue can still
+  commit. Cloud tombstones remain separate release-disabled work.
+- Tests: direct Room read after deletion returns, idempotent retry, SQLite-trigger
+  rejection retains both durable and visible record; no flush at acknowledgement.
+- Performance/accessibility/RTL: one indexed primary-key delete; existing controls
+  retained; EN/FA error feedback; device latency/TalkBack/RTL verification pending.
+- Acceptance/dependencies: creation durability plus exact-head Android and storage
+  regressions; real-device create/delete/reopen/failure acceptance before GREEN.
+- Status: YELLOW source patched; exact-head automated evidence pending.
+- Rollback: revert this deletion commit; release gates unchanged.

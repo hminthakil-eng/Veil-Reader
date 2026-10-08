@@ -228,9 +228,9 @@ class LocalLibraryRepository internal constructor(
             }
         }
 
-    fun deleteBookmark(id: String) {
-        _bookmarks.value = _bookmarks.value.filterNot { it.id == id }
-        enqueue { database.bookmarks().deleteById(id) }
+    suspend fun deleteBookmark(id: String) {
+        // Keep the visible record until Room commits, including when deletion fails.
+        orderedWrite { database.bookmarks().deleteById(id) }
     }
 
     fun updateHighlightNote(id: String, note: String) {
