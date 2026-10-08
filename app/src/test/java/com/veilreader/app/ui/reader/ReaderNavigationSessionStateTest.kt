@@ -101,6 +101,36 @@ class ReaderNavigationSessionStateTest {
     }
 
     @Test
+    fun explorationRejectsNonReadingCheckpoints() {
+        val machine = ReaderNavigationSessionStateMachine("durable")
+        machine.onProgrammaticSettlement(
+            ReaderNavigationTransaction(
+                token = 6L,
+                originLocatorJson = "durable",
+                targetIdentity = null,
+                targetHref = "chapter.xhtml#note",
+                passageVisitLocatorJson = null,
+                startedAtElapsedMs = 6L,
+                reason = ReaderNavigationReason.FOOTNOTE,
+                commitPolicy = ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR
+            ),
+            "note"
+        )
+        listOf(
+            ReaderLocatorEvent.NAVIGATOR_POSITION,
+            ReaderLocatorEvent.OPENING_CHECKPOINT,
+            ReaderLocatorEvent.RELAYOUT_CHECKPOINT,
+            ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT,
+            ReaderLocatorEvent.FINAL_SNAPSHOT
+        ).forEach { assertFalse(machine.mayCommitObservedEvent(it)) }
+        listOf(
+            ReaderLocatorEvent.NAVIGATOR_PAGE_TURN,
+            ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT,
+            ReaderLocatorEvent.PAPER_COMMIT
+        ).forEach { assertTrue(machine.mayCommitObservedEvent(it)) }
+    }
+
+    @Test
     fun returnPreviousSettlement_waitsForDurableAcknowledgement() {
         val machine = ReaderNavigationSessionStateMachine("anchor")
         machine.onProgrammaticSettlement(
