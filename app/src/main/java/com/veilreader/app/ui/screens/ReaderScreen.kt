@@ -164,6 +164,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.deliverReaderResource
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
@@ -872,13 +873,9 @@ fun ReaderScreen(
         mutableStateOf<Job?>(null)
     }
 
-    DisposableEffect(imageViewer?.bitmap) {
-        val ownedBitmap = imageViewer?.bitmap
-        onDispose {
-            ownedBitmap
-                ?.takeIf { !it.isRecycled }
-                ?.recycle()
-        }
+    DisposableEffect(imageViewer) {
+        val ownedImage = imageViewer
+        onDispose { ownedImage?.close() }
     }
     DisposableEffect(readerSessionInstanceId) {
         onDispose {
@@ -1956,31 +1953,37 @@ fun ReaderScreen(
                                 .get(image.embeddedLink)
                                 ?.use { resource -> resource.read() }
                                 ?.getOrNull()
-                            val bitmap = bytes?.let { payload ->
-                                withContext(Dispatchers.Default) {
-                                    decodeReaderImage(payload)
+                            val caption = image.text?.trim()?.takeIf { it.isNotEmpty() }
+                            deliverReaderResource(
+                                dispatcher = Dispatchers.Default,
+                                load = {
+                                    bytes?.let { payload ->
+                                        decodeReaderImage(payload)?.let { bitmap ->
+                                            ReaderImageContent(
+                                                bitmap = bitmap,
+                                                caption = caption
+                                            )
+                                        }
+                                    }
+                                },
+                                accept = { content ->
+                                    when {
+                                        requestSerial != imageLoadSerial ||
+                                            !readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            ) -> false
+                                        content == null -> {
+                                            readerMessage = imageViewerFailedMessage
+                                            false
+                                        }
+                                        else -> {
+                                            imageViewer = content
+                                            true
+                                        }
+                                    }
                                 }
-                            }
-                            if (
-                                requestSerial != imageLoadSerial ||
-                                !readerAsyncResultBelongsToSession(
-                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                    expectedSessionInstanceId = expectedSessionId
-                                )
-                            ) {
-                                bitmap?.takeIf { !it.isRecycled }?.recycle()
-                                return@launch
-                            }
-                            if (bitmap == null) {
-                                readerMessage = imageViewerFailedMessage
-                            } else {
-                                imageViewer = ReaderImageContent(
-                                    bitmap = bitmap,
-                                    caption = image.text
-                                        ?.trim()
-                                        ?.takeIf { it.isNotEmpty() }
-                                )
-                            }
+                            )
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {

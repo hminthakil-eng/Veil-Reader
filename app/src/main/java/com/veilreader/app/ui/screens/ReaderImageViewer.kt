@@ -57,7 +57,11 @@ import org.readium.r2.shared.publication.services.content.Content
 internal data class ReaderImageContent(
     val bitmap: Bitmap,
     val caption: String?
-)
+) : AutoCloseable {
+    override fun close() {
+        if (!bitmap.isRecycled) bitmap.recycle()
+    }
+}
 
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderImageTapInputListener(
