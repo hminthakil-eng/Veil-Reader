@@ -38,6 +38,22 @@ class ReaderInputOwnershipTest {
         assertNull(paper.acquire(ReaderInputOwner.PAPER))
     }
 
+    @Test fun duplicatePreviewStartIsRejectedUntilFinish() {
+        val paper = ReaderInputOwnership().acquire(ReaderInputOwner.PAPER)!!
+        val preview = paper.beginPreview()!!
+        assertNull(preview.beginPreview())
+        assertEquals(preview, preview.release(ReaderInputOwner.PAPER))
+        val finished = preview.finishPreview()
+        assertEquals(true, finished.beginPreview()?.previewPending)
+    }
+
+    @Test fun slidePreviewHasSameReentryProtection() {
+        val slide = ReaderInputOwnership().acquire(ReaderInputOwner.SLIDE)!!
+            .beginPreview()!!
+        assertNull(slide.beginPreview())
+        assertFalse(slide.canAcquire(ReaderInputOwner.NAVIGATOR))
+    }
+
     @Test fun explicitReleaseAllowsHandoff() {
         val navigator = ReaderInputOwnership().acquire(ReaderInputOwner.NAVIGATOR)!!
         val released = navigator.release(ReaderInputOwner.NAVIGATOR)
