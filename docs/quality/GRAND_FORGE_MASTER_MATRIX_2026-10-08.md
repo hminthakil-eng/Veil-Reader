@@ -13,11 +13,11 @@ Paths below are relative to app/src/main/java/com/veilreader/app unless noted.
 
 | Capability | Kindle | Moon+ | Veil | Best Reference | Veil Gap | Root Cause | Target | Priority | Files | Tests | Status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Progress durability | Continuity benchmark | Resume benchmark | Atomic checkpoint + ordered Room | Existing Veil journal | Failure-path/device acceptance | Physical evidence missing | Accepted state survives abrupt kill | P0 | data/LocalLibraryRepository.kt, ui/reader/ReaderViewModel.kt | ReaderCloseDurabilityTest, RoomRuntimeRepositoryInstrumentedTest, fault injection | YELLOW baseline CI |
+| Progress durability | Continuity benchmark | Resume benchmark | Atomic checkpoint + ordered Room | Existing Veil journal | Failure-path/device acceptance | Physical evidence missing | Accepted state survives abrupt kill | P0 | data/LocalLibraryRepository.kt, ui/reader/ReaderViewModel.kt | ReaderCloseDurabilityTest, RoomRuntimeRepositoryInstrumentedTest, fault injection | YELLOW exact06a94b57 CI |
 | Stable publication identity | Ecosystem identity | Import depth | Content fingerprint already exists | Existing Veil import commit | Rename/relink/restore matrix incomplete | End-to-end identity evidence missing | Preserve user data across source changes | P0 | data/LocalLibraryRepository.kt | RoomRuntimeRepositoryInstrumentedTest | YELLOW |
 | Navigation transactions | Reading continuity | Search/navigation depth | Existing transaction/session gates | Existing Veil ownership model | Complete exploration vs anchor audit | Mixed navigation semantics need characterization | Exploration preserves reading anchor | P0 | ui/reader/ReaderNavigationTransaction.kt, ui/screens/ReaderScreen.kt | ReaderNavigationTransactionTest | YELLOW |
-| Input ownership | Predictable interaction | Gesture flexibility | Single arbiter; static lifetime fixed | Existing Veil arbiter | Stale selection destroy releases new owner | Unconditional false callback | Exact-owner release | P0 | ui/screens/ReaderSelectionActionMode.kt | ReaderSelectionActionModeTest | YELLOW patch |
-| Paper availability | Physical reading benchmark | Transition choice | GPU exists, release disabled | Existing canonical engine | Disabled-mode remap unexplained | Failure notice requires presented Paper | Explicit reason, static mode truthful | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderTransitionAvailabilityTest | YELLOW patch |
+| Input ownership | Predictable interaction | Gesture flexibility | Single arbiter; static lifetime fixed | Existing Veil arbiter | Stale selection destroy releases new owner | Unconditional false callback | Exact-owner release | P0 | ui/screens/ReaderSelectionActionMode.kt | ReaderSelectionActionModeTest | YELLOW automated pass; device pending |
+| Paper availability | Physical reading benchmark | Transition choice | GPU exists, release disabled | Existing canonical engine | Disabled-mode remap unexplained | Failure notice requires presented Paper | Explicit reason, static mode truthful | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderTransitionAvailabilityTest | YELLOW automated pass; device pending |
 | Paper performance | Smooth turns | Multiple transitions | Snapshot/upload/presentation fences | Existing Veil traces | First turn/100/500 turns/high-refresh proof | No physical hardware | Stable frame/memory budgets on device | P0 | ui/reader/material/, benchmark/ | PaperWarmupBenchmark, ReaderFrameBenchmark | BLOCKED physical |
 | Fixed-layout transition | Layout-aware behavior | Format depth | Static paging policy | Existing Veil capability policy | No physical leaf/spread engine | Whole-view capture is not one leaf | Explicit unavailability until correct engine | P0 | ui/screens/ReaderAppearancePolicy.kt | ReaderTransitionAvailabilityTest | HOLD engine |
 | Typography/RTL | Typesetting maturity | Advanced settings | Script-aware capability restrictions exist | Readium + Veil policy | Rendered corpus/extreme settings evidence | Permanent output matrix incomplete | Readable language-aware layouts | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderPreferencesTest, rendered fixtures pending | YELLOW |
@@ -36,16 +36,16 @@ Paths below are relative to app/src/main/java/com/veilreader/app unless noted.
 
 ## Feature evidence matrix
 
-“Baseline pass” applies only to b8ec35a1, never to a new patch. Physical QA and
+Current automated evidence is against06a94b57. Older baseline references apply only to b8ec35a1. Physical QA and
 emulator instrumentation are separate columns. No row is GREEN.
 
 | Feature | Implemented | Integrated | Unit | Instrumented | Device | UX | Perf | Release | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Progress journal | Yes | Yes | Baseline pass | Baseline fault injection pass | Missing | Missing | Baseline smoke only | Enabled | YELLOW |
-| Bookmark creation | Patched | Reader action | Existing baseline | New cases pending | Missing | Missing | Latency unmeasured | Enabled | YELLOW |
-| Bookmark deletion | Patched | Reader + Archive | Existing baseline | New cases pending | Missing | Missing | Latency unmeasured | Enabled | YELLOW |
-| Selection exact owner | Patched | Existing callback | Three new cases pending | Not run | Missing | Missing | Constant-time guard; unmeasured | Enabled | YELLOW |
-| Transition availability notice | Patched | Ready Reader snackbar | Three policy cases pending | Not run | Missing | Missing | No rendering work; unmeasured | Notice enabled | YELLOW |
+| Progress journal | Yes | Yes | Current961 suite pass | 36 abrupt-process samples pass | Missing | Missing | Baseline smoke only | Enabled | YELLOW |
+| Bookmark creation | Patched | Reader action | Current suite pass | New Room cases pass | Missing | Missing | Latency unmeasured | Enabled | YELLOW |
+| Bookmark deletion | Patched | Reader + Archive | Current suite pass | New Room cases pass | Missing | Missing | Latency unmeasured | Enabled | YELLOW |
+| Selection exact owner | Patched | Existing callback | 3/3 pass | Compiled; UI case not run | Missing | Missing | Constant-time guard; unmeasured | Enabled | YELLOW |
+| Transition availability notice | Patched | Ready Reader snackbar | 3/3 pass | Compiled; notice UI not run | Missing | Missing | No rendering work; unmeasured | Notice enabled | YELLOW |
 | GPU Paper | Substantial | Debug/benchmark | Baseline pass | Simulated evidence | Missing | Missing | No hardware traces | Disabled | BLOCKED |
 | Background TTS | Substantial | Debug review | Baseline pass | Baseline backend | Missing audible playback | Missing | Battery/thermal missing | Disabled | BLOCKED |
 | Neural/network TTS | Partial/gated | Review/adapter | Baseline coverage | Partial | Missing | Missing | Missing | Disabled | HOLD |
@@ -67,3 +67,50 @@ defects, not independently measured competitor complaints.
 | AP-06 | Clutter inside reading canvas / product constraint | Short dismissible state feedback; no persistent decoration | Reuse existing Reader snackbar |
 | AP-07 | Network text sharing without consent / product constraint | Optional explicit adapters; local reading remains offline | Network TTS/Cloud gates remain disabled |
 | AP-08 | Physical Next hard-coded to left / RTL constraint | Semantic Next routes by publication progression | Existing directional tests; actual RTL Paper remains BLOCKED |
+
+
+## Wave 1 automated acceptance record
+
+- Executable source: 06a94b57f17b13edd4c8e1cc513ac868bdaa0d24. Subsequent
+  documentation/CI-retention changes do not change the application or benchmark
+  source trees; they are not represented as a newly device-tested APK.
+- [Android CI37752444851](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752444851):
+  961 unit tests, zero failures/errors/skips; instrumentation compilation, schema
+  verification, lint (zero errors;174 existing warnings), debug/release APK/AAB,
+  optimized archive verification and performance-harness compilation PASS.
+- [Storage37752444933](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752444933):
+  163 instrumented tests, zero failures/errors/skips; includes all five new
+  bookmark acknowledgement/duplicate/failure/deletion regressions.
+- [Durability37752444930](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752444930):
+  six scenarios ×six cycles =36 abrupt-process samples PASS. These cover locator
+  commits/preview cancellation, not optical GPU Paper or bookmark process-kill UI.
+- [Performance37752445136](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752445136):
+  generation, packaged Baseline Profile verification, release archive and absolute
+  smoke budgets PASS. Manual dispatch skipped the PR relative-delta gate.
+- Unit coverage:955 →961; instrumentation coverage:158 →163. Lint:174 warnings
+  and zero errors before and after. No failures in the exercised suites.
+- User's S24 Ultra is a manual-install target, not an attached device. Device,
+  TalkBack, rendered RTL, optical Paper, audible TTS, battery and thermal evidence
+  remain UNVERIFIED. No feature is GREEN and no risky gate is promoted.
+
+| Emulator metric | b8ec35a1 baseline | 06a94b57 current | Interpretation |
+|---|---:|---:|---|
+| Cold-start TTID median |811.338ms|912.747ms|Higher observed sample; budget6000ms passes |
+| Reader gfx P95, median across runs |200ms|225ms|Higher observed sample; budget400ms passes |
+| Reader gfx P99, median across runs |200ms|250ms|Higher observed sample; budget600ms passes |
+| Reader gfx frame count, median |77.5|71|Coverage signal; not a speed metric |
+
+Before/after runs used separate uncontrolled API35/lavapipe CI environments.
+These measurements establish neither a speedup nor causality for the increase.
+Current raw reader data reports100% jank, P50=200ms, P95 runs200–250ms and P99
+runs250–300ms. That is not production performance acceptance. Same-device S24
+traces and a representative 60/90/120Hz matrix remain required. The historical
+baseline was recovered from job113192735910 logs. Current startup raw scenarios
+were missing from the artifact; the independent CI-retention patch fixes future
+capture paths and remains unexecuted/YELLOW.
+
+Debug APK SHA-256:
+be7d21606bf0e11bfe13f1a5a6d94254a080e01427c65e953a171c49a5da9948.
+[Exact test artifact11539007013](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752444851/artifacts/11539007013).
+This is a debug test APK, not a signed production release. See the
+[S24 Ultra protocol](GRAND_FORGE_S24_ULTRA_QA_2026-10-08.md).

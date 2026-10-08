@@ -293,3 +293,37 @@ Reuse the file-level graph and archaeology above; no duplicate roadmap.
 - Acceptance/dependencies: next dispatched benchmark artifact includes separate
   startup/reader raw JSON and supports median/P95/worst-case interpretation.
 - Status/rollback: YELLOW infrastructure patch; revert this one path if needed.
+
+## Current Wave 1 verification boundary
+
+All runtime changes in this continuation are tested at06a94b57. Exact reports,
+before/after coverage, benchmark measurements, APK identity and remaining
+acceptance gaps are recorded in
+[the master matrix](GRAND_FORGE_MASTER_MATRIX_2026-10-08.md).
+Android961, storage163 and36 abrupt-process samples passed; debug/release
+compilation, archive verification and emulator profile/smoke budgets passed.
+GF-W1-BOOKMARK-ACK-CREATE, GF-W1-BOOKMARK-ACK-DELETE,
+GF-W1-SELECTION-OWNER and GF-PAP-002 now have automated evidence, remain
+YELLOW for missing physical/UX/performance acceptance, and supersede the
+earlier RED/pending-source entries in this historical ledger.
+
+Observed emulator startup/P95/P99 values increased versus the previous unpaired
+run. No speedup is claimed, no physical performance gate is earned, and cause
+remains unresolved until controlled measurements. Lint debt is unchanged at174
+warnings, zero errors. No failures occurred in the exercised suites. The
+post-test CI raw-report retention change is independently YELLOW/unexecuted.
+
+Physical target: user-reported S24 Ultra, manual APK installation; no remote
+endpoint is connected. [Device protocol](GRAND_FORGE_S24_ULTRA_QA_2026-10-08.md).
+Do not alter quality/physical-device-status.json without actual physical results.
+All seven risky release gates remain false. No production release, main merge
+or feature promotion occurred.
+
+Next execution boundary: record actual S24 bookmark/selection/notice outcomes;
+investigate any device failures immediately. Then continue existing
+navigation/input/Paper readiness tests and controlled first-turn/100-turn,
+RTL/large-font/TalkBack acceptance before renderer promotion. Deferred async
+selection-clear replacement races, progress-checkpoint failure acknowledgement,
+foreground TTS integration gaps, PDF/device corpus, expanded preference backup
+round-trip and10k-library budgets remain open. The whole-app audit and later
+waves are not claimed complete.
