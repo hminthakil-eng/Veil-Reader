@@ -129,6 +129,8 @@ import com.veilreader.app.ui.reader.hasReachedObservedDestination
 import com.veilreader.app.ui.reader.passageVisitAfterSettlement
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderNavigationReason
+import com.veilreader.app.ui.reader.ReaderNavigationCommitPolicy
+import com.veilreader.app.ui.reader.ReaderNavigationSessionStateMachine
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderIdentityJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
@@ -540,6 +542,11 @@ fun ReaderScreen(
     }
     val navigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
         ReaderNavigationTransactionGate()
+    }
+    val navigationSessionState = remember(opened.book.id, readerSessionInstanceId) {
+        ReaderNavigationSessionStateMachine(
+            opened.initialLocator?.toVeilPersistedJson(opened.format)
+        )
     }
     DisposableEffect(navigationTransactionGate) {
         onDispose { navigationTransactionGate.reset() }
@@ -1345,6 +1352,9 @@ fun ReaderScreen(
 
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
         val json = locator.toVeilPersistedJson(opened.format)
+        if (event == ReaderLocatorEvent.FINAL_SNAPSHOT &&
+            !navigationSessionState.mayPersistFinalSnapshot()
+        ) return
         readerViewModel.onLocatorUpdate(
             bookId = opened.book.id,
             expectedOpenInstanceId = readerSessionInstanceId,
@@ -1354,6 +1364,7 @@ fun ReaderScreen(
             locationKey = "${opened.book.id}:$json",
             event = event
         )?.let { commit ->
+            navigationSessionState.onDurableReadingCommit(commit.locatorJson)
             onLocatorCheckpoint(commit.locatorJson)
         }
     }
@@ -1446,7 +1457,10 @@ fun ReaderScreen(
         ) ?: return
         val json = locator.toVeilPersistedJson(opened.format)
         previousLocationJson = settled.originLocatorJson?.takeIf { it != json }
-        recordLocator(locator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+        navigationSessionState.onProgrammaticSettlement(settled, json)
+        if (settled.commitPolicy == ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT) {
+            recordLocator(locator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+        }
         settled.passageVisitAfterSettlement(pdfPageNumber(locator))?.let {
             library.recordPassageVisitForLocator(bookId = opened.book.id, locatorJson = it)
         }
@@ -1522,10 +1536,15 @@ fun ReaderScreen(
                     previousLocationJson =
                         cancelledNavigation.originLocatorJson
                             ?.takeIf { it != json }
-                    recordLocator(
-                        currentLocator,
-                        ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+                    navigationSessionState.onProgrammaticSettlement(
+                        cancelledNavigation,
+                        json
                     )
+                    if (cancelledNavigation.commitPolicy ==
+                        ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT
+                    ) {
+                        recordLocator(currentLocator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+                    }
                     cancelledNavigation
                         .passageVisitAfterSettlement(
                             if (opened.format == BookFormat.PDF) {
@@ -2042,6 +2061,7 @@ fun ReaderScreen(
                     observedPdfPage = if (opened.format == BookFormat.PDF) pdfPageNumber(locator) else null
                 )
                 if (settledNavigation != null) {
+                    navigationSessionState.onProgrammaticSettlement(settledNavigation, json)
                     previousLocationJson = settledNavigation.originLocatorJson
                         ?.takeIf { origin -> origin != json }
                     settledNavigation.passageVisitAfterSettlement(
@@ -2079,7 +2099,12 @@ fun ReaderScreen(
                 )
                 val wasInitialLocator = initialLocatorPending
                 initialLocatorPending = false
-                val commit = readerViewModel.onLocatorUpdate(
+                val commit = if (
+                    settledNavigation?.commitPolicy ==
+                        ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR ||
+                    (navigationSessionState.state.isExploring &&
+                        event == ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+                ) null else readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     expectedOpenInstanceId = readerSessionInstanceId,
                     progression = locator.locations.totalProgression
@@ -2089,6 +2114,7 @@ fun ReaderScreen(
                     event = event
                 )
                 commit?.let { accepted ->
+                    navigationSessionState.onDurableReadingCommit(accepted.locatorJson)
                     onLocatorCheckpoint(accepted.locatorJson)
                 }
 
