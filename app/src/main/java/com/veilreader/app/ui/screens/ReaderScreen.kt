@@ -4847,48 +4847,10 @@ internal fun EpubAppearancePanel(
         }
 
         if (!capabilities.fixedLayout) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                listOf(
-                    false to stringResource(R.string.reader_quick),
-                    true to stringResource(R.string.reader_advanced)
-                ).forEach { (advanced, label) ->
-                val selected = showAdvanced == advanced
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .selectable(
-                            selected = selected,
-                            role = Role.Tab
-                        ) { showAdvanced = advanced },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilMaterials.ElevatedSurface
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.78f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                    )
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        VeilMicroLabel(
-                            text = label,
-                            color = if (selected) {
-                                VeilPalette.Moon
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                }
-            }
-        }
+            ReaderAppearanceModeTabs(
+                advanced = showAdvanced,
+                onAdvancedChange = { showAdvanced = it }
+            )
         }
 
         if (!showAdvanced) {
