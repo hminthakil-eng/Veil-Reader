@@ -3,7 +3,10 @@ package com.veilreader.app.ui.screens
 import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
 import org.readium.r2.navigator.OverflowableNavigator
@@ -32,7 +35,7 @@ internal class StaticPagedNavigationInputListener(
     private var navigationJob: Job? = null
 
     override fun onDrag(event: DragEvent): Boolean {
-        if (!isEnabled()) {
+        if (!isEnabled() || !scope.isActive) {
             reserved = false
             return false
         }
@@ -61,40 +64,45 @@ internal class StaticPagedNavigationInputListener(
                     progression = navigator.overflow.value.readingProgression
                 ) ?: return true
 
-                val origin = navigator.currentLocator.value
-                val accepted = when (direction) {
-                    PaperTurnDirection.FORWARD -> navigator.goForward(animated = false)
-                    PaperTurnDirection.BACKWARD -> navigator.goBackward(animated = false)
-                }
-                if (!accepted) {
-                    onBoundaryHit(
-                        paperTurnSideFor(
-                            direction = direction,
-                            progression = navigator.overflow.value.readingProgression
-                        )
-                    )
-                    return true
-                }
-
-                navigationJob = scope.launch {
-                    val moved =
-                        awaitReaderVisualNavigationDeparture(
-                            currentLocator = navigator.currentLocator,
-                            origin = origin
-                        )
-                    if (moved) {
-                        onNavigationCommitted()
-                    } else {
-                        navigator.go(origin, animated = false)
-                        onBoundaryHit(
-                            paperTurnSideFor(
-                                direction = direction,
-                                progression = navigator.overflow.value.readingProgression
+                // Install ownership before execution, including on an immediate dispatcher.
+                // A cancelled owner must never move the navigator before its worker starts.
+                val job = scope.launch(start = CoroutineStart.LAZY) {
+                    try {
+                        if (!scope.isActive || !isEnabled()) return@launch
+                        val origin = navigator.currentLocator.value
+                        val accepted = when (direction) {
+                            PaperTurnDirection.FORWARD -> navigator.goForward(animated = false)
+                            PaperTurnDirection.BACKWARD -> navigator.goBackward(animated = false)
+                        }
+                        if (!accepted) {
+                            onBoundaryHit(paperTurnSideFor(direction,
+                                navigator.overflow.value.readingProgression))
+                            return@launch
+                        }
+                        val moved =
+                            awaitReaderVisualNavigationDeparture(
+                                currentLocator = navigator.currentLocator,
+                                origin = origin
                             )
-                        )
+                        if (moved) {
+                            onNavigationCommitted()
+                        } else {
+                            navigator.go(origin, animated = false)
+                            onBoundaryHit(
+                                paperTurnSideFor(
+                                    direction = direction,
+                                    progression = navigator.overflow.value.readingProgression
+                                )
+                            )
+                        }
+                    } finally {
+                        // A throwing callback/restore or cancelled wait must release the lock.
+                        if (navigationJob === currentCoroutineContext()[Job]) navigationJob = null
                     }
-                    navigationJob = null
                 }
+                navigationJob = job
+                job.start()
+                if (job.isCompleted && navigationJob === job) navigationJob = null
                 true
             }
         }
