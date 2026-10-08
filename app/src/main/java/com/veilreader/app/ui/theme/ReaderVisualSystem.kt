@@ -2,6 +2,7 @@ package com.veilreader.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.domain.ReaderTheme
 
 /**
  * Veil Reader visual contract.
@@ -35,6 +36,32 @@ object ReaderVisualPalette {
     val TtsWash = ArenaPalette.Moon.copy(alpha = 0.07f)
     val SelectionEdge = ArenaPalette.AntiqueGold.copy(alpha = 0.82f)
 }
+
+
+data class ReaderVisualThemeArgb(
+    val background: Int,
+    val text: Int
+)
+
+internal fun readerVisualThemeArgb(theme: ReaderTheme): ReaderVisualThemeArgb =
+    when (theme) {
+        ReaderTheme.PAPER -> ReaderVisualThemeArgb(
+            background = 0xFFF4EFDF.toInt(),
+            text = 0xFF29271F.toInt()
+        )
+        ReaderTheme.SEPIA -> ReaderVisualThemeArgb(
+            background = 0xFFE9DDC3.toInt(),
+            text = 0xFF372F24.toInt()
+        )
+        ReaderTheme.DUSK -> ReaderVisualThemeArgb(
+            background = 0xFF141517.toInt(),
+            text = 0xFFD8D6D0.toInt()
+        )
+        ReaderTheme.OLED -> ReaderVisualThemeArgb(
+            background = 0xFF000000.toInt(),
+            text = 0xFFD5D5D2.toInt()
+        )
+    }
 
 object ReaderVisualGeometry {
     val TouchTarget = 48.dp
