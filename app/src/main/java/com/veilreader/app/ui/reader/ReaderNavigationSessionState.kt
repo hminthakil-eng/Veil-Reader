@@ -34,7 +34,11 @@ internal class ReaderNavigationSessionStateMachine(
     ) {
         state = when (transaction.commitPolicy) {
             ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT ->
-                ReaderNavigationSessionState(readingAnchorJson = settledLocatorJson)
+                state.copy(
+                    explorationLocatorJson = null,
+                    explorationOriginJson = null,
+                    explorationReason = null
+                )
 
             ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR ->
                 state.copy(
