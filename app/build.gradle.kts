@@ -17,6 +17,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
+        buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
         applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
         minSdk = 26
         targetSdk = 37

@@ -1257,7 +1257,7 @@ fun ReaderScreen(
     val backgroundTtsEnabled = remember {
         VeilFeatureGates.enabled(
             VeilRiskyFeature.BACKGROUND_TTS,
-            debugReview = BuildConfig.DEBUG
+            debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
         )
     }
     val foregroundTtsCheckpoint = remember(opened.book.id, readerSessionInstanceId, backgroundTtsEnabled) {
