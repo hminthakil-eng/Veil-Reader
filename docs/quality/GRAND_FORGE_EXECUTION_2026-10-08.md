@@ -352,3 +352,14 @@ waves are not claimed complete.
 - Risks: on persistent storage failure Reader stays open with an explicit warning; it does not undo the renderer's physical page movement. Scroll/relayout observation durability and real storage exhaustion remain separate acceptance gaps.
 - Performance: same journal write on semantic commit, no new heartbeat-driven whole-screen updates; latency/device traces pending. Accessibility: localized non-gesture recovery instructions; TalkBack announcement pending. RTL: locators and semantic direction unchanged; real fixture acceptance pending.
 - Dependencies/status: existing journal/close contracts; YELLOW, Android/storage/process tests pending. Rollback is this isolated fix commit.
+
+## GF-NAV-003 — precise jump admission inside coarse positions
+
+- Priority/subsystem: P0 navigation transaction, search/highlight/bookmark/return actions.
+- Observed/evidence/root cause: `shouldStartReaderIdentityJump` used tolerant settlement identity as its no-op predicate. Position equality takes precedence over CSS selector and viewport progression; the existing visual-departure characterization confirms adjacent viewports can share a position chunk. A precise destination can therefore be swallowed before `nav.go` is called.
+- Expected/implementation/files: `ui/reader/ReaderNavigationTransaction.kt` admits jumps when known paragraph selectors or meaningful viewport progression differ; tolerant settlement remains unchanged because first-visible renderer anchors need not equal selected paragraphs. Same fine anchor stays a no-op.
+- User impact/reuse: existing notebook/search/return callers get the correction without a new navigator or interaction flow. Readium keeps navigation/layout.
+- Tests: three unit cases cover paragraph targets, adjacent viewports/noise, identical fine anchors and unchanged tolerant settlement. Android CI pending.
+- Risks/dependencies: a target elsewhere on the same visible page can still yield a no-op navigator emission; existing timeout remains the safety boundary. This does not implement ReadingAnchor/ExplorationLocator separation, which remains RED.
+- Performance/accessibility/RTL: constant-time identity comparisons; no animation or physical direction changes. Real target focus, reflow/RTL corpus and response metrics pending.
+- Acceptance/status: precise targets reach the navigator while identical anchors are ignored; YELLOW until tests/device acceptance. Rollback: isolated fix commit.

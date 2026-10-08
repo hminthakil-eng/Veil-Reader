@@ -38,9 +38,23 @@ internal data class ReaderNavigationTransaction(
 internal fun shouldStartReaderIdentityJump(
     origin: ReaderNavigationIdentity?,
     target: ReaderNavigationIdentity?
-): Boolean =
-    target != null &&
-        (origin == null || !readerNavigationIdentityMatchesTarget(origin, target))
+): Boolean {
+    target ?: return false
+    origin ?: return true
+    // Jump admission needs the finest available anchor. Readium position chunks
+    // span multiple paragraphs/viewports, so equality here must not swallow a
+    // search result or highlight elsewhere inside that chunk. Settlement below
+    // intentionally remains tolerant of renderer-generated/coarse locators.
+    if (origin.cssSelector != null && target.cssSelector != null &&
+        origin.cssSelector != target.cssSelector
+    ) return true
+    val originProgression = origin.progression?.takeIf { it.isFinite() }
+    val targetProgression = target.progression?.takeIf { it.isFinite() }
+    if (originProgression != null && targetProgression != null &&
+        abs(originProgression - targetProgression) > VISUAL_PAGE_PROGRESSION_TOLERANCE
+    ) return true
+    return !readerNavigationIdentityMatchesTarget(origin, target)
+}
 
 internal fun readerEffectiveTargetHref(
     currentHref: String?,
