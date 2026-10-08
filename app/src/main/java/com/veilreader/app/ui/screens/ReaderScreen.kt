@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -334,21 +335,28 @@ fun ReaderScreen(
             activeFixedLayoutSpread = fixedLayoutSpread
         }
     }
-    val effectiveReaderAppearance = remember(
-        readerAppearance,
-        fixedLayoutPublication
-    ) {
-        val publicationAppearance =
-            effectiveReaderAppearanceForPublication(
-                appearance = readerAppearance,
-                fixedLayout = fixedLayoutPublication
-            )
+    val typesettingViewportWidth = LocalConfiguration.current.screenWidthDp.toDouble()
+    val typesettingAccessibilityScale = LocalDensity.current.fontScale.toDouble()
+    fun effectiveAppearance(requested: ReaderAppearance): ReaderAppearance =
         applyMaterialPageRolloutToAppearance(
-            appearance = publicationAppearance,
+            appearance = AdaptiveTypesettingPolicy.resolve(
+                appearance = effectiveReaderAppearanceForPublication(requested, fixedLayoutPublication),
+                format = opened.format,
+                fixedLayout = fixedLayoutPublication,
+                viewportWidthDp = typesettingViewportWidth,
+                accessibilityFontScale = typesettingAccessibilityScale
+            ),
             format = opened.format,
             debugReview = BuildConfig.DEBUG,
             materialPageEnabled = MaterialPageEngineRollout.isEnabled()
         )
+    val effectiveReaderAppearance = remember(
+        readerAppearance,
+        fixedLayoutPublication,
+        typesettingViewportWidth,
+        typesettingAccessibilityScale
+    ) {
+        effectiveAppearance(readerAppearance)
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(effectiveReaderAppearance)
@@ -651,12 +659,7 @@ fun ReaderScreen(
         expectedAppearance: ReaderAppearance? = null
     ) {
         appearanceCloseJob?.cancel()
-        val normalizedExpected = expectedAppearance?.let {
-            effectiveReaderAppearanceForPublication(
-                appearance = it,
-                fixedLayout = fixedLayoutPublication
-            )
-        }
+        val normalizedExpected = expectedAppearance?.let(::effectiveAppearance)
         appearanceCloseJob = scope.launch {
             // Give a final slider commit one frame to propagate into the parent state before
             // deciding whether the renderer is settled. Then keep the chamber above the renderer
@@ -5159,6 +5162,13 @@ internal fun EpubAppearancePanel(
                     )
                 }
             )
+            if (capabilities.columnsEditable) {
+                Text(
+                    stringResource(R.string.reader_columns_adaptive_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
                 Text(
                     stringResource(R.string.reader_columns_paged_only),

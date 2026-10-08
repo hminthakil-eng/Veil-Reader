@@ -327,3 +327,16 @@ selection-clear replacement races, progress-checkpoint failure acknowledgement,
 foreground TTS integration gaps, PDF/device corpus, expanded preference backup
 round-trip and10k-library budgets remain open. The whole-app audit and later
 waves are not claimed complete.
+
+## GF-TYPE-001 — viewport-aware reading columns
+
+- Priority/subsystem: P0, adaptive typesetting.
+- User impact/observed: user reports no perceivable Reader improvement on S24 Ultra. Source mapping delegates AUTO/TWO directly to Readium without consulting Veil font size or Android accessibility scale. This does not establish the device's actual column behavior.
+- Expected/root cause: columns should fit the text measure; the effective preference previously lacked a viewport policy.
+- Files/implementation: `ui/screens/AdaptiveTypesettingPolicy.kt` resolves reflowable EPUB columns; `ReaderScreen.kt` uses it for both presentation and appearance-close acknowledgement, observing window configuration and font scale. Saved preferences remain intact. EN/FA column explanation added.
+- Reuse: Readium retains rendering, locators and layout; this policy only supplies preferences. No competitor implementation or assets used.
+- Acceptance: narrow windows and large text use one column; eligible wide windows use two; explicit ONE remains ONE; scroll stays single-column; PDF/fixed-layout untouched; preference restores when space returns.
+- Risks/performance: width threshold is a conservative first policy, not a complete typesetting subsystem. Resize may trigger existing anchored reflow. Actual text measure, margins, RTL corpus and tablet UX still require rendered validation. No performance improvement claimed.
+- Accessibility/RTL: large system scale prevents cramped columns; no physical page direction changes.
+- Tests: six unit cases cover width, reader/system size, scope, scrolling, explicit ONE, invalid inputs and preference preservation. Local reading-policy39 and Paper source guard passed. Android compilation/unit/device evidence pending.
+- Dependencies/status: existing appearance relayout transaction; YELLOW, not a finished Reader overhaul.
