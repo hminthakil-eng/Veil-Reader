@@ -49,6 +49,67 @@ import org.readium.r2.navigator.preferences.ReadingProgression
  *
  * Navigation ownership, persistence and effective-appearance policy remain outside this file.
  */
+
+@Composable
+internal fun ReaderAppearanceModeTabs(
+    advanced: Boolean,
+    onAdvancedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        listOf(
+            false to stringResource(R.string.reader_quick),
+            true to stringResource(R.string.reader_advanced)
+        ).forEach { (value, label) ->
+            val selected = advanced == value
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                    .selectable(
+                        selected = selected,
+                        role = Role.Tab
+                    ) { onAdvancedChange(value) },
+                shape = RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius),
+                color = if (selected) {
+                    VeilMaterials.ElevatedSurface
+                } else {
+                    VeilPalette.Archive.copy(alpha = ReaderVisualOpacity.InactiveArchiveSurface)
+                },
+                border = BorderStroke(
+                    if (selected) 1.5.dp else 1.dp,
+                    if (selected) {
+                        VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.SelectedBorder)
+                    } else {
+                        VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.QuietBorder)
+                    }
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 11.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    VeilMicroLabel(
+                        text = label,
+                        strong = selected,
+                        color = if (selected) {
+                            VeilPalette.Moon
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 internal fun ReaderAppearanceChoice(
     label: String,
