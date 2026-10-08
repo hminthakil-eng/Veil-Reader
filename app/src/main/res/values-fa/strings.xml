@@ -1426,4 +1426,5 @@
     <string name="reader_paper_rollout_unavailable">پویانمایی کاغذ در این نسخه در دسترس نیست. ورق‌زدن ساده فعال است؛ تنظیم ذخیره‌شدهٔ شما تغییر نکرده است.</string>
     <string name="reader_fixed_layout_transition_unavailable">این کتاب با چیدمان ثابت از ورق‌زدن ساده استفاده می‌کند. ورق‌زدن پویانمایی‌شده و پیمایش در دسترس نیستند؛ تنظیم ذخیره‌شدهٔ شما تغییر نکرده است.</string>
     <string name="tts_checkpoint_failed">موقعیت شنیدن ذخیره یا بازیابی نشد. برای حفظ جای شما، پخش متوقف می‌شود. پس از بررسی فضای ذخیره‌سازی دوباره تلاش کنید.</string>
+    <string name="notice_highlight_delete_failed">برجسته‌سازی حذف نشد. بخش ذخیره‌شده و یادداشت آن همچنان حفظ شده‌اند.</string>
 </resources>

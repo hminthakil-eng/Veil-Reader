@@ -238,14 +238,12 @@ class LocalLibraryRepository internal constructor(
         orderedWrite { database.bookmarks().deleteById(id) }
     }
 
-    fun updateHighlightNote(id: String, note: String) {
-        val cleanNote = note.trim()
-        _highlights.value.firstOrNull { it.id == id }?.copy(note = cleanNote)?.let { updated ->
-            _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
-        }
-        enqueue {
-            val persisted = database.highlights().findById(id)?.toDomain() ?: return@enqueue
-            database.highlights().upsert(persisted.copy(note = cleanNote).toEntity())
+    suspend fun updateHighlightNote(id: String, note: String): Boolean = orderedWrite {
+        database.withTransaction {
+            val persisted = database.highlights().findById(id)?.toDomain()
+                ?: return@withTransaction false
+            database.highlights().upsert(persisted.copy(note = note.trim()).toEntity())
+            true
         }
     }
 
@@ -951,11 +949,13 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun deleteHighlight(id: String) {
+    suspend fun deleteHighlight(id: String) {
         if (id.isBlank()) return
-        deletedHighlightIds += id
+        orderedWrite {
+            database.highlights().deleteById(id)
+            deletedHighlightIds += id
+        }
         _highlights.value = _highlights.value.filterNot { it.id == id }
-        enqueue { database.highlights().deleteById(id) }
     }
 
     /**

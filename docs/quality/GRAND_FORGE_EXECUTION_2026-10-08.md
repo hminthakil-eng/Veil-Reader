@@ -531,3 +531,28 @@ foreground listening checkpoint, corpus/RTL/selection/PDF and device performance
   headings/semantic notes; wide tables/MathML intentionally probe unsupported
   behavior. Stable locators, TTS script routing and real output remain unverified.
 - Rollback: remove isolated fixtures/builder; no application behavior changes.
+
+## GF-ANN-004 — durable note edit and highlight deletion
+
+- Priority/subsystem: P0 high-value annotation acknowledgement, Reader + Archive.
+- Observed/root cause: note updates changed cache before queued Room upsert;
+  deletion hid a passage and marked its in-memory tombstone before queued delete.
+  Archive closed its note editor before asynchronous storage confirmation.
+- Files/implementation: LocalLibraryRepository.kt awaits ordered note transaction
+  and deletion, returns false for removed note targets without poisoning storage,
+  and publishes deletion only after commit. ReaderScreen.kt awaits edit and wraps
+  deletion failure with session-fenced feedback. VeilApp.kt passes suspend Archive
+  edits and catches delete failure. ArchiveScreen.kt keeps draft/editor through
+  save, locks submission/dismissal while pending and shows accessible failure.
+  EN/FA strings distinguish highlight deletion failures.
+- Reuse: Room queue/DAO, existing note editor/feedback, exact highlight ID.
+- Tests: AnnotationDurabilityInstrumentedTest adds five direct-boundary/missing-
+  target/injected-update/injected-delete/idempotence cases; CI pending, YELLOW.
+- Acceptance: saved note already in Room; failed edit/delete preserve previous
+  durable/visible data; no success acknowledgement for removed target; Archive
+  failure retains draft and retry. UX/TalkBack/process-death acceptance pending.
+- Risks/dependencies: cancellation may complete a durable write without feedback;
+  existing fail-closed queue remains. Deletion guards are local, not sync tombstones.
+- Performance/accessibility/RTL: one ordered commit per user action; localized
+  polite failure and non-gesture retry; actual latency, RTL editor and TalkBack
+  pending. Rollback isolated commit; no schema/gate changes.

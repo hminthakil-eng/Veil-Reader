@@ -4011,8 +4011,7 @@ fun ReaderScreen(
             },
             onSaveNote = onSaveNote@{ id, note ->
                 val expectedSessionId = readerSessionInstanceId
-                library.updateHighlightNote(id, note)
-                library.flushWrites()
+                check(library.updateHighlightNote(id, note)) { "The saved passage was removed." }
                 if (
                     !readerAsyncResultBelongsToSession(
                         currentSessionInstanceId = latestReaderSessionInstanceId.value,
@@ -4025,7 +4024,17 @@ fun ReaderScreen(
                 onSensoryEvent(VeilSensoryEvent.NOTE)
                 readerMessage = noteSavedMessage
             },
-            onDeleteHighlight = library::deleteHighlight,
+            onDeleteHighlight = { id ->
+                scope.launch {
+                    try { library.deleteHighlight(id) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) {
+                        if (latestReaderSessionInstanceId.value == readerSessionInstanceId) {
+                            readerMessage = activity.getString(R.string.notice_highlight_delete_failed)
+                        }
+                    }
+                }
+            },
             onDeleteBookmark = { id ->
                 val expectedSessionId = readerSessionInstanceId
                 scope.launch {

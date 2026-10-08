@@ -304,6 +304,69 @@ class AnnotationDurabilityInstrumentedTest {
     }
 
     @Test
+    fun noteUpdateAcknowledgementIsCommittedWithoutFlush() = runBlocking {
+        val highlight = savedHighlight()
+        assertTrue(repository.updateHighlightNote(highlight.id, "  Durable edit  "))
+        assertEquals("Durable edit", db.highlights().findById(highlight.id)?.note)
+    }
+
+    @Test
+    fun missingNoteTargetDoesNotRecreatePassageOrPoisonStorageQueue() = runBlocking {
+        importBookmarkBook()
+        assertFalse(repository.updateHighlightNote("missing", "Must not create"))
+        assertTrue(db.highlights().listAll().isEmpty())
+        assertTrue(repository.addBookmark("bookmark-book", "Still works", "{\"href\":\"chapter.xhtml\"}"))
+    }
+
+    @Test
+    fun rejectedNoteUpdatePreservesDurableAndVisibleNote() = runBlocking {
+        val highlight = savedHighlight()
+        assertTrue(repository.updateHighlightNote(highlight.id, "Keep this note"))
+        repository.highlights.first { list -> list.any { it.id == highlight.id && it.note == "Keep this note" } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_note_update BEFORE UPDATE ON highlights " +
+                "BEGIN SELECT RAISE(ABORT, 'injected note update failure'); END"
+        )
+        var failed = false
+        try { repository.updateHighlightNote(highlight.id, "Must fail") }
+        catch (_: Exception) { failed = true }
+        assertTrue(failed)
+        assertEquals("Keep this note", db.highlights().findById(highlight.id)?.note)
+        assertEquals("Keep this note", repository.highlights.value.single().note)
+    }
+
+    @Test
+    fun highlightDeletionAcknowledgementIsCommittedAndIdempotent() = runBlocking {
+        val highlight = savedHighlight()
+        repository.deleteHighlight(highlight.id)
+        assertNull(db.highlights().findById(highlight.id))
+        assertTrue(repository.highlights.value.isEmpty())
+        repository.deleteHighlight(highlight.id)
+        assertTrue(db.highlights().listAll().isEmpty())
+    }
+
+    @Test
+    fun rejectedHighlightDeletionPreservesDurableAndVisiblePassage() = runBlocking {
+        val highlight = savedHighlight()
+        repository.highlights.first { list -> list.any { it.id == highlight.id } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_highlight_delete BEFORE DELETE ON highlights " +
+                "BEGIN SELECT RAISE(ABORT, 'injected highlight deletion failure'); END"
+        )
+        var failed = false
+        try { repository.deleteHighlight(highlight.id) }
+        catch (_: Exception) { failed = true }
+        assertTrue(failed)
+        assertEquals(highlight.id, db.highlights().findById(highlight.id)?.id)
+        assertEquals(highlight.id, repository.highlights.value.single().id)
+    }
+
+    private suspend fun savedHighlight(): com.veilreader.app.domain.Highlight {
+        importBookmarkBook()
+        return repository.addHighlight("bookmark-book", "Durable passage", "{\"href\":\"chapter.xhtml\"}")
+    }
+
+    @Test
     fun highlightAndNote_areDurableWhenSaveAcknowledgementIsAllowed() = runBlocking {
         repository.addImportedBook(
             Book(

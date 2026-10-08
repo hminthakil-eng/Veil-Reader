@@ -1239,18 +1239,17 @@ fun VeilApp(
             onClose = routeViewModel::closeArchive,
             onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
             onSaveNote = { id, note ->
-                library.updateHighlightNote(id, note)
+                check(library.updateHighlightNote(id, note)) { "The saved passage was removed." }
+            },
+            onDeleteHighlight = { id ->
                 scope.launch {
-                    try {
-                        library.flushWrites()
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (error: Exception) {
-                        showNotice(R.string.notice_note_save_failed, VeilNoticeKind.WARNING, VeilIssueCategory.PERSISTENCE)
+                    try { library.deleteHighlight(id) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) {
+                        showNotice(R.string.notice_highlight_delete_failed, VeilNoticeKind.WARNING, VeilIssueCategory.PERSISTENCE)
                     }
                 }
             },
-            onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = { id ->
                 scope.launch {
                     try {
