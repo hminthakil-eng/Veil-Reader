@@ -1117,6 +1117,36 @@ fun ReaderScreen(
         }
     }
 
+    val transitionUnavailableReason = readerTransitionUnavailableReason(
+        appearance = readerAppearance,
+        format = opened.format,
+        fixedLayout = fixedLayoutPublication,
+        materialPageEnabled = MaterialPageEngineRollout.isEnabled()
+    )
+    val transitionUnavailableMessage = when (transitionUnavailableReason) {
+        ReaderTransitionUnavailableReason.PAPER_ROLLOUT_DISABLED ->
+            stringResource(R.string.reader_paper_rollout_unavailable)
+        ReaderTransitionUnavailableReason.FIXED_LAYOUT_LEAF_UNSUPPORTED ->
+            stringResource(R.string.reader_fixed_layout_transition_unavailable)
+        null -> null
+    }
+    var announcedTransitionReason by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<ReaderTransitionUnavailableReason?>(null)
+    }
+    LaunchedEffect(transitionUnavailableReason, readerSessionReady, closeInFlight,
+        readerSessionInstanceId) {
+        val reason = transitionUnavailableReason ?: return@LaunchedEffect
+        if (!readerSessionReady || closeInFlight || announcedTransitionReason == reason) {
+            return@LaunchedEffect
+        }
+        announcedTransitionReason = reason
+        snackbarHostState.showSnackbar(
+            message = transitionUnavailableMessage ?: return@LaunchedEffect,
+            withDismissAction = true,
+            duration = SnackbarDuration.Long
+        )
+    }
+
     val latestRequestedReaderAppearance = rememberUpdatedState(readerAppearance)
     val latestReaderAppearanceChange = rememberUpdatedState(onReaderAppearanceChange)
 

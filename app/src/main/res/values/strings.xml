@@ -1421,4 +1421,6 @@
     <string name="reader_paper_use_slide">Use Slide</string>
     <string name="reader_bookmark_save_failed">Couldn’t save the bookmark. Your saved bookmarks are unchanged.</string>
     <string name="reader_bookmark_delete_failed">Couldn’t remove the bookmark. It is still saved.</string>
+    <string name="reader_paper_rollout_unavailable">Paper animation is unavailable in this version. Using simple paging; your saved preference is unchanged.</string>
+    <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
 </resources>

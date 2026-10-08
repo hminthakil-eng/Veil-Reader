@@ -242,3 +242,33 @@ Reuse the file-level graph and archaeology above; no duplicate roadmap.
   transitions on device; existing input arbitration integration.
 - Status: YELLOW source patch; no claim of physical selection QA.
 - Rollback: revert this independent selection commit.
+
+### GF-PAP-002 — unavailable transition explanation, first implementation slice
+
+- Priority/subsystem: P0 / page-transition capability UX.
+- Observed/root cause: saved Paper is remapped to PAGED while the release gate is
+  closed; renderer-failure notices only run in presented Paper mode, so the remap
+  cannot reach them. Fixed-layout remaps similarly lack an entry explanation.
+- Expected/implementation: ReaderAppearancePolicy.kt reports a typed reason from
+  the requested mode/publication/rollout; ReaderScreen.kt shows a dismissible
+  notice after session readiness and coalesces the reason per Reader session.
+  No preference mutation, implicit Slide selection or release-gate promotion.
+- Files: ReaderAppearancePolicy.kt, ReaderScreen.kt, EN/FA strings.xml,
+  ReaderTransitionAvailabilityTest.kt.
+- Reuse: existing requested/effective appearance, SnackbarHost and readiness state;
+  no renderer changes or duplicate transition engine.
+- Risks: notice can queue behind other Reader messages; accessibility announcements
+  and first-page presentation need device UX verification. Fixed-layout takes
+  precedence over rollout restriction; PDF retains its separate capability UI.
+- Tests: disabled Paper resolves to static paging with explanation and unchanged
+  requested preference; fixed-layout Paper/Slide/Scroll remaps; available modes,
+  Scroll with dormant Paper style, PDF and enabled Paper do not falsely warn.
+- Performance: constant policy work, one notice per reason/session; no snapshots,
+  textures, shader initialization or animation changes.
+- Accessibility/RTL: dismissible localized EN/FA notice; no gesture is required.
+  Rendered/TalkBack verification remains pending.
+- Acceptance/dependencies: policy tests and CI; release-disabled saved-Paper entry
+  and fixed-layout transition notice manually verified before GREEN.
+- Status: YELLOW source implementation; renderer readiness/performance remains
+  BLOCKED on representative physical hardware.
+- Rollback: revert this notice/policy commit; all seven release gates unchanged.
