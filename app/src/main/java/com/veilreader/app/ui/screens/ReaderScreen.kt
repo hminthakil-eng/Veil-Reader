@@ -1019,22 +1019,15 @@ fun ReaderScreen(
                     when (action) {
                         ReaderSelectionAction.LOOKUP -> Unit
                         ReaderSelectionAction.HIGHLIGHT -> {
-                            val highlight = existing ?: library.addHighlight(
-                                bookId = opened.book.id,
-                                quote = quote,
-                                locatorJson = locatorJson
+                            val committed = library.commitSelectionHighlight(
+                                bookId = opened.book.id, quote = quote, locatorJson = locatorJson
                             )
-                            val isNew = existing == null
+                            if (!readerAsyncResultBelongsToSession(
+                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                    expectedSessionInstanceId = readerSessionInstanceId
+                                )) return@onAction
+                            val isNew = committed.created
                             if (isNew) {
-                                library.flushWrites()
-                                if (
-                                    !readerAsyncResultBelongsToSession(
-                                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                        expectedSessionInstanceId = readerSessionInstanceId
-                                    )
-                                ) {
-                                    return@onAction
-                                }
                                 readerViewModel.onHighlightAdded(readerSessionInstanceId)
                                 onSensoryEvent(VeilSensoryEvent.MARK)
                             } else {

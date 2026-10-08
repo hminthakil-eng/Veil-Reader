@@ -267,6 +267,43 @@ class AnnotationDurabilityInstrumentedTest {
     }
 
     @Test
+    fun highlightAcknowledgement_isCommittedBeforeReturn_withoutFlush() = runBlocking {
+        importBookmarkBook()
+        val result = repository.commitSelectionHighlight("bookmark-book", "  Saved passage  ", "{\"href\":\"chapter.xhtml\"}")
+        assertTrue(result.created)
+        assertEquals(result.highlight.id, db.highlights().listAll().single().id)
+        assertEquals("Saved passage", db.highlights().listAll().single().quote)
+    }
+
+    @Test
+    fun concurrentHighlightRequests_createOneDurablePassage_withoutCacheAuthority() = runBlocking {
+        importBookmarkBook()
+        val results = List(20) {
+            async { repository.commitSelectionHighlight("bookmark-book", "Same passage", "{\"href\":\"chapter.xhtml\"}") }
+        }.awaitAll()
+        assertEquals(1, results.count { it.created })
+        assertEquals(1, results.map { it.highlight.id }.distinct().size)
+        assertEquals(1, db.highlights().listAll().size)
+    }
+
+    @Test
+    fun rejectedHighlightWrite_doesNotAcknowledgeOrPublishPhantomRecord() = runBlocking {
+        importBookmarkBook()
+        repository.highlights.first { it.isEmpty() }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_highlight BEFORE INSERT ON highlights " +
+                "BEGIN SELECT RAISE(ABORT, 'injected highlight storage failure'); END"
+        )
+        var failure: Exception? = null
+        try {
+            repository.addHighlight("bookmark-book", "Must fail", "{\"href\":\"failure.xhtml\"}")
+        } catch (error: Exception) { failure = error }
+        assertTrue("Storage failure must reach the caller", failure != null)
+        assertTrue(db.highlights().listAll().isEmpty())
+        assertTrue(repository.highlights.value.isEmpty())
+    }
+
+    @Test
     fun highlightAndNote_areDurableWhenSaveAcknowledgementIsAllowed() = runBlocking {
         repository.addImportedBook(
             Book(

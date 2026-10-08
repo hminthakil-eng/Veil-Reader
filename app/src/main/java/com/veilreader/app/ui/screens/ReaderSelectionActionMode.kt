@@ -71,21 +71,23 @@ internal class ReaderSelectionActionModeCallback(
             ACTION_LOOKUP -> ReaderSelectionAction.LOOKUP
             else -> return false
         }
+        if (activeMode !== mode) return false
         val navigator = navigatorProvider() ?: return false
 
         coroutineScope.launch {
+            if (!ownsSelection(mode, navigator)) return@launch
             // Capture first because finishing ActionMode can clear the WebView selection
             // immediately on some devices. Cleanup is unconditional: renderer disposal or a
             // selection-query failure must never leave Android's native toolbar orphaned.
             val selection = try {
-                navigator.currentSelection()
+                navigator.currentSelection().takeIf { ownsSelection(mode, navigator) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
                 null
             } finally {
                 try {
-                    navigator.clearSelection()
+                    if (ownsSelection(mode, navigator)) navigator.clearSelection()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
@@ -108,19 +110,23 @@ internal class ReaderSelectionActionModeCallback(
      * Clear Readium's selection first, then finish the exact ActionMode owned by this callback.
      */
     fun dismissSelection() {
-        val mode = activeMode
+        val mode = activeMode ?: return
+        val navigator = navigatorProvider()
         coroutineScope.launch {
             try {
-                navigatorProvider()?.clearSelection()
+                if (navigator != null && ownsSelection(mode, navigator)) navigator.clearSelection()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
                 // Renderer teardown can race an overlay opening. The ActionMode is still ours.
             } finally {
-                mode?.finish()
+                mode.finish()
             }
         }
     }
+
+    private fun ownsSelection(mode: ActionMode, navigator: SelectableNavigator): Boolean =
+        activeMode === mode && navigatorProvider() === navigator
 
     override fun onDestroyActionMode(mode: ActionMode) {
         // Android may destroy a replaced toolbar after its successor has acquired selection.

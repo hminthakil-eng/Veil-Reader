@@ -59,6 +59,11 @@ import kotlinx.coroutines.withContext
  * share one queue so progress, annotations, derived metadata and backup snapshots have deterministic
  * ordering.
  */
+internal data class SelectionHighlightCommit(
+    val highlight: Highlight,
+    val created: Boolean
+)
+
 internal data class SelectionNoteCommit(
     val highlight: Highlight,
     val created: Boolean
@@ -713,23 +718,26 @@ class LocalLibraryRepository internal constructor(
         )
     }
 
-    fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight {
+    suspend fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight =
+        commitSelectionHighlight(bookId, quote, locatorJson).highlight
+
+    /** Duplicate authority and acknowledgement both come from the ordered Room transaction. */
+    internal suspend fun commitSelectionHighlight(
+        bookId: String, quote: String, locatorJson: String
+    ): SelectionHighlightCommit = orderedWrite {
         val cleanQuote = quote.trim()
-        _highlights.value.firstOrNull {
-            it.id !in deletedHighlightIds &&
-                it.bookId == bookId &&
-                it.locatorJson == locatorJson &&
-                it.quote == cleanQuote
-        }?.let { return it }
-        val record = Highlight(
-            id = UUID.randomUUID().toString(),
-            bookId = bookId,
-            quote = cleanQuote,
-            locatorJson = locatorJson
-        )
-        _highlights.value = listOf(record) + _highlights.value
-        enqueue { database.highlights().upsert(record.toEntity()) }
-        return record
+        require(bookId.isNotBlank() && cleanQuote.isNotBlank() && locatorJson.isNotBlank())
+        database.withTransaction {
+            val existing = database.highlights()
+                .findByBookLocatorAndQuote(bookId, locatorJson, cleanQuote)?.toDomain()
+            if (existing != null) return@withTransaction SelectionHighlightCommit(existing, false)
+            val record = Highlight(
+                id = UUID.randomUUID().toString(), bookId = bookId,
+                quote = cleanQuote, locatorJson = locatorJson
+            )
+            database.highlights().upsert(record.toEntity())
+            SelectionHighlightCommit(record, true)
+        }
     }
 
     /**
