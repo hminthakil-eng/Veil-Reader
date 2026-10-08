@@ -91,3 +91,13 @@ build was “nothing changed”; the cover screenshot does not validate text/tur
   test environment; do not deliberately fill the personal phone's storage.
 
 Physical status for every new item remains UNVERIFIED.
+
+## Delivery correction — use Forge QA, not the3539 normal debug APK
+
+Both normal debug APK signatures verify, but the06a and3539 signing certificates
+differ. Android cannot update the former installation with the latter. Preserve
+the existing Veil app and its data. A separately installed **Veil Reader Forge QA**
+(com.veilreader.app.forgeqa) is building; it has its own library/permissions and a
+source-suffixed version. Import one test publication into that app. Its APK link,
+hash, actual QA test reports and pinned signer will be recorded after verification.
+No uninstall or production-data migration is required for this test installation.

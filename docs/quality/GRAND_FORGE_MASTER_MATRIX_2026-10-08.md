@@ -153,3 +153,34 @@ ReadingAnchor/ExplorationLocator separation remains RED: current Notebook search
 still shares committed programmatic navigation. Paper hardware, audible playback,
 TalkBack/RTL/rendered text, full application journey and release promotion remain
 unaccepted. All seven risky release gates remain false.
+
+## Verified3539c9c9 batch, prior to packaging/window correction
+
+- Android37761477427:980 unit tests in170 suites, zero failures/errors/skips;
+  instrumentation compilation, Room schema, debug APK, optimized release APK/AAB,
+  archive verification and performance-harness compilation pass. Lint0 errors/175
+  warnings included one new ConfigurationScreenWidthHeight warning, subsequently
+  corrected with actual LocalWindowInfo dimensions; that later source is still testing.
+- Storage37761480606:165 instrumented tests, zero failures/errors/skips.
+- Fault injection37761483780:36 abrupt-process samples pass.
+- Performance37761680929: profile generation, benchmark execution, generated-profile
+  release packaging, packaged-profile verification and absolute smoke budgets pass.
+  Raw separate startup and Reader JSONs are retained, verifying the earlier retention fix.
+- Unpaired software-emulator observations, not causal speedup evidence: baselineb8
+  TTID811.338ms / ReaderP95200ms / P99200ms;06a912.747ms /225ms /250ms;
+ 3539 TTID743.829ms / ReaderP95200ms / P99200ms.3539 raw ReaderP50 median150ms,
+  highest reported per-runP99250ms,100% jank in all six samples. Startup profiled
+  median743.829ms, max792.782ms; uncompiled median798.110ms, max873.008ms.
+  API35 x86_64 lavapipe/independent runners; no physical production acceptance.
+-3539 debug APK SHA-256:4a515740c16f042bb8d1d0208ac57706aad613a350494f68f19ebd672c860cf0.
+  Its signing certificate differs from the previous06a APK; it cannot update that
+  installed package. It is not the planned S24 delivery artifact.
+
+Device delivery now targets an isolated com.veilreader.app.forgeqa installation
+with an explicit QA/source label, private non-production key cache and certificate
+pin guard. Normal app identity and all seven risky gates retain their defaults.
+The first QA run failed configuration before tests: generated label resources were
+disabled.03423a36 explicitly enables them only for QA. Current QA run37765266653
+and normal Android run37764746924 are pending; no QA APK/device result is claimed.
+ReadingAnchor/exploration separation remains RED, as do complete rendered/script
+and physical-reader acceptance. No row is GREEN.
