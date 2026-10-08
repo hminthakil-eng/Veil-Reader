@@ -57,7 +57,7 @@ internal fun ReaderAppearanceModeTabs(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
     ) {
         listOf(
             false to stringResource(R.string.reader_quick),
@@ -218,7 +218,7 @@ internal fun ReaderReadingModeSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectableGroup(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
             ) {
                 choices.forEach { (mode, previewMode) ->
                     val active = selected == mode
@@ -244,7 +244,7 @@ internal fun ReaderReadingModeSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
             ) {
                 choices.forEach { (mode, previewMode) ->
                     val active = selected == mode
@@ -314,7 +314,7 @@ internal fun ReaderPageTurnSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectableGroup(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
             ) {
                 choices.forEach { (style, previewMode, label) ->
                     val choiceEnabled = readerPageTurnStyleEnabled(
@@ -337,7 +337,7 @@ internal fun ReaderPageTurnSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
             ) {
                 choices.forEach { (style, previewMode, label) ->
                     val choiceEnabled = readerPageTurnStyleEnabled(
@@ -370,7 +370,7 @@ private fun ReaderModeChoice(
 ) {
     Surface(
         modifier = modifier
-            .heightIn(min = 58.dp)
+            .heightIn(min = ReaderVisualGeometry.AppearanceModeChoiceMinHeight)
             .selectable(
                 selected = active,
                 enabled = enabled,
@@ -582,9 +582,12 @@ internal fun ReaderAppearancePreview(
 
     Surface(
         modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
+        shape = RoundedCornerShape(ReaderVisualGeometry.CardRadius),
+        color = VeilPalette.Archive.copy(alpha = ReaderVisualOpacity.InactiveArchiveSurface),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.QuietBorder)
+        ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -636,7 +639,7 @@ internal fun ReaderAppearancePreview(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 150.dp)
+                    .heightIn(min = ReaderVisualGeometry.AppearancePreviewMinHeight)
                     .background(paper, RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius))
                     .border(
                         1.dp,
@@ -698,7 +701,7 @@ internal fun AppearancePreset(
 
     Surface(
         modifier = modifier
-            .heightIn(min = 86.dp)
+            .heightIn(min = ReaderVisualGeometry.AppearanceThemeCardMinHeight)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
@@ -728,7 +731,7 @@ internal fun AppearancePreset(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 64.dp)
+                    .heightIn(min = ReaderVisualGeometry.AppearanceThemeSpecimenMinHeight)
                     .background(paper, RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius))
                     .border(
                         1.dp,
