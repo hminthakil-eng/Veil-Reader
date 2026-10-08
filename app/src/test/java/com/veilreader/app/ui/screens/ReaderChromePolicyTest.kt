@@ -1,6 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
@@ -307,19 +306,19 @@ class ReaderChromePolicyTest {
     @Test
     fun `image pan is zero at base scale and clamped while zoomed`() {
         assertEquals(
-            Offset.Zero,
-            clampReaderImagePan(
-                requested = Offset(400f, -400f),
-                scale = 1f,
-                viewport = IntSize(1000, 800)
+            ReaderImageTransform(),
+            clampReaderImageTransform(
+                requested = ReaderImageTransform(1f, 400f, -400f),
+                viewportWidth = 1000, viewportHeight = 800,
+                imageWidth = 1000, imageHeight = 800
             )
         )
         assertEquals(
-            Offset(500f, -400f),
-            clampReaderImagePan(
-                requested = Offset(900f, -900f),
-                scale = 2f,
-                viewport = IntSize(1000, 800)
+            ReaderImageTransform(2f, 500f, -400f),
+            clampReaderImageTransform(
+                requested = ReaderImageTransform(2f, 900f, -900f),
+                viewportWidth = 1000, viewportHeight = 800,
+                imageWidth = 1000, imageHeight = 800
             )
         )
     }
