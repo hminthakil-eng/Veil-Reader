@@ -24,7 +24,7 @@ internal data class ReaderInputOwnership(
         if (canAcquire(requested)) copy(owner = requested) else null
 
     fun beginPreview(): ReaderInputOwnership? =
-        if (owner == ReaderInputOwner.PAPER || owner == ReaderInputOwner.SLIDE)
+        if (!previewPending && (owner == ReaderInputOwner.PAPER || owner == ReaderInputOwner.SLIDE))
             copy(previewPending = true) else null
 
     fun finishPreview(): ReaderInputOwnership = copy(previewPending = false)
