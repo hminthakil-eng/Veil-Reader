@@ -1352,7 +1352,15 @@ fun ReaderScreen(
 
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
         val json = locator.toVeilPersistedJson(opened.format)
-        if (!navigationSessionState.mayCommitObservedEvent(event)) return
+        if (!navigationSessionState.mayCommitObservedEvent(event)) {
+            ReaderTrace.event(
+                "exploration_checkpoint_suppressed",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId,
+                details = "event=${event.name}"
+            )
+            return
+        }
         readerViewModel.onLocatorUpdate(
             bookId = opened.book.id,
             expectedOpenInstanceId = readerSessionInstanceId,
