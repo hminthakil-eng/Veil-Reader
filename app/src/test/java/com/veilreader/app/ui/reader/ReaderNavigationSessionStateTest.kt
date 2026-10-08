@@ -101,7 +101,7 @@ class ReaderNavigationSessionStateTest {
     }
 
     @Test
-    fun returnPreviousSettlement_commitsImmediately() {
+    fun returnPreviousSettlement_waitsForDurableAcknowledgement() {
         val machine = ReaderNavigationSessionStateMachine("anchor")
         machine.onProgrammaticSettlement(
             ReaderNavigationTransaction(
@@ -119,5 +119,9 @@ class ReaderNavigationSessionStateTest {
 
         assertEquals("anchor", machine.state.readingAnchorJson)
         assertFalse(machine.state.isExploring)
+        machine.onDurableReadingCommitAccepted("restored", accepted = false)
+        assertEquals("anchor", machine.state.readingAnchorJson)
+        machine.onDurableReadingCommitAccepted("restored", accepted = true)
+        assertEquals("restored", machine.state.readingAnchorJson)
     }
 }
