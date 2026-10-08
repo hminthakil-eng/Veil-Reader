@@ -1352,9 +1352,7 @@ fun ReaderScreen(
 
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
         val json = locator.toVeilPersistedJson(opened.format)
-        if (event == ReaderLocatorEvent.FINAL_SNAPSHOT &&
-            !navigationSessionState.mayPersistFinalSnapshot()
-        ) return
+        if (!navigationSessionState.mayCommitObservedEvent(event)) return
         readerViewModel.onLocatorUpdate(
             bookId = opened.book.id,
             expectedOpenInstanceId = readerSessionInstanceId,
@@ -2102,8 +2100,7 @@ fun ReaderScreen(
                 val commit = if (
                     settledNavigation?.commitPolicy ==
                         ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR ||
-                    (navigationSessionState.state.isExploring &&
-                        event == ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+                    !navigationSessionState.mayCommitObservedEvent(event)
                 ) null else readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     expectedOpenInstanceId = readerSessionInstanceId,
