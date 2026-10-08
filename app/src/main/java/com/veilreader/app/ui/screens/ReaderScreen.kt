@@ -3307,7 +3307,7 @@ fun ReaderScreen(
                             .heightIn(min = 48.dp)
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
                     ) {
                         ReaderChromeButton(
                             ReaderAction.BACK,
@@ -4725,9 +4725,12 @@ internal fun EpubAppearancePanel(
         modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = VeilSpacing.lg, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = ReaderVisualGeometry.AppearanceSheetHorizontalPadding)
+            .padding(
+                top = ReaderVisualGeometry.AppearanceSheetTopPadding,
+                bottom = ReaderVisualGeometry.AppearanceSheetBottomPadding
+            ),
+        verticalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceSectionGap)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             if (!condensedApproach) {
