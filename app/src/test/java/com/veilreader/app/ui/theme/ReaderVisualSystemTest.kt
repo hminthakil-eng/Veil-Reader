@@ -95,6 +95,20 @@ class ReaderVisualSystemTest {
         assertTrue(ReaderVisualOpacity.HudProgressTrack < ReaderVisualOpacity.HudAccentHairline)
     }
 
+
+    @Test
+    fun navigationAndTtsChromeStayTouchFriendly() {
+        assertTrue(
+            ReaderVisualGeometry.PreviousLocationChipMinHeight.value >=
+                ReaderVisualGeometry.TouchTarget.value
+        )
+        assertTrue(
+            ReaderVisualGeometry.TtsMiniPlayerMinHeight.value >=
+                ReaderVisualGeometry.TouchTarget.value
+        )
+        assertTrue(ReaderVisualGeometry.TtsMiniPlayerRadius.value <= 16f)
+    }
+
     @Test
     fun annotationChannelsRemainDistinct() {
         val highlights = listOf(
