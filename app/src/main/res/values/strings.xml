@@ -1426,4 +1426,5 @@
     <string name="reader_paper_rollout_unavailable">Paper animation is unavailable in this version. Using simple paging; your saved preference is unchanged.</string>
     <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
     <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
+    <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
 </resources>
