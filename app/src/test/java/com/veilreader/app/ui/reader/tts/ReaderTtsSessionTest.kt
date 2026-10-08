@@ -22,6 +22,49 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class ReaderTtsSessionTest {
     @Test
+    fun checkpointMustCommitBeforePlaybackAndPlayingAcknowledgement() = runTest {
+        val saved = CompletableDeferred<Unit>()
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), commitCheckpoint = { _, _ -> saved.await() })
+        try {
+            session.start(locator()); runCurrent()
+            assertEquals(ReaderTtsPhase.PREPARING, session.state.value.phase)
+            assertTrue(backend.requests.isEmpty())
+            saved.complete(Unit); runCurrent()
+            assertEquals(ReaderTtsPhase.PLAYING, session.state.value.phase)
+            assertEquals(1, backend.requests.size)
+        } finally { session.close() }
+    }
+
+    @Test
+    fun checkpointFailureNeverSpeaksOrAcknowledgesPlaying() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), commitCheckpoint = { _, _ -> error("Storage failed") })
+        try {
+            session.start(locator()); runCurrent()
+            assertEquals(ReaderTtsPhase.FAILED, session.state.value.phase)
+            assertEquals(ReaderTtsProblem.STORAGE, session.state.value.problem)
+            assertTrue(backend.requests.isEmpty())
+        } finally { session.close() }
+    }
+
+    @Test
+    fun pauseWhileCheckpointWaitsCannotStartLateSpeech() = runTest {
+        val saved = CompletableDeferred<Unit>()
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), commitCheckpoint = { _, _ -> saved.await() })
+        try {
+            session.start(locator()); runCurrent()
+            session.pause(); saved.complete(Unit); runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertTrue(backend.requests.isEmpty())
+        } finally { session.close() }
+    }
+
+    @Test
     fun foregroundSleepTimerPausesAtDeadlineWithoutRestartingUtterance() = runTest {
         val backend = FakeBackend()
         val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },

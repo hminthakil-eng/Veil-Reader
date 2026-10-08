@@ -106,6 +106,8 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPreferences
 import com.veilreader.app.ui.reader.tts.readerCanPlayForegroundTts
 import com.veilreader.app.ui.reader.tts.readerCanCompleteTtsStart
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
+import com.veilreader.app.ui.reader.tts.ReaderForegroundTtsCheckpointController
+import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpointStore
 import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpoint
 import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
@@ -1255,8 +1257,14 @@ fun ReaderScreen(
     val backgroundTtsEnabled = remember {
         VeilFeatureGates.enabled(
             VeilRiskyFeature.BACKGROUND_TTS,
-            debugReview = BuildConfig.DEBUG
+            debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
         )
+    }
+    val foregroundTtsCheckpoint = remember(opened.book.id, readerSessionInstanceId, backgroundTtsEnabled) {
+        if (backgroundTtsEnabled) null else {
+            val store = ReaderTtsCheckpointStore(activity.applicationContext)
+            ReaderForegroundTtsCheckpointController(opened.book.id, store::read, store::save)
+        }
     }
     val ttsSession = remember(
         opened.book.id,
@@ -1268,9 +1276,31 @@ fun ReaderScreen(
             null
         } else {
             val ownerId = readerSessionInstanceId
-            createReadiumReaderTtsSession(activity.applicationContext, opened) {
+            createReadiumReaderTtsSession(
+                activity.applicationContext, opened,
+                commitCheckpoint = { locator, preferences ->
+                    requireNotNull(foregroundTtsCheckpoint).commit(locator, preferences)
+                }
+            ) {
                 latestReaderSessionInstanceId.value == ownerId && latestTtsCanPlay.value()
             }
+        }
+    }
+    LaunchedEffect(ttsSession, foregroundTtsCheckpoint) {
+        val session = ttsSession ?: return@LaunchedEffect
+        try {
+            foregroundTtsCheckpoint?.restore(
+                session,
+                ReaderTtsPreferences(
+                    speed = latestTtsSettings.value.speed.toFloat(),
+                    pitch = latestTtsSettings.value.pitch.toFloat(),
+                    preferredVoiceIds = latestTtsSettings.value.preferredVoiceIds
+                )
+            ) { latestReaderSessionInstanceId.value == readerSessionInstanceId && !closeInFlight }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            readerMessage = activity.getString(R.string.tts_checkpoint_failed)
         }
     }
     val ttsServiceController = remember(
@@ -4099,6 +4129,7 @@ fun ReaderScreen(
             }
         val previewProblem by previewProblemSource.collectAsStateWithLifecycle()
         val checkpointSource = ttsServiceController?.checkpoint
+            ?: foregroundTtsCheckpoint?.checkpoint
             ?: remember {
                 kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsCheckpoint?>(null)
             }
