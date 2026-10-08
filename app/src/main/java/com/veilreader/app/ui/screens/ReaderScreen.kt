@@ -389,6 +389,7 @@ fun ReaderScreen(
     val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
     val readerOpenFailedMessage = stringResource(R.string.notice_open_failed)
     val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
+    val bookmarkSaveFailedMessage = stringResource(R.string.reader_bookmark_save_failed)
     val bookmarkDuplicateMessage = stringResource(R.string.reader_bookmark_duplicate)
     val noteSavedMessage = stringResource(R.string.reader_note_saved)
     val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
@@ -3288,22 +3289,34 @@ fun ReaderScreen(
                             selectionActionModeCallback.dismissSelection()
                             val locator = navigator?.currentLocator?.value
                             if (locator != null) {
-                                val added = library.addBookmark(
-                                    opened.book.id,
+                                val expectedSessionId = readerSessionInstanceId
+                                val bookId = opened.book.id
+                                val locatorJson = locator.toVeilPersistedJson(opened.format)
+                                val label =
                                     if (opened.format == BookFormat.PDF && pdfPageNumber(locator) != null) {
                                         activity.getString(R.string.pdf_bookmark_page, pdfPageNumber(locator))
                                     } else {
                                         "${formatPercent(progress)} · ${locator.title?.takeIf { it.isNotBlank() } ?: readerBookTitle}"
-                                    },
-                                    locator.toVeilPersistedJson(opened.format)
-                                )
-                                if (added) {
-                                    onSensoryEvent(VeilSensoryEvent.MARK)
-                                }
-                                readerMessage = if (added) {
-                                    bookmarkSavedMessage
-                                } else {
-                                    bookmarkDuplicateMessage
+                                    }
+                                scope.launch {
+                                    try {
+                                        val added = library.addBookmark(bookId, label, locatorJson)
+                                        if (!readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            )
+                                        ) return@launch
+                                        if (added) onSensoryEvent(VeilSensoryEvent.MARK)
+                                        readerMessage = if (added) bookmarkSavedMessage else bookmarkDuplicateMessage
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (_: Exception) {
+                                        if (readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            )
+                                        ) readerMessage = bookmarkSaveFailedMessage
+                                    }
                                 }
                             }
                         }

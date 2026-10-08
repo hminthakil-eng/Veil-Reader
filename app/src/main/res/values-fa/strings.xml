@@ -1419,4 +1419,5 @@
     <string name="reader_paper_presentation_failed">نمایش ورق کاغذ ممکن نشد. دوباره تلاش کنید یا از اسلاید استفاده کنید.</string>
     <string name="reader_paper_renderer_unavailable">نمایش کاغذ فعلاً در دسترس نیست. ورق‌زدن ساده همچنان کار می‌کند؛ می‌توانید از اسلاید استفاده کنید.</string>
     <string name="reader_paper_use_slide">استفاده از اسلاید</string>
+    <string name="reader_bookmark_save_failed">ذخیرهٔ نشانک انجام نشد. نشانک‌های ذخیره‌شدهٔ شما تغییر نکرده‌اند.</string>
 </resources>

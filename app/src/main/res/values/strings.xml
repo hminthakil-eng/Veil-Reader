@@ -1419,4 +1419,5 @@
     <string name="reader_paper_presentation_failed">The paper turn could not be displayed. Try again or use Slide.</string>
     <string name="reader_paper_renderer_unavailable">Paper animation is unavailable right now. Simple paging still works; you can use Slide.</string>
     <string name="reader_paper_use_slide">Use Slide</string>
+    <string name="reader_bookmark_save_failed">Couldn’t save the bookmark. Your saved bookmarks are unchanged.</string>
 </resources>

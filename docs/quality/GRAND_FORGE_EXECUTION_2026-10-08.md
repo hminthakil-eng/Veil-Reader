@@ -139,3 +139,59 @@ Public official behavior references consulted2026-10-08: [Android accessible48dp
 ## Next execution boundary
 
 Finish current exact-head CI, storage and smoke measurements; characterize bookmark acknowledged-write correctness and stale selection callbacks next in Wave1. Extract Reader orchestration only after these tests; do not rewrite giant composables. Wave2 then addresses explicit Paper availability and physical renderer acceptance. Physical checks stay BLOCKED when no device evidence is available; safe source work continues without pretending those gates passed.
+
+## Dedicated Grand Forge continuation — bookmark creation durability
+
+Repository truth refreshed at `b8ec35a14d0c670adc6774afba4f7b272cfb10b3`.
+The dedicated `grand-forge/p0-kindle-reader-quality-20261008` branch and
+`codex/reader-quality-hardening-20261007` have identical heads. Continue on the
+dedicated branch specified by the user, superseding the earlier instruction in
+this ledger to continue directly on PR427. Open PR427 and the TTS stacked chain
+remain intact. Exact baseline Android CI37741413918, storage37741413937,
+durability37741413944 and performance37741413848 all succeeded. This is baseline
+evidence, not evidence for the new patch.
+
+### GF-W1-BOOKMARK-ACK-CREATE
+
+- Priority/subsystem: P0 / local annotation durability.
+- User impact/observed: creation returns true and emits saved/haptic feedback before
+  queued Room insertion; failure can leave a phantom bookmark in the cache.
+- Expected: success means Room has committed; duplicate requests produce one record;
+  failure produces no success feedback or optimistic cached record.
+- Evidence/root cause: `LocalLibraryRepository.addBookmark` mutates StateFlow and
+  enqueues a write; `ReaderScreen` immediately acknowledges its Boolean.
+- Affected files/implementation: `LocalLibraryRepository.kt` makes addBookmark
+  suspending and reuses orderedWrite plus Room transaction; `data/db/Daos.kt`
+  queries the exact durable book/locator pair; `ui/screens/ReaderScreen.kt`
+  captures the requested book/locator before suspension, acknowledges after commit,
+  fences asynchronous feedback to the requesting session, preserves cancellation
+  and displays a localized storage error. EN/FA strings added.
+- Reuse opportunity: existing serialized queue, Room transaction and session fence;
+  no second storage system, schema migration or proprietary code.
+- Risks: callers now suspend; a cancelled caller can leave a committed bookmark
+  without feedback, but retries detect that durable duplicate. Duplicate identity
+  remains exact locator JSON; semantic normalization is separate work.
+- Tests: `AnnotationDurabilityInstrumentedTest.kt` adds immediate committed-read,
+  20 concurrent requests and SQLite-trigger write-failure regressions. Assertions
+  deliberately omit flushWrites at the acknowledgement boundary.
+- Performance: one indexed-by-book lookup and insert transaction per new bookmark;
+  no main-thread blocking. Device latency not measured.
+- Accessibility/RTL: existing accessible one-action control retained; localized
+  EN/FA failure feedback. TalkBack and RTL rendered verification remain pending.
+- Acceptance: all three Room regressions pass, Android compilation/unit/lint/build
+  pass, real-device create/reopen/failure and UX verification before GREEN.
+- Dependencies: Wave0 repository truth; existing orderedWrite/session ownership.
+- Status: YELLOW source patch; Android evidence pending. Bookmark deletion remains
+  RED under the parent GF-W1-BOOKMARK-ACK task; creation is only one coherent slice.
+- Rollback: revert this coherent commit. All seven release gates unchanged.
+
+Local checks: reading policy39 PASS, canonical Paper source contract PASS, four
+Paper guard regressions PASS, git diff whitespace check PASS. Local Gradle wrapper
+download failed with connection refused; this executor also has no Android SDK
+or attached device. Use existing GitHub Android/storage workflows for compilation
+and emulator evidence; do not treat emulator success as physical-device proof.
+
+Next P0 graph: bookmark create acknowledgement → bookmark delete acknowledgement
+→ selection mode replacement ownership → progress checkpoint failure
+characterization → navigation/input/Paper regressions → typography/RTL → TTS.
+Reuse the file-level graph and archaeology above; no duplicate roadmap.
