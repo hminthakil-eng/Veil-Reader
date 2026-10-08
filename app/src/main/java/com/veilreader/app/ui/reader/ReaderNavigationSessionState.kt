@@ -64,6 +64,15 @@ internal class ReaderNavigationSessionStateMachine(
      */
     fun mayPersistFinalSnapshot(): Boolean = !state.isExploring
 
+    /** Layout, opening and jump observations cannot promote a temporary destination. */
+    fun mayCommitObservedEvent(event: ReaderLocatorEvent): Boolean =
+        !state.isExploring || when (event) {
+            ReaderLocatorEvent.NAVIGATOR_PAGE_TURN,
+            ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT,
+            ReaderLocatorEvent.PAPER_COMMIT -> true
+            else -> false
+        }
+
     /** A failed write must never be advertised as a durable anchor. */
     fun onDurableReadingCommitAccepted(locatorJson: String, accepted: Boolean) {
         if (accepted) onDurableReadingCommit(locatorJson)
