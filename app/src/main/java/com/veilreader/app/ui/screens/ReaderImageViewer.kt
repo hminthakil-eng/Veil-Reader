@@ -16,13 +16,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +38,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -180,6 +178,9 @@ internal fun ReaderImageViewer(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val zoomOutLabel = stringResource(R.string.pdf_zoom_out)
+                        val fitLabel = stringResource(R.string.reader_image_zoom_reset)
+                        val zoomInLabel = stringResource(R.string.pdf_zoom_in)
                         val zoomColors = IconButtonDefaults.iconButtonColors(
                             contentColor = VeilPalette.Moon,
                             disabledContentColor = VeilPalette.Moon.copy(alpha = 0.38f)
@@ -188,25 +189,25 @@ internal fun ReaderImageViewer(
                             IconButton(
                                 onClick = { zoomBy(0.8f) },
                                 enabled = transform.scale > 1f,
-                                modifier = Modifier.size(48.dp),
+                                modifier = Modifier.size(48.dp).semantics { contentDescription = zoomOutLabel },
                                 colors = zoomColors
                             ) {
-                                Icon(Icons.Default.Remove, stringResource(R.string.pdf_zoom_out))
+                                Text("−", Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleLarge)
                             }
                             IconButton(
                                 onClick = { transform = ReaderImageTransform() },
-                                modifier = Modifier.size(48.dp),
+                                modifier = Modifier.size(48.dp).semantics { contentDescription = fitLabel },
                                 colors = zoomColors
                             ) {
-                                Icon(Icons.Default.Refresh, stringResource(R.string.reader_image_zoom_reset))
+                                Text("↺", Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleLarge)
                             }
                             IconButton(
                                 onClick = { zoomBy(1.25f) },
                                 enabled = transform.scale < 5f && viewport.width > 0 && viewport.height > 0,
-                                modifier = Modifier.size(48.dp),
+                                modifier = Modifier.size(48.dp).semantics { contentDescription = zoomInLabel },
                                 colors = zoomColors
                             ) {
-                                Icon(Icons.Default.Add, stringResource(R.string.pdf_zoom_in))
+                                Text("+", Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleLarge)
                             }
                         }
                         Text(
