@@ -1,15 +1,19 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -181,3 +185,47 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
         }
     }
 }
+
+@Composable
+internal fun PreviousLocationChip(
+    returnLabel: String,
+    locationLabel: String,
+    background: Color,
+    foreground: Color,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius),
+        border = BorderStroke(
+            1.dp,
+            accent.copy(alpha = ReaderVisualOpacity.HudAccentHairline)
+        ),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = background.copy(alpha = ReaderVisualOpacity.ChromeSurface),
+            contentColor = foreground
+        ),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+        modifier = modifier.heightIn(min = ReaderVisualGeometry.PreviousLocationChipMinHeight)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Text(
+                returnLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = accent.copy(alpha = ReaderVisualOpacity.SelectedBorder)
+            )
+            Text(
+                locationLabel,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
