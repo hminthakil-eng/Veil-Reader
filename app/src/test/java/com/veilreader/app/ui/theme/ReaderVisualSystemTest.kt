@@ -64,6 +64,26 @@ class ReaderVisualSystemTest {
         assertEquals(0xFFD5D5D2.toInt(), oled.text)
     }
 
+
+    @Test
+    fun appearanceSheetGeometryStaysComfortableAndAccessible() {
+        assertTrue(ReaderVisualGeometry.AppearanceSheetHorizontalPadding.value >= 16f)
+        assertTrue(ReaderVisualGeometry.AppearanceSheetTopPadding.value >= 16f)
+        assertTrue(ReaderVisualGeometry.AppearanceSectionGap.value >= 12f)
+        assertTrue(
+            ReaderVisualGeometry.AppearanceModeChoiceMinHeight.value >=
+                ReaderVisualGeometry.TouchTarget.value
+        )
+        assertTrue(
+            ReaderVisualGeometry.AppearancePreviewMinHeight.value >
+                ReaderVisualGeometry.AppearanceModeChoiceMinHeight.value
+        )
+        assertTrue(
+            ReaderVisualGeometry.AppearanceThemeCardMinHeight.value >
+                ReaderVisualGeometry.TouchTarget.value
+        )
+    }
+
     @Test
     fun annotationChannelsRemainDistinct() {
         val highlights = listOf(
