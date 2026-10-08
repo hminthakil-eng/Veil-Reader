@@ -91,6 +91,9 @@ object ReaderVisualGeometry {
     val HudTopRowMinHeight = 52.dp
     val HudControlGap = 4.dp
     val PreviousLocationTopOffset = 60.dp
+    val PreviousLocationChipMinHeight = 48.dp
+    val TtsMiniPlayerMinHeight = 64.dp
+    val TtsMiniPlayerRadius = 12.dp
 
     val MobileHorizontalMargin = 22.dp
     val MobileHorizontalMarginMin = 14.dp
