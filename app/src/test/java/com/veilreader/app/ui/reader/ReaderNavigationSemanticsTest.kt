@@ -13,6 +13,7 @@ class ReaderNavigationSemanticsTest {
             ReaderNavigationReason.FOOTNOTE,
             ReaderNavigationReason.BOOKMARK,
             ReaderNavigationReason.HIGHLIGHT,
+            ReaderNavigationReason.SAVED_PASSAGE,
             ReaderNavigationReason.PAGE_PREVIEW,
             ReaderNavigationReason.REFERENCE,
             ReaderNavigationReason.INTERNAL_LINK,
