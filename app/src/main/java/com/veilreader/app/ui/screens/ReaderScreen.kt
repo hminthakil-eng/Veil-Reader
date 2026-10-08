@@ -41,7 +41,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -344,7 +344,9 @@ fun ReaderScreen(
             activeFixedLayoutSpread = fixedLayoutSpread
         }
     }
-    val typesettingViewportWidth = LocalConfiguration.current.screenWidthDp.toDouble()
+    val typesettingViewportWidth = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value.toDouble()
+    }
     val typesettingAccessibilityScale = LocalDensity.current.fontScale.toDouble()
     fun effectiveAppearance(requested: ReaderAppearance): ReaderAppearance =
         applyMaterialPageRolloutToAppearance(
