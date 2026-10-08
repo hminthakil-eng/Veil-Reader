@@ -20,6 +20,7 @@ Paths below are relative to app/src/main/java/com/veilreader/app unless noted.
 | Paper availability | Physical reading benchmark | Transition choice | GPU exists, release disabled | Existing canonical engine | Disabled-mode remap unexplained | Failure notice requires presented Paper | Explicit reason, static mode truthful | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderTransitionAvailabilityTest | YELLOW automated pass; device pending |
 | Paper performance | Smooth turns | Multiple transitions | Snapshot/upload/presentation fences | Existing Veil traces | First turn/100/500 turns/high-refresh proof | No physical hardware | Stable frame/memory budgets on device | P0 | ui/reader/material/, benchmark/ | PaperWarmupBenchmark, ReaderFrameBenchmark | BLOCKED physical |
 | Fixed-layout transition | Layout-aware behavior | Format depth | Static paging policy | Existing Veil capability policy | No physical leaf/spread engine | Whole-view capture is not one leaf | Explicit unavailability until correct engine | P0 | ui/screens/ReaderAppearancePolicy.kt | ReaderTransitionAvailabilityTest | HOLD engine |
+| Adaptive columns | Layout maturity | Column customization | New viewport/font-size policy | Existing Readium renderer | Physical output and complete text-measure policy pending | Mapper previously delegated AUTO/TWO without Veil font scale | Single column when text would be cramped; preserve requested setting | P0 | ui/screens/AdaptiveTypesettingPolicy.kt, ReaderScreen.kt | AdaptiveTypesettingPolicyTest (6 cases; CI pending) | YELLOW 1fe42055 pending |
 | Typography/RTL | Typesetting maturity | Advanced settings | Script-aware capability restrictions exist | Readium + Veil policy | Rendered corpus/extreme settings evidence | Permanent output matrix incomplete | Readable language-aware layouts | P0 | ui/screens/ReaderAppearancePolicy.kt, ReaderScreen.kt | ReaderPreferencesTest, rendered fixtures pending | YELLOW |
 | Bookmark create | One-action saved place | Notebook depth | Ordered Room commit patched | Existing Bookmark domain | Device/UX and semantic duplicate identity | Earlier optimistic cache acknowledgement | Durable one-action create | P0 | data/LocalLibraryRepository.kt, data/db/Daos.kt, ui/screens/ReaderScreen.kt | AnnotationDurabilityInstrumentedTest (3 creation cases) | YELLOW |
 | Bookmark delete | Reliable saved places | Notebook depth | Ordered deletion patched | Existing Room observer | Device/UX acceptance | Earlier optimistic removal | Retain record on failure | P0 | data/LocalLibraryRepository.kt, ui/VeilApp.kt, ui/screens/ReaderScreen.kt | AnnotationDurabilityInstrumentedTest (2 deletion cases) | YELLOW |
@@ -46,6 +47,7 @@ emulator instrumentation are separate columns. No row is GREEN.
 | Bookmark deletion | Patched | Reader + Archive | Current suite pass | New Room cases pass | Missing | Missing | Latency unmeasured | Enabled | YELLOW |
 | Selection exact owner | Patched | Existing callback | 3/3 pass | Compiled; UI case not run | Missing | Missing | Constant-time guard; unmeasured | Enabled | YELLOW |
 | Transition availability notice | Patched | Ready Reader snackbar | 3/3 pass | Compiled; notice UI not run | Missing | Missing | No rendering work; unmeasured | Notice enabled | YELLOW |
+| Adaptive reading columns | Patched | Reader initial/apply/close paths | Six new cases, CI pending | Not run | Missing | Missing | Reflow cost unmeasured | Awaiting build | YELLOW |
 | GPU Paper | Substantial | Debug/benchmark | Baseline pass | Simulated evidence | Missing | Missing | No hardware traces | Disabled | BLOCKED |
 | Background TTS | Substantial | Debug review | Baseline pass | Baseline backend | Missing audible playback | Missing | Battery/thermal missing | Disabled | BLOCKED |
 | Neural/network TTS | Partial/gated | Review/adapter | Baseline coverage | Partial | Missing | Missing | Missing | Disabled | HOLD |
@@ -114,3 +116,13 @@ be7d21606bf0e11bfe13f1a5a6d94254a080e01427c65e953a171c49a5da9948.
 [Exact test artifact11539007013](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752444851/artifacts/11539007013).
 This is a debug test APK, not a signed production release. See the
 [S24 Ultra protocol](GRAND_FORGE_S24_ULTRA_QA_2026-10-08.md).
+
+## Reader experience follow-up
+
+User S24 feedback: “nothing changed”; the cover screenshot is not evidence of
+Paper/text/layout acceptance. Previous build mainly changed durability and
+ownership. Do not describe it as a completed visible Reader upgrade.
+New executable source1fe42055 adds adaptive reflowable EPUB columns and an EN/FA
+settings explanation. [Exact-source CI](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37758765459)
+is pending; previous961/storage163/process36 results do not verify this new code.
+No feature gate promotion, cover replacement or whole-Reader redesign.
