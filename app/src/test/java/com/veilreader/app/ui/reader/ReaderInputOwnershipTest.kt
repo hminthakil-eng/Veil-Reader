@@ -23,6 +23,29 @@ class ReaderInputOwnershipTest {
         assertEquals(ReaderInputOwner.SLIDE, settled.acquire(ReaderInputOwner.SLIDE)?.owner)
     }
 
+    @Test fun competingOwnerCannotStealIdleNavigator() {
+        val navigator = ReaderInputOwnership().acquire(ReaderInputOwner.NAVIGATOR)!!
+        assertFalse(navigator.canAcquire(ReaderInputOwner.PAPER))
+        assertFalse(navigator.canAcquire(ReaderInputOwner.PROGRAMMATIC))
+        assertNull(navigator.acquire(ReaderInputOwner.SLIDE))
+        assertEquals(ReaderInputOwner.NAVIGATOR, navigator.owner)
+    }
+
+    @Test fun sameOwnerCannotBypassPendingPreview() {
+        val paper = ReaderInputOwnership().acquire(ReaderInputOwner.PAPER)!!
+            .beginPreview()!!
+        assertFalse(paper.canAcquire(ReaderInputOwner.PAPER))
+        assertNull(paper.acquire(ReaderInputOwner.PAPER))
+    }
+
+    @Test fun explicitReleaseAllowsHandoff() {
+        val navigator = ReaderInputOwnership().acquire(ReaderInputOwner.NAVIGATOR)!!
+        val released = navigator.release(ReaderInputOwner.NAVIGATOR)
+        assertEquals(ReaderInputOwner.NONE, released.owner)
+        assertEquals(ReaderInputOwner.PROGRAMMATIC,
+            released.acquire(ReaderInputOwner.PROGRAMMATIC)?.owner)
+    }
+
     @Test fun navigatorCannotStartPaperPreview() {
         val navigator = ReaderInputOwnership().acquire(ReaderInputOwner.NAVIGATOR)!!
         assertNull(navigator.beginPreview())
