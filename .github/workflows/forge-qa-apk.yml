@@ -2,6 +2,12 @@ name: Forge QA APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008" ]
+    paths:
+      - "app/**"
+      - "tools/run_android_ci_emulator.sh"
+      - ".github/workflows/forge-qa-apk.yml"
 
 permissions:
   contents: read
