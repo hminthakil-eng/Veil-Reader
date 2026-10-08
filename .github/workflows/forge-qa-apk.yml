@@ -93,8 +93,8 @@ jobs:
           pin = Path('quality/forge-qa-signing-cert.sha256')
           if pin.exists():
               signature = Path('build/forge-qa/SIGNATURE.txt').read_text()
-              prefix = 'Signer #1 certificate SHA-256 digest:'
-              actual = next(line[len(prefix):].strip().lower() for line in signature.splitlines() if line.startswith(prefix))
+              prefixes = ('Signer #1 certificate SHA-256 digest:', 'V2 Signer: certificate SHA-256 digest:')
+              actual = next(line[len(prefix):].strip().lower() for line in signature.splitlines() for prefix in prefixes if line.startswith(prefix))
               assert actual == pin.read_text().strip().lower(), 'QA signer does not match pinned update identity'
           PY
           printf 'source=%s\nrun=%s\npackage=com.veilreader.app.forgeqa\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > build/forge-qa/BUILD.txt
