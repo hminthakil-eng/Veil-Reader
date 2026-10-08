@@ -54,6 +54,17 @@ internal class ReaderNavigationSessionStateMachine(
         state = ReaderNavigationSessionState(readingAnchorJson = locatorJson)
     }
 
+    /**
+     * Reaching a temporary destination is not a durability acknowledgement. Callers must not
+     * persist a lifecycle/final snapshot while this exploration is active.
+     */
+    fun mayPersistFinalSnapshot(): Boolean = !state.isExploring
+
+    /** A failed write must never be advertised as a durable anchor. */
+    fun onDurableReadingCommitAccepted(locatorJson: String, accepted: Boolean) {
+        if (accepted) onDurableReadingCommit(locatorJson)
+    }
+
     fun clearExploration() {
         state = state.copy(
             explorationLocatorJson = null,
