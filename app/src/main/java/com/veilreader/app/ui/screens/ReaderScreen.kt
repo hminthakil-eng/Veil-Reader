@@ -290,6 +290,12 @@ fun ReaderScreen(
             .distinctUntilChanged()
     }
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
+    val progressFailureFlow = remember(readerViewModel, opened.book.id, readerSessionInstanceId) {
+        readerViewModel.uiState.map { state ->
+            state.bookId == opened.book.id && state.progressSaveFailed
+        }.distinctUntilChanged()
+    }
+    val progressSaveFailed by progressFailureFlow.collectAsStateWithLifecycle(initialValue = false)
 
     var navigator by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
@@ -426,6 +432,12 @@ fun ReaderScreen(
     val boundaryEndMessage =
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    val progressSaveFailedMessage = stringResource(R.string.reader_progress_save_failed)
+    LaunchedEffect(progressSaveFailed, opened.book.id, readerSessionInstanceId) {
+        if (progressSaveFailed) {
+            readerMessage = progressSaveFailedMessage
+        }
+    }
     var paperFailureNotice by remember(readerSessionInstanceId) {
         mutableStateOf<ReaderPaperFailureNotice?>(null)
     }
@@ -1509,6 +1521,9 @@ fun ReaderScreen(
                     }
                 }
 
+                check(!readerViewModel.uiState.value.progressSaveFailed) {
+                    "Reader progress checkpoint is not durable."
+                }
                 ReaderTrace.event(
                     "reader_close_durability_wait",
                     bookId = opened.book.id,

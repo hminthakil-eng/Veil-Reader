@@ -530,6 +530,13 @@ class LocalLibraryRepository internal constructor(
                 )
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
+            if (!saveResult.crashCheckpointDurable) {
+                return@synchronized ReaderProgressSaveOutcome(
+                    accepted = false,
+                    crashCheckpointDurable = false,
+                    crashCheckpointLatencyNanos = saveResult.crashCheckpointLatencyNanos
+                )
+            }
             latestReaderProgressOrderByBook[lease.bookId] = order
             ReaderProgressSaveOutcome(
                 accepted = true,
@@ -664,6 +671,15 @@ class LocalLibraryRepository internal constructor(
             )
         }
 
+        // A semantic commit may not escape into the cache/Room queue if the journal
+        // failed. Keep the previous accepted position and ordering so this save can retry.
+        if (!crashCheckpointDurable) {
+            return ProgressSaveResult(
+                newlyFinished = false,
+                crashCheckpointDurable = false,
+                crashCheckpointLatencyNanos = crashCheckpointLatencyNanos
+            )
+        }
         latestProgressTimestampByBook[id] = committedAtEpochMs
         replaceBookCached(updated)
         val crossedMilestones = crossedReadingMilestones(

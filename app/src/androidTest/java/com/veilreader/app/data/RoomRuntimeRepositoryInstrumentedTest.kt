@@ -699,6 +699,67 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun failedSemanticCheckpointRetainsPriorPositionAndAllowsSameSequenceRetry() = runBlocking<Unit> {
+        val repository = repository()
+        val origin = """{"href":"origin.xhtml"}"""
+        val destination = """{"href":"destination.xhtml"}"""
+        repository.addImportedBook(Book(
+            id = "failed-journal-book", title = "Journal failure", author = "Durability",
+            sourceUri = "file:///journal-failure.epub", progress = 0.2f,
+            locatorJson = origin, lastOpenedAtEpochMs = 100L
+        ))
+        repository.flushWrites()
+        val lease = repository.beginReaderProgressSession("failed-journal-book", "failure-session")
+        val journalRoot = File(context.filesDir, "reader-recovery")
+        journalRoot.deleteRecursively()
+        journalRoot.writeText("File blocks checkpoint directory")
+
+        val failed = repository.saveReaderProgress(
+            lease, 0.7, destination, sequence = 1L, nowEpochMs = 101L, bypassDebounce = true
+        )
+        assertFalse(failed.accepted)
+        assertFalse(failed.crashCheckpointDurable)
+        assertEquals(origin, repository.getBook("failed-journal-book")?.locatorJson)
+        assertEquals(0.2f, requireNotNull(repository.getBook("failed-journal-book")).progress, 0.0001f)
+        repository.flushWrites()
+        assertEquals(origin, db.books().findEntity("failed-journal-book")?.locatorJson)
+
+        assertTrue(journalRoot.delete())
+        val retried = repository.saveReaderProgress(
+            lease, 0.7, destination, sequence = 1L, nowEpochMs = 101L, bypassDebounce = true
+        )
+        assertTrue(retried.accepted)
+        assertTrue(retried.crashCheckpointDurable)
+        repository.flushWrites()
+        assertEquals(destination, db.books().findEntity("failed-journal-book")?.locatorJson)
+        repository.endReaderProgressSession(lease)
+    }
+
+    @Test
+    fun malformedSemanticCheckpointCannotAdvanceCompletionOrOrdering() = runBlocking<Unit> {
+        val repository = repository()
+        repository.addImportedBook(Book(
+            id = "invalid-journal-book", title = "Invalid checkpoint", author = "Durability",
+            sourceUri = "file:///invalid-journal.epub", progress = 0.2f,
+            locatorJson = """{"href":"origin.xhtml"}"""
+        ))
+        repository.flushWrites()
+        val lease = repository.beginReaderProgressSession("invalid-journal-book", "invalid-session")
+        val failed = repository.saveReaderProgress(
+            lease, 1.0, "not a locator", sequence = 1L, bypassDebounce = true
+        )
+        assertFalse(failed.accepted)
+        assertFalse(failed.newlyFinished)
+        assertFalse(requireNotNull(repository.getBook("invalid-journal-book")).finished)
+        repository.flushWrites()
+        assertFalse(requireNotNull(db.books().findEntity("invalid-journal-book")).finished)
+        assertTrue(repository.saveReaderProgress(
+            lease, 1.0, """{"href":"final.xhtml"}""", sequence = 1L, bypassDebounce = true
+        ).accepted)
+        repository.endReaderProgressSession(lease)
+    }
+
+    @Test
     fun semanticCheckpoint_bridgesAsyncRoomWindow_andClearsOnlyAfterRoomCatchesUp() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(

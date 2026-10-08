@@ -340,3 +340,15 @@ waves are not claimed complete.
 - Accessibility/RTL: large system scale prevents cramped columns; no physical page direction changes.
 - Tests: six unit cases cover width, reader/system size, scope, scrolling, explicit ONE, invalid inputs and preference preservation. Local reading-policy39 and Paper source guard passed. Android compilation/unit/device evidence pending.
 - Dependencies/status: existing appearance relayout transaction; YELLOW, not a finished Reader overhaul.
+
+## GF-W1-PROGRESS-FAILURE — reject failed semantic checkpoints
+
+- Priority/subsystem: P0 local durability, Reader progress and close transaction.
+- Observed/evidence: `saveProgressLocked` reported a failed crash journal but still replaced the cached Book and queued Room; `saveReaderProgress` returned accepted=true; `ReaderViewModel` ignored the durability flag. Close could then acknowledge storage success.
+- Expected/user impact: retain the last accepted position when synchronous recovery fails; warn the reader and permit a same-position retry rather than falsely acknowledging progress/completion.
+- Files/implementation: `data/LocalLibraryRepository.kt` rejects failed checkpoints before cache, timestamp, milestones, queue or writer-order advancement. `ui/reader/ReaderLocatorPolicy.kt` rolls back the pending dedup owner and supports a durability retry after duplicate observations. `ReaderViewModel.kt` publishes failure, delays page credit until acceptance and clears failure only after a semantic durable save. `ReaderScreen.kt` observes a distinct failure flag, presents an EN/FA warning and rejects successful close before session finalization when a checkpoint remains unsaved.
+- Reuse: existing AtomicFile journal, ordered Room pipeline, snackbar and anchored final-snapshot transaction; no new persistence engine.
+- Acceptance/tests: block checkpoint directory with a file and verify no cache/Room acknowledgement, then remove obstruction and retry identical sequence; reject malformed completion without marking finished; dedup tests preserve saved origin, allow retry after an observation, and reject stale rollback.
+- Risks: on persistent storage failure Reader stays open with an explicit warning; it does not undo the renderer's physical page movement. Scroll/relayout observation durability and real storage exhaustion remain separate acceptance gaps.
+- Performance: same journal write on semantic commit, no new heartbeat-driven whole-screen updates; latency/device traces pending. Accessibility: localized non-gesture recovery instructions; TalkBack announcement pending. RTL: locators and semantic direction unchanged; real fixture acceptance pending.
+- Dependencies/status: existing journal/close contracts; YELLOW, Android/storage/process tests pending. Rollback is this isolated fix commit.

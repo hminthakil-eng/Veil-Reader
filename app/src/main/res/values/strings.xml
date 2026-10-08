@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="reader_progress_save_failed">Your new reading position could not be saved. Free some device storage, then turn a page or try closing the book again.</string>
     <string name="reader_columns_adaptive_hint">Two columns appear when there is enough room for your text size. Narrow windows and large text use one column; your preference is kept.</string>
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">Reading</string>

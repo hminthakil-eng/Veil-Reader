@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="reader_progress_save_failed">موقعیت جدید مطالعه ذخیره نشد. مقداری از فضای دستگاه را آزاد کنید، سپس صفحه را ورق بزنید یا دوباره کتاب را ببندید.</string>
     <string name="reader_columns_adaptive_hint">دو ستون زمانی نمایش داده می‌شود که برای اندازهٔ متن شما فضای کافی باشد. در پنجره‌های باریک و با متن بزرگ، یک ستون نمایش داده می‌شود؛ انتخاب شما حفظ می‌شود.</string>
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">مطالعه</string>
