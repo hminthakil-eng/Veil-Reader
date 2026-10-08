@@ -157,6 +157,7 @@ import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.ReaderVisualGeometry
 import com.veilreader.app.ui.theme.ReaderVisualOpacity
+import com.veilreader.app.ui.theme.readerVisualThemeArgb
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.withVeilTracking
@@ -5786,7 +5787,7 @@ private fun ReaderAppearancePreview(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = 150.dp)
-                    .background(paper, MaterialTheme.shapes.extraSmall)
+                    .background(paper, RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius))
                     .border(
                         1.dp,
                         if (appearance.theme == ReaderTheme.OLED) {
@@ -5794,7 +5795,7 @@ private fun ReaderAppearancePreview(
                         } else {
                             Color(0xFF6E5D42).copy(alpha = 0.24f)
                         },
-                        MaterialTheme.shapes.extraSmall
+                        RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius)
                     )
             ) {
                 ReaderPageAtmosphere(
@@ -5853,16 +5854,19 @@ private fun AppearancePreset(
                 role = Role.RadioButton,
                 onClick = onClick
             ),
-        shape = MaterialTheme.shapes.extraSmall,
+        shape = RoundedCornerShape(ReaderVisualGeometry.CardRadius),
         color = if (selected) {
             VeilMaterials.ElevatedSurface
         } else {
             Color.Transparent
         },
         border = BorderStroke(
-            1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+            if (selected) 1.5.dp else 1.dp,
+            if (selected) {
+                VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.SelectedBorder)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+            }
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -5875,11 +5879,11 @@ private fun AppearancePreset(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = 64.dp)
-                    .background(paper, MaterialTheme.shapes.extraSmall)
+                    .background(paper, RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius))
                     .border(
                         1.dp,
                         ink.copy(alpha = 0.18f),
-                        MaterialTheme.shapes.extraSmall
+                        RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius)
                     )
             ) {
                 Text(
@@ -5994,12 +5998,10 @@ internal fun readerHighlightTint(theme: ReaderTheme): Int =
         ReaderTheme.OLED -> 0xFFD1B15B.toInt()
     }
 
-internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
-    ReaderTheme.PAPER -> 0xFFE9DEC5.toInt() to 0xFF2A251F.toInt()
-    ReaderTheme.SEPIA -> 0xFFE2D0AA.toInt() to 0xFF362E24.toInt()
-    ReaderTheme.DUSK -> 0xFF18151D.toInt() to 0xFFF5F0F7.toInt()
-    ReaderTheme.OLED -> 0xFF000000.toInt() to 0xFFF5F0F7.toInt()
-}
+internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> =
+    readerVisualThemeArgb(theme).let { colors ->
+        colors.background to colors.text
+    }
 
 @OptIn(ExperimentalReadiumApi::class)
 internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumPreferences(
