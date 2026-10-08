@@ -182,8 +182,13 @@ class PaperDiscreteTurnLifecycleTest {
                     assertTrue(controls.perform())
                     runCurrent()
                     assertTrue(controls.pending())
+                    val cancelledAt = testScheduler.currentTime
                     owner.cancel()
                     runCurrent()
+                    // Readium settlement is intentionally NonCancellable and bounded to 1500ms.
+                    // Cleanup must run when it exits, not bypass the accepted-navigation fence.
+                    advanceUntilIdle()
+                    assertTrue(testScheduler.currentTime - cancelledAt <= 1_500L)
                     assertFalse(controls.pending())
                     assertEquals(listOf(fixture.origin), fixture.restores)
                     assertEquals(0, fixture.commits)
