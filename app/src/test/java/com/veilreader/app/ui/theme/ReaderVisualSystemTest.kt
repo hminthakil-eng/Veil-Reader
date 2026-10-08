@@ -84,6 +84,17 @@ class ReaderVisualSystemTest {
         )
     }
 
+
+    @Test
+    fun readerHudGeometryRemainsAccessibleAndRestrained() {
+        assertTrue(ReaderVisualGeometry.HudTopRowMinHeight.value >= ReaderVisualGeometry.TouchTarget.value)
+        assertTrue(ReaderVisualGeometry.HudHorizontalInset.value >= 6f)
+        assertTrue(ReaderVisualGeometry.HudCornerRadius.value <= 16f)
+        assertTrue(ReaderVisualGeometry.PreviousLocationTopOffset.value >= 56f)
+        assertTrue(ReaderVisualOpacity.AccessDockSurface < ReaderVisualOpacity.ChromeSurface)
+        assertTrue(ReaderVisualOpacity.HudProgressTrack < ReaderVisualOpacity.HudAccentHairline)
+    }
+
     @Test
     fun annotationChannelsRemainDistinct() {
         val highlights = listOf(
