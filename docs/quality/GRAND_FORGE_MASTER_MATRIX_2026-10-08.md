@@ -191,3 +191,28 @@ Physical-device acceptance remains UNVERIFIED. The public QA certificate is pinn
 runner cache save passed, later cache restore/update acceptance is pending.
 ReadingAnchor/exploration separation remains RED, as do complete rendered/script
 and physical-reader acceptance. No row is GREEN.
+
+## 2026 design brief — verified reuse decisions
+
+Magic UI repository metadata and LICENSE.md confirm MIT licensing, copyright
+Magic UI,2026-10-08. Its web/React animation components are reference material;
+nothing was copied into native Compose or the reading canvas in this wave.
+Reuse restrained shell hierarchy/feedback concepts independently; preserve
+reduced-motion and avoid animation on repeated reading actions.
+
+| Insight | Evidence / decision | Veil target / priority / status |
+|---|---|---|
+| Script-aware typography | New original LTR/RTL corpus passes EPUBCheck5.4.0; rendered acceptance absent | Existing Readium shaping/fallback first, P0/YELLOW |
+| Variable-font optical axes | Font and navigator-specific support needs verification; not an automatic legibility guarantee | Opt-in policy/corpus before implementation, P1/HOLD |
+| Hinge-aware layout | Actual window sizing is integrated; hinge avoidance not verified | Characterize separating hinge and text measure, P0/YELLOW |
+| Focus mask/sensory restraint | Existing ruler/haptic/reduced-motion paths need reachable-device audit | Reuse controls, keep user ownership, P0/YELLOW |
+| Eye/hand-position inference | Proposal is not measured device capability; inferred grip/cognition can be wrong | Optional adapter only after hardware/privacy/UX evidence, P2/HOLD |
+| Narrative-driven reflow/audio | Proposed sentiment behavior can disturb position and calm reading; no measured benefit | No automatic layout/theme change while reading, P2/HOLD |
+| Bionic text | No clinical efficacy evidence supplied; script shaping/accessibility need testing | Optional research, no dyslexia-treatment claim, P2/HOLD |
+| OS emergency notification replacement | Application canvas does not own system emergency alerts | Respect OS handling; no substitute dismissal flow, BLOCKED |
+| Local AI/vector search | Local execution is not zero latency or automatically private; lifecycle/security need evidence | Optional offline adapter, P2/HOLD |
+| EPUB4.0 / e-ink90Hz claims | Supplied brief is not a verified standard/hardware benchmark; official current validator reports EPUB3.4 rules | Publication/device capability evidence, HOLD |
+| Calm metrics | Do not infer comprehension/focus depth from page cadence without validity evidence | Actual time/session events, separate Reader/gamification domain, P1/YELLOW |
+
+P0 annotation/selection/listening continuity remains ahead of speculative motion
+and AI. Fixtures are structurally validated, not visual goldens. No GREEN claim.
