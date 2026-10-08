@@ -14,10 +14,10 @@ internal data class ReaderInputOwnership(
     fun canAcquire(requested: ReaderInputOwner): Boolean =
         when {
             requested == ReaderInputOwner.NONE -> false
-            owner == requested -> true
             previewPending -> false
             owner == ReaderInputOwner.NONE -> true
-            else -> true
+            owner == requested -> true
+            else -> false
         }
 
     fun acquire(requested: ReaderInputOwner): ReaderInputOwnership? =
