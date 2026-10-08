@@ -1352,6 +1352,12 @@ fun ReaderScreen(
             ttsServiceController?.close()
         }
     }
+    val ttsVisualStateFallback = remember {
+        kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState())
+    }
+    val ttsVisualStateSource =
+        ttsServiceController?.state ?: ttsSession?.state ?: ttsVisualStateFallback
+    val ttsVisualState by ttsVisualStateSource.collectAsStateWithLifecycle()
     DisposableEffect(ttsSession, lifecycle, backgroundTtsEnabled) {
         val observer = LifecycleEventObserver { _, event ->
             if (
@@ -3533,14 +3539,54 @@ fun ReaderScreen(
                     }
 
                     if (ttsSession != null || ttsServiceController != null) {
-                        TextButton(
-                            onClick = {
-                                readerViewModel.onUserInteraction(readerSessionInstanceId)
-                                selectionActionModeCallback.dismissSelection()
-                                showTts = true
-                            },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                        ) { Text(stringResource(R.string.tts_title), color = readerChromeAccent) }
+                        val ttsActive = ttsVisualState.phase in setOf(
+                            com.veilreader.app.ui.reader.tts.ReaderTtsPhase.PLAYING,
+                            com.veilreader.app.ui.reader.tts.ReaderTtsPhase.PAUSED,
+                            com.veilreader.app.ui.reader.tts.ReaderTtsPhase.PREPARING
+                        )
+                        if (ttsActive) {
+                            ReaderTtsMiniPlayer(
+                                state = ttsVisualState,
+                                activeText = ttsVisualState.activeText,
+                                speed = speechSettingsState.value.speed,
+                                background = readerChromeBackground,
+                                foreground = readerChromeForeground,
+                                accent = readerChromeAccent,
+                                onPrevious = {
+                                    ttsServiceController?.previous() ?: ttsSession?.previous()
+                                },
+                                onPause = {
+                                    ttsServiceController?.pause() ?: ttsSession?.pause()
+                                },
+                                onResume = {
+                                    ttsServiceController?.resume() ?: ttsSession?.resume()
+                                },
+                                onNext = {
+                                    ttsServiceController?.next() ?: ttsSession?.next()
+                                },
+                                onExpand = {
+                                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                                    selectionActionModeCallback.dismissSelection()
+                                    showTts = true
+                                }
+                            )
+                        } else {
+                            TextButton(
+                                onClick = {
+                                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                                    selectionActionModeCallback.dismissSelection()
+                                    showTts = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            ) {
+                                Text(
+                                    stringResource(R.string.tts_title),
+                                    color = readerChromeAccent
+                                )
+                            }
+                        }
                     }
                     etaLabel?.let { label ->
                         Text(label, color = readerChromeMuted, style = MaterialTheme.typography.labelSmall,
@@ -3571,32 +3617,14 @@ fun ReaderScreen(
                 )
             )
         ) {
-            OutlinedButton(
-                onClick = ::returnToPreviousLocation,
-                shape = MaterialTheme.shapes.extraSmall,
-                border = BorderStroke(1.dp, readerChromeAccent.copy(alpha = 0.34f)),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = readerChromeBackground,
-                    contentColor = readerChromeForeground
-                ),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(1.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.reader_return),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass.copy(alpha = 0.84f)
-                    )
-                    Text(
-                        stringResource(R.string.reader_previous_location),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
+            PreviousLocationChip(
+                returnLabel = stringResource(R.string.reader_return),
+                locationLabel = stringResource(R.string.reader_previous_location),
+                background = readerChromeBackground,
+                foreground = readerChromeForeground,
+                accent = readerChromeAccent,
+                onClick = ::returnToPreviousLocation
+            )
         }
 
         SnackbarHost(
@@ -4187,10 +4215,7 @@ fun ReaderScreen(
     }
 
     if (showTts) {
-        val speechStateSource = ttsServiceController?.state
-            ?: ttsSession?.state
-            ?: remember { kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState()) }
-        val speechState by speechStateSource.collectAsStateWithLifecycle()
+        val speechState = ttsVisualState
         val voiceCatalogSource = ttsServiceController?.voices
             ?: remember {
                 kotlinx.coroutines.flow.MutableStateFlow<List<ReaderTtsVoice>>(emptyList())
