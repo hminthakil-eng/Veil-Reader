@@ -8,6 +8,39 @@ import org.junit.Test
 
 class ReaderNavigationTransactionTest {
 
+
+    @Test
+    fun navigationTransaction_carriesSemanticReasonAndCommitPolicy() {
+        val gate = ReaderNavigationTransactionGate()
+
+        val exploration = gate.begin(
+            originLocatorJson = "origin",
+            nowElapsedMs = 10L,
+            targetHref = "chapter.xhtml#note",
+            reason = ReaderNavigationReason.SAVED_PASSAGE
+        )
+        assertEquals(ReaderNavigationReason.SAVED_PASSAGE, exploration.reason)
+        assertEquals(
+            ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR,
+            exploration.commitPolicy
+        )
+
+        gate.reset()
+
+        val returnJump = gate.begin(
+            originLocatorJson = "preview",
+            nowElapsedMs = 20L,
+            targetHref = "chapter.xhtml#reading-anchor",
+            reason = ReaderNavigationReason.RETURN_PREVIOUS
+        )
+        assertEquals(ReaderNavigationReason.RETURN_PREVIOUS, returnJump.reason)
+        assertEquals(
+            ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT,
+            returnJump.commitPolicy
+        )
+    }
+
+
     @Test
     fun paragraphJumpIsNotSwallowedBySharedCoarsePosition() {
         val origin = ReaderNavigationIdentity("chapter.xhtml", 12, "#paragraph-one", 0.42)
