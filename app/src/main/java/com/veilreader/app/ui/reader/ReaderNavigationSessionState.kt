@@ -28,6 +28,14 @@ internal class ReaderNavigationSessionStateMachine(
         state = ReaderNavigationSessionState(readingAnchorJson = locatorJson)
     }
 
+    /**
+     * A rejected or uncommitted exploration must not leak into the next book session.
+     * The persisted anchor is authoritative when restoring a reader after process death.
+     */
+    fun resetForPublication(initialReadingAnchorJson: String?) {
+        state = ReaderNavigationSessionState(readingAnchorJson = initialReadingAnchorJson)
+    }
+
     fun onProgrammaticSettlement(
         transaction: ReaderNavigationTransaction,
         settledLocatorJson: String
