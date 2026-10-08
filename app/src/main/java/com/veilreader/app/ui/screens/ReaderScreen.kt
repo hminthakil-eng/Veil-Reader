@@ -164,6 +164,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import com.veilreader.app.ui.reader.runReaderRequestWithDeadline
 import com.veilreader.app.ui.reader.deliverReaderResource
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -406,6 +407,8 @@ fun ReaderScreen(
     )
     val imageViewerFailedMessage =
         stringResource(R.string.reader_image_viewer_failed)
+    val imageViewerTimeoutMessage = stringResource(R.string.reader_image_viewer_timeout)
+    val imageViewerTooLargeMessage = stringResource(R.string.reader_image_viewer_too_large)
     val appearanceApplyFailedMessage =
         stringResource(R.string.reader_appearance_apply_failed)
     val boundaryBeginningMessage =
@@ -862,6 +865,12 @@ fun ReaderScreen(
     var imageLoading by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var imageLoadJob by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     var imageLoadSerial by remember(opened.book.id, readerSessionInstanceId) { mutableIntStateOf(0) }
+    fun cancelImageLoad() {
+        imageLoadSerial += 1
+        imageLoadJob?.cancel()
+        imageLoadJob = null
+        imageLoading = false
+    }
     var closeInFlight by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var readerViewportSize by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(IntSize.Zero)
@@ -1426,12 +1435,7 @@ fun ReaderScreen(
         }
     }
 
-    BackHandler(enabled = imageLoading) {
-        imageLoadSerial += 1
-        imageLoadJob?.cancel()
-        imageLoadJob = null
-        imageLoading = false
-    }
+    BackHandler(enabled = imageLoading) { cancelImageLoad() }
 
     BackHandler(
         enabled =
@@ -1949,41 +1953,59 @@ fun ReaderScreen(
                     imageLoading = true
                     imageLoadJob = scope.launch {
                         try {
-                            val bytes = opened.publication
-                                .get(image.embeddedLink)
-                                ?.use { resource -> resource.read() }
-                                ?.getOrNull()
-                            val caption = image.text?.trim()?.takeIf { it.isNotEmpty() }
-                            deliverReaderResource(
-                                dispatcher = Dispatchers.Default,
-                                load = {
-                                    bytes?.let { payload ->
-                                        decodeReaderImage(payload)?.let { bitmap ->
-                                            ReaderImageContent(
-                                                bitmap = bitmap,
-                                                caption = caption
-                                            )
-                                        }
-                                    }
-                                },
-                                accept = { content ->
-                                    when {
-                                        requestSerial != imageLoadSerial ||
-                                            !readerAsyncResultBelongsToSession(
-                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                                expectedSessionInstanceId = expectedSessionId
-                                            ) -> false
-                                        content == null -> {
-                                            readerMessage = imageViewerFailedMessage
-                                            false
-                                        }
-                                        else -> {
-                                            imageViewer = content
-                                            true
-                                        }
+                            runReaderRequestWithDeadline(
+                                timeoutMs = READER_IMAGE_LOAD_TIMEOUT_MS,
+                                onTimeout = {
+                                    if (
+                                        requestSerial == imageLoadSerial &&
+                                        readerAsyncResultBelongsToSession(
+                                            currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                            expectedSessionInstanceId = expectedSessionId
+                                        )
+                                    ) {
+                                        imageLoadSerial += 1
+                                        imageLoading = false
+                                        imageLoadJob = null
+                                        readerMessage = imageViewerTimeoutMessage
                                     }
                                 }
-                            )
+                            ) {
+                                val bytes = withContext(Dispatchers.IO) {
+                                    opened.publication.get(image.embeddedLink)
+                                        ?.use { resource -> readReaderImageBytes(resource) }
+                                }
+                                val caption = image.text?.trim()?.takeIf { it.isNotEmpty() }
+                                deliverReaderResource(
+                                    dispatcher = Dispatchers.Default,
+                                    load = {
+                                        bytes?.let { payload ->
+                                            decodeReaderImage(payload)?.let { bitmap ->
+                                                ReaderImageContent(
+                                                    bitmap = bitmap,
+                                                    caption = caption
+                                                )
+                                            }
+                                        }
+                                    },
+                                    accept = { content ->
+                                        when {
+                                            requestSerial != imageLoadSerial ||
+                                                !readerAsyncResultBelongsToSession(
+                                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                    expectedSessionInstanceId = expectedSessionId
+                                                ) -> false
+                                            content == null -> {
+                                                readerMessage = imageViewerFailedMessage
+                                                false
+                                            }
+                                            else -> {
+                                                imageViewer = content
+                                                true
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
@@ -1994,7 +2016,11 @@ fun ReaderScreen(
                                     expectedSessionInstanceId = expectedSessionId
                                 )
                             ) {
-                                readerMessage = imageViewerFailedMessage
+                                readerMessage = if (error is ReaderImageTooLargeException) {
+                                    imageViewerTooLargeMessage
+                                } else {
+                                    imageViewerFailedMessage
+                                }
                             }
                         } finally {
                             if (
@@ -2938,10 +2964,21 @@ fun ReaderScreen(
                     .background(VeilPalette.Ink.copy(alpha = 0.42f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(
-                    color = VeilPalette.Brass,
-                    strokeWidth = 2.dp
-                )
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    CircularProgressIndicator(color = VeilPalette.Brass, strokeWidth = 2.dp)
+                    Text(
+                        stringResource(R.string.reader_image_viewer_loading),
+                        color = VeilPalette.Moon,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Button(onClick = { cancelImageLoad() }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.common_cancel))
+                    }
+                }
             }
         }
 

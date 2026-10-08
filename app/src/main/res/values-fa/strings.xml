@@ -208,6 +208,9 @@
     <string name="reader_image_viewer_close">بستن</string>
     <string name="reader_image_zoom_reset">نمایش کامل تصویر</string>
     <string name="reader_image_viewer_hint">برای بزرگ‌نمایی نیشگون بگیرید · برای بررسی جابه‌جا کنید</string>
+    <string name="reader_image_viewer_loading">در حال بازکردن تصویر…</string>
+    <string name="reader_image_viewer_timeout">بازکردن این تصویر بیش از حد طول کشید. می‌توانید دوباره تلاش کنید.</string>
+    <string name="reader_image_viewer_too_large">حجم این تصویر از حد مجاز نمایشگر بیشتر است.</string>
     <string name="reader_image_viewer_failed">باز کردن این تصویر ممکن نشد.</string>
     <string name="reader_appearance_apply_failed">اعمال ظاهر مطالعه در حال حاضر ممکن نشد.</string>
     <string name="reader_boundary_beginning">ابتدای کتاب.</string>

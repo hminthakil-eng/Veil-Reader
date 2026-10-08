@@ -208,6 +208,9 @@
     <string name="reader_image_viewer_close">Close</string>
     <string name="reader_image_zoom_reset">Fit image</string>
     <string name="reader_image_viewer_hint">Pinch to zoom · drag to inspect</string>
+    <string name="reader_image_viewer_loading">Opening illustration…</string>
+    <string name="reader_image_viewer_timeout">Opening this illustration took too long. You can try again.</string>
+    <string name="reader_image_viewer_too_large">This illustration exceeds the viewer’s size limit.</string>
     <string name="reader_image_viewer_failed">Could not open this illustration.</string>
     <string name="reader_appearance_apply_failed">The reading appearance could not be applied right now.</string>
     <string name="reader_boundary_beginning">Beginning of book.</string>
