@@ -1705,14 +1705,14 @@ fun ReaderScreen(
                                 if (
                                     shouldStartReaderLinkJump(
                                         currentHref = currentLocator.href.toString(),
-                                        targetHref = targetHref,
-                                        reason = ReaderNavigationReason.INTERNAL_LINK
+                                        targetHref = targetHref
                                     )
                                 ) {
                                     val token = beginProgrammaticNavigation(
                                         originLocatorJson =
                                             currentLocator.toVeilPersistedJson(opened.format),
-                                        targetHref = targetHref
+                                        targetHref = targetHref,
+                                        reason = ReaderNavigationReason.INTERNAL_LINK
                                     )
                                     game.rebasePagePacing()
                                     if (
@@ -1751,7 +1751,8 @@ fun ReaderScreen(
                                 val transaction = navigationTransactionGate.begin(
                                     originLocatorJson = origin,
                                     nowElapsedMs = SystemClock.elapsedRealtime(),
-                                    targetHref = targetHref
+                                    targetHref = targetHref,
+                                    reason = ReaderNavigationReason.INTERNAL_LINK
                                 )
                                 ReaderTrace.event(
                                     "navigation_jump_requested",
