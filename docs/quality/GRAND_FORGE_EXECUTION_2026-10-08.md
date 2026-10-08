@@ -402,3 +402,19 @@ waves are not claimed complete.
 - Implementation/files: `ReaderScreen.kt` now converts LocalWindowInfo.containerSize pixels through current density for the adaptive policy.
 - Priority/impact: P0 split-screen/foldable typography correctness; no preference mutation.
 - Tests/acceptance/status: prior policy tests remain applicable; new source compile/lint and QA device rendering pending, YELLOW. This correction is not represented by the older3539 APK.
+
+## GF-REL-002 — package-aware SAF reader assertions
+
+- Priority/subsystem: P0 non-destructive QA installation verification.
+- Observed/evidence: QA37765266653 installed and passed164 Android tests, but
+  ReaderSafImportInstrumentedTest timed out looking for com.veilreader.app resource
+  IDs. Unit980 and lint0 errors/174 warnings passed in the same QA configuration.
+- Root cause/files/implementation: ReaderSafImportInstrumentedTest.kt hard-coded
+  resource ownership while launching targetContext.packageName. Use the installed
+  target package for resourcePager/webView IDs before and after rotation.
+- Expected/acceptance: identical import/open/rotation assertions execute for the
+  default and Forge QA packages; do not weaken the expected navigator assertions.
+- Reuse/tests: existing actual SAF import and orientation test; rerun37768309693.
+- Risks/performance/accessibility/RTL: test-only ID resolution; no user runtime,
+  layout, gesture or persistence change. Dependencies: separate QA build.
+- Status: YELLOW pending rerun; rollback isolated test commit efa3fb20.

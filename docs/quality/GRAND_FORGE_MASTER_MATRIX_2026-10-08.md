@@ -180,7 +180,11 @@ Device delivery now targets an isolated com.veilreader.app.forgeqa installation
 with an explicit QA/source label, private non-production key cache and certificate
 pin guard. Normal app identity and all seven risky gates retain their defaults.
 The first QA run failed configuration before tests: generated label resources were
-disabled.03423a36 explicitly enables them only for QA. Current QA run37765266653
-and normal Android run37764746924 are pending; no QA APK/device result is claimed.
+disabled.03423a36 explicitly enables them only for QA. Normal Android run37764746924 passed. QA run37765266653 passed980 units,
+lint0 errors/174 warnings and164 of165 Android tests; its SAF UI test searched
+hard-coded original-package resource IDs after installing the separate QA package.
+efa3fb20 resolves IDs using instrumentation.targetContext.packageName for both
+portrait and rotated Reader checks. QA rerun37768309693 is pending; no installable
+QA artifact or physical-device result is claimed yet.
 ReadingAnchor/exploration separation remains RED, as do complete rendered/script
 and physical-reader acceptance. No row is GREEN.
