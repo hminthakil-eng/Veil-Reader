@@ -128,6 +128,7 @@ import com.veilreader.app.ui.reader.ReaderNavigationIdentity
 import com.veilreader.app.ui.reader.hasReachedObservedDestination
 import com.veilreader.app.ui.reader.passageVisitAfterSettlement
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
+import com.veilreader.app.ui.reader.ReaderNavigationReason
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderIdentityJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
@@ -577,6 +578,7 @@ fun ReaderScreen(
         targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
         passageVisitLocatorJson: String? = null,
+        reason: ReaderNavigationReason,
         expectedPdfPage: Int? = null
     ): Long {
         val transaction = navigationTransactionGate.begin(
@@ -585,6 +587,7 @@ fun ReaderScreen(
             targetIdentity = targetIdentity,
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson,
+            reason = reason,
             expectedPdfPage = expectedPdfPage,
             originPdfPage = if (expectedPdfPage != null) {
                 latestNavigator.value?.currentLocator?.value?.let(::pdfPageNumber)
@@ -1412,6 +1415,7 @@ fun ReaderScreen(
                 originLocatorJson =
                     originLocator.toVeilPersistedJson(opened.format),
                 targetIdentity = targetIdentity,
+                reason = ReaderNavigationReason.RETURN_PREVIOUS,
                 expectedPdfPage =
                     if (opened.format == BookFormat.PDF) {
                         pdfPageNumber(locator)
@@ -1701,7 +1705,8 @@ fun ReaderScreen(
                                 if (
                                     shouldStartReaderLinkJump(
                                         currentHref = currentLocator.href.toString(),
-                                        targetHref = targetHref
+                                        targetHref = targetHref,
+                                        reason = ReaderNavigationReason.INTERNAL_LINK
                                     )
                                 ) {
                                     val token = beginProgrammaticNavigation(
@@ -1821,7 +1826,9 @@ fun ReaderScreen(
                     readerMessage = previousLocationFailedMessage
                 } else if (pdfPageNumber(nav.currentLocator.value) != pdfPageNumber(target)) {
                     val token = beginProgrammaticNavigation(
-                        currentLocatorJson(), expectedPdfPage = pdfPageNumber(target)
+                        currentLocatorJson(),
+                        reason = ReaderNavigationReason.PDF_INTERNAL_LINK,
+                        expectedPdfPage = pdfPageNumber(target)
                     )
                     readerViewModel.onUserInteraction(readerSessionInstanceId)
                     game.rebasePagePacing()
@@ -3925,6 +3932,7 @@ fun ReaderScreen(
                                 originLocator.toVeilPersistedJson(opened.format),
                             targetIdentity = targetIdentity,
                             passageVisitLocatorJson = json,
+                            reason = ReaderNavigationReason.SAVED_PASSAGE,
                             expectedPdfPage =
                                 if (opened.format == BookFormat.PDF) {
                                     pdfPageNumber(locator)
@@ -3991,7 +3999,8 @@ fun ReaderScreen(
                         val transactionToken = beginProgrammaticNavigation(
                             originLocatorJson =
                                 current.toVeilPersistedJson(opened.format),
-                            targetHref = targetHref
+                            targetHref = targetHref,
+                            reason = ReaderNavigationReason.TABLE_OF_CONTENTS
                         )
                         if (
                             nav.go(
@@ -4215,7 +4224,8 @@ fun ReaderScreen(
                             val token = beginProgrammaticNavigation(
                                 originLocatorJson =
                                     origin.toVeilPersistedJson(opened.format),
-                                targetIdentity = targetIdentity
+                                targetIdentity = targetIdentity,
+                                reason = ReaderNavigationReason.LISTENING_POSITION
                             )
                             if (
                                 nav.go(
