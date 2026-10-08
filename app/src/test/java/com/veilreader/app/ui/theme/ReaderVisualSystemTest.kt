@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.theme
 
+import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -44,6 +45,23 @@ class ReaderVisualSystemTest {
             ReaderVisualPalette.Oled
         )
         assertEquals(themes.size, themes.map { it.value }.distinct().size)
+    }
+
+    @Test
+    fun readerThemeArgbMatchesApprovedSanctuaryPalette() {
+        val paper = readerVisualThemeArgb(ReaderTheme.PAPER)
+        val sepia = readerVisualThemeArgb(ReaderTheme.SEPIA)
+        val dusk = readerVisualThemeArgb(ReaderTheme.DUSK)
+        val oled = readerVisualThemeArgb(ReaderTheme.OLED)
+
+        assertEquals(0xFFF4EFDF.toInt(), paper.background)
+        assertEquals(0xFF29271F.toInt(), paper.text)
+        assertEquals(0xFFE9DDC3.toInt(), sepia.background)
+        assertEquals(0xFF372F24.toInt(), sepia.text)
+        assertEquals(0xFF141517.toInt(), dusk.background)
+        assertEquals(0xFFD8D6D0.toInt(), dusk.text)
+        assertEquals(0xFF000000.toInt(), oled.background)
+        assertEquals(0xFFD5D5D2.toInt(), oled.text)
     }
 
     @Test
