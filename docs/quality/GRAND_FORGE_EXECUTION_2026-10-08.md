@@ -219,3 +219,26 @@ Reuse the file-level graph and archaeology above; no duplicate roadmap.
   regressions; real-device create/delete/reopen/failure acceptance before GREEN.
 - Status: YELLOW source patched; exact-head automated evidence pending.
 - Rollback: revert this deletion commit; release gates unchanged.
+
+### GF-W1-SELECTION-OWNER continuation
+
+- Priority/subsystem: P0 / Reader input and semantic selection.
+- Observed/root cause: onDestroyActionMode always reports false, even when Android
+  destroys an old mode after onCreateActionMode has reserved a replacement mode.
+  The Reader can therefore release input ownership while selection remains active.
+- Expected/implementation: only the exact active ActionMode can clear activeMode
+  and report selection false. Repeated/stale/unowned destroy is ignored.
+- Affected files: ui/screens/ReaderSelectionActionMode.kt and
+  ui/screens/ReaderSelectionActionModeTest.kt.
+- Reuse: existing callback identity; no parallel selection contract or rewrite.
+- Risks: async clearSelection replacement races remain a separate characterization
+  task; this guard fixes only destroy ownership.
+- Tests: real callback with Android ActionMode/Menu under Robolectric; current
+  destroy once, old destroy after replacement, unowned destroy. The original code
+  would fail each expectation; exact-head execution remains pending.
+- Performance/accessibility/RTL: constant-time identity check; preserves native
+  toolbar and avoids accidental tap/page routing during selection; script-neutral.
+- Acceptance/dependencies: unit tests and actual selection replacement/overlay
+  transitions on device; existing input arbitration integration.
+- Status: YELLOW source patch; no claim of physical selection QA.
+- Rollback: revert this independent selection commit.
