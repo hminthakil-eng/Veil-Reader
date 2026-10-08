@@ -1,6 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import android.app.Activity
+import android.graphics.PointF
 import android.view.View
+import androidx.compose.runtime.MonotonicFrameClock
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import java.lang.reflect.Proxy
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -8,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -17,6 +21,8 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.readium.r2.navigator.OverflowableNavigator
+import org.readium.r2.navigator.input.DragEvent
+import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
@@ -24,6 +30,7 @@ import org.readium.r2.shared.util.Url
 import org.readium.r2.shared.util.mediatype.MediaType
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Robolectric
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalReadiumApi::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -253,6 +260,121 @@ class PaperDiscreteTurnLifecycleTest {
         }
     }
 
+    @Test
+    fun `startup drag stays reserved and retries capture when renderer becomes ready`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { layoutView() }
+        val state = PaperCurlState()
+        var selected = true
+        val listener = PaperCurlInputListener(fixture.navigator, state,
+            isEnabled = { selected && paperRendererCanOwnNavigationInput(false, state.rendererStatus) },
+            scope = this, onInteraction = {}, onCommittedTurn = { fixture.commit() },
+            isDragEnabled = { selected && paperRendererCanReserveDrag(false, state.rendererStatus) })
+        try {
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -100f)))
+            assertTrue(listener.hasPendingTurn())
+            assertEquals(0, state.debugBeginAttempts)
+            assertEquals(0, fixture.requests)
+            state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -300f)))
+            assertEquals(1, state.debugBeginAttempts)
+            // Capture is rejected because this fixture is detached; repeated Moves must not retry.
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -400f)))
+            assertEquals(1, state.debugBeginAttempts)
+            assertEquals(0, fixture.requests)
+            selected = false
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, -400f)))
+            advanceUntilIdle()
+            assertFalse(listener.hasPendingTurn())
+            assertEquals(0, fixture.commits)
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `normal-motion release never moves page when sheet presentation times out`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val clock = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+                delay(16L)
+                return onFrame(testScheduler.currentTime * 1_000_000L)
+            }
+        }
+        val owner = CoroutineScope(coroutineContext + clock)
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, owner,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() })
+        try {
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
+            assertTrue(state.active)
+            runCurrent()
+            assertEquals(0, fixture.requests)
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, -900f)))
+            advanceUntilIdle()
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertFalse(state.active)
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `presented sheet permits exactly one preview and one release commit`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val clock = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+                delay(16L)
+                return onFrame(testScheduler.currentTime * 1_000_000L)
+            }
+        }
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true },
+            CoroutineScope(coroutineContext + clock), onInteraction = {},
+            onCommittedTurn = { fixture.commit() })
+        try {
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
+            assertTrue(state.active)
+            runCurrent()
+            assertEquals(0, fixture.requests)
+            state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
+            runCurrent()
+            assertEquals(1, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, -900f)))
+            advanceUntilIdle()
+            assertEquals(1, fixture.requests)
+            assertEquals(1, fixture.commits)
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    private fun drag(type: DragEvent.Type, offsetX: Float) =
+        DragEvent(type = type, start = PointF(950f, 400f), offset = PointF(offsetX, 0f))
+
     private data class Controls(val perform: () -> Boolean, val pending: () -> Boolean, val cancel: () -> Boolean)
 
     private fun controls(paper: Boolean, fixture: NavigatorFixture, scope: CoroutineScope): Controls {
@@ -285,6 +407,11 @@ class PaperDiscreteTurnLifecycleTest {
             if (failCommit) throw IllegalStateException("commit failure")
         }
         private val view = View(RuntimeEnvironment.getApplication())
+        fun layoutView() { view.layout(0, 0, 1000, 1600) }
+        fun attachView(activity: Activity) {
+            activity.setContentView(view)
+            layoutView()
+        }
         private val overflow = Proxy.newProxyInstance(javaClass.classLoader,
             arrayOf(OverflowableNavigator.Overflow::class.java)) { _, method, _ ->
             when (method.name) {

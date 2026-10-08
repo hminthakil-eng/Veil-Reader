@@ -109,6 +109,26 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `startup drag ownership is separate from permission to move the page`() {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            GpuMaterialPageRendererStatus.entries.forEach { status ->
+                val expected = status == GpuMaterialPageRendererStatus.INITIALIZING ||
+                    status == GpuMaterialPageRendererStatus.READY
+                assertEquals(expected, paperRendererCanReserveDrag(false, status))
+            }
+            assertTrue(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
+            assertFalse(shouldAllowPaperNavigation(false,
+                GpuMaterialPageRendererStatus.INITIALIZING, visualActive = true))
+            MaterialPageEngineRollout.setDebugOverride(false)
+            assertFalse(paperRendererCanReserveDrag(false, GpuMaterialPageRendererStatus.READY))
+            assertFalse(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `Reduced Motion keeps functional Paper navigation without a curl visual`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {

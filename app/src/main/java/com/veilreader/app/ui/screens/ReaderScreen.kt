@@ -2061,6 +2061,13 @@ fun ReaderScreen(
                 PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
+                    isDragEnabled = {
+                        latestReaderSessionReady.value && paperModeSelected() &&
+                            paperRendererCanReserveDrag(
+                                reducedMotion = latestReducedMotion.value,
+                                rendererStatus = paperCurlState.rendererStatus
+                            )
+                    },
                     isEnabled = {
                         latestReaderSessionReady.value &&
                             paperRendererOwnsNavigationInput()

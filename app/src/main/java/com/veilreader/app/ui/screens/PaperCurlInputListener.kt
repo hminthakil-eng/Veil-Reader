@@ -57,6 +57,15 @@ internal fun paperRendererCanOwnNavigationInput(
     MaterialPageEngineRollout.isEnabled() &&
         (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY)
 
+/** Reserve a Paper drag during GL startup; actual page movement still requires READY. */
+internal fun paperRendererCanReserveDrag(
+    reducedMotion: Boolean,
+    rendererStatus: GpuMaterialPageRendererStatus
+): Boolean =
+    MaterialPageEngineRollout.isEnabled() &&
+        (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY ||
+            rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING)
+
 internal fun shouldAllowPaperNavigation(
     reducedMotion: Boolean,
     rendererStatus: GpuMaterialPageRendererStatus,
@@ -76,7 +85,8 @@ internal class PaperCurlInputListener(
     private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
     private val onCommittedTurn: () -> Unit,
-    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {},
+    private val isDragEnabled: () -> Boolean = isEnabled
 ) : InputListener {
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
@@ -273,7 +283,7 @@ internal class PaperCurlInputListener(
     }
 
     override fun onDrag(event: DragEvent): Boolean {
-        if (!paperModeEnabled()) {
+        if (!isDragEnabled() || !scope.isActive) {
             // The mode may change while a sheet is lifted. Restore its starting
             // locator before allowing the new navigation mode to own later drags.
             return cancelPendingTurn()
@@ -414,7 +424,7 @@ internal class PaperCurlInputListener(
                     }
                 }
 
-                commit -> {
+                commit && reducedMotion -> {
                     // This branch is reachable without a visual only for Reduced Motion.
                     // Normal-motion Paper fails closed before a static navigation fallback.
                     val origin =
@@ -655,7 +665,11 @@ internal class PaperCurlInputListener(
         state.updateDrag(event.start, event.offset)
         val operationToken = activeOperationGeneration
         navigationJob = launchPreview {
-            if (!state.materialEngine.awaitSheetPresented()) return@launchPreview
+            if (!state.materialEngine.awaitSheetPresented()) {
+                // An unpresented sheet must never enable the release-time static branch.
+                if (operationIsCurrent(operationToken)) state.clearImmediately()
+                return@launchPreview
+            }
             if (
                 !cancellationRequested &&
                 operationIsCurrent(operationToken) &&
