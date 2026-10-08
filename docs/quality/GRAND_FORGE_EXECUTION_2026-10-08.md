@@ -385,3 +385,20 @@ waves are not claimed complete.
 - Risks/acceptance: foreground timer is session-local, not a background playback or persisted alarm promise. End-of-chapter remains unsupported/unexposed. Audible expiry, TalkBack state, multilingual highlighting, thermal and physical device acceptance pending.
 - Performance/privacy/RTL: one suspended timer job, no text persistence/new network or publication mutation; semantic active text retains source script. No measured battery claim.
 - Dependencies/status: default foreground session and existing Listening Mode; YELLOW. Background/neural/network gates unchanged. Rollback: isolated timer/integration commit.
+
+## GF-REL-001 — non-destructive S24 QA delivery
+
+- Priority/subsystem: P0 device QA and install/update continuity.
+- Observed/evidence: Google apksig8.7.3 verified both debug APK v2 signatures. Historical06a certificate SHA-256 is dd01c2c1db33163000319e737b57cb82c6388870abe751d2711ad879b1a5ffd2;3539 is c41f70571eda55608f9f6413782df20eeb2a4b2313b770a67339cb4071e1436e. They differ: Android cannot update that prior installed package with this APK. Do not solve by asking the user to uninstall personal data.
+- Expected/implementation/files: `app/build.gradle.kts` adds explicit `veilForgeQa` build property for com.veilreader.app.forgeqa, clear QA label/source-suffixed version and a dedicated non-production key path; default identity remains com.veilreader.app. `app/src/main/AndroidManifest.xml` resolves a configured label. `.github/workflows/forge-qa-apk.yml` runs QA-configured unit/compile/lint/build and actual emulator installation/storage tests, retains its QA key cache and verifies package, label, signature/hash before artifact upload. `tools/run_android_ci_emulator.sh` accepts an optional test package for capture/probe routing, preserving the production default and fully qualified debug class namespace.
+- Durability/risk: separate installation has its own library/permissions, so the user imports a test book there; existing Veil data is retained by Android. Signing-key cache retention is not guaranteed. Once the first QA certificate is pinned, the workflow fails if the key is missing/mismatched instead of silently generating an incompatible update. This is not production signing or a stable-key recovery guarantee.
+- Tests/status: shell/YAML/XML syntax and Paper guard pass locally. Actual QA/default builds, Android QA install, signer cache/pin evidence pending; YELLOW. No production release/gate promotion.
+- Reuse: existing Android/Gradle/emulator/APK verification infrastructure; official Google apksig verifies local artifacts, not embedded in the app.
+- Performance/accessibility/RTL: no renderer changes in this packaging task; separate QA label identifies installation. Reader/device acceptance remains missing. Dependencies: GitHub Actions cache and Android runner. Rollback: remove explicit QA property/workflow; normal defaults are preserved.
+
+## GF-TYPE-002 — lint-correct actual window sizing
+
+- Evidence/root cause:3539 passed980 units,165 instrumented tests and36 process-death samples, but lint grew174→175 with ConfigurationScreenWidthHeight. It reports rounded/inset-dependent screenWidthDp is not actual window size.
+- Implementation/files: `ReaderScreen.kt` now converts LocalWindowInfo.containerSize pixels through current density for the adaptive policy.
+- Priority/impact: P0 split-screen/foldable typography correctness; no preference mutation.
+- Tests/acceptance/status: prior policy tests remain applicable; new source compile/lint and QA device rendering pending, YELLOW. This correction is not represented by the older3539 APK.
