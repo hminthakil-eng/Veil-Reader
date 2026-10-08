@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -233,6 +234,9 @@ fun ReaderScreen(
         "Veil Reader requires a FragmentActivity host."
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var readerLifecycleResumed by remember(lifecycle, readerSessionInstanceId) {
+        mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
     val scope = rememberCoroutineScope()
     val latestReaderSessionInstanceId = rememberUpdatedState(readerSessionInstanceId)
     val formatPercent = rememberVeilPercentFormatter()
@@ -289,6 +293,12 @@ fun ReaderScreen(
             .distinctUntilChanged()
     }
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
+    val progressFailureFlow = remember(readerViewModel, opened.book.id, readerSessionInstanceId) {
+        readerViewModel.uiState.map { state ->
+            state.bookId == opened.book.id && state.progressSaveFailed
+        }.distinctUntilChanged()
+    }
+    val progressSaveFailed by progressFailureFlow.collectAsStateWithLifecycle(initialValue = false)
 
     var navigator by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
@@ -334,21 +344,30 @@ fun ReaderScreen(
             activeFixedLayoutSpread = fixedLayoutSpread
         }
     }
-    val effectiveReaderAppearance = remember(
-        readerAppearance,
-        fixedLayoutPublication
-    ) {
-        val publicationAppearance =
-            effectiveReaderAppearanceForPublication(
-                appearance = readerAppearance,
-                fixedLayout = fixedLayoutPublication
-            )
+    val typesettingViewportWidth = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value.toDouble()
+    }
+    val typesettingAccessibilityScale = LocalDensity.current.fontScale.toDouble()
+    fun effectiveAppearance(requested: ReaderAppearance): ReaderAppearance =
         applyMaterialPageRolloutToAppearance(
-            appearance = publicationAppearance,
+            appearance = AdaptiveTypesettingPolicy.resolve(
+                appearance = effectiveReaderAppearanceForPublication(requested, fixedLayoutPublication),
+                format = opened.format,
+                fixedLayout = fixedLayoutPublication,
+                viewportWidthDp = typesettingViewportWidth,
+                accessibilityFontScale = typesettingAccessibilityScale
+            ),
             format = opened.format,
             debugReview = BuildConfig.DEBUG,
             materialPageEnabled = MaterialPageEngineRollout.isEnabled()
         )
+    val effectiveReaderAppearance = remember(
+        readerAppearance,
+        fixedLayoutPublication,
+        typesettingViewportWidth,
+        typesettingAccessibilityScale
+    ) {
+        effectiveAppearance(readerAppearance)
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(effectiveReaderAppearance)
@@ -389,6 +408,8 @@ fun ReaderScreen(
     val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
     val readerOpenFailedMessage = stringResource(R.string.notice_open_failed)
     val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
+    val bookmarkSaveFailedMessage = stringResource(R.string.reader_bookmark_save_failed)
+    val bookmarkDeleteFailedMessage = stringResource(R.string.reader_bookmark_delete_failed)
     val bookmarkDuplicateMessage = stringResource(R.string.reader_bookmark_duplicate)
     val noteSavedMessage = stringResource(R.string.reader_note_saved)
     val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
@@ -416,6 +437,12 @@ fun ReaderScreen(
     val boundaryEndMessage =
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    val progressSaveFailedMessage = stringResource(R.string.reader_progress_save_failed)
+    LaunchedEffect(progressSaveFailed, opened.book.id, readerSessionInstanceId) {
+        if (progressSaveFailed) {
+            readerMessage = progressSaveFailedMessage
+        }
+    }
     var paperFailureNotice by remember(readerSessionInstanceId) {
         mutableStateOf<ReaderPaperFailureNotice?>(null)
     }
@@ -649,12 +676,7 @@ fun ReaderScreen(
         expectedAppearance: ReaderAppearance? = null
     ) {
         appearanceCloseJob?.cancel()
-        val normalizedExpected = expectedAppearance?.let {
-            effectiveReaderAppearanceForPublication(
-                appearance = it,
-                fixedLayout = fixedLayoutPublication
-            )
-        }
+        val normalizedExpected = expectedAppearance?.let(::effectiveAppearance)
         appearanceCloseJob = scope.launch {
             // Give a final slider commit one frame to propagate into the parent state before
             // deciding whether the renderer is settled. Then keep the chamber above the renderer
@@ -694,10 +716,11 @@ fun ReaderScreen(
         reducedMotion,
         paperCurlState.active,
         paperCurlState.snapshotSourceRevision,
+        readerLifecycleResumed,
         readerSessionInstanceId
     ) {
         if (
-            !readerSessionReady ||
+            !readerSessionReady || !readerLifecycleResumed ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
             !shouldCapturePaperTurnSnapshot(reducedMotion)
@@ -714,13 +737,19 @@ fun ReaderScreen(
         // the gesture falls back to a fresh immediate capture.
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
-            !paperCurlState.active &&
+            !paperCurlState.active && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
             )
         ) {
-            paperCurlState.prepareSnapshot(nav.publicationView)
+            paperCurlState.prepareSnapshot(nav.publicationView) {
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                    readerAsyncResultBelongsToSession(
+                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                        expectedSessionInstanceId = readerSessionInstanceId
+                    )
+            }
         }
     }
     LaunchedEffect(
@@ -729,10 +758,11 @@ fun ReaderScreen(
         presentedReaderAppearance,
         reducedMotion,
         slidePageState.active,
+        readerLifecycleResumed,
         readerSessionInstanceId
     ) {
         if (
-            !readerSessionReady ||
+            !readerSessionReady || !readerLifecycleResumed ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.SLIDE ||
             reducedMotion
@@ -745,7 +775,7 @@ fun ReaderScreen(
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
-            !slidePageState.active &&
+            !slidePageState.active && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
@@ -1115,6 +1145,36 @@ fun ReaderScreen(
         }
     }
 
+    val transitionUnavailableReason = readerTransitionUnavailableReason(
+        appearance = readerAppearance,
+        format = opened.format,
+        fixedLayout = fixedLayoutPublication,
+        materialPageEnabled = MaterialPageEngineRollout.isEnabled()
+    )
+    val transitionUnavailableMessage = when (transitionUnavailableReason) {
+        ReaderTransitionUnavailableReason.PAPER_ROLLOUT_DISABLED ->
+            stringResource(R.string.reader_paper_rollout_unavailable)
+        ReaderTransitionUnavailableReason.FIXED_LAYOUT_LEAF_UNSUPPORTED ->
+            stringResource(R.string.reader_fixed_layout_transition_unavailable)
+        null -> null
+    }
+    var announcedTransitionReason by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<ReaderTransitionUnavailableReason?>(null)
+    }
+    LaunchedEffect(transitionUnavailableReason, readerSessionReady, closeInFlight,
+        readerSessionInstanceId) {
+        val reason = transitionUnavailableReason ?: return@LaunchedEffect
+        if (!readerSessionReady || closeInFlight || announcedTransitionReason == reason) {
+            return@LaunchedEffect
+        }
+        announcedTransitionReason = reason
+        snackbarHostState.showSnackbar(
+            message = transitionUnavailableMessage ?: return@LaunchedEffect,
+            withDismissAction = true,
+            duration = SnackbarDuration.Long
+        )
+    }
+
     val latestRequestedReaderAppearance = rememberUpdatedState(readerAppearance)
     val latestReaderAppearanceChange = rememberUpdatedState(onReaderAppearanceChange)
 
@@ -1474,6 +1534,9 @@ fun ReaderScreen(
                     }
                 }
 
+                check(!readerViewModel.uiState.value.progressSaveFailed) {
+                    "Reader progress checkpoint is not durable."
+                }
                 ReaderTrace.event(
                     "reader_close_durability_wait",
                     bookId = opened.book.id,
@@ -1804,6 +1867,7 @@ fun ReaderScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
+                    readerLifecycleResumed = true
                     if (latestReaderSessionReady.value) {
                         readerViewModel.onResume(readerSessionInstanceId)
                     }
@@ -1811,6 +1875,7 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
+                    readerLifecycleResumed = false
                     if (latestReaderSessionReady.value) {
                         // Lifecycle teardown may cancel the composition scope immediately. Restore an
                         // uncommitted preview synchronously before any final locator can be flushed.
@@ -3288,22 +3353,34 @@ fun ReaderScreen(
                             selectionActionModeCallback.dismissSelection()
                             val locator = navigator?.currentLocator?.value
                             if (locator != null) {
-                                val added = library.addBookmark(
-                                    opened.book.id,
+                                val expectedSessionId = readerSessionInstanceId
+                                val bookId = opened.book.id
+                                val locatorJson = locator.toVeilPersistedJson(opened.format)
+                                val label =
                                     if (opened.format == BookFormat.PDF && pdfPageNumber(locator) != null) {
                                         activity.getString(R.string.pdf_bookmark_page, pdfPageNumber(locator))
                                     } else {
                                         "${formatPercent(progress)} · ${locator.title?.takeIf { it.isNotBlank() } ?: readerBookTitle}"
-                                    },
-                                    locator.toVeilPersistedJson(opened.format)
-                                )
-                                if (added) {
-                                    onSensoryEvent(VeilSensoryEvent.MARK)
-                                }
-                                readerMessage = if (added) {
-                                    bookmarkSavedMessage
-                                } else {
-                                    bookmarkDuplicateMessage
+                                    }
+                                scope.launch {
+                                    try {
+                                        val added = library.addBookmark(bookId, label, locatorJson)
+                                        if (!readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            )
+                                        ) return@launch
+                                        if (added) onSensoryEvent(VeilSensoryEvent.MARK)
+                                        readerMessage = if (added) bookmarkSavedMessage else bookmarkDuplicateMessage
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (_: Exception) {
+                                        if (readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            )
+                                        ) readerMessage = bookmarkSaveFailedMessage
+                                    }
                                 }
                             }
                         }
@@ -3926,7 +4003,22 @@ fun ReaderScreen(
                 readerMessage = noteSavedMessage
             },
             onDeleteHighlight = library::deleteHighlight,
-            onDeleteBookmark = library::deleteBookmark
+            onDeleteBookmark = { id ->
+                val expectedSessionId = readerSessionInstanceId
+                scope.launch {
+                    try {
+                        library.deleteBookmark(id)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        if (readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) readerMessage = bookmarkDeleteFailedMessage
+                    }
+                }
+            }
             )
         }
     }
@@ -4022,6 +4114,7 @@ fun ReaderScreen(
             it.request.bookId == opened.book.id
         }
         val sleepDeadlineSource = ttsServiceController?.sleepDeadlineEpochMs
+            ?: ttsSession?.sleepDeadlineEpochMs
             ?: remember { kotlinx.coroutines.flow.MutableStateFlow<Long?>(null) }
         val sleepDeadlineEpochMs by sleepDeadlineSource.collectAsStateWithLifecycle()
 
@@ -4042,7 +4135,7 @@ fun ReaderScreen(
             ReaderListeningMode(
                 book = opened.book,
                 state = speechState,
-                activeText = activeSegmentText,
+                activeText = activeSegmentText ?: speechState.activeText,
                 supported = ttsSession != null || ttsServiceController != null,
                 settings = speechSettingsState.value,
                 startPending = ttsStartPending,
@@ -4055,7 +4148,11 @@ fun ReaderScreen(
                 previewProblem = previewProblem,
                 sleepDeadlineEpochMs = sleepDeadlineEpochMs,
                 onSetSleepTimer = { minutes ->
-                    ttsServiceController?.setSleepTimer(minutes)
+                    if (ttsServiceController != null) {
+                        ttsServiceController.setSleepTimer(minutes)
+                    } else {
+                        ttsSession?.setSleepTimer(minutes)
+                    }
                 },
                 listeningPositionAvailable = activeListeningCheckpoint != null,
                 onSyncListeningPosition = {
@@ -5100,6 +5197,13 @@ internal fun EpubAppearancePanel(
                     )
                 }
             )
+            if (capabilities.columnsEditable) {
+                Text(
+                    stringResource(R.string.reader_columns_adaptive_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
                 Text(
                     stringResource(R.string.reader_columns_paged_only),

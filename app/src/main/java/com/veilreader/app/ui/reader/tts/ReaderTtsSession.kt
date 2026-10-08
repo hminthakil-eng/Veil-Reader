@@ -46,11 +46,15 @@ internal class ReaderTtsSession(
     private val canPlay: () -> Boolean,
     dispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Main.immediate,
     private val initializationTimeoutMs: Long = 5_000L,
-    private val utteranceTimeoutMs: Long = 600_000L
+    private val utteranceTimeoutMs: Long = 600_000L,
+    private val nowEpochMs: () -> Long = System::currentTimeMillis
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState = MutableStateFlow(ReaderTtsState())
     val state = mutableState.asStateFlow()
+    private val mutableSleepDeadline = MutableStateFlow<Long?>(null)
+    val sleepDeadlineEpochMs = mutableSleepDeadline.asStateFlow()
+    private var sleepTimerJob: Job? = null
 
     private var backend: ReaderTtsBackend? = null
     private var content: ReaderTtsContent? = null
@@ -306,6 +310,33 @@ internal class ReaderTtsSession(
         if (!closed) preferences = value.normalized()
     }
 
+    /** Foreground timer: altering its deadline never restarts synthesis or the content iterator. */
+    fun setSleepTimer(minutes: Int): Boolean {
+        if (closed) return false
+        val normalized = normalizedTtsSleepMinutes(minutes) ?: return false
+        val deadline = if (normalized == 0) null else {
+            try {
+                ttsSleepDeadline(nowEpochMs(), normalized)
+            } catch (_: IllegalArgumentException) {
+                return false
+            } catch (_: ArithmeticException) {
+                return false
+            }
+        }
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        mutableSleepDeadline.value = deadline
+        if (deadline != null) {
+            sleepTimerJob = scope.launch {
+                delay(normalized.toLong() * 60_000L)
+                pause()
+                mutableSleepDeadline.value = null
+                sleepTimerJob = null
+            }
+        }
+        return true
+    }
+
     fun pause() {
         if (closed) return
         resumeAfterTransientFocusLoss = false
@@ -320,6 +351,7 @@ internal class ReaderTtsSession(
 
     fun stop() {
         if (closed) return
+        setSleepTimer(0)
         resetSource()
         mutableState.value = ReaderTtsState()
     }

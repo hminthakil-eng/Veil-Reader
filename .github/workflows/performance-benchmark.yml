@@ -177,6 +177,7 @@ jobs:
           path: |
             benchmark/build/outputs/
             benchmark/build/reports/
+            benchmark/build/perf-results/
             app/src/**/generated/baselineProfiles/
             performance/current-smoke.json
             performance/dashboard-smoke.md

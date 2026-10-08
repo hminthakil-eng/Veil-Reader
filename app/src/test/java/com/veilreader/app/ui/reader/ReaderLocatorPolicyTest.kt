@@ -7,6 +7,37 @@ import org.junit.Test
 class ReaderLocatorPolicyTest {
 
     @Test
+    fun durabilityRetryCanRecommitAnObservedDuplicateWithoutLosingSavedOrigin() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("observed"))
+        assertFalse(gate.acceptCommit("observed"))
+        assertTrue(gate.acceptCommit("observed", retryDurability = true))
+        gate.rejectCommit("observed")
+        assertFalse(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("observed"))
+    }
+
+    @Test
+    fun rejectedSaveAllowsRetryAndPreservesPreviousCommittedDuplicate() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("failed"))
+        gate.rejectCommit("failed")
+        assertFalse(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("failed"))
+    }
+
+    @Test
+    fun staleRejectionDoesNotReleaseNewerCommit() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("old"))
+        assertTrue(gate.acceptCommit("new"))
+        gate.rejectCommit("old")
+        assertFalse(gate.acceptCommit("new"))
+    }
+
+    @Test
     fun consecutiveCommittedDuplicate_isRejected_butRevisitAfterMovementIsAccepted() {
         val gate = ReaderLocatorDeduplicator()
 

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 MODE="${1:-}"
+VEIL_TEST_APPLICATION_ID="${VEIL_TEST_APPLICATION_ID:-com.veilreader.app}"
 case "$MODE" in
   storage|performance|durability) ;;
   *) echo "Usage: $0 {storage|performance|durability}" >&2; exit 2 ;;
@@ -45,10 +46,10 @@ cleanup() {
   # Only the inert Compose review directory; never export publication/history files.
   # Preserve the original test exit code even when optional capture collection fails.
   if [[ "$MODE" == "storage" ]] &&
-     "$ADB" -s "$SERIAL" shell run-as com.veilreader.app test -d files/grayfog-review >/dev/null 2>&1; then
-    if "$ADB" -s "$SERIAL" exec-out run-as com.veilreader.app \
+     "$ADB" -s "$SERIAL" shell run-as "$VEIL_TEST_APPLICATION_ID" test -d files/grayfog-review >/dev/null 2>&1; then
+    if "$ADB" -s "$SERIAL" exec-out run-as "$VEIL_TEST_APPLICATION_ID" \
         tar -C files -cf - grayfog-review >build/reports/grayfog-review.tar; then
-      echo "Saved production Compose review captures: build/reports/grayfog-review.tar"
+      echo "Saved Compose review captures: build/reports/grayfog-review.tar"
     else
       rm -f build/reports/grayfog-review.tar
       echo "Optional Grayfog capture collection failed; test status remains $status." >&2
@@ -200,8 +201,8 @@ case "$MODE" in
     run_gradle :app:installDebug --stacktrace
     assert_emulator_alive
 
-    PACKAGE="com.veilreader.app"
-    COMPONENT="${PACKAGE}/.debug.ReaderDurabilityProbeActivity"
+    PACKAGE="$VEIL_TEST_APPLICATION_ID"
+    COMPONENT="${PACKAGE}/com.veilreader.app.debug.ReaderDurabilityProbeActivity"
     RESULT_FILE="files/reader-durability-probe-result.txt"
     REPLAY_GUARD_FILE="files/reader-durability-probe-replay-guard.txt"
     REPORT="build/reports/reader-durability-fault-injection.txt"

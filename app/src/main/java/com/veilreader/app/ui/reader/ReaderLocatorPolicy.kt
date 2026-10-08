@@ -104,14 +104,25 @@ internal data class ReaderLocatorCommit(
  */
 internal class ReaderLocatorDeduplicator {
     private var lastCommittedLocationKey: String? = null
+    private var previousCommittedLocationKey: String? = null
 
-    fun acceptCommit(locationKey: String): Boolean {
-        if (locationKey == lastCommittedLocationKey) return false
+    fun acceptCommit(locationKey: String, retryDurability: Boolean = false): Boolean {
+        if (locationKey == lastCommittedLocationKey) return retryDurability
+        previousCommittedLocationKey = lastCommittedLocationKey
         lastCommittedLocationKey = locationKey
         return true
     }
 
+    /** Roll back only the pending owner, allowing retry without forgetting the last saved place. */
+    fun rejectCommit(locationKey: String) {
+        if (lastCommittedLocationKey == locationKey) {
+            lastCommittedLocationKey = previousCommittedLocationKey
+            previousCommittedLocationKey = null
+        }
+    }
+
     fun reset() {
         lastCommittedLocationKey = null
+        previousCommittedLocationKey = null
     }
 }

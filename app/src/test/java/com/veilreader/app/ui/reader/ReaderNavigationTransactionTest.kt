@@ -9,6 +9,29 @@ import org.junit.Test
 class ReaderNavigationTransactionTest {
 
     @Test
+    fun paragraphJumpIsNotSwallowedBySharedCoarsePosition() {
+        val origin = ReaderNavigationIdentity("chapter.xhtml", 12, "#paragraph-one", 0.42)
+        val target = origin.copy(cssSelector = "#paragraph-two")
+        assertTrue(shouldStartReaderIdentityJump(origin, target))
+        // A navigator can publish the first visible paragraph, rather than the exact
+        // selected paragraph, after reaching its containing page.
+        assertTrue(readerNavigationIdentityMatchesTarget(origin, target))
+    }
+
+    @Test
+    fun viewportJumpIsNotSwallowedBySharedCoarsePosition() {
+        val origin = ReaderNavigationIdentity("chapter.xhtml", 12, null, 0.42, progression = 0.2)
+        assertTrue(shouldStartReaderIdentityJump(origin, origin.copy(progression = 0.25)))
+        assertFalse(shouldStartReaderIdentityJump(origin, origin.copy(progression = 0.20005)))
+    }
+
+    @Test
+    fun identicalFineAnchorRemainsANoOp() {
+        val origin = ReaderNavigationIdentity("chapter.xhtml", 12, "#paragraph-one", 0.42, 0.2)
+        assertFalse(shouldStartReaderIdentityJump(origin, origin.copy()))
+    }
+
+    @Test
     fun navigationTransactionToken_neverUsesZeroOrNegativeSentinel() {
         assertEquals(1L, nextReaderNavigationTransactionToken(0L))
         assertEquals(8L, nextReaderNavigationTransactionToken(7L))

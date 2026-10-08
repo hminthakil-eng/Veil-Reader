@@ -123,7 +123,10 @@ internal class ReaderSelectionActionModeCallback(
     }
 
     override fun onDestroyActionMode(mode: ActionMode) {
-        if (activeMode === mode) activeMode = null
+        // Android may destroy a replaced toolbar after its successor has acquired selection.
+        // Only the current owner can release the Reader's selection/input reservation.
+        if (activeMode !== mode) return
+        activeMode = null
         onModeChanged(false)
     }
 

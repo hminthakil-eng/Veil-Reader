@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="reader_progress_save_failed">موقعیت جدید مطالعه ذخیره نشد. مقداری از فضای دستگاه را آزاد کنید، سپس صفحه را ورق بزنید یا دوباره کتاب را ببندید.</string>
+    <string name="reader_columns_adaptive_hint">دو ستون زمانی نمایش داده می‌شود که برای اندازهٔ متن شما فضای کافی باشد. در پنجره‌های باریک و با متن بزرگ، یک ستون نمایش داده می‌شود؛ انتخاب شما حفظ می‌شود.</string>
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">مطالعه</string>
     <string name="nav_library">کتابخانه</string>
@@ -1419,4 +1421,8 @@
     <string name="reader_paper_presentation_failed">نمایش ورق کاغذ ممکن نشد. دوباره تلاش کنید یا از اسلاید استفاده کنید.</string>
     <string name="reader_paper_renderer_unavailable">نمایش کاغذ فعلاً در دسترس نیست. ورق‌زدن ساده همچنان کار می‌کند؛ می‌توانید از اسلاید استفاده کنید.</string>
     <string name="reader_paper_use_slide">استفاده از اسلاید</string>
+    <string name="reader_bookmark_save_failed">ذخیرهٔ نشانک انجام نشد. نشانک‌های ذخیره‌شدهٔ شما تغییر نکرده‌اند.</string>
+    <string name="reader_bookmark_delete_failed">حذف نشانک انجام نشد. نشانک همچنان ذخیره است.</string>
+    <string name="reader_paper_rollout_unavailable">پویانمایی کاغذ در این نسخه در دسترس نیست. ورق‌زدن ساده فعال است؛ تنظیم ذخیره‌شدهٔ شما تغییر نکرده است.</string>
+    <string name="reader_fixed_layout_transition_unavailable">این کتاب با چیدمان ثابت از ورق‌زدن ساده استفاده می‌کند. ورق‌زدن پویانمایی‌شده و پیمایش در دسترس نیستند؛ تنظیم ذخیره‌شدهٔ شما تغییر نکرده است.</string>
 </resources>

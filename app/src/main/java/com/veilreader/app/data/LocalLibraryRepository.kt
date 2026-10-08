@@ -211,17 +211,26 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean {
-        if (_bookmarks.value.any { it.bookId == bookId && it.locatorJson == locatorJson }) return false
-        val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
-        _bookmarks.value = listOf(bookmark) + _bookmarks.value
-        enqueue { database.bookmarks().upsert(bookmark.toEntity()) }
-        return true
-    }
+    /**
+     * Acknowledges only a committed Room write. Duplicate detection uses durable state inside the
+     * ordered transaction, so rapid taps and stale observer snapshots cannot create duplicates.
+     * Room's observer publishes the result; failure must never create a phantom cached bookmark.
+     */
+    suspend fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean =
+        orderedWrite {
+            database.withTransaction {
+                if (database.bookmarks().findByBookAndLocator(bookId, locatorJson) != null) {
+                    return@withTransaction false
+                }
+                val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
+                database.bookmarks().upsert(bookmark.toEntity())
+                true
+            }
+        }
 
-    fun deleteBookmark(id: String) {
-        _bookmarks.value = _bookmarks.value.filterNot { it.id == id }
-        enqueue { database.bookmarks().deleteById(id) }
+    suspend fun deleteBookmark(id: String) {
+        // Keep the visible record until Room commits, including when deletion fails.
+        orderedWrite { database.bookmarks().deleteById(id) }
     }
 
     fun updateHighlightNote(id: String, note: String) {
@@ -521,6 +530,13 @@ class LocalLibraryRepository internal constructor(
                 )
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
+            if (!saveResult.crashCheckpointDurable) {
+                return@synchronized ReaderProgressSaveOutcome(
+                    accepted = false,
+                    crashCheckpointDurable = false,
+                    crashCheckpointLatencyNanos = saveResult.crashCheckpointLatencyNanos
+                )
+            }
             latestReaderProgressOrderByBook[lease.bookId] = order
             ReaderProgressSaveOutcome(
                 accepted = true,
@@ -655,6 +671,15 @@ class LocalLibraryRepository internal constructor(
             )
         }
 
+        // A semantic commit may not escape into the cache/Room queue if the journal
+        // failed. Keep the previous accepted position and ordering so this save can retry.
+        if (!crashCheckpointDurable) {
+            return ProgressSaveResult(
+                newlyFinished = false,
+                crashCheckpointDurable = false,
+                crashCheckpointLatencyNanos = crashCheckpointLatencyNanos
+            )
+        }
         latestProgressTimestampByBook[id] = committedAtEpochMs
         replaceBookCached(updated)
         val crossedMilestones = crossedReadingMilestones(

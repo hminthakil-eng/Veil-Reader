@@ -22,6 +22,88 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class ReaderTtsSessionTest {
     @Test
+    fun foregroundSleepTimerPausesAtDeadlineWithoutRestartingUtterance() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), utteranceTimeoutMs = 7_200_000L,
+            nowEpochMs = { 1_000L + testScheduler.currentTime })
+        try {
+            session.start(locator()); runCurrent()
+            assertTrue(session.setSleepTimer(10)); runCurrent()
+            assertEquals(601_000L, session.sleepDeadlineEpochMs.value)
+            assertEquals(1, backend.requests.size)
+            advanceTimeBy(599_999L); runCurrent()
+            assertEquals(ReaderTtsPhase.PLAYING, session.state.value.phase)
+            advanceTimeBy(1L); runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertNull(session.sleepDeadlineEpochMs.value)
+            assertEquals(1, backend.requests.size)
+            assertTrue(backend.abandonFocusStops > 0)
+        } finally { session.close() }
+    }
+
+    @Test
+    fun replacingAndDisablingTimerDoesNotRestartOrPausePlaybackAtOldDeadline() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), utteranceTimeoutMs = 7_200_000L,
+            nowEpochMs = { 1_000L + testScheduler.currentTime })
+        try {
+            session.start(locator()); runCurrent()
+            assertTrue(session.setSleepTimer(10)); runCurrent()
+            advanceTimeBy(300_000L); runCurrent()
+            assertTrue(session.setSleepTimer(15)); runCurrent()
+            assertEquals(1_201_000L, session.sleepDeadlineEpochMs.value)
+            advanceTimeBy(300_000L); runCurrent()
+            assertEquals(ReaderTtsPhase.PLAYING, session.state.value.phase)
+            assertTrue(session.setSleepTimer(0)); runCurrent()
+            advanceTimeBy(1_200_000L); runCurrent()
+            assertEquals(ReaderTtsPhase.PLAYING, session.state.value.phase)
+            assertEquals(1, backend.requests.size)
+            assertNull(session.sleepDeadlineEpochMs.value)
+        } finally { session.close() }
+    }
+
+    @Test
+    fun invalidTimerRequestPreservesValidTimer() = runTest {
+        var now = 1_000L
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), utteranceTimeoutMs = 7_200_000L,
+            nowEpochMs = { now })
+        try {
+            session.start(locator()); runCurrent()
+            assertTrue(session.setSleepTimer(10)); runCurrent()
+            assertFalse(session.setSleepTimer(181))
+            now = Long.MAX_VALUE
+            assertFalse(session.setSleepTimer(15))
+            assertEquals(601_000L, session.sleepDeadlineEpochMs.value)
+            advanceTimeBy(600_000L); runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+        } finally { session.close() }
+    }
+
+    @Test
+    fun stopAndCloseCancelForegroundSleepTimerOwnership() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ source {} }, { backend }, "en", { true },
+            StandardTestDispatcher(testScheduler), utteranceTimeoutMs = 7_200_000L)
+        session.start(locator()); runCurrent()
+        assertTrue(session.setSleepTimer(10)); runCurrent()
+        session.stop()
+        assertNull(session.sleepDeadlineEpochMs.value)
+        session.start(locator()); runCurrent()
+        advanceTimeBy(600_000L); runCurrent()
+        assertEquals(ReaderTtsPhase.PLAYING, session.state.value.phase)
+        assertTrue(session.setSleepTimer(10)); runCurrent()
+        session.close()
+        assertNull(session.sleepDeadlineEpochMs.value)
+        assertFalse(session.setSleepTimer(10))
+        advanceTimeBy(600_000L); runCurrent()
+        assertEquals(ReaderTtsPhase.CLOSED, session.state.value.phase)
+    }
+
+    @Test
     fun preferenceChangesApplyToNextChunkWithoutReplacingContentOrStartingPlayback() = runTest {
         val backend = FakeBackend()
         val session = ReaderTtsSession({ source {} }, { backend }, "fa", { true }, StandardTestDispatcher(testScheduler))

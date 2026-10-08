@@ -67,8 +67,8 @@ class ReaderSafImportInstrumentedTest {
 
         waitForPackage(target.packageName)
         waitForViewId(
-            "com.veilreader.app:id/resourcePager",
-            "com.veilreader.app:id/webView"
+            "${target.packageName}:id/resourcePager",
+            "${target.packageName}:id/webView"
         )
 
         uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_90)
@@ -76,8 +76,8 @@ class ReaderSafImportInstrumentedTest {
             waitForPackage(target.packageName)
             waitForResumedActivity(excluding = activity)
             waitForViewId(
-                "com.veilreader.app:id/resourcePager",
-                "com.veilreader.app:id/webView"
+                "${target.packageName}:id/resourcePager",
+                "${target.packageName}:id/webView"
             )
         } finally {
             uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)

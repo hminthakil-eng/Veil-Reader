@@ -8,6 +8,9 @@ import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -48,6 +51,98 @@ class AnnotationDurabilityInstrumentedTest {
     fun tearDown() = runBlocking {
         repository.closeForTest()
         db.close()
+    }
+
+    @Test
+    fun bookmarkAcknowledgement_isAlreadyCommitted_withoutFlushOrObserverWait() = runBlocking {
+        importBookmarkBook()
+        assertTrue(repository.addBookmark("bookmark-book", "Saved", "{\"href\":\"one.xhtml\"}"))
+
+        // Query Room directly at the acknowledgement boundary, without flushing the write queue.
+        val stored = db.bookmarks().listAll().single()
+        assertEquals("Saved", stored.label)
+        assertFalse(repository.addBookmark("bookmark-book", "Duplicate", stored.locatorJson))
+        assertEquals(1, db.bookmarks().listAll().size)
+    }
+
+    @Test
+    fun concurrentBookmarkRequests_acknowledgeExactlyOneDurableRecord() = runBlocking {
+        importBookmarkBook()
+        val results = List(20) {
+            async {
+                repository.addBookmark("bookmark-book", "Rapid tap", "{\"href\":\"same.xhtml\"}")
+            }
+        }.awaitAll()
+        assertEquals(1, results.count { it })
+        assertEquals(1, db.bookmarks().listAll().size)
+    }
+
+    @Test
+    fun rejectedBookmarkWrite_doesNotAcknowledgeOrPublishPhantomRecord() = runBlocking {
+        importBookmarkBook()
+        repository.bookmarks.first { it.isEmpty() }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_bookmark BEFORE INSERT ON bookmarks " +
+                "BEGIN SELECT RAISE(ABORT, 'injected bookmark storage failure'); END"
+        )
+
+        var failure: Exception? = null
+        try {
+            repository.addBookmark("bookmark-book", "Must fail", "{\"href\":\"failure.xhtml\"}")
+        } catch (error: Exception) {
+            failure = error
+        }
+        assertTrue("Storage failure must reach the caller", failure != null)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+        assertTrue(repository.bookmarks.value.isEmpty())
+    }
+
+    @Test
+    fun bookmarkDeletion_isCommittedBeforeReturn_andIsIdempotent() = runBlocking {
+        importBookmarkBook()
+        repository.addBookmark("bookmark-book", "Saved", "{\"href\":\"delete.xhtml\"}")
+        val id = db.bookmarks().listAll().single().id
+        repository.deleteBookmark(id)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+        repository.deleteBookmark(id)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+    }
+
+    @Test
+    fun rejectedBookmarkDeletion_preservesDurableAndVisibleRecord() = runBlocking {
+        importBookmarkBook()
+        repository.addBookmark("bookmark-book", "Keep", "{\"href\":\"keep.xhtml\"}")
+        val saved = db.bookmarks().listAll().single()
+        repository.bookmarks.first { bookmarks -> bookmarks.any { it.id == saved.id } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_bookmark_delete BEFORE DELETE ON bookmarks " +
+                "BEGIN SELECT RAISE(ABORT, 'injected bookmark deletion failure'); END"
+        )
+
+        var failure: Exception? = null
+        try {
+            repository.deleteBookmark(saved.id)
+        } catch (error: Exception) {
+            failure = error
+        }
+        assertTrue("Deletion failure must reach the caller", failure != null)
+        assertEquals(saved, db.bookmarks().listAll().single())
+        assertEquals(saved.id, repository.bookmarks.value.single().id)
+    }
+
+    private suspend fun importBookmarkBook() {
+        repository.addImportedBook(
+            Book(
+                id = "bookmark-book",
+                title = "Bookmark durability",
+                author = "QA",
+                format = BookFormat.EPUB,
+                sourceUri = "file:///bookmark.epub",
+                mediaType = "application/epub+zip",
+                addedAtEpochMs = 1L
+            )
+        )
+        repository.flushWrites()
     }
 
     @Test
