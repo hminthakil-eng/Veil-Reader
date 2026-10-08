@@ -223,7 +223,7 @@ internal fun ReaderTtsControls(
                             sleepMenu = false
                         }
                     )
-                    listOf(15, 30, 45, 60).forEach { minutes ->
+                    listOf(10, 15, 30, 45, 60).forEach { minutes ->
                         DropdownMenuItem(
                             text = {
                                 Text(

@@ -374,3 +374,14 @@ waves are not claimed complete.
 - Acceptance/risks: hidden sessions must not create/retain new warm snapshots; resume earns a fresh current capture. Physical background loops, memory, first-turn latency and GL presentation remain unverified. Default predicate preserves existing non-UI test callers; Reader passes live lifecycle/session ownership.
 - Performance/accessibility/RTL: avoids hidden CPU capture/allocation; no measured improvement yet. No direction/gesture or accessibility navigation changes.
 - Dependencies/status: existing prewarm and upload-lease ownership; YELLOW. GPU release gate remains false. Rollback: isolated lifecycle patch.
+
+## GF-TTS-003 — foreground sleep timer and Listening Mode text
+
+- Priority/subsystem: P0 default system/foreground TTS integration.
+- Observed/evidence/root cause: `ReaderScreen.kt` passed a sleep callback that only addressed the background service; with BACKGROUND_TTS false it silently did nothing. Listening Mode active-text input similarly read only the service despite `ReaderTtsState.activeText` already being characterized in the core session.
+- Expected/implementation/files: `ui/reader/tts/ReaderTtsSession.kt` owns a cancellable foreground deadline job/flow, reuses existing sleep validation/deadline policy, pauses at expiry, retains valid timers on invalid requests, supports replacement without synthesis restart, and clears on stop/close. `ReaderScreen.kt` routes to exactly the service or foreground owner, observes its deadline and supplies foreground semantic text. `ReaderTtsControls.kt` adds the requested10-minute preset to15/30/45/60.
+- Reuse: existing speech session, state, pause/audio focus behavior and sleep policy; no new playback engine.
+- Tests: four deterministic virtual-time session tests cover exact expiry, no utterance restart, replacement/cancel, invalid/overflow preservation, stop/close ownership. Existing active-text lifecycle characterization is reused. Unit/build evidence pending.
+- Risks/acceptance: foreground timer is session-local, not a background playback or persisted alarm promise. End-of-chapter remains unsupported/unexposed. Audible expiry, TalkBack state, multilingual highlighting, thermal and physical device acceptance pending.
+- Performance/privacy/RTL: one suspended timer job, no text persistence/new network or publication mutation; semantic active text retains source script. No measured battery claim.
+- Dependencies/status: default foreground session and existing Listening Mode; YELLOW. Background/neural/network gates unchanged. Rollback: isolated timer/integration commit.
