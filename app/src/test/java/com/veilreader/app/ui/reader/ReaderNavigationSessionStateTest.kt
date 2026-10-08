@@ -73,6 +73,33 @@ class ReaderNavigationSessionStateTest {
         assertEquals("chapter-8-page-2", machine.locatorForDurabilityFallback(null))
     }
 
+
+    @Test
+    fun explorationBlocksFinalSnapshotUntilReadingCommit() {
+        val machine = ReaderNavigationSessionStateMachine("durable")
+        machine.onProgrammaticSettlement(
+            ReaderNavigationTransaction(
+                token = 5L,
+                originLocatorJson = "durable",
+                targetIdentity = null,
+                targetHref = "chapter.xhtml#footnote",
+                passageVisitLocatorJson = null,
+                startedAtElapsedMs = 5L,
+                reason = ReaderNavigationReason.FOOTNOTE,
+                commitPolicy = ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR
+            ),
+            "footnote"
+        )
+
+        assertFalse(machine.mayPersistFinalSnapshot())
+        machine.onDurableReadingCommitAccepted("footnote", accepted = false)
+        assertEquals("durable", machine.state.readingAnchorJson)
+        assertFalse(machine.mayPersistFinalSnapshot())
+        machine.onDurableReadingCommitAccepted("next-page", accepted = true)
+        assertTrue(machine.mayPersistFinalSnapshot())
+        assertEquals("next-page", machine.state.readingAnchorJson)
+    }
+
     @Test
     fun returnPreviousSettlement_commitsImmediately() {
         val machine = ReaderNavigationSessionStateMachine("anchor")
