@@ -1,0 +1,48 @@
+name: Typography Corpus
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008" ]
+    paths:
+      - "qa/fixtures/**"
+      - "tools/build_typography_fixtures.py"
+      - ".github/workflows/typography-corpus.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify deterministic original fixtures
+        run: |
+          python3 tools/build_typography_fixtures.py
+          git diff --exit-code -- qa/fixtures/
+      - name: Validate with pinned official EPUBCheck
+        run: |
+          curl --fail --silent --show-error --location https://github.com/w3c/epubcheck/releases/download/v5.4.0/epubcheck-5.4.0.zip --output "$RUNNER_TEMP/epubcheck.zip"
+          printf '33350c61038e71dfb3d45a76aed04bf5481e6d5500cb780f6e98db8bbd15a28c  %s\n' "$RUNNER_TEMP/epubcheck.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/epubcheck.zip" -d "$RUNNER_TEMP/epubcheck"
+          mkdir -p build/typography-corpus
+          for fixture in qa/fixtures/veil-typesetting-*.epub; do
+            java -jar "$RUNNER_TEMP/epubcheck/epubcheck-5.4.0/epubcheck.jar" --failonwarnings --json "build/typography-corpus/$(basename "$fixture").validation.json" "$fixture"
+            cp "$fixture" build/typography-corpus/
+          done
+          cp qa/fixtures/README.md build/typography-corpus/
+          (cd build/typography-corpus && sha256sum *.epub > SHA256SUMS)
+          printf 'source=%s\nstructural-validation-only=true\n' "$GITHUB_SHA" > build/typography-corpus/BUILD.txt
+      - name: Publish device corpus and validation evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-typography-device-corpus
+          path: build/typography-corpus/
+          if-no-files-found: error
+          retention-days: 14
