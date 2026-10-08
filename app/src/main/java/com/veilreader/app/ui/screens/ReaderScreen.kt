@@ -155,6 +155,8 @@ import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.ReaderVisualGeometry
+import com.veilreader.app.ui.theme.ReaderVisualOpacity
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.withVeilTracking
@@ -4649,12 +4651,12 @@ internal fun ReaderChromeButton(
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(48.dp)
+            .size(ReaderVisualGeometry.TouchTarget)
             .semantics { contentDescription = accessibilityLabel }
     ) {
         ReaderActionIcon(
             action = action,
-            modifier = Modifier.size(21.dp),
+            modifier = Modifier.size(ReaderVisualGeometry.ChromeIcon),
             tint = tint
         )
     }
@@ -4673,11 +4675,14 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 56.dp),
+        modifier = modifier.defaultMinSize(
+            minWidth = 0.dp,
+            minHeight = ReaderVisualGeometry.ReaderControlMinHeight
+        ),
         contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
         colors = ButtonDefaults.textButtonColors(
             contentColor = foreground,
-            disabledContentColor = foreground.copy(alpha = 0.28f)
+            disabledContentColor = foreground.copy(alpha = ReaderVisualOpacity.Disabled)
         )
     ) {
         Column(
@@ -4687,16 +4692,24 @@ private fun ReaderControl(
             ReaderActionIcon(
                 action = action,
                 modifier = Modifier.size(
-                    if (action == ReaderAction.APPEARANCE) 24.dp else 18.dp
+                    if (action == ReaderAction.APPEARANCE) {
+                        ReaderVisualGeometry.AppearanceGlyph
+                    } else {
+                        ReaderVisualGeometry.StandardToolIcon
+                    }
                 ),
-                tint = if (enabled) accent else foreground.copy(alpha = 0.28f)
+                tint = if (enabled) accent
+                else foreground.copy(alpha = ReaderVisualOpacity.Disabled)
             )
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
-                color = if (enabled) foreground.copy(alpha = 0.78f)
-                    else foreground.copy(alpha = 0.28f),
+                color = if (enabled) {
+                    foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary)
+                } else {
+                    foreground.copy(alpha = ReaderVisualOpacity.Disabled)
+                },
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
@@ -5666,7 +5679,9 @@ private fun ReaderAppearanceChoice(
     onClick: () -> Unit
 ) {
     val foreground = when {
-        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(
+            alpha = ReaderVisualOpacity.Disabled
+        )
         selected -> VeilPalette.Moon
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -5679,11 +5694,11 @@ private fun ReaderAppearanceChoice(
                 role = Role.RadioButton,
                 onClick = onClick
             ),
-        shape = MaterialTheme.shapes.extraSmall,
+        shape = RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius),
         color = if (selected) {
             VeilMaterials.ElevatedSurface
         } else {
-            VeilPalette.Archive.copy(alpha = 0.66f)
+            VeilPalette.Archive.copy(alpha = ReaderVisualOpacity.InactiveArchiveSurface)
         },
         contentColor = foreground,
         tonalElevation = 0.dp,
@@ -5691,9 +5706,9 @@ private fun ReaderAppearanceChoice(
         border = BorderStroke(
             if (selected) 1.5.dp else 1.dp,
             if (selected) {
-                VeilPalette.Brass.copy(alpha = 0.76f)
+                VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.SelectedBorder)
             } else {
-                VeilPalette.Brass.copy(alpha = 0.22f)
+                VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.QuietBorder)
             }
         )
     ) {
@@ -6263,16 +6278,16 @@ private fun ReaderModeChoice(
                 role = Role.RadioButton,
                 onClick = onClick
             ),
-        shape = MaterialTheme.shapes.extraSmall,
+        shape = RoundedCornerShape(ReaderVisualGeometry.CompactControlRadius),
         color = if (active) {
             VeilMaterials.ElevatedSurface
         } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+            MaterialTheme.colorScheme.surface.copy(alpha = ReaderVisualOpacity.InactiveSurface)
         },
         border = BorderStroke(
             1.dp,
             if (active) {
-                VeilPalette.Brass.copy(alpha = 0.82f)
+                VeilPalette.Brass.copy(alpha = ReaderVisualOpacity.SelectedBorder)
             } else {
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
             }
