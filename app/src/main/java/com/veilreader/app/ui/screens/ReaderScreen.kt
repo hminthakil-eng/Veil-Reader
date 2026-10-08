@@ -584,16 +584,6 @@ fun ReaderScreen(
         } else {
             ReaderInputOwnership(owner = previewOwner, previewPending = true)
         }
-        if (!previewOwnership.canAcquire(ReaderInputOwner.PROGRAMMATIC)) {
-            ReaderTrace.event(
-                "navigation_jump_blocked_input_owner",
-                bookId = opened.book.id,
-                sessionId = readerSessionInstanceId,
-                details = "owner=${previewOwner.name}"
-            )
-            return false
-        }
-
         if (!paperSettled || !slideSettled) {
             paperInputListener?.forceCancelPendingTurn()
             slideInputListener?.forceCancelPendingTurn()
@@ -601,6 +591,15 @@ fun ReaderScreen(
                 "navigation_jump_blocked_unsettled_preview",
                 bookId = opened.book.id,
                 sessionId = readerSessionInstanceId
+            )
+            return false
+        }
+        if (!previewOwnership.canAcquire(ReaderInputOwner.PROGRAMMATIC)) {
+            ReaderTrace.event(
+                "navigation_jump_blocked_input_owner",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId,
+                details = "owner=${previewOwner.name}"
             )
             return false
         }
