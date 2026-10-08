@@ -206,6 +206,7 @@
     <!-- Reader feedback and recoverable errors -->
     <string name="reader_image_viewer_title">تصویر</string>
     <string name="reader_image_viewer_close">بستن</string>
+    <string name="reader_image_zoom_reset">نمایش کامل تصویر</string>
     <string name="reader_image_viewer_hint">برای بزرگ‌نمایی نیشگون بگیرید · برای بررسی جابه‌جا کنید</string>
     <string name="reader_image_viewer_failed">باز کردن این تصویر ممکن نشد.</string>
     <string name="reader_appearance_apply_failed">اعمال ظاهر مطالعه در حال حاضر ممکن نشد.</string>

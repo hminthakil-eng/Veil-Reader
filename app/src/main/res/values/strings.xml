@@ -206,6 +206,7 @@
     <!-- Reader feedback and recoverable errors -->
     <string name="reader_image_viewer_title">Illustration</string>
     <string name="reader_image_viewer_close">Close</string>
+    <string name="reader_image_zoom_reset">Fit image</string>
     <string name="reader_image_viewer_hint">Pinch to zoom · drag to inspect</string>
     <string name="reader_image_viewer_failed">Could not open this illustration.</string>
     <string name="reader_appearance_apply_failed">The reading appearance could not be applied right now.</string>
