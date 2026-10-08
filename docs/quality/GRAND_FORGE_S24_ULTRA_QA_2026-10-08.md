@@ -70,8 +70,10 @@ integration and lifecycle behavior but do not replace deterministic fault tests.
 
 ## Next P0 build —3539c9c9 (not the historical APK above)
 
-Build/tests/APK hash pending exact-source CI37761477427. Do not install the
-historical06a APK to verify these new changes. User feedback on that previous
+Behavior batch3539 passed980 units,165 Android tests and36 abrupt-process
+samples. Its normal debug APK cannot update the historical06a installation
+because the signing certificate differs. Use the separate Forge QA delivery
+below for manual testing; do not uninstall the existing Veil app. User feedback on that previous
 build was “nothing changed”; the cover screenshot does not validate text/turning.
 
 - Open an actual text chapter. In Appearance, test Auto/Two columns in portrait,
@@ -98,6 +100,17 @@ Both normal debug APK signatures verify, but the06a and3539 signing certificates
 differ. Android cannot update the former installation with the latter. Preserve
 the existing Veil app and its data. A separately installed **Veil Reader Forge QA**
 (com.veilreader.app.forgeqa) is building; it has its own library/permissions and a
-source-suffixed version. Import one test publication into that app. Its APK link,
-hash, actual QA test reports and pinned signer will be recorded after verification.
+source-suffixed version. Import one test publication into that app.
+
+- [Download verified Forge QA artifact](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693/artifacts/11547406062). GitHub login is required;
+  unzip and install `VeilReader-ForgeQA-efa3fb20.apk`. Retention14 days.
+- Version `0.10.0-forge-efa3fb20`, source `efa3fb207954ec9468f5e6c37b6c69cc9ecdf741`.
+- APK SHA-256 `e45956c76cd3720a12e7a1035ccf3ae91c92d6a3d0563c1543f808e1b2632449`; included SHA256SUMS independently checked.
+- [QA CI](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693):980 units/170 suites,165 Android tests, zero failures/errors/skips;
+  lint0 errors/174 warnings. Actual SAF import/open/rotation passed.
+- Android v2 signature verified by runner apksigner and independently by Google
+  apksig8.7.3. Public certificate SHA-256 is pinned in
+  `quality/forge-qa-signing-cert.sha256`; key cache saved successfully. Restore
+  from cache and future update installation remain unverified.
+
 No uninstall or production-data migration is required for this test installation.

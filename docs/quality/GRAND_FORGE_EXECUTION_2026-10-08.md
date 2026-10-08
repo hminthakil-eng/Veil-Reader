@@ -418,3 +418,21 @@ waves are not claimed complete.
 - Risks/performance/accessibility/RTL: test-only ID resolution; no user runtime,
   layout, gesture or persistence change. Dependencies: separate QA build.
 - Status: YELLOW pending rerun; rollback isolated test commit efa3fb20.
+
+## QA delivery evidence — efa3fb20
+
+[QA37768309693](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693) passed980 units/170 suites,165 Android tests,
+zero failures/errors/skips, lint0 errors/174 warnings. The corrected SAF test
+verifies import/open/rotation under com.veilreader.app.forgeqa. Signed version
+0.10.0-forge-efa3fb20 and [APK artifact](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693/artifacts/11547406062) verified independently;
+SHA-256 e45956c76cd3720a12e7a1035ccf3ae91c92d6a3d0563c1543f808e1b2632449.
+
+GF-REL-001/002 and GF-TYPE-002 now have build/instrumentation evidence and remain
+YELLOW for manual S24/UX acceptance. Prior3539 behavior/storage/process/performance
+results remain separately identified. No claim of a new process-death/performance
+run against the QA package. The QA key cache save passed; public certificate pin
+and both current/legacy apksigner output parsing pass locally. Subsequent cache
+restore and upgrade installation remain pending. No gate promotion or production
+merge. Revert isolated behavior/build commits for rollback; physical status JSON
+remains UNVERIFIED. Full mission still includes ReadingAnchor/exploration,
+foreground listening checkpoint, corpus/RTL/selection/PDF and device performance.

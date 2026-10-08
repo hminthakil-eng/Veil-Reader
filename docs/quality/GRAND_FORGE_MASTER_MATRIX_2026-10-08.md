@@ -184,7 +184,10 @@ disabled.03423a36 explicitly enables them only for QA. Normal Android run3776474
 lint0 errors/174 warnings and164 of165 Android tests; its SAF UI test searched
 hard-coded original-package resource IDs after installing the separate QA package.
 efa3fb20 resolves IDs using instrumentation.targetContext.packageName for both
-portrait and rotated Reader checks. QA rerun37768309693 is pending; no installable
-QA artifact or physical-device result is claimed yet.
+portrait and rotated Reader checks. QA rerun37768309693 passed980 units,165 Android tests, lint0 errors/174 warnings
+and package/signature/hash verification. [Installable artifact](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693/artifacts/11547406062) is version
+0.10.0-forge-efa3fb20, APK SHA-256 e45956c76cd3720a12e7a1035ccf3ae91c92d6a3d0563c1543f808e1b2632449.
+Physical-device acceptance remains UNVERIFIED. The public QA certificate is pinned;
+runner cache save passed, later cache restore/update acceptance is pending.
 ReadingAnchor/exploration separation remains RED, as do complete rendered/script
 and physical-reader acceptance. No row is GREEN.
