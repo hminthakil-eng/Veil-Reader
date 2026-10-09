@@ -216,14 +216,14 @@ internal class PaperCurlInputListener(
             // page turn when GPU/capture readiness is missing.
             invalidateOperation()
             resetDrag()
-            if (!reducedMotion && state.rendererStatus == GpuMaterialPageRendererStatus.READY) {
+            if (!reducedMotion && materialPageRendererCanPresent(state.rendererStatus)) {
                 onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
             }
             return
         }
 
         // Tap/key turns must obey the same visual transaction as drag turns.
-        // Wait for the acquired GPU source buffer before changing Readium underneath
+        // Wait for the presented Paper source sheet before changing Readium underneath
         // it. READY/upload/draw and fixed delays do not prove screen presentation.
         completionJob = launchCompletion {
             if (visualReady && !reducedMotion) {
