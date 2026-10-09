@@ -3202,12 +3202,13 @@ fun ReaderScreen(
 
         AnimatedVisibility(
             visible =
-                !controlsVisible &&
+                !readerChromeAutoHideEnabled &&
+                    !controlsVisible &&
                     readerSessionReady &&
                     !showNotebook &&
                     !showAppearance &&
                     !showPdfZoom &&
-            !showTts &&
+                    !showTts &&
                     !selectionModeActive &&
                     !touchExplorationEnabled,
             modifier = Modifier
