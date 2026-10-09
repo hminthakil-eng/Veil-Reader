@@ -58,7 +58,8 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 if (navigator == null) delay(50)
             }
             navigator.currentLocator.collect { locator ->
-                window.decorView.contentDescription = "benchmark-reader-locator:${locator.href}|${locator.locations.progression}"
+                val progression = locator.locations.progression ?: return@collect
+                window.decorView.contentDescription = "benchmark-reader-locator:${locator.href}|$progression"
             }
         }
 

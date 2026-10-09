@@ -257,7 +257,7 @@ internal fun PaperCurlOverlay(
     }
 
     val presentedEpoch by state.materialEngine.presentedSheetEpoch.collectAsState()
-    Box(modifier = modifier) {
+    Box(modifier = modifier.readerVisualOnlyInput()) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
             modifier = Modifier.fillMaxSize(),

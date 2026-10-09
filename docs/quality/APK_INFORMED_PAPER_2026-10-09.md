@@ -87,3 +87,20 @@ Real-input acceptance now opens and dismisses Reader chrome with center taps on
 the cover, edge-taps into chapter one, and checks actual Readium href/progression
 after every swipe and settling. Harness/probe/EPUB remain benchmark-only.
 Hosted after-fix runtime and phone verification must be recorded separately.
+
+
+### GPU host hit testing after shader repair
+
+After-fix run 37949200789 at ced8b0ca links/initializes GPU successfully, but
+center taps and the first cover swipe both fail with no `gesture_owned` event.
+The GPU's AndroidView sits inside PaperCurlOverlay's Box, a separate sibling
+subtree above ReaderFragmentHost. AndroidView's sibling sharing is local to its
+own layout; its parent Box still wins outer hit testing and excludes Readium.
+Android's PointerInputModifierNode documentation explicitly describes layout-local
+sharing. Add an inert sharing node to the outer Paper Box: it consumes no events
+and forwards/synthesizes none. Real Readium remains the sole event source.
+Native AndroidView instrumentation uses the same nested hierarchy and a negative
+control without sharing. Existing real-publication cover/gesture tests remain
+mandatory after this repair. Storage instrumentation at ced8b0ca also failed;
+its job log omitted failure details and artifact download returned HTTP 403.
+Print failure XML and crash traces on the next run rather than assuming a flake.
