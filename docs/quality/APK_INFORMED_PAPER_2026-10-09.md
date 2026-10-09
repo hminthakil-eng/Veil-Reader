@@ -134,3 +134,21 @@ the uploaded 7a6bea9 signer is eb1ea9e88162d33a559b8e59be74bc67d7357eb5b83e8e081
 They cannot update each other in place. Reuse the existing separate Forge QA
 package/build and its pinned non-production signer/cache via the verification PR.
 No uninstall, production-data migration, merge or release gate promotion.
+
+### Confirmed native accessibility occlusion — a4c17de1
+
+Storage run 37971059466 still fails the same import lookup with flags=65554
+(including explicit ID reporting). Native hierarchy diagnostics show visible
+resourcePager and R2WebViews, while the overlay's ViewFactoryHolder remains
+accessibility-important despite the GPU child being View.NO. The test setup
+change did not repair the product defect. Compose's semantics occlusion prunes
+covered sibling bounds for an important interop host; native View.NO is not a
+replacement for marking the Compose host decorative.
+
+Apply hideFromAccessibility to the modifier passed to the actual GPU AndroidView
+(and software visual overlay), preserving parent input sharing and publication
+semantics. Add a native accessibility negative control: native View.NO alone
+excludes the publication, but hiding the host restores its content description.
+Keep the existing real SAF import/rotation test unchanged. Validate both the
+normal and separately signed QA variants; previous navigation smoke cannot
+establish this new accessibility repair.

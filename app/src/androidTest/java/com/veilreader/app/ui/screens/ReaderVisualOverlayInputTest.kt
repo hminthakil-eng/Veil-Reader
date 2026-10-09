@@ -3,6 +3,8 @@ package com.veilreader.app.ui.screens
 import android.content.Context
 import android.view.MotionEvent
 import android.view.View
+import android.view.accessibility.AccessibilityNodeInfo
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -18,12 +20,57 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
 class ReaderVisualOverlayInputTest {
     @get:Rule val compose = createComposeRule()
+
+    @Test
+    fun nativeDecorativeHostDoesNotOccludePublicationAccessibility() {
+        val hide = mutableStateOf(false)
+        compose.setContent {
+            Box(Modifier.size(240.dp)) {
+                AndroidView(
+                    factory = { View(it).apply {
+                        contentDescription = "Publication content"
+                        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+                    } },
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(Modifier.fillMaxSize().readerVisualOnlyInput()) {
+                    AndroidView(
+                        factory = { View(it).apply {
+                            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                        } },
+                        modifier = if (hide.value) Modifier.fillMaxSize().readerVisualOnlyAccessibility()
+                        else Modifier.fillMaxSize()
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        assertFalse("Native NO alone must reproduce interop host occlusion", publicationIsAccessible())
+        compose.runOnIdle { hide.value = true }
+        compose.waitUntil(timeoutMillis = 5_000) { publicationIsAccessible() }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun publicationIsAccessible(): Boolean {
+        val root = InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow ?: return false
+        val queue = ArrayDeque<AccessibilityNodeInfo>()
+        queue.add(root)
+        var found = false
+        while (queue.isNotEmpty()) {
+            val node = queue.removeFirst()
+            if (node.contentDescription?.toString() == "Publication content") found = true
+            for (index in 0 until node.childCount) node.getChild(index)?.let(queue::add)
+            node.recycle()
+        }
+        return found
+    }
 
     @Test
     fun nestedNativeOverlaySharesTapAndSwipeWithPublicationOnlyWhenParentShares() {

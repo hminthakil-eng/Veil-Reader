@@ -260,7 +260,7 @@ internal fun PaperCurlOverlay(
     Box(modifier = modifier.readerVisualOnlyInput()) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
             onRendererStatus = state::updateRendererStatus
         )
 

@@ -190,6 +190,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 1
 
+      - name: Preserve actual Reader interaction evidence
+        if: always() && github.event_name == 'pull_request' && startsWith(github.head_ref, 'verify/apk-informed-paper-')
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-input-evidence
+          path: |
+            benchmark/build/outputs/androidTest-results/**/TEST-*.xml
+            benchmark/build/outputs/androidTest-results/**/logcat-*ReaderFrameSmokeBenchmark*.txt
+            benchmark/build/perf-results/*.json
+            performance/current-smoke.json
+          if-no-files-found: warn
+          retention-days: 7
+
       # Emulator metrics are regression smoke signals only. The dashboard emits early warnings but
       # does not hard-fail on gradual drift. Absolute budgets and PR delta budgets remain the gates.
       # Product performance decisions use the physical-device policy on a stable device class.

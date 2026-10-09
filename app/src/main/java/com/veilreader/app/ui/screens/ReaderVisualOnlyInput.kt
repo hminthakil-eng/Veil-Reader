@@ -6,6 +6,8 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
 
 /**
@@ -15,6 +17,9 @@ import androidx.compose.ui.unit.IntSize
  * Observe/consume nothing: Readium remains the sole native gesture/event producer.
  */
 internal fun Modifier.readerVisualOnlyInput(): Modifier = then(ReaderVisualOnlyInputElement)
+
+/** Hide the Compose interop host too: native View.NO alone still leaves an occluding host. */
+internal fun Modifier.readerVisualOnlyAccessibility(): Modifier = semantics { hideFromAccessibility() }
 
 private object ReaderVisualOnlyInputElement : ModifierNodeElement<ReaderVisualOnlyInputNode>() {
     override fun equals(other: Any?) = other === this
