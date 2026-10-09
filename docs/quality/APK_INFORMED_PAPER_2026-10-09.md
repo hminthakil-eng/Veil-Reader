@@ -197,3 +197,27 @@ Add acquired/drawn timestamp diagnostics without changing acknowledgement and a
 small native GPU integration test independent of Readium. It must acknowledge
 two distinct epochs through real acquired buffers. Compare listener delivery and
 the producer timestamp before changing presentation timing or buffer identity.
+
+### Primary-source deferred-acquisition race
+
+Android 15 `TextureView.applyUpdate` calls TextureLayer.updateSurfaceTexture then
+invokes the UI listener. TextureLayer queues a renderer layer update; its JNI
+entry calls DeferredLayerUpdater.updateTexImage, which only sets a flag. Actual
+buffer dequeue happens later in DeferredLayerUpdater.apply on RenderThread.
+Thus the UI notification alone does not guarantee that SurfaceTexture.timestamp
+already identifies the just-drawn sheet. With WHEN_DIRTY rendering and navigation
+waiting for that sheet, no later frame necessarily arrives to retry the read.
+
+Primary source, tag `android-15.0.0_r1` in `aosp-mirror/platform_frameworks_base`:
+- `core/java/android/view/TextureView.java` — applyUpdate.
+- `graphics/java/android/graphics/TextureLayer.java` — updateSurfaceTexture.
+- `libs/hwui/jni/android_graphics_TextureLayer.cpp` — native layer update.
+- `libs/hwui/DeferredLayerUpdater.h` and `.cpp` — flag versus actual dequeue.
+
+Prepare a bounded-lifetime, frame-scheduled timestamp recheck while an active
+sheet has pending GPU buffers. Keep exact producer/acquired timestamp, context
+and viewport matching. Never call updateTexImage ourselves, request synthetic
+navigation, acknowledge a GL draw, or extend the existing 500ms transaction.
+Cancel checks on inactive submission, pause, surface destruction and detach.
+Runtime before/after native acquisition and real-publication acceptance are
+required before accepting this repair; primary-source reasoning is not a pass.
