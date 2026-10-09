@@ -124,48 +124,94 @@ internal object WindowPixelCopyPreparedMaterialPageSnapshotProvider :
             )
         }
 
-        val started = SystemClock.elapsedRealtimeNanos()
-        target.eraseColor(android.graphics.Color.TRANSPARENT)
-        val result = withTimeoutOrNull(PIXEL_COPY_TIMEOUT_MS) {
-            suspendCancellableCoroutine<Int> { continuation ->
-                PixelCopy.request(
-                    window,
-                    sourceRect,
-                    target,
-                    { copyResult ->
-                        if (continuation.isActive) {
-                            continuation.resume(copyResult)
-                        }
-                    },
-                    Handler(Looper.getMainLooper())
-                )
-            }
-        } ?: return MaterialPageSnapshotCapture.Failed(
+        val temporary = runCatching {
+            Bitmap.createBitmap(
+                sourceRect.width(),
+                sourceRect.height(),
+                Bitmap.Config.ARGB_8888
+            )
+        }.getOrNull() ?: return MaterialPageSnapshotCapture.Failed(
             sourceRevision = sourceRevision,
             reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
-            errorType = "PixelCopyTimeout"
+            errorType = "PixelCopyBufferAllocation"
         )
 
-        return if (result == PixelCopy.SUCCESS) {
-            MaterialPageSnapshotCapture.Ready(
-                bitmap = target,
+        val started = SystemClock.elapsedRealtimeNanos()
+        val result = withTimeoutOrNull(PIXEL_COPY_TIMEOUT_MS) {
+            suspendCancellableCoroutine<Int> { continuation ->
+                try {
+                    PixelCopy.request(
+                        window,
+                        sourceRect,
+                        temporary,
+                        { copyResult ->
+                            if (continuation.isActive) {
+                                continuation.resume(copyResult)
+                            } else if (!temporary.isRecycled) {
+                                // A timeout/cancel must never leave PixelCopy writing
+                                // into one of MaterialPageEngine's reusable buffers.
+                                temporary.recycle()
+                            }
+                        },
+                        Handler(Looper.getMainLooper())
+                    )
+                } catch (_: Exception) {
+                    if (continuation.isActive) {
+                        continuation.resume(PIXEL_COPY_REQUEST_EXCEPTION)
+                    }
+                }
+            }
+        }
+
+        if (result == null) {
+            // The accepted request can still complete after timeout. Its callback
+            // owns temporary recycling once the continuation is no longer active.
+            return MaterialPageSnapshotCapture.Failed(
                 sourceRevision = sourceRevision,
-                provider = PROVIDER_NAME,
-                elapsedNanos =
-                    (SystemClock.elapsedRealtimeNanos() - started)
-                        .coerceAtLeast(0L)
+                reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
+                errorType = "PixelCopyTimeout"
             )
-        } else {
-            MaterialPageSnapshotCapture.Failed(
+        }
+
+        if (result != PixelCopy.SUCCESS) {
+            if (!temporary.isRecycled) temporary.recycle()
+            return MaterialPageSnapshotCapture.Failed(
                 sourceRevision = sourceRevision,
                 reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
                 errorType = "PixelCopyResult:$result"
             )
         }
+
+        return try {
+            if (
+                !view.isAttachedToWindow ||
+                view.width != target.width ||
+                view.height != target.height
+            ) {
+                MaterialPageSnapshotCapture.NotReady(
+                    sourceRevision = sourceRevision,
+                    reason = MaterialPageSnapshotFailureReason.VIEW_NOT_READY
+                )
+            } else {
+                target.eraseColor(android.graphics.Color.TRANSPARENT)
+                Canvas(target).drawBitmap(temporary, 0f, 0f, null)
+                MaterialPageSnapshotCapture.Ready(
+                    bitmap = target,
+                    sourceRevision = sourceRevision,
+                    provider = PROVIDER_NAME,
+                    elapsedNanos =
+                        (SystemClock.elapsedRealtimeNanos() - started)
+                            .coerceAtLeast(0L)
+                )
+            }
+        } finally {
+            if (!temporary.isRecycled) temporary.recycle()
+        }
     }
 
     private const val PROVIDER_NAME = "window_pixel_copy"
     private const val PIXEL_COPY_TIMEOUT_MS = 420L
+    private const val PIXEL_COPY_REQUEST_EXCEPTION = Int.MIN_VALUE
 }
 
 internal fun materialPageVisibleWebView(root: View): WebView? {
