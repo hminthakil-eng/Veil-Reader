@@ -17,13 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.test.assertHeightIsAtLeast
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNode
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -59,8 +54,8 @@ class ReaderSanctuaryVisualEvidenceTest {
             EpubAppearancePanel(
                 appearance = ReaderAppearance(),
                 fixedLayout = false,
-                spread = ReaderFixedLayoutSpread.AUTO,
-                screenBrightness = null,
+                fixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
+                publicationLanguage = null,
                 onSpreadChange = {},
                 onChange = {},
                 onDone = {},
@@ -80,8 +75,8 @@ class ReaderSanctuaryVisualEvidenceTest {
             EpubAppearancePanel(
                 appearance = ReaderAppearance(),
                 fixedLayout = false,
-                spread = ReaderFixedLayoutSpread.AUTO,
-                screenBrightness = null,
+                fixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
+                publicationLanguage = null,
                 onSpreadChange = {},
                 onChange = {},
                 onDone = {},
