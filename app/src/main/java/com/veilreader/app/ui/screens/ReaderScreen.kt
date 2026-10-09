@@ -2389,11 +2389,7 @@ fun ReaderScreen(
                             nav.overflow.value.scroll
                         },
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
-                    ) ||
-                        (
-                            opened.format == BookFormat.EPUB &&
-                                paperNeedsStaticFallback()
-                            )
+                    )
                 },
                 onInteraction = ::markReaderNavigationInteraction,
                 onNavigationCommitted = {
