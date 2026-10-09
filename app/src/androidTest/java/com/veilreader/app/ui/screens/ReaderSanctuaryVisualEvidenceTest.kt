@@ -86,6 +86,8 @@ class ReaderSanctuaryVisualEvidenceTest {
         }
 
         compose.onNodeWithText(localized.getString(R.string.reader_advanced)).assertIsDisplayed()
+        compose.onNodeWithText(localized.getString(R.string.settings_appearance_title)).assertIsDisplayed()
+        compose.onNodeWithText(localized.getString(R.string.reader_changes_live)).assertDoesNotExist()
         capture("sanctuary-appearance-advanced-fa-200-contrast")
     }
 
@@ -148,6 +150,7 @@ class ReaderSanctuaryVisualEvidenceTest {
         }
 
         compose.onNodeWithText(localized.getString(R.string.tts_title)).assertIsDisplayed()
+        compose.onNodeWithText("خط باریکی از نور روی حاشیهٔ دفتر باقی مانده بود.").assertIsDisplayed()
         compose.onNode(hasContentDescription(localized.getString(R.string.tts_pause)))
             .assertHeightIsAtLeast(48.dp)
         capture("sanctuary-tts-mini-fa-200-contrast")
