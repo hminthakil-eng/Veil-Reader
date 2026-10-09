@@ -29,6 +29,7 @@ import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageSide
 import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.reader.material.materialPageRendererCanPresent
 
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
@@ -93,11 +94,16 @@ internal class PaperCurlState {
 
     fun updateRendererStatus(value: GpuMaterialPageRendererStatus) {
         rendererStatus = value
-        if (value != GpuMaterialPageRendererStatus.READY) materialEngine.invalidateSheetPresentation()
+        if (!materialPageRendererCanPresent(value)) materialEngine.invalidateSheetPresentation()
         when (value) {
             GpuMaterialPageRendererStatus.READY -> {
                 rendererEverReady = true
                 if (!active && performancePhase == PaperPerformancePhase.GL_RECREATE) {
+                    performancePhase = PaperPerformancePhase.IDLE
+                }
+            }
+            GpuMaterialPageRendererStatus.SOFTWARE_READY -> {
+                if (!active) {
                     performancePhase = PaperPerformancePhase.IDLE
                 }
             }
@@ -136,7 +142,7 @@ internal class PaperCurlState {
             debugBeginAttempts += 1
         }
         if (
-            rendererStatus != GpuMaterialPageRendererStatus.READY ||
+            !materialPageRendererCanPresent(rendererStatus) ||
             active
         ) {
             return false
@@ -264,6 +270,8 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · DISABLED"
                 state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ->
                     "PAPER · GPU CANONICAL · INITIALIZING · A${state.debugBeginAttempts}"
+                state.rendererStatus == GpuMaterialPageRendererStatus.SOFTWARE_READY ->
+                    "PAPER · SOFTWARE MESH · READY · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
                     "PAPER · GPU CANONICAL · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
