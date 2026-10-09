@@ -68,7 +68,7 @@ class ReaderFrameSmokeBenchmark {
             val origin = readerLocator()
             val epoch = gpuSheetEpoch()
             check(epoch >= 0L) { "GPU host is unavailable" }
-            if (turn == 0) device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
+            if (turn == 0 && !svgCover) device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
             else device.swipe(device.displayWidth * 4 / 5, device.displayHeight / 2,
                 device.displayWidth / 5, device.displayHeight / 2, 40)
             awaitReaderLocatorDeparture(origin)

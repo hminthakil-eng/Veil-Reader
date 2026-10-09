@@ -221,3 +221,6 @@ navigation, acknowledge a GL draw, or extend the existing 500ms transaction.
 Cancel checks on inactive submission, pause, surface destruction and detach.
 Runtime before/after native acquisition and real-publication acceptance are
 required before accepting this repair; primary-source reasoning is not a pass.
+Exercise the img cover with an animated edge tap and the SVG cover with an
+animated drag, then continue dragging text pages. Both publication cases still
+require a new actual GPU acquisition and stable locator after every turn.
