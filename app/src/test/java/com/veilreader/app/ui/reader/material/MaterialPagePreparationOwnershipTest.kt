@@ -28,14 +28,15 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun turnCannotReuseBufferOfSuspendedWarmCapture() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        // Window visibility is a controlled platform input to these ownership
-        // tests; Robolectric's WebView/window visibility is not device evidence.
-        val view = object : WebView(activity.get()) {
-            override fun isShown() = true
-        }
+        val view = WebView(activity.get())
         activity.get().setContentView(view)
         activity.visible()
-        view.layout(0, 0, 32, 48)
+        // WebView's provider-backed setFrame leaves layout() at 0x0 in
+        // Robolectric. Set View bounds for this pixel-ownership fixture.
+        view.left = 0
+        view.top = 0
+        view.right = 32
+        view.bottom = 48
         assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
             "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
@@ -68,14 +69,15 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun cancellationReleasesOneOfTwoBusyCaptureSlots() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        // Window visibility is a controlled platform input to these ownership
-        // tests; Robolectric's WebView/window visibility is not device evidence.
-        val view = object : WebView(activity.get()) {
-            override fun isShown() = true
-        }
+        val view = WebView(activity.get())
         activity.get().setContentView(view)
         activity.visible()
-        view.layout(0, 0, 32, 48)
+        // WebView's provider-backed setFrame leaves layout() at 0x0 in
+        // Robolectric. Set View bounds for this pixel-ownership fixture.
+        view.left = 0
+        view.top = 0
+        view.right = 32
+        view.bottom = 48
         assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
             "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
@@ -112,14 +114,15 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun idleReleaseRejectsLateCaptureWithoutSoftwareFallback() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        // Window visibility is a controlled platform input to these ownership
-        // tests; Robolectric's WebView/window visibility is not device evidence.
-        val view = object : WebView(activity.get()) {
-            override fun isShown() = true
-        }
+        val view = WebView(activity.get())
         activity.get().setContentView(view)
         activity.visible()
-        view.layout(0, 0, 32, 48)
+        // WebView's provider-backed setFrame leaves layout() at 0x0 in
+        // Robolectric. Set View bounds for this pixel-ownership fixture.
+        view.left = 0
+        view.top = 0
+        view.right = 32
+        view.bottom = 48
         assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
             "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
@@ -156,14 +159,15 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun refreshingPreparedPixelsCannotBeConsumedByTurn() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        // Window visibility is a controlled platform input to these ownership
-        // tests; Robolectric's WebView/window visibility is not device evidence.
-        val view = object : WebView(activity.get()) {
-            override fun isShown() = true
-        }
+        val view = WebView(activity.get())
         activity.get().setContentView(view)
         activity.visible()
-        view.layout(0, 0, 32, 48)
+        // WebView's provider-backed setFrame leaves layout() at 0x0 in
+        // Robolectric. Set View bounds for this pixel-ownership fixture.
+        view.left = 0
+        view.top = 0
+        view.right = 32
+        view.bottom = 48
         assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
             "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
