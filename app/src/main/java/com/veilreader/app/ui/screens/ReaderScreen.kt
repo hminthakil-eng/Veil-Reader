@@ -2257,16 +2257,6 @@ fun ReaderScreen(
                     pageTurnStyle = latestAppearance.value.pageTurnStyle
                 )
 
-            fun paperRendererOwnsNavigationInput(): Boolean =
-                paperModeSelected() &&
-                    paperRendererCanOwnNavigationInput(
-                        reducedMotion = latestReducedMotion.value,
-                        rendererStatus = paperCurlState.rendererStatus
-                    )
-
-            fun paperNeedsStaticFallback(): Boolean =
-                paperModeSelected() && !paperRendererOwnsNavigationInput()
-
             val paperListener = if (navigator is EpubNavigatorFragment) {
                 PaperCurlInputListener(
                     navigator = nav,
@@ -2280,8 +2270,7 @@ fun ReaderScreen(
                             )
                     },
                     isEnabled = {
-                        latestReaderSessionReady.value &&
-                            paperRendererOwnsNavigationInput()
+                        latestReaderSessionReady.value && paperModeSelected()
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
@@ -2345,9 +2334,8 @@ fun ReaderScreen(
                                     format = opened.format,
                                     scroll = latestAppearance.value.scroll,
                                     pageTurnStyle = latestAppearance.value.pageTurnStyle
-                                ) ||
-                                    paperNeedsStaticFallback()
                                 )
+                            )
                     },
                     scope = scope,
                     onInteraction = ::markReaderNavigationInteraction,
