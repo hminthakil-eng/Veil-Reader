@@ -560,14 +560,12 @@ fun ReaderScreen(
         val slideHadPendingTurn =
             slideInputListener?.hasPendingTurn() == true
 
-        val paperSettled =
-            !paperHadPendingTurn ||
-                paperInputListener?.cancelPendingTurnAndAwait() == true ||
-                paperInputListener?.hasPendingTurn() != true
-        val slideSettled =
-            !slideHadPendingTurn ||
-                slideInputListener?.cancelPendingTurnAndAwait() == true ||
-                slideInputListener?.hasPendingTurn() != true
+        // Cancellation acknowledgement alone is insufficient: a listener may still own
+        // a preview when it reports completion. Recheck both listeners after cancellation.
+        if (paperHadPendingTurn) paperInputListener?.cancelPendingTurnAndAwait()
+        if (slideHadPendingTurn) slideInputListener?.cancelPendingTurnAndAwait()
+        val paperSettled = paperInputListener?.hasPendingTurn() != true
+        val slideSettled = slideInputListener?.hasPendingTurn() != true
 
         // Ownership is computed from the live preview listeners, not a stale mode flag.
         val previewOwner = when {
