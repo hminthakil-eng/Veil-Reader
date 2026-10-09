@@ -64,6 +64,20 @@ jobs:
       - name: Unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
 
+      - name: Print unit regression failures
+        if: failure()
+        run: |
+          python3 - <<'PY_REPORT'
+          import glob
+          import xml.etree.ElementTree as ET
+          for path in sorted(glob.glob("app/build/test-results/testDebugUnitTest/TEST-*.xml")):
+              root = ET.parse(path).getroot()
+              for case in root.findall("testcase"):
+                  for failure in list(case.findall("failure")) + list(case.findall("error")):
+                      print(f"{case.get('classname')}.{case.get('name')}: {failure.get('message')}")
+                      print("\n".join((failure.text or "").splitlines()[:30]))
+          PY_REPORT
+
       - name: Compile accessibility instrumentation regressions
         run: gradle :app:compileDebugAndroidTestKotlin --stacktrace
 

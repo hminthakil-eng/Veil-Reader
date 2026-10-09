@@ -27,10 +27,13 @@ class MaterialPagePreparationOwnershipTest {
     }
 
     @Test fun turnCannotReuseBufferOfSuspendedWarmCapture() = runTest {
-        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val activity = Robolectric.buildActivity(Activity::class.java).setup()
         val view = WebView(activity.get())
         activity.get().setContentView(view)
+        activity.visible()
         view.layout(0, 0, 32, 48)
+        assertTrue("Fixture must enter the suspended hardware-capture path",
+            materialPageVisibleWebView(view) === view)
         val finishCapture = CompletableDeferred<Unit>()
         var capturedTarget: Bitmap? = null
         val engine = MaterialPageEngineState(
@@ -59,10 +62,13 @@ class MaterialPagePreparationOwnershipTest {
     }
 
     @Test fun cancellationReleasesOneOfTwoBusyCaptureSlots() = runTest {
-        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val activity = Robolectric.buildActivity(Activity::class.java).setup()
         val view = WebView(activity.get())
         activity.get().setContentView(view)
+        activity.visible()
         view.layout(0, 0, 32, 48)
+        assertTrue("Fixture must enter the suspended hardware-capture path",
+            materialPageVisibleWebView(view) === view)
         val neverFinishes = CompletableDeferred<Unit>()
         val targets = mutableListOf<Bitmap>()
         val engine = MaterialPageEngineState(
@@ -95,10 +101,13 @@ class MaterialPagePreparationOwnershipTest {
     }
 
     @Test fun idleReleaseRejectsLateCaptureWithoutSoftwareFallback() = runTest {
-        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val activity = Robolectric.buildActivity(Activity::class.java).setup()
         val view = WebView(activity.get())
         activity.get().setContentView(view)
+        activity.visible()
         view.layout(0, 0, 32, 48)
+        assertTrue("Fixture must enter the suspended hardware-capture path",
+            materialPageVisibleWebView(view) === view)
         val finishCapture = CompletableDeferred<Unit>()
         var immediateCaptures = 0
         val engine = MaterialPageEngineState(
@@ -131,10 +140,13 @@ class MaterialPagePreparationOwnershipTest {
     }
 
     @Test fun refreshingPreparedPixelsCannotBeConsumedByTurn() = runTest {
-        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val activity = Robolectric.buildActivity(Activity::class.java).setup()
         val view = WebView(activity.get())
         activity.get().setContentView(view)
+        activity.visible()
         view.layout(0, 0, 32, 48)
+        assertTrue("Fixture must enter the suspended hardware-capture path",
+            materialPageVisibleWebView(view) === view)
         val finishCapture = CompletableDeferred<Unit>()
         var requests = 0
         var refreshingTarget: Bitmap? = null
