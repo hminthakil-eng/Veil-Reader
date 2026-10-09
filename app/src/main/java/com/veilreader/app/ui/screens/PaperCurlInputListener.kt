@@ -57,14 +57,19 @@ internal fun paperRendererCanOwnNavigationInput(
     MaterialPageEngineRollout.isEnabled() &&
         (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY)
 
-/** Reserve a Paper drag during GL startup; actual page movement still requires READY. */
+/**
+ * Paper owns its drag sequence whenever the Paper engine rollout is selected.
+ *
+ * Renderer readiness controls whether the page may move, not who owns the gesture. Returning false
+ * for FAILED/UNSUPPORTED let Readium/native paged gestures take over and made a broken Paper engine
+ * look like a valid static/slide turn on real devices.
+ */
+@Suppress("UNUSED_PARAMETER")
 internal fun paperRendererCanReserveDrag(
     reducedMotion: Boolean,
     rendererStatus: GpuMaterialPageRendererStatus
 ): Boolean =
-    MaterialPageEngineRollout.isEnabled() &&
-        (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY ||
-            rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING)
+    MaterialPageEngineRollout.isEnabled()
 
 internal fun shouldAllowPaperNavigation(
     reducedMotion: Boolean,
