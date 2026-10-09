@@ -24,6 +24,9 @@ internal data class ReaderNavigationTransaction(
     val targetHref: String?,
     val passageVisitLocatorJson: String?,
     val startedAtElapsedMs: Long,
+    val reason: ReaderNavigationReason = ReaderNavigationReason.UNKNOWN,
+    val commitPolicy: ReaderNavigationCommitPolicy =
+        ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT,
     val expectedPdfPage: Int? = null,
     val originPdfPage: Int? = null
 )
@@ -38,9 +41,23 @@ internal data class ReaderNavigationTransaction(
 internal fun shouldStartReaderIdentityJump(
     origin: ReaderNavigationIdentity?,
     target: ReaderNavigationIdentity?
-): Boolean =
-    target != null &&
-        (origin == null || !readerNavigationIdentityMatchesTarget(origin, target))
+): Boolean {
+    target ?: return false
+    origin ?: return true
+    // Jump admission needs the finest available anchor. Readium position chunks
+    // span multiple paragraphs/viewports, so equality here must not swallow a
+    // search result or highlight elsewhere inside that chunk. Settlement below
+    // intentionally remains tolerant of renderer-generated/coarse locators.
+    if (origin.cssSelector != null && target.cssSelector != null &&
+        origin.cssSelector != target.cssSelector
+    ) return true
+    val originProgression = origin.progression?.takeIf { it.isFinite() }
+    val targetProgression = target.progression?.takeIf { it.isFinite() }
+    if (originProgression != null && targetProgression != null &&
+        abs(originProgression - targetProgression) > VISUAL_PAGE_PROGRESSION_TOLERANCE
+    ) return true
+    return !readerNavigationIdentityMatchesTarget(origin, target)
+}
 
 internal fun readerEffectiveTargetHref(
     currentHref: String?,
@@ -232,6 +249,9 @@ internal class ReaderNavigationTransactionGate(
         targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
         passageVisitLocatorJson: String? = null,
+        reason: ReaderNavigationReason = ReaderNavigationReason.UNKNOWN,
+        commitPolicy: ReaderNavigationCommitPolicy =
+            readerNavigationIntentFor(reason).commitPolicy,
         expectedPdfPage: Int? = null,
         originPdfPage: Int? = null
     ): ReaderNavigationTransaction {
@@ -243,6 +263,8 @@ internal class ReaderNavigationTransactionGate(
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson,
             startedAtElapsedMs = nowElapsedMs,
+            reason = reason,
+            commitPolicy = commitPolicy,
             expectedPdfPage = expectedPdfPage?.takeIf { it > 0 },
             originPdfPage = originPdfPage?.takeIf { it > 0 }
         )

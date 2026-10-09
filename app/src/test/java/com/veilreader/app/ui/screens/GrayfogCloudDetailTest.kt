@@ -141,10 +141,14 @@ class GrayfogCloudDetailTest {
         // Pixel evidence belongs to the emulator-backed Grayfog capture lane.
     }
 
-    @Test @Config(qualifiers = "en-w412dp-h900dp-mdpi")
+    @Test
+    @Config(qualifiers = "en-w412dp-h900dp-mdpi")
+    @GraphicsMode(GraphicsMode.Mode.LEGACY)
     fun unknownAnnotationDatesDoNotInventEpochHistory() = checkUnknownDate()
 
-    @Test @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
+    @Test
+    @Config(qualifiers = "fa-rIR-w360dp-h800dp-mdpi")
+    @GraphicsMode(GraphicsMode.Mode.LEGACY)
     fun persianUnknownAnnotationDatesRemainExplicit() = checkUnknownDate()
 
 }

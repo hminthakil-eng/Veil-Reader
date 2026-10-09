@@ -25,6 +25,34 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class ReaderPreferenceMappingTest {
     @Test
+    fun `Paper activation does not resubmit identical paged Readium preferences`() {
+        val before = ReaderAppearance(scroll = false, pageTurnStyle = PageTurnStyle.SLIDE)
+        listOf(PageTurnStyle.PAPER, PageTurnStyle.NONE).forEach { style ->
+            assertFalse(readerRendererPreferencesChanged(
+                com.veilreader.app.domain.BookFormat.EPUB,
+                before, before.copy(pageTurnStyle = style),
+                ReaderFixedLayoutSpread.AUTO, ReaderFixedLayoutSpread.AUTO
+            ))
+        }
+    }
+
+    @Test
+    fun `renderer preference comparison preserves scroll typography and spread changes`() {
+        val before = ReaderAppearance(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
+        listOf(before.copy(scroll = true), before.copy(fontScale = 1.4),
+            before.copy(theme = ReaderTheme.OLED)).forEach { after ->
+            assertTrue(readerRendererPreferencesChanged(
+                com.veilreader.app.domain.BookFormat.EPUB, before, after,
+                ReaderFixedLayoutSpread.AUTO, ReaderFixedLayoutSpread.AUTO
+            ))
+        }
+        assertTrue(readerRendererPreferencesChanged(
+            com.veilreader.app.domain.BookFormat.EPUB, before, before,
+            ReaderFixedLayoutSpread.SINGLE, ReaderFixedLayoutSpread.DUAL
+        ))
+    }
+
+    @Test
     fun `dense reading controls stack for large text and narrow widths`() {
         assertTrue(shouldStackDenseChoices(widthDp = 412, fontScale = 2.0f, optionCount = 2))
         assertTrue(shouldStackDenseChoices(widthDp = 412, fontScale = 1.35f, optionCount = 3))
@@ -59,10 +87,10 @@ class ReaderPreferenceMappingTest {
 
     @Test
     fun `reader themes expose deterministic background and text colors`() {
-        assertEquals(0xFFE9DEC5.toInt() to 0xFF2A251F.toInt(), readiumThemeColors(ReaderTheme.PAPER))
-        assertEquals(0xFFE2D0AA.toInt() to 0xFF362E24.toInt(), readiumThemeColors(ReaderTheme.SEPIA))
-        assertEquals(0xFF18151D.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.DUSK))
-        assertEquals(0xFF000000.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.OLED))
+        assertEquals(0xFFF4EFDF.toInt() to 0xFF29271F.toInt(), readiumThemeColors(ReaderTheme.PAPER))
+        assertEquals(0xFFE9DDC3.toInt() to 0xFF372F24.toInt(), readiumThemeColors(ReaderTheme.SEPIA))
+        assertEquals(0xFF141517.toInt() to 0xFFD8D6D0.toInt(), readiumThemeColors(ReaderTheme.DUSK))
+        assertEquals(0xFF000000.toInt() to 0xFFD5D5D2.toInt(), readiumThemeColors(ReaderTheme.OLED))
     }
 
     @Test

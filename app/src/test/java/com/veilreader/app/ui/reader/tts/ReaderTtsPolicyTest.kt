@@ -86,6 +86,34 @@ class ReaderTtsPolicyTest {
         assertEquals(text.length, ttsChunkEnd(text, 5000, Int.MAX_VALUE))
     }
 
+    @Test
+    fun previewAndPlaybackShareExactLocaleRankingRegardlessOfCatalogOrder() {
+        val voices = listOf(voice("gb", "en-GB", quality = 500), voice("us", "en-US"))
+        for (catalog in listOf(voices, voices.reversed())) {
+            assertEquals("us", selectOfflineTtsVoice(
+                eligibleOfflineTtsVoices(catalog, "en-US"), "en-US"
+            )?.id)
+        }
+    }
+
+    @Test
+    fun missingExplicitVoiceDoesNotPreviewAnUnselectedReplacement() {
+        val voices = listOf(voice("available", "en-US"))
+        assertNull(selectOfflineTtsVoice(eligibleOfflineTtsVoices(voices, "en-US"), "en-US", "gone"))
+    }
+
+    @Test
+    fun pickerCannotOfferAnOppositeScriptOrUnavailableVoice() {
+        val voices = listOf(
+            voice("simplified", "zh-Hans-CN"), voice("traditional", "zh-Hant-TW"),
+            voice("network", "zh-Hant-TW", network = true),
+            voice("missing", "zh-Hant-TW", installed = false)
+        )
+        assertEquals(listOf("traditional"), eligibleOfflineTtsVoices(voices, "zh-Hant-TW").map { it.id })
+        assertTrue(eligibleOfflineTtsVoices(voices, "fa-IR").isEmpty())
+        assertTrue(eligibleOfflineTtsVoices(voices, "und").isEmpty())
+    }
+
     private fun voice(id: String, language: String, quality: Int = 300, network: Boolean = false, installed: Boolean = true) =
         ReaderTtsVoice(id, language, quality, network, installed)
 }

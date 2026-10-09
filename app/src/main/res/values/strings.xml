@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="reader_progress_save_failed">Your new reading position could not be saved. Free some device storage, then turn a page or try closing the book again.</string>
+    <string name="reader_columns_adaptive_hint">Two columns appear when there is enough room for your text size. Narrow windows and large text use one column; your preference is kept.</string>
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">Reading</string>
     <string name="nav_library">Library</string>
@@ -206,7 +208,11 @@
     <!-- Reader feedback and recoverable errors -->
     <string name="reader_image_viewer_title">Illustration</string>
     <string name="reader_image_viewer_close">Close</string>
+    <string name="reader_image_zoom_reset">Fit image</string>
     <string name="reader_image_viewer_hint">Pinch to zoom · drag to inspect</string>
+    <string name="reader_image_viewer_loading">Opening illustration…</string>
+    <string name="reader_image_viewer_timeout">Opening this illustration took too long. You can try again.</string>
+    <string name="reader_image_viewer_too_large">This illustration exceeds the viewer’s size limit.</string>
     <string name="reader_image_viewer_failed">Could not open this illustration.</string>
     <string name="reader_appearance_apply_failed">The reading appearance could not be applied right now.</string>
     <string name="reader_boundary_beginning">Beginning of book.</string>
@@ -1346,7 +1352,7 @@
     <string name="reader_selection_lookup">Lookup</string>
     <string name="reader_lookup_failed">No installed app can look up the selected text.</string>
     <string name="tts_title">Read aloud</string>
-    <string name="tts_intro">Listen using installed offline Android voices. Playback stays under your explicit control.</string>
+    <string name="tts_intro">Listen using installed offline Android voices. Playback stays under your explicit control.</string>\n    <string name="tts_compact_ready">Installed offline voices</string>
     <string name="tts_start">Start from visible text</string>
     <string name="tts_play">Play</string>
     <string name="tts_pause">Pause</string>
@@ -1409,4 +1415,16 @@
     <string name="tts_listening_mode_position">Listening position</string>
     <string name="tts_listening_mode_settings">Voice &amp; settings</string>
 
+    <string name="reader_notebook_searching">Searching…</string>
+    <string name="reader_notebook_search_timed_out">Search took too long. Refine the phrase and try again.</string>
+    <string name="reader_paper_snapshot_failed">Could not prepare this page for a paper turn. Try again or use Slide.</string>
+    <string name="reader_paper_presentation_failed">The paper turn could not be displayed. Try again or use Slide.</string>
+    <string name="reader_paper_renderer_unavailable">Paper animation is unavailable right now. Simple paging still works; you can use Slide.</string>
+    <string name="reader_paper_use_slide">Use Slide</string>
+    <string name="reader_bookmark_save_failed">Couldn’t save the bookmark. Your saved bookmarks are unchanged.</string>
+    <string name="reader_bookmark_delete_failed">Couldn’t remove the bookmark. It is still saved.</string>
+    <string name="reader_paper_rollout_unavailable">Paper animation is unavailable in this version. Using simple paging; your saved preference is unchanged.</string>
+    <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
+    <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
+    <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
 </resources>

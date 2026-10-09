@@ -17,7 +17,7 @@ on:
       - "tools/**"
       - ".github/workflows/android.yml"
   pull_request:
-    branches: [ "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   workflow_dispatch:
 
 permissions:
@@ -64,6 +64,9 @@ jobs:
       - name: Unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
 
+      - name: Compile accessibility instrumentation regressions
+        run: gradle :app:compileDebugAndroidTestKotlin --stacktrace
+
       - name: Verify committed Room schema
         run: |
           schema_status="$(git status --porcelain --untracked-files=all -- app/schemas/)"
@@ -89,14 +92,14 @@ jobs:
       - name: Compile performance harness
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
-      - name: Upload APK for manual runs only
-        if: github.event_name == 'workflow_dispatch'
+      - name: Upload debug APK for verified pull requests and manual runs
+        if: success() && (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request')
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
 
       - name: Upload verification reports on failure only
         if: failure()

@@ -2,10 +2,12 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -38,7 +40,16 @@ class ReaderFocusGuideOverlayTest {
         compose.setContent {
             VeilTheme(highContrastEnabled = highContrast.value) {
                 Box(Modifier.size(200.dp).testTag("viewport")) {
-                    Box(Modifier.fillMaxSize().background(Color.White).clickable { clicks += 1 })
+                    val interactionSource = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.White)
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null
+                            ) { clicks += 1 }
+                    )
                     ReaderFocusGuideOverlay(
                         ReaderFocusGuideSettings(mode = mode.value), theme.value, Modifier.fillMaxSize()
                     )

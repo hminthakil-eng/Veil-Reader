@@ -29,7 +29,9 @@ internal data class ReaderProgressWriteOrder(
 
 internal data class ReaderProgressSaveOutcome(
     val accepted: Boolean,
-    val newlyFinished: Boolean = false
+    val newlyFinished: Boolean = false,
+    val crashCheckpointDurable: Boolean = true,
+    val crashCheckpointLatencyNanos: Long? = null
 )
 
 internal fun shouldReplacePendingProgress(

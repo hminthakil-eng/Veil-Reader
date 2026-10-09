@@ -2,5 +2,12 @@
     <application>
         <!-- Only the debug APK exposes fictional, inert review fixtures. -->
         <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
+        <!-- Debug-only adb probe. Never merged into the release manifest. -->
+        <activity
+            android:name=".debug.ReaderDurabilityProbeActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="com.veilreader.app.reader.durability.probe" />
     </application>
 </manifest>
