@@ -42,6 +42,8 @@ import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.ShellVisualGeometry
+import com.veilreader.app.ui.theme.ShellVisualOpacity
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
@@ -483,7 +485,7 @@ private fun ContinueReadingHero(
 ) {
     val progress = current.progress.coerceIn(0f, 1f)
     val fontScale = LocalDensity.current.fontScale
-    val shellShape = MaterialTheme.shapes.extraSmall
+    val shellShape = RoundedCornerShape(ShellVisualGeometry.HomeHeroRadius)
 
     BoxWithConstraints(
         Modifier
@@ -868,7 +870,7 @@ private fun RecentBookCard(
     Surface(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(itemWidthDp.dp),
-        shape = MaterialTheme.shapes.extraSmall,
+        shape = RoundedCornerShape(ShellVisualGeometry.RecentBookRadius),
         color = Color.Transparent,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -901,7 +903,7 @@ private fun RecentBookCard(
                         .matchParentSize()
                         .padding(horizontal = 2.dp)
                 ) {
-                    val hairline = VeilPalette.Brass.copy(alpha = 0.28f)
+                    val hairline = VeilPalette.Brass.copy(alpha = ShellVisualOpacity.RecentRule)
                     drawLine(
                         color = hairline,
                         start = Offset(0f, size.height - 1.dp.toPx()),
@@ -909,7 +911,7 @@ private fun RecentBookCard(
                         strokeWidth = 1.dp.toPx()
                     )
                     drawCircle(
-                        color = VeilPalette.MoonCrimson.copy(alpha = 0.74f),
+                        color = VeilPalette.Brass.copy(alpha = ShellVisualOpacity.RecentAccent),
                         radius = 2.2.dp.toPx(),
                         center = Offset(size.width - 6.dp.toPx(), 6.dp.toPx())
                     )
