@@ -167,6 +167,7 @@ internal class GpuMaterialPageCurlView(
         // acquired buffer, rather than a draw callback or a fixed-delay guess.
         surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                ReaderTrace.event("paper_gpu_surface_available", "width=$width height=$height")
                 surfaceDelegate?.onSurfaceTextureAvailable(surface, width, height)
             }
             override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
@@ -180,6 +181,12 @@ internal class GpuMaterialPageCurlView(
                 surfaceDelegate?.onSurfaceTextureUpdated(surface)
                 val acquiredTimestamp = surface.timestamp
                 val presented = synchronized(frameLock) {
+                    completedSheetDraws.lastOrNull()?.let { drawn ->
+                        ReaderTrace.event("paper_gpu_buffer_acquired",
+                            "acquiredNs=$acquiredTimestamp drawnNs=${drawn.timestamp} " +
+                                "epoch=${drawn.epoch} generation=${drawn.generation}/$rendererGeneration " +
+                                "viewport=${drawn.viewport}/$viewportGeneration pending=${completedSheetDraws.size}")
+                    }
                     completedSheetDraws.firstOrNull { it.timestamp == acquiredTimestamp }.also {
                         while (completedSheetDraws.isNotEmpty() && completedSheetDraws.first().timestamp <= acquiredTimestamp) {
                             completedSheetDraws.removeFirst()

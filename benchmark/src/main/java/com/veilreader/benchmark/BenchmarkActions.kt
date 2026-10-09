@@ -88,5 +88,5 @@ internal fun MacrobenchmarkScope.awaitReaderLocatorDeparture(origin: String) {
         if (readerLocator() != origin) return
         Thread.sleep(50)
     }
-    error("Gesture did not change the actual Readium locator: $origin")
+    error("Gesture did not change the actual Readium locator: $origin; probe=${readerVisualProbe()}")
 }

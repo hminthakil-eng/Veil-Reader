@@ -180,3 +180,20 @@ separately from the locator and exclude them from locator comparison. Require
 new acquired epoch, completed visual state and stable location after every edge
 tap/drag. Idle/context-stale acquisition cannot satisfy a new sheet epoch.
 No production gesture, rendering order, Reduced Motion policy or gate is altered.
+
+### Motion-enabled failure — f73d64a4
+
+Performance 37977922709 executes all five benchmark Reader cases; the three
+Reduced Motion input/navigation cases pass, but both new animated cases fail at
+the first cover edge tap. GPU upload/draw finishes about 21ms after submission
+and GLTextureView completes swap about 13ms later. No `paper_source_presented`
+event occurs; the 500ms presentation transaction cancels without navigating.
+This is a real remaining gap, not a reason to weaken the navigation oracle or
+mark the renderer accepted. Storage 37977922710 passes the complete native and
+SAF instrumentation lane. Android CI and Forge QA are still running at this
+checkpoint. The compiled candidate must not be advertised as an animated Paper fix.
+
+Add acquired/drawn timestamp diagnostics without changing acknowledgement and a
+small native GPU integration test independent of Readium. It must acknowledge
+two distinct epochs through real acquired buffers. Compare listener delivery and
+the producer timestamp before changing presentation timing or buffer identity.
