@@ -102,8 +102,16 @@ internal data class MaterialPagePreparedSnapshot(
     val provider: String
 )
 
+/**
+ * Prepared page pixels remain valid primarily by source revision + exact viewport.
+ *
+ * Readers routinely dwell on a page far longer than a few seconds. A short TTL forced Paper to
+ * discard its warm WebView snapshot just before the next human page turn and fall back to a
+ * synchronous gesture-time capture. Keep a generous safety ceiling while navigation, relayout,
+ * theme/decoration changes and viewport changes continue to invalidate the source revision.
+ */
 internal const val MATERIAL_PAGE_PREPARED_SNAPSHOT_MAX_AGE_NANOS =
-    3_000_000_000L
+    300_000_000_000L
 
 internal fun materialPagePreparedSnapshotIsCurrent(
     prepared: MaterialPagePreparedSnapshot?,
