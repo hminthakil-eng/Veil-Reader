@@ -252,6 +252,33 @@ Veil target:
 - gamification world remains separate from the Sanctuary Reader;
 - no manipulative interruption of reading.
 
+
+## Veil gap scan against current repository
+
+This scan is repository-structure evidence, not a claim that every listed component is user-complete.
+
+| Capability family | Veil evidence | Current assessment |
+|---|---|---|
+| TTS / listening | 58 TTS/listening files and tests, including neural runtime candidates, playback service, checkpointing, sleep timer, voice presentation and accessibility tests | **STRONG BASE — POLISH/QUALITY GAP**, not a rebuild target |
+| Highlights / notes / bookmarks / selection | ReaderNotebook, ReaderSelectionActionMode, annotation durability tests, PDF annotation audit | **BASE EXISTS — EXPAND ACTIONS/SEARCH/EXPORT/PDF PARITY** |
+| Dictionary / translation / Word-Wise-like context | no dedicated dictionary/translation owner found in current tree scan | **MISSING OWNER — HIGH-VALUE W2 CANDIDATE** |
+| Typography / appearance | dedicated appearance policy/components, typography corpus workflow, licensed Veil font families, 200% font-size contract | **STRONG BASE — HYPHENATION/ADVANCED TYPE GAP** |
+| Library / retrieval | LocalLibraryRepository, Archive/Library screens, search/retrieval policy, metadata/memory models | **STRONG BASE — LARGE-LIBRARY/SERIES/MULTI-ACTION POLISH** |
+| Sync / catalogs | backup/cloud verification artifacts exist but very little explicit sync/catalog ownership in tree | **MATERIAL GAP — OPDS/CALIBRE + CONFLICT-SAFE OPTIONAL SYNC** |
+| Search / navigation | locator policy, navigation transactions/session state, search presentation tests, directional/static/slide listeners | **STRONG FOUNDATION — IN-BOOK SEARCH/TOC/JUMP UX MUST BE BENCHMARKED** |
+| Accessibility | Reader TTS/listening accessibility tests, shell/reader hardware accessibility contracts | **FOUNDATION EXISTS — MAGNIFIER/COMPLETE TALKBACK DEVICE PASS STILL NEEDED** |
+| Reading stats / motivation | GamificationEngine/Castle and state tests | **VEIL-DIFFERENTIATED — KEEP OUT OF SANCTUARY READER CHROME** |
+| Formats | EPUB/PDF core; CBZ ingest exists through manga path | **PARTIAL — FORMAT EXPANSION REQUIRES SEPARATE RENDERER GATES** |
+
+### Reuse-first consequences
+
+1. Do **not** rewrite Veil TTS from scratch. Benchmark and harden the existing ownership/service/checkpoint stack.
+2. Build dictionary/translation as a new narrow provider abstraction because no equivalent owner currently exists.
+3. Treat OPDS/Calibre as a catalog/source layer, not as a rewrite of the local library.
+4. Reuse the existing CBZ/manga ingestion path if comic support enters the main Library; do not create a second archive parser.
+5. Extend current Reader appearance/navigation owners instead of introducing competitor-shaped parallel state.
+
+
 ## Implementation waves
 
 | Wave | Scope | Entry gate | Exit gate |
