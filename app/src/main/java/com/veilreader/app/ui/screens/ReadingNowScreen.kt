@@ -503,7 +503,7 @@ private fun ContinueReadingHero(
             .border(
                 BorderStroke(
                     1.dp,
-                    VeilPalette.LightBrass.copy(alpha = 0.82f)
+                    VeilPalette.LightBrass.copy(alpha = ShellVisualOpacity.HomeHeroBorder)
                 ),
                 shellShape
             )
@@ -524,7 +524,7 @@ private fun ContinueReadingHero(
 
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
-            strength = 0.20f
+            strength = ShellVisualOpacity.HomeHeroOrnament
         )
 
         @Composable
@@ -534,14 +534,14 @@ private fun ContinueReadingHero(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 52.dp),
-                shape = shellShape,
+                shape = RoundedCornerShape(ShellVisualGeometry.HomeHeroActionRadius),
                 color = Color.Transparent,
                 contentColor = VeilPalette.LightInk,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 border = BorderStroke(
                     1.dp,
-                    VeilPalette.LightBrass.copy(alpha = 0.60f)
+                    VeilPalette.LightBrass.copy(alpha = ShellVisualOpacity.HomeHeroActionBorder)
                 )
             ) {
                 Row(
@@ -631,7 +631,7 @@ private fun ContinueReadingHero(
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.dp),
+                    .height(ShellVisualGeometry.HomeHeroProgressHeight),
                 color = VeilPalette.LightBrass,
                 trackColor = VeilPalette.BorderLight.copy(alpha = 0.58f),
                 drawStopIndicator = {}
@@ -937,7 +937,7 @@ private fun RecentBookCard(
                     progress = { book.progress.coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(2.dp),
+                        .height(ShellVisualGeometry.RecentProgressHeight),
                     color = VeilPalette.Brass,
                     trackColor = VeilPalette.BorderDark.copy(alpha = 0.42f),
                     drawStopIndicator = {}
