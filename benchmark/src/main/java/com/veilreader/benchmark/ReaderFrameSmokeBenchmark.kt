@@ -27,6 +27,26 @@ class ReaderFrameSmokeBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
+    fun coverEdgeTapAdvances() = benchmarkRule.measureRepeated(
+        packageName = TARGET_PACKAGE,
+        metrics = listOf(FrameTimingGfxInfoMetric()),
+        compilationMode = CompilationMode.None(),
+        iterations = 1,
+        setupBlock = {
+            pressHome()
+            startActivityAndWait(readerIntent())
+            awaitReaderSurface()
+        }
+    ) {
+        val origin = readerLocator()
+        check(origin.contains("cover.xhtml")) { "Fixture did not open on its image cover: $origin" }
+        // The lower edge is outside the image, so this exercises navigation without image viewing.
+        device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
+        awaitReaderLocatorDeparture(origin)
+        Thread.sleep(650)
+    }
+
+    @Test
     fun pageTurns() = benchmarkRule.measureRepeated(
         packageName = TARGET_PACKAGE,
         metrics = listOf(FrameTimingGfxInfoMetric()),

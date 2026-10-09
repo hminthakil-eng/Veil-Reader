@@ -5,6 +5,11 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
+import org.readium.r2.navigator.Navigator
+import org.readium.r2.shared.ExperimentalReadiumApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
@@ -31,6 +36,7 @@ import kotlinx.coroutines.withContext
  * reader. It is compiled and declared only by the explicit benchmark build; normal debug,
  * release, and Baseline Profile target variants never include this test-only entry point.
  */
+@OptIn(ExperimentalReadiumApi::class)
 class BenchmarkReaderActivity : FragmentActivity() {
     private lateinit var readerJankMonitor: ReaderJankMonitor
 
@@ -42,6 +48,19 @@ class BenchmarkReaderActivity : FragmentActivity() {
         MaterialPageEngineRollout.setDebugOverride(true)
 
         val benchmarkReaderSessionId = "benchmark-reader-session-${UUID.randomUUID()}"
+
+        // Test-only observation of the actual Readium locator, independent of gesture delivery.
+        // No navigation is driven by this probe. Normal app variants never include it.
+        lifecycleScope.launch {
+            var navigator: Navigator? = null
+            while (navigator == null) {
+                navigator = findNavigator(supportFragmentManager)
+                if (navigator == null) delay(50)
+            }
+            navigator.currentLocator.collect { locator ->
+                window.decorView.contentDescription = "benchmark-reader-locator:${locator.toJSON()}"
+            }
+        }
 
         lifecycleScope.launch {
             val context = applicationContext
@@ -97,8 +116,16 @@ class BenchmarkReaderActivity : FragmentActivity() {
         super.onPause()
     }
 
+    private fun findNavigator(manager: FragmentManager): Navigator? {
+        for (fragment in manager.fragments) {
+            (fragment as? Navigator)?.let { return it }
+            findNavigator(fragment.childFragmentManager)?.let { return it }
+        }
+        return null
+    }
+
     private fun ensureFixture(): File {
-        val target = File(cacheDir, "veil-reader-benchmark.epub")
+        val target = File(cacheDir, "veil-reader-benchmark-cover-v2.epub")
         if (target.isFile && target.length() > 0L) return target
 
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
@@ -136,9 +163,11 @@ class BenchmarkReaderActivity : FragmentActivity() {
                   </metadata>
                   <manifest>
                     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+                    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
+                    <item id="coverImage" href="cover.svg" media-type="image/svg+xml" properties="cover-image"/>
                     $chapters
                   </manifest>
-                  <spine>$spine</spine>
+                  <spine><itemref idref="cover"/>$spine</spine>
                 </package>""".trimIndent()
             )
 
@@ -149,6 +178,21 @@ class BenchmarkReaderActivity : FragmentActivity() {
                   <head><title>Contents</title></head>
                   <body><nav epub:type="toc"><ol>$navEntries</ol></nav></body>
                 </html>""".trimIndent()
+            )
+
+            zip.writeEntry(
+                "OEBPS/cover.xhtml",
+                """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cover</title></head>
+                <body style="margin:0;background:#000"><img src="cover.svg" alt="Veil test cover"
+                style="display:block;width:90%;height:auto;margin:5% auto"/></body></html>"""
+            )
+            zip.writeEntry(
+                "OEBPS/cover.svg",
+                """<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+                <rect width="600" height="800" fill="#222"/>
+                <rect x="20" y="20" width="560" height="760" fill="none" stroke="#aaa"/>
+                <text x="300" y="380" text-anchor="middle" fill="#eee" font-size="40">Veil test cover</text>
+                </svg>"""
             )
 
             repeat(6) { zeroBased ->

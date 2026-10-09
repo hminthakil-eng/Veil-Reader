@@ -85,6 +85,10 @@ jobs:
         run: |
           echo "=== Benchmark instrumentation results ==="
           find benchmark/build/outputs/androidTest-results -type f \( -name '*.xml' -o -name '*.txt' \) -print -exec cat {} \; 2>/dev/null || true
+          echo "=== Reader input/presentation trace ==="
+          if [ -f build/reports/logcat-performance.log ]; then
+            rg 'VeilReaderTrace|GPU Paper|Gesture did not|Actual Readium' build/reports/logcat-performance.log | tail -160 || true
+          fi
           echo "=== End benchmark instrumentation results ==="
 
       - name: Build release package with generated profiles
