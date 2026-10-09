@@ -2251,10 +2251,11 @@ fun ReaderScreen(
             }
 
             fun paperModeSelected(): Boolean =
-                shouldUsePaperCurlNavigation(
+                shouldMountPaperCurlRuntime(
                     format = opened.format,
-                    scroll = latestAppearance.value.scroll,
-                    pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    fixedLayout = fixedLayoutPublication,
+                    appearance = latestAppearance.value,
+                    materialPageEnabled = MaterialPageEngineRollout.isEnabled()
                 )
 
             val paperListener = if (navigator is EpubNavigatorFragment) {
@@ -3111,9 +3112,12 @@ fun ReaderScreen(
         }
 
         if (
-            opened.format == BookFormat.EPUB &&
-            !presentedReaderAppearance.scroll &&
-            presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
+            shouldMountPaperCurlRuntime(
+                format = opened.format,
+                fixedLayout = fixedLayoutPublication,
+                appearance = presentedReaderAppearance,
+                materialPageEnabled = MaterialPageEngineRollout.isEnabled()
+            )
         ) {
             PaperCurlOverlay(
                 state = paperCurlState,
