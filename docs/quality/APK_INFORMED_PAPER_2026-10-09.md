@@ -224,3 +224,22 @@ required before accepting this repair; primary-source reasoning is not a pass.
 Exercise the img cover with an animated edge tap and the SVG cover with an
 animated drag, then continue dragging text pages. Both publication cases still
 require a new actual GPU acquisition and stable locator after every turn.
+
+### Before-fix runtime confirms deferred timestamp read — c3479697
+
+Performance 37980690817 executes five actual Reader cases: three Reduced Motion
+cases pass, both animated cases fail. Native Storage 37980690616 independently
+fails the first acquired epoch after five seconds. No other failed testcase is
+printed by the storage failure reporter.
+
+The img-case trace records first GPU draw at 19:53:20.207 (21,776us after
+submission). At 19:53:20.228 the UI callback reads old acquired timestamp
+1207664538844 while the pending draw is tagged 1210690544602, epoch=1,
+generation=1/1 and viewport=1/1. The next callback at 19:53:20.699 finally reads
+that exact draw timestamp, after the active-sheet transaction has cancelled.
+The final probe is still cover.xhtml|0.0, gpuEpoch=1, gpuActive=false, motion=true;
+there is no paper_source_presented event. The SVG case shows the same sequence.
+The native and publication negative controls therefore support re-reading real
+acquisition after the deferred layer update, without extending the deadline or
+loosening buffer/context/viewport identity. After-fix verification is PR #444
+at f7100fe9; physical-device optical acceptance remains separate.
