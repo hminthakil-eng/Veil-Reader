@@ -2479,11 +2479,7 @@ fun ReaderScreen(
                     BookFormat.EPUB ->
                         when (latestAppearance.value.navigationMode) {
                             ReaderNavigationMode.PAPER_CURL ->
-                                if (paperRendererOwnsNavigationInput()) {
-                                    paperListener?.performDiscreteTurn(direction) == true
-                                } else {
-                                    performDirectPagedTurn()
-                                }
+                                paperListener?.performDiscreteTurn(direction) == true
 
                             ReaderNavigationMode.SLIDE ->
                                 slideListener?.performDiscreteTurn(direction) == true
