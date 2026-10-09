@@ -44,6 +44,9 @@ class ReaderFrameSmokeBenchmark {
         device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
         awaitReaderLocatorDeparture(origin)
         Thread.sleep(650)
+        check(readerLocator().contains("c1.xhtml")) {
+            "Edge tap did not commit cover-to-chapter navigation: ${readerLocator()}"
+        }
     }
 
     @Test

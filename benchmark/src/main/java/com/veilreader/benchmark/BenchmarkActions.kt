@@ -55,6 +55,7 @@ internal fun MacrobenchmarkScope.turnReaderPages(turns: Int = 6) {
         awaitReaderLocatorDeparture(origin)
         // Locator departure occurs under the curl. Do not race the next gesture with settlement.
         Thread.sleep(650)
+        check(readerLocator() != origin) { "Paper preview rolled back instead of committing navigation" }
     }
 }
 
