@@ -96,6 +96,19 @@ internal class GpuMaterialPageCurlView(
     private var submittedFrame: SubmittedFrame? = null
     private val pendingUploadLeases = mutableListOf<MaterialPageGpuUploadLease>()
     private var lastSubmittedActive = false
+    // Read-only observation of a real acquired GPU buffer; never drives presentation or navigation.
+    internal var lastAcquiredSheetEpoch = 0L
+        private set
+    internal val isPageTurnActive: Boolean get() = lastSubmittedActive
+    private var acquisitionCheckScheduled = false
+    private var lastLoggedAcquisitionTimestamp = Long.MIN_VALUE
+    private val acquisitionCheck = Runnable {
+        acquisitionCheckScheduled = false
+        if (isAttachedToWindow && isAvailable && !rendererPaused && lastSubmittedActive) {
+            surfaceTexture?.let(::acknowledgeAcquiredSheet)
+            scheduleSheetAcquisitionCheck()
+        }
+    }
     private var submittedSequence = 0L
     private var textureRevision = 0L
     private var textureSubmissionStartedAtNanos = 0L
@@ -163,35 +176,75 @@ internal class GpuMaterialPageCurlView(
         // acquired buffer, rather than a draw callback or a fixed-delay guess.
         surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                ReaderTrace.event("paper_gpu_surface_available", details = "width=$width height=$height")
                 surfaceDelegate?.onSurfaceTextureAvailable(surface, width, height)
             }
             override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
                 surfaceDelegate?.onSurfaceTextureSizeChanged(surface, width, height)
             }
             override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                cancelSheetAcquisitionCheck()
                 synchronized(frameLock) { completedSheetDraws.clear() }
                 return surfaceDelegate?.onSurfaceTextureDestroyed(surface) ?: true
             }
             override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
                 surfaceDelegate?.onSurfaceTextureUpdated(surface)
-                val acquiredTimestamp = surface.timestamp
-                val presented = synchronized(frameLock) {
-                    completedSheetDraws.firstOrNull { it.timestamp == acquiredTimestamp }.also {
-                        while (completedSheetDraws.isNotEmpty() && completedSheetDraws.first().timestamp <= acquiredTimestamp) {
-                            completedSheetDraws.removeFirst()
-                        }
-                    }
-                } ?: return
-                if (gpuMaterialSheetPresentationMatches(
-                        presented.timestamp, acquiredTimestamp,
-                        presented.generation, rendererGeneration,
-                        presented.viewport, viewportGeneration
-                    )) {
-                    onSheetPresented(presented.epoch)
-                }
+                acknowledgeAcquiredSheet(surface)
+                // API 35 TextureView.applyUpdate only queues HWUI's deferred layer update
+                // before this callback. RenderThread may acquire the buffer afterwards.
+                // Re-read its real timestamp on a frame callback; never infer presentation
+                // from the callback itself, GL submission, or elapsed time.
+                scheduleSheetAcquisitionCheck()
             }
         }
         renderMode = GLTextureView.RENDER_MODE_WHEN_DIRTY
+    }
+
+    private fun acknowledgeAcquiredSheet(surface: SurfaceTexture) {
+        val acquiredTimestamp = surface.timestamp
+        val presented = synchronized(frameLock) {
+            if (acquiredTimestamp != lastLoggedAcquisitionTimestamp) {
+                lastLoggedAcquisitionTimestamp = acquiredTimestamp
+                completedSheetDraws.lastOrNull()?.let { drawn ->
+                    ReaderTrace.event("paper_gpu_buffer_acquired",
+                        details = "acquiredNs=$acquiredTimestamp drawnNs=${drawn.timestamp} " +
+                            "epoch=${drawn.epoch} generation=${drawn.generation}/$rendererGeneration " +
+                            "viewport=${drawn.viewport}/$viewportGeneration pending=${completedSheetDraws.size}")
+                }
+            }
+            completedSheetDraws.firstOrNull { it.timestamp == acquiredTimestamp }.also {
+                while (completedSheetDraws.isNotEmpty() && completedSheetDraws.first().timestamp <= acquiredTimestamp) {
+                    completedSheetDraws.removeFirst()
+                }
+            }
+        } ?: return
+        if (gpuMaterialSheetPresentationMatches(
+                presented.timestamp, acquiredTimestamp,
+                presented.generation, rendererGeneration,
+                presented.viewport, viewportGeneration
+            )) {
+            lastAcquiredSheetEpoch = maxOf(lastAcquiredSheetEpoch, presented.epoch)
+            onSheetPresented(presented.epoch)
+        }
+    }
+
+    private fun scheduleSheetAcquisitionCheck() {
+        if (!acquisitionCheckScheduled && !rendererPaused && lastSubmittedActive &&
+            isAttachedToWindow && isAvailable && synchronized(frameLock) { completedSheetDraws.isNotEmpty() }) {
+            acquisitionCheckScheduled = true
+            postOnAnimation(acquisitionCheck)
+        }
+    }
+
+    private fun cancelSheetAcquisitionCheck() {
+        removeCallbacks(acquisitionCheck)
+        acquisitionCheckScheduled = false
+    }
+
+    override fun onDetachedFromWindow() {
+        cancelSheetAcquisitionCheck()
+        synchronized(frameLock) { completedSheetDraws.clear() }
+        super.onDetachedFromWindow()
     }
 
     fun submitFrame(
@@ -257,6 +310,7 @@ internal class GpuMaterialPageCurlView(
                 uploadRevision
             )
         }
+        if (!lastSubmittedActive) cancelSheetAcquisitionCheck()
         requestRender()
     }
 
@@ -616,6 +670,7 @@ internal class GpuMaterialPageCurlView(
     }
 
     fun pauseRenderer() {
+        cancelSheetAcquisitionCheck()
         if (rendererPaused) return
         runCatching { onPause() }
             .onSuccess {
@@ -1076,12 +1131,12 @@ internal class GpuMaterialPageCurlView(
             uniform float uCylinderTilt;
             uniform float uCylinderRadius;
             uniform float uPageAspect;
-            uniform float uSideSign;
-            uniform float uShadowPass;
+            uniform mediump float uSideSign;
+            uniform mediump float uShadowPass;
 
-            varying vec2 vTexCoord;
-            varying vec3 vNormal;
-            varying float vLift;
+            varying mediump vec2 vTexCoord;
+            varying mediump vec3 vNormal;
+            varying mediump float vLift;
 
             const float PI = 3.14159265358979323846;
 
@@ -1184,13 +1239,13 @@ internal class GpuMaterialPageCurlView(
             uniform float uEdgeStrength;
             uniform float uShadowStrength;
             uniform float uVisualAlpha;
-            uniform float uShadowPass;
+            uniform mediump float uShadowPass;
             uniform vec2 uTexelSize;
-            uniform float uSideSign;
+            uniform mediump float uSideSign;
 
-            varying vec2 vTexCoord;
-            varying vec3 vNormal;
-            varying float vLift;
+            varying mediump vec2 vTexCoord;
+            varying mediump vec3 vNormal;
+            varying mediump float vLift;
 
             float pageNoise(vec2 uv) {
                 float a = sin(uv.x * 173.0 + uMaterialPhase * 7.0);

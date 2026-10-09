@@ -3,6 +3,7 @@
 package com.veilreader.app.ui.screens
 
 import android.os.SystemClock
+import com.veilreader.app.diagnostics.ReaderTrace
 import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineStart
@@ -35,7 +36,7 @@ import org.readium.r2.shared.publication.Locator
  * Interactive paper turn driven through Readium's own input pipeline.
  *
  * No Android overlay owns touch input. Readium remains authoritative for gestures.
- * During a drag, the destination may be previewed underneath the captured source page;
+ * The captured source tracks the finger; destination navigation waits for release;
  * persistence/counting is deferred until commit and an exact start locator is restored on cancel.
  */
 @OptIn(ExperimentalReadiumApi::class)
@@ -294,6 +295,10 @@ internal class PaperCurlInputListener(
     }
 
     override fun onDrag(event: DragEvent): Boolean {
+        if (event.type != DragEvent.Type.Move) ReaderTrace.event(
+            name = "paper_drag_event",
+            details = "type=${event.type} reserved=$dragReserved active=${state.active} epoch=${state.materialEngine.sheetEpoch}"
+        )
         if (!isDragEnabled() || !scope.isActive) {
             // The mode may change while a sheet is lifted. Restore its starting
             // locator before allowing the new navigation mode to own later drags.
@@ -348,10 +353,12 @@ internal class PaperCurlInputListener(
         if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
-            // A reserved gesture that never became a horizontal turn is still
-            // consumed so the native renderer cannot finish it as a slide.
+            // Readium emits End for every touchend, including taps that never emitted Start.
+            // Consuming an unreserved End prevents the browser's synthesized click, so edge
+            // navigation, image viewing and center chrome taps never reach onTap.
+            val wasReserved = dragReserved
             resetDrag()
-            return true
+            return wasReserved
         }
 
         if (!state.active && navigationJob == null) {
@@ -435,12 +442,14 @@ internal class PaperCurlInputListener(
                     }
                 }
 
-                commit && reducedMotion -> {
-                    // This branch is reachable without a visual only for Reduced Motion.
-                    // Normal-motion Paper fails closed before a static navigation fallback.
+                commit && (reducedMotion || (state.active &&
+                    state.materialEngine.presentedSheetEpoch.value == state.materialEngine.sheetEpoch)) -> {
+                    // Change Readium only after the original touch sequence has ended.
+                    // Normal motion still requires the exact acquired source sheet.
                     val origin =
                         dragStartLocator ?: navigator.currentLocator.value
                     val accepted = navigate(spec.direction)
+                    previewNavigationSucceeded = accepted
                     val moved =
                         accepted &&
                             awaitReaderVisualNavigationDeparture(
@@ -463,6 +472,7 @@ internal class PaperCurlInputListener(
                         turnCommitted = true
                         onCommittedTurn()
                         if (state.active && shouldAnimatePaperVisual()) {
+                            if (!reducedMotion) delay(VeilMotion.PAGE_REVEAL_MS)
                             state.animateComplete(
                                 releaseVelocityDpPerSec =
                                     releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -687,38 +697,9 @@ internal class PaperCurlInputListener(
                 }
                 return@launchPreview
             }
-            if (
-                !cancellationRequested &&
-                operationIsCurrent(operationToken) &&
-                shouldAllowPaperNavigation(isReducedMotion(), state.rendererStatus, state.active)
-            ) {
-                val origin = dragStartLocator
-                val accepted = navigate(spec.direction)
-                val moved =
-                    accepted &&
-                        origin != null &&
-                        awaitReaderVisualNavigationDeparture(
-                        currentLocator = navigator.currentLocator,
-                        origin = origin
-                            )
-                if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
-                    return@launchPreview
-                }
-                if (
-                    accepted &&
-                    (
-                        !moved ||
-                            cancellationRequested ||
-                            !operationIsCurrent(operationToken)
-                        )
-                ) {
-                    restoreDragStart(spec, forceRequest = true)
-                } else {
-                    previewNavigationSucceeded = moved
-                }
-            }
-            // Keep the previewed destination underneath the curl. The reverse
-            // face remains source-derived until a true opposite-leaf provider exists.
+            // Keep the Readium/WebView receiving this touch sequence in place until End.
+            // Crossing resources during Move can retire it before JS delivers touchend.
+            // The presented source still tracks the finger; reveal the destination on release.
         }
         navigationJob?.start()
         return true

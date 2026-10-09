@@ -85,6 +85,10 @@ jobs:
         run: |
           echo "=== Benchmark instrumentation results ==="
           find benchmark/build/outputs/androidTest-results -type f \( -name '*.xml' -o -name '*.txt' \) -print -exec cat {} \; 2>/dev/null || true
+          echo "=== Reader input/presentation trace ==="
+          if [ -f build/reports/logcat-performance.log ]; then
+            rg 'VeilReaderTrace|GPU Paper|Gesture did not|Actual Readium' build/reports/logcat-performance.log | tail -160 || true
+          fi
           echo "=== End benchmark instrumentation results ==="
 
       - name: Build release package with generated profiles
@@ -185,6 +189,19 @@ jobs:
             build/reports/
           if-no-files-found: warn
           retention-days: 1
+
+      - name: Preserve actual Reader interaction evidence
+        if: always() && github.event_name == 'pull_request' && startsWith(github.head_ref, 'verify/apk-informed-paper-')
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-input-evidence
+          path: |
+            benchmark/build/outputs/androidTest-results/**/TEST-*.xml
+            benchmark/build/outputs/androidTest-results/**/logcat-*ReaderFrameSmokeBenchmark*.txt
+            benchmark/build/perf-results/*.json
+            performance/current-smoke.json
+          if-no-files-found: warn
+          retention-days: 7
 
       # Emulator metrics are regression smoke signals only. The dashboard emits early warnings but
       # does not hard-fail on gradual drift. Absolute budgets and PR delta budgets remain the gates.

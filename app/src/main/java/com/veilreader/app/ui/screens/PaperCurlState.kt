@@ -257,18 +257,19 @@ internal fun PaperCurlOverlay(
     }
 
     val presentedEpoch by state.materialEngine.presentedSheetEpoch.collectAsState()
-    Box(modifier = modifier) {
+    Box(modifier = modifier.readerVisualOnlyInput()) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
             onRendererStatus = state::updateRendererStatus
         )
 
         if (BuildConfig.DEBUG) {
-            val label = when {
+            val label: String? = when {
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU CANONICAL · DISABLED"
-                state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ->
+                state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING &&
+                    state.debugBeginAttempts > 0 ->
                     "PAPER · GPU CANONICAL · INITIALIZING · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.SOFTWARE_READY ->
                     "PAPER · SOFTWARE MESH · READY · A${state.debugBeginAttempts}"
@@ -288,11 +289,11 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · WAITING FOR FRAME · A${state.debugBeginAttempts}"
                 state.active ->
                     "PAPER · GPU CANONICAL · ACTIVE · A${state.debugBeginAttempts}"
-                else ->
-                    "PAPER · GPU CANONICAL · READY · A${state.debugBeginAttempts}"
+                else -> null
             }
-            Text(
-                text = label,
+            label?.let { debugLabel ->
+                Text(
+                text = debugLabel,
                 color = Color(0xFFFFC857),
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -304,7 +305,8 @@ internal fun PaperCurlOverlay(
                     )
                     .padding(horizontal = 8.dp, vertical = 5.dp)
                     .clearAndSetSemantics { }
-            )
+                )
+            }
         }
     }
 }
