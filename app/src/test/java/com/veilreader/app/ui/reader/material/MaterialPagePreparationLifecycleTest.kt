@@ -75,4 +75,66 @@ class MaterialPagePreparationLifecycleTest {
             activity.pause().stop().destroy()
         }
     }
+
+    @Test fun warmCaptureUsesPreparedProviderWithoutTouchingImmediateProvider() = runTest {
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val view = View(activity.get())
+        activity.get().setContentView(view)
+        view.layout(0, 0, 32, 48)
+        var immediateCaptures = 0
+        var preparedCaptures = 0
+        val engine = MaterialPageEngineState(
+            snapshotProvider = MaterialPageImmediateSnapshotProvider { _, target, revision ->
+                immediateCaptures++
+                MaterialPageSnapshotCapture.Ready(target, revision, "immediate", 0L)
+            },
+            preparedSnapshotProvider = MaterialPagePreparedSnapshotProvider { _, target, revision ->
+                preparedCaptures++
+                MaterialPageSnapshotCapture.Ready(target, revision, "prepared", 0L)
+            }
+        )
+        try {
+            assertTrue(engine.prepareSnapshot(view))
+            assertEquals(1, preparedCaptures)
+            assertEquals(0, immediateCaptures)
+            assertTrue(engine.begin(view, MaterialPageSide.RIGHT))
+            assertEquals(0, immediateCaptures)
+            engine.clearImmediately()
+        } finally {
+            engine.dispose()
+            activity.pause().stop().destroy()
+        }
+    }
+
+    @Test fun hardwarePreparedProviderFallsBackForNonWebViewContent() = runTest {
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val view = View(activity.get())
+        activity.get().setContentView(view)
+        view.layout(0, 0, 32, 48)
+        val target = android.graphics.Bitmap.createBitmap(
+            32,
+            48,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        var fallbackCaptures = 0
+        val provider = HardwareCompositedPreparedMaterialPageSnapshotProvider(
+            fallback = MaterialPageImmediateSnapshotProvider { _, bitmap, revision ->
+                fallbackCaptures++
+                MaterialPageSnapshotCapture.Ready(bitmap, revision, "fallback", 0L)
+            }
+        )
+        try {
+            val capture = provider.capture(view, target, 9L)
+            assertTrue(capture is MaterialPageSnapshotCapture.Ready)
+            assertEquals(
+                "fallback",
+                (capture as MaterialPageSnapshotCapture.Ready).provider
+            )
+            assertEquals(1, fallbackCaptures)
+        } finally {
+            target.recycle()
+            activity.pause().stop().destroy()
+        }
+    }
+
 }
