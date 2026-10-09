@@ -243,3 +243,34 @@ The native and publication negative controls therefore support re-reading real
 acquisition after the deferred layer update, without extending the deadline or
 loosening buffer/context/viewport identity. After-fix verification is PR #444
 at f7100fe9; physical-device optical acceptance remains separate.
+
+
+### After-fix acquisition passes; resource-crossing drag still fails — f7100fe9
+
+Android 37982353401 passes unit tests, lint and optimized archives. Native Storage
+37982353271 passes, including two independently acquired GPU epochs. Performance
+37982353412 executes five actual Reader cases: four pass, including motion-enabled
+img-cover tap followed by two text drags; the SVG-cover drag fails to finish.
+Its source sheet is actually acquired at 20:02:32.746, 266,343us after begin.
+The final probe is c2.xhtml|0.0 with gpuEpoch=1 and gpuActive=true, motion=true.
+This does not establish a completed cover turn or correct one-page navigation.
+
+The controller navigates during Move once the source sheet is acquired. Readium's
+3.4.0 document-scoped JS stores drag state and delivers End only on touchend;
+there is no touchcancel bridge. Moving to another resource can retire the original
+WebView while its native touch sequence is still in progress. Resource retirement
+is the working cause of the missing terminal completion, not yet a runtime proof.
+
+Keep the presented source tracking the finger and defer Readium destination changes
+to End. Then require the same exact acquired epoch, navigate once, wait for actual
+locator departure and destination reveal, animate release, and clear. Cancelled
+drags do not navigate. The visual tradeoff is that the underlying destination is
+revealed on release rather than during the live drag. Do not substitute a timer,
+synthetic touch event or native slide. Add Start/End-only trace events, strengthen
+the real cover test to require cover -> c1 (no skipped chapter), and test that an
+acquired drag leaves its original resource until End and cancels without movement.
+Verification of this release transaction remains pending.
+
+Forge QA attempt 1 stops its Robolectric JVM with a JNI FloatBuffer class-lookup
+abort; the same source passes normal Android units. Retry only the failed QA job
+on the same SHA, retain the failure evidence, and do not label it a phone crash.

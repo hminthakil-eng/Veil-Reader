@@ -66,6 +66,7 @@ class ReaderFrameSmokeBenchmark {
     ) {
         repeat(3) { turn ->
             val origin = readerLocator()
+            if (turn == 0) check(origin.contains("cover.xhtml")) { "Animated fixture did not open on its cover: $origin" }
             val epoch = gpuSheetEpoch()
             check(epoch >= 0L) { "GPU host is unavailable" }
             if (turn == 0 && !svgCover) device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
@@ -74,6 +75,9 @@ class ReaderFrameSmokeBenchmark {
             awaitReaderLocatorDeparture(origin)
             awaitGpuSheetSettled(epoch)
             check(readerLocator() != origin) { "Animated Paper turn rolled back" }
+            if (turn == 0) check(readerLocator().contains("c1.xhtml")) {
+                "Cover turn skipped the first chapter: ${readerLocator()}"
+            }
         }
     }
 
