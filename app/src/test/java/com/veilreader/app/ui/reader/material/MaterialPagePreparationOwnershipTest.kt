@@ -28,11 +28,16 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun turnCannotReuseBufferOfSuspendedWarmCapture() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        val view = WebView(activity.get())
+        // Window visibility is a controlled platform input to these ownership
+        // tests; Robolectric's WebView/window visibility is not device evidence.
+        val view = object : WebView(activity.get()) {
+            override fun isShown() = true
+        }
         activity.get().setContentView(view)
         activity.visible()
         view.layout(0, 0, 32, 48)
-        assertTrue("Fixture must enter the suspended hardware-capture path",
+        assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
+            "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
         val finishCapture = CompletableDeferred<Unit>()
         var capturedTarget: Bitmap? = null
@@ -63,11 +68,16 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun cancellationReleasesOneOfTwoBusyCaptureSlots() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        val view = WebView(activity.get())
+        // Window visibility is a controlled platform input to these ownership
+        // tests; Robolectric's WebView/window visibility is not device evidence.
+        val view = object : WebView(activity.get()) {
+            override fun isShown() = true
+        }
         activity.get().setContentView(view)
         activity.visible()
         view.layout(0, 0, 32, 48)
-        assertTrue("Fixture must enter the suspended hardware-capture path",
+        assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
+            "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
         val neverFinishes = CompletableDeferred<Unit>()
         val targets = mutableListOf<Bitmap>()
@@ -102,11 +112,16 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun idleReleaseRejectsLateCaptureWithoutSoftwareFallback() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        val view = WebView(activity.get())
+        // Window visibility is a controlled platform input to these ownership
+        // tests; Robolectric's WebView/window visibility is not device evidence.
+        val view = object : WebView(activity.get()) {
+            override fun isShown() = true
+        }
         activity.get().setContentView(view)
         activity.visible()
         view.layout(0, 0, 32, 48)
-        assertTrue("Fixture must enter the suspended hardware-capture path",
+        assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
+            "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
         val finishCapture = CompletableDeferred<Unit>()
         var immediateCaptures = 0
@@ -141,11 +156,16 @@ class MaterialPagePreparationOwnershipTest {
 
     @Test fun refreshingPreparedPixelsCannotBeConsumedByTurn() = runTest {
         val activity = Robolectric.buildActivity(Activity::class.java).setup()
-        val view = WebView(activity.get())
+        // Window visibility is a controlled platform input to these ownership
+        // tests; Robolectric's WebView/window visibility is not device evidence.
+        val view = object : WebView(activity.get()) {
+            override fun isShown() = true
+        }
         activity.get().setContentView(view)
         activity.visible()
         view.layout(0, 0, 32, 48)
-        assertTrue("Fixture must enter the suspended hardware-capture path",
+        assertTrue("Fixture must enter capture: attached=${view.isAttachedToWindow}, " +
+            "shown=${view.isShown}, size=${view.width}x${view.height}, visibility=${view.visibility}",
             materialPageVisibleWebView(view) === view)
         val finishCapture = CompletableDeferred<Unit>()
         var requests = 0
