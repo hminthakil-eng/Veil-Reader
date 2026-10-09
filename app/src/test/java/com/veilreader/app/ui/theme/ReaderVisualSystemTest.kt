@@ -126,6 +126,18 @@ class ReaderVisualSystemTest {
         assertTrue(ShellVisualOpacity.RecentRule < ShellVisualOpacity.RecentAccent)
     }
 
+
+    @Test
+    fun grayfogShellUsesRestrainedLuxuryAccents() {
+        assertTrue(ShellVisualOpacity.HomeHeroBorder < 0.70f)
+        assertTrue(ShellVisualOpacity.HomeHeroActionBorder < ShellVisualOpacity.HomeHeroBorder)
+        assertTrue(ShellVisualOpacity.HomeHeroOrnament < 0.20f)
+        assertTrue(ShellVisualOpacity.RecentRule < ShellVisualOpacity.RecentAccent)
+        assertTrue(ShellVisualOpacity.ReturningArchiveImage < 0.70f)
+        assertTrue(ShellVisualGeometry.HomeHeroActionRadius.value < ShellVisualGeometry.HomeHeroRadius.value)
+        assertTrue(ShellVisualGeometry.HomeHeroProgressHeight.value <= 2f)
+    }
+
     @Test
     fun annotationChannelsRemainDistinct() {
         val highlights = listOf(
