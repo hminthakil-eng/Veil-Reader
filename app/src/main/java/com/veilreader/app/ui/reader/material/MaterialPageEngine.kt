@@ -98,8 +98,12 @@ internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
     private var sensorySink: MaterialPageSensorySink? = null,
     private val snapshotProvider: MaterialPageImmediateSnapshotProvider =
-        ViewDrawImmediateMaterialPageSnapshotProvider
+        ViewDrawImmediateMaterialPageSnapshotProvider,
+    preparedSnapshotProvider: MaterialPagePreparedSnapshotProvider? = null
 ) {
+    private val warmSnapshotProvider: MaterialPagePreparedSnapshotProvider =
+        preparedSnapshotProvider
+            ?: HardwareCompositedPreparedMaterialPageSnapshotProvider(snapshotProvider)
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
 
@@ -352,7 +356,7 @@ internal class MaterialPageEngineState(
         val totalStarted = SystemClock.elapsedRealtimeNanos()
         Trace.beginSection("paper.capture.prepare")
         val capture = try {
-            snapshotProvider.capture(
+            warmSnapshotProvider.capture(
                 view = view,
                 target = target,
                 sourceRevision = revision
