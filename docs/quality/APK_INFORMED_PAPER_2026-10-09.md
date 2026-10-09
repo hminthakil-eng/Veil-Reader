@@ -104,3 +104,33 @@ control without sharing. Existing real-publication cover/gesture tests remain
 mandatory after this repair. Storage instrumentation at ced8b0ca also failed;
 its job log omitted failure details and artifact download returned HTTP 403.
 Print failure XML and crash traces on the next run rather than assuming a flake.
+
+### First real input recovery — 8a73b255
+
+Android run 37967841814 passes 1,031 unit tests with no failures/errors/skips,
+zero lint errors, instrumentation compilation, debug/release archives and schema
+checks. Performance run 37967842048 passes actual-publication center tap chrome,
+cover edge advance and every locator departure/settled-navigation assertion in
+six repetitions of fourteen forward swipes. Absolute emulator budgets pass;
+relative-delta baseline is missing. This establishes emulator navigation recovery,
+not physical-device optical Paper quality or a complete app quality claim.
+
+Storage run 37967841813 executes 182 tests; the new native nested-overlay
+negative-control tap/swipe regression passes. The sole failure is SAF import's
+accessibility resource-ID lookup. Logcat confirms navigator attachment, readiness
+and a rendered-book locator at progression 0.0. Explicitly request
+AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS in the test, restoring previous
+flags afterwards (Android documents this flag as not set by default). Retain the
+same ID/rotation assertions and add native-hierarchy diagnostics if it still fails.
+Do not declare the import flow accepted until the new run passes.
+
+The user's supplied book has an inline SVG/image cover followed by navigation
+and 1,467 content entries. Add a second independent SVG-container fixture with
+our own test artwork; retain the existing img cover test. No user book text or
+art is committed to the repository.
+
+Normal debug APK 8a73b255 has signer 1c39a77ca6a3d7974ce891bb5385bdd60e23418abfac0da14c6e1428ad8f8e3d;
+the uploaded 7a6bea9 signer is eb1ea9e88162d33a559b8e59be74bc67d7357eb5b83e8e081ca30840c1cd9a45.
+They cannot update each other in place. Reuse the existing separate Forge QA
+package/build and its pinned non-production signer/cache via the verification PR.
+No uninstall, production-data migration, merge or release gate promotion.

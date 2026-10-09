@@ -30,14 +30,19 @@ class ReaderFrameSmokeBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun coverTapControlsAndEdgeAdvance() = benchmarkRule.measureRepeated(
+    fun coverTapControlsAndEdgeAdvance() = exerciseCover(svgCover = false)
+
+    @Test
+    fun svgCoverTapControlsAndEdgeAdvance() = exerciseCover(svgCover = true)
+
+    private fun exerciseCover(svgCover: Boolean) = benchmarkRule.measureRepeated(
         packageName = TARGET_PACKAGE,
         metrics = listOf(FrameTimingGfxInfoMetric()),
         compilationMode = CompilationMode.None(),
         iterations = 1,
         setupBlock = {
             pressHome()
-            startActivityAndWait(readerIntent())
+            startActivityAndWait(readerIntent().putExtra("benchmark_svg_cover", svgCover))
             awaitReaderSurface()
         }
     ) {

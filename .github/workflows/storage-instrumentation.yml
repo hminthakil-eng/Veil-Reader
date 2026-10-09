@@ -71,7 +71,7 @@ jobs:
                       print("\n".join((failure.text or "").splitlines()[:30]))
           PY_REPORT
           if [ -f build/reports/logcat-storage.log ]; then
-            rg 'FATAL EXCEPTION|AndroidRuntime|GpuMaterialPageCurl' build/reports/logcat-storage.log | tail -80 || true
+            grep -E 'FATAL EXCEPTION|AndroidRuntime|GpuMaterialPageCurl|VeilSafQa' build/reports/logcat-storage.log | tail -80 || true
           fi
 
       - name: Upload production Compose review captures

@@ -126,7 +126,8 @@ class BenchmarkReaderActivity : FragmentActivity() {
     }
 
     private fun ensureFixture(): File {
-        val target = File(cacheDir, "veil-reader-benchmark-cover-v3.epub")
+        val svgCover = intent.getBooleanExtra("benchmark_svg_cover", false)
+        val target = File(cacheDir, if (svgCover) "veil-reader-benchmark-svg-cover-v1.epub" else "veil-reader-benchmark-cover-v3.epub")
         if (target.isFile && target.length() > 0L) return target
 
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
@@ -183,9 +184,19 @@ class BenchmarkReaderActivity : FragmentActivity() {
 
             zip.writeEntry(
                 "OEBPS/cover.xhtml",
-                """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cover</title></head>
-                <body style="margin:0;background:#000"><img src="cover.svg" alt="Veil test cover"
-                style="display:block;width:90%;height:auto;margin:5% auto"/></body></html>"""
+                if (svgCover) {
+                    // Same container geometry as the reported book, using only our test artwork.
+                    """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>SVG cover</title></head>
+                    <body style="margin:0;background:#000"><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    width="100%" height="100%" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid">
+                    <image width="600" height="800" xlink:href="cover.svg"/></svg>
+                    </div></body></html>"""
+                } else {
+                    """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cover</title></head>
+                    <body style="margin:0;background:#000"><img src="cover.svg" alt="Veil test cover"
+                    style="display:block;width:90%;height:auto;margin:5% auto"/></body></html>"""
+                }
             )
             zip.writeEntry(
                 "OEBPS/cover.svg",
