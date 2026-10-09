@@ -259,10 +259,11 @@ internal fun PaperCurlOverlay(
         )
 
         if (BuildConfig.DEBUG) {
-            val label = when {
+            val label: String? = when {
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU CANONICAL · DISABLED"
-                state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ->
+                state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING &&
+                    state.debugBeginAttempts > 0 ->
                     "PAPER · GPU CANONICAL · INITIALIZING · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
                     "PAPER · GPU CANONICAL · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
@@ -280,11 +281,11 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · WAITING FOR FRAME · A${state.debugBeginAttempts}"
                 state.active ->
                     "PAPER · GPU CANONICAL · ACTIVE · A${state.debugBeginAttempts}"
-                else ->
-                    "PAPER · GPU CANONICAL · READY · A${state.debugBeginAttempts}"
+                else -> null
             }
+            label?.let { debugLabel ->
             Text(
-                text = label,
+                text = debugLabel,
                 color = Color(0xFFFFC857),
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -297,6 +298,7 @@ internal fun PaperCurlOverlay(
                     .padding(horizontal = 8.dp, vertical = 5.dp)
                     .clearAndSetSemantics { }
             )
+            }
         }
     }
 }
