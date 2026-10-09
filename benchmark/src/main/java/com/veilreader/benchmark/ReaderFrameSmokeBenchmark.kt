@@ -10,6 +10,8 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import androidx.test.uiautomator.UiDevice
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +30,52 @@ import org.junit.runner.RunWith
 class ReaderFrameSmokeBenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
+    private var originalAnimatorScale: Float? = null
+
+    @After
+    fun restoreAnimatorScale() {
+        originalAnimatorScale?.let { scale ->
+            UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("settings put global animator_duration_scale $scale")
+        }
+        originalAnimatorScale = null
+    }
+
+    @Test
+    fun paperGpuAcquiresImageCoverAndText() = exerciseGpuPaper(svgCover = false)
+
+    @Test
+    fun paperGpuAcquiresSvgCoverAndText() = exerciseGpuPaper(svgCover = true)
+
+    private fun exerciseGpuPaper(svgCover: Boolean) = benchmarkRule.measureRepeated(
+        packageName = TARGET_PACKAGE,
+        metrics = listOf(FrameTimingGfxInfoMetric()),
+        compilationMode = CompilationMode.None(),
+        iterations = 1,
+        setupBlock = {
+            if (originalAnimatorScale == null) {
+                originalAnimatorScale = device.executeShellCommand("settings get global animator_duration_scale").trim().toFloat()
+            }
+            device.executeShellCommand("settings put global animator_duration_scale 1")
+            killProcess()
+            pressHome()
+            startActivityAndWait(readerIntent().putExtra("benchmark_svg_cover", svgCover))
+            awaitReaderSurface()
+            check(readerVisualProbe().endsWith(";motion=true")) { "Paper presentation test launched in Reduced Motion" }
+        }
+    ) {
+        repeat(3) { turn ->
+            val origin = readerLocator()
+            val epoch = gpuSheetEpoch()
+            check(epoch >= 0L) { "GPU host is unavailable" }
+            if (turn == 0) device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
+            else device.swipe(device.displayWidth * 4 / 5, device.displayHeight / 2,
+                device.displayWidth / 5, device.displayHeight / 2, 40)
+            awaitReaderLocatorDeparture(origin)
+            awaitGpuSheetSettled(epoch)
+            check(readerLocator() != origin) { "Animated Paper turn rolled back" }
+        }
+    }
 
     @Test
     fun coverTapControlsAndEdgeAdvance() = exerciseCover(svgCover = false)

@@ -152,3 +152,31 @@ excludes the publication, but hiding the host restores its content description.
 Keep the existing real SAF import/rotation test unchanged. Validate both the
 normal and separately signed QA variants; previous navigation smoke cannot
 establish this new accessibility repair.
+
+### Passed navigation/accessibility, animation coverage gap — ac80d777
+
+Android 37973098910, Storage 37973098792 and Forge QA 37973098796 pass.
+Normal and QA variants execute 1,031 unit tests and 183 Android tests with zero
+failures/errors/skips; the SAF import/rotation and both native overlay negative
+controls pass. Signed candidate b8e9183b is the verification PR merge snapshot;
+its certificate matches the pinned QA identity. Its APK SHA-256 is
+`d2d9fae474fdb172bcbd01c208c8e0118c2d682e824d214d6e9b54310ee4fba0`.
+
+Performance 37973098931 passes all three actual benchmark-variant Reader tests
+(img/SVG center and edge taps, 14 swipes × 6), plus smoke budgets P95/P99=200ms.
+Raw input evidence artifact 11639575330 distinguishes actual benchmark tests
+(3/3 pass) from the BaselineProfile-only run's expected rule-filter assumption
+violations. Do not count those excluded Macrobenchmark rules as executed tests.
+
+However, raw logs contain no active-sheet presentation. The harness sets
+animator_duration_scale=0 and VeilTheme respects that through
+ValueAnimator.areAnimatorsEnabled: the turn controller follows Reduced Motion.
+These passing tests establish input/navigation, not animated Paper rendering.
+
+Add separate image/SVG GPU presentation cases with scale=1 and a fresh process;
+restore the original scale after each case. Observe only the real GPU view's
+acquired-buffer epoch and submitted active state. Publish those test-only fields
+separately from the locator and exclude them from locator comparison. Require
+new acquired epoch, completed visual state and stable location after every edge
+tap/drag. Idle/context-stale acquisition cannot satisfy a new sheet epoch.
+No production gesture, rendering order, Reduced Motion policy or gate is altered.

@@ -96,6 +96,10 @@ internal class GpuMaterialPageCurlView(
     private var submittedFrame: SubmittedFrame? = null
     private val pendingUploadLeases = mutableListOf<MaterialPageGpuUploadLease>()
     private var lastSubmittedActive = false
+    // Read-only observation of a real acquired GPU buffer; never drives presentation or navigation.
+    internal var lastAcquiredSheetEpoch = 0L
+        private set
+    internal val isPageTurnActive: Boolean get() = lastSubmittedActive
     private var submittedSequence = 0L
     private var textureRevision = 0L
     private var textureSubmissionStartedAtNanos = 0L
@@ -187,6 +191,7 @@ internal class GpuMaterialPageCurlView(
                         presented.generation, rendererGeneration,
                         presented.viewport, viewportGeneration
                     )) {
+                    lastAcquiredSheetEpoch = maxOf(lastAcquiredSheetEpoch, presented.epoch)
                     onSheetPresented(presented.epoch)
                 }
             }

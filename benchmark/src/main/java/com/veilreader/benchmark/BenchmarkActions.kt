@@ -61,10 +61,26 @@ internal fun MacrobenchmarkScope.turnReaderPages(turns: Int = 6) {
 
 private const val LOCATOR_PREFIX = "benchmark-reader-locator:"
 
-internal fun MacrobenchmarkScope.readerLocator(): String =
+internal fun MacrobenchmarkScope.readerVisualProbe(): String =
     requireNotNull(device.findObject(By.descStartsWith(LOCATOR_PREFIX))?.contentDescription) {
         "Actual Readium locator is unavailable"
     }
+
+internal fun MacrobenchmarkScope.readerLocator(): String = readerVisualProbe().substringBefore(';')
+
+internal fun MacrobenchmarkScope.gpuSheetEpoch(): Long =
+    readerVisualProbe().substringAfter(";gpuEpoch=").substringBefore(';').toLong()
+
+internal fun MacrobenchmarkScope.awaitGpuSheetSettled(previousEpoch: Long) {
+    val deadline = SystemClock.uptimeMillis() + 8_000L
+    while (SystemClock.uptimeMillis() < deadline) {
+        val probe = readerVisualProbe()
+        val epoch = probe.substringAfter(";gpuEpoch=").substringBefore(';').toLong()
+        if (epoch > previousEpoch && probe.contains(";gpuActive=false;motion=true")) return
+        Thread.sleep(50)
+    }
+    error("No new acquired GPU sheet and completed Paper animation: ${readerVisualProbe()}")
+}
 
 internal fun MacrobenchmarkScope.awaitReaderLocatorDeparture(origin: String) {
     val deadline = SystemClock.uptimeMillis() + 8_000L

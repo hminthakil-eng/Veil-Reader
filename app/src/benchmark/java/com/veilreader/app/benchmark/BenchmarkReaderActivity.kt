@@ -1,6 +1,9 @@
 package com.veilreader.app.benchmark
 
 import android.net.Uri
+import android.animation.ValueAnimator
+import android.view.View
+import android.view.ViewGroup
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,7 +12,6 @@ import androidx.fragment.app.FragmentManager
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.shared.ExperimentalReadiumApi
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
@@ -20,6 +22,7 @@ import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.diagnostics.ReaderJankMonitor
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.GpuMaterialPageCurlView
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
@@ -57,9 +60,18 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 navigator = findNavigator(supportFragmentManager)
                 if (navigator == null) delay(50)
             }
-            navigator.currentLocator.collect { locator ->
-                val progression = locator.locations.progression ?: return@collect
-                window.decorView.contentDescription = "benchmark-reader-locator:${locator.href}|$progression"
+            while (true) {
+                val locator = navigator.currentLocator.value
+                val progression = locator.locations.progression
+                if (progression != null) {
+                    val gpu = findGpuView(window.decorView)
+                    val probe = "benchmark-reader-locator:${locator.href}|$progression" +
+                        ";gpuEpoch=${gpu?.lastAcquiredSheetEpoch ?: -1L}" +
+                        ";gpuActive=${gpu?.isPageTurnActive ?: false}" +
+                        ";motion=${ValueAnimator.areAnimatorsEnabled()}"
+                    if (window.decorView.contentDescription != probe) window.decorView.contentDescription = probe
+                }
+                delay(50)
             }
         }
 
@@ -121,6 +133,14 @@ class BenchmarkReaderActivity : FragmentActivity() {
         for (fragment in manager.fragments) {
             (fragment as? Navigator)?.let { return it }
             findNavigator(fragment.childFragmentManager)?.let { return it }
+        }
+        return null
+    }
+
+    private fun findGpuView(view: View): GpuMaterialPageCurlView? {
+        if (view is GpuMaterialPageCurlView) return view
+        if (view is ViewGroup) for (index in 0 until view.childCount) {
+            findGpuView(view.getChildAt(index))?.let { return it }
         }
         return null
     }
