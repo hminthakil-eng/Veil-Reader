@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -62,6 +63,7 @@ internal fun ReaderTtsMiniPlayer(
     )
     val playingOrPreparing =
         state.phase == ReaderTtsPhase.PLAYING || state.phase == ReaderTtsPhase.PREPARING
+    val largeText = LocalDensity.current.fontScale >= 1.5f
 
     Surface(
         modifier = modifier
@@ -72,80 +74,162 @@ internal fun ReaderTtsMiniPlayer(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
+        if (largeText) {
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    stringResource(R.string.tts_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = accent
-                )
-                Text(
-                    activeText?.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.tts_intro),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            TextButton(
-                onClick = onPrevious,
-                enabled = transportEnabled,
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ReaderVisualGeometry.TouchTarget,
-                        minHeight = ReaderVisualGeometry.TouchTarget
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.tts_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    .semantics { contentDescription = previousLabel }
-            ) { Text("‹", color = foreground) }
-
-            TextButton(
-                onClick = if (playingOrPreparing) onPause else onResume,
-                enabled = transportEnabled,
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ReaderVisualGeometry.TouchTarget,
-                        minHeight = ReaderVisualGeometry.TouchTarget
+                    Text(
+                        activeText?.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.tts_intro),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    .semantics {
-                        contentDescription = if (playingOrPreparing) pauseLabel else playLabel
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    TextButton(
+                        onClick = onPrevious,
+                        enabled = transportEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            .semantics { contentDescription = previousLabel }
+                    ) { Text("‹", color = foreground, maxLines = 1) }
+
+                    TextButton(
+                        onClick = if (playingOrPreparing) onPause else onResume,
+                        enabled = transportEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            .semantics {
+                                contentDescription = if (playingOrPreparing) pauseLabel else playLabel
+                            }
+                    ) {
+                        Text(if (playingOrPreparing) "Ⅱ" else "▶", color = accent, maxLines = 1)
                     }
-            ) {
-                Text(if (playingOrPreparing) "Ⅱ" else "▶", color = accent)
+
+                    TextButton(
+                        onClick = onNext,
+                        enabled = transportEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            .semantics { contentDescription = nextLabel }
+                    ) { Text("›", color = foreground, maxLines = 1) }
+
+                    TextButton(
+                        onClick = onExpand,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                    ) {
+                        Text(
+                            "${number(speed)}×",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accent,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
-
-            TextButton(
-                onClick = onNext,
-                enabled = transportEnabled,
+        } else {
+            Row(
                 modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = ReaderVisualGeometry.TouchTarget,
-                        minHeight = ReaderVisualGeometry.TouchTarget
-                    )
-                    .semantics { contentDescription = nextLabel }
-            ) { Text("›", color = foreground) }
-
-            TextButton(
-                onClick = onExpand,
-                modifier = Modifier.heightIn(min = ReaderVisualGeometry.TouchTarget)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(
-                    "${number(speed)}×",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = accent
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.tts_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent
+                    )
+                    Text(
+                        activeText?.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.tts_intro),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+    
+                TextButton(
+                    onClick = onPrevious,
+                    enabled = transportEnabled,
+                    modifier = Modifier
+                        .defaultMinSize(
+                            minWidth = ReaderVisualGeometry.TouchTarget,
+                            minHeight = ReaderVisualGeometry.TouchTarget
+                        )
+                        .semantics { contentDescription = previousLabel }
+                ) { Text("‹", color = foreground) }
+    
+                TextButton(
+                    onClick = if (playingOrPreparing) onPause else onResume,
+                    enabled = transportEnabled,
+                    modifier = Modifier
+                        .defaultMinSize(
+                            minWidth = ReaderVisualGeometry.TouchTarget,
+                            minHeight = ReaderVisualGeometry.TouchTarget
+                        )
+                        .semantics {
+                            contentDescription = if (playingOrPreparing) pauseLabel else playLabel
+                        }
+                ) {
+                    Text(if (playingOrPreparing) "Ⅱ" else "▶", color = accent)
+                }
+    
+                TextButton(
+                    onClick = onNext,
+                    enabled = transportEnabled,
+                    modifier = Modifier
+                        .defaultMinSize(
+                            minWidth = ReaderVisualGeometry.TouchTarget,
+                            minHeight = ReaderVisualGeometry.TouchTarget
+                        )
+                        .semantics { contentDescription = nextLabel }
+                ) { Text("›", color = foreground) }
+    
+                TextButton(
+                    onClick = onExpand,
+                    modifier = Modifier.heightIn(min = ReaderVisualGeometry.TouchTarget)
+                ) {
+                    Text(
+                        "${number(speed)}×",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent
+                    )
+                }
             }
         }
     }
