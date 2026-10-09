@@ -7,6 +7,9 @@ import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +30,7 @@ class ReaderFrameSmokeBenchmark {
     val benchmarkRule = MacrobenchmarkRule()
 
     @Test
-    fun coverEdgeTapAdvances() = benchmarkRule.measureRepeated(
+    fun coverTapControlsAndEdgeAdvance() = benchmarkRule.measureRepeated(
         packageName = TARGET_PACKAGE,
         metrics = listOf(FrameTimingGfxInfoMetric()),
         compilationMode = CompilationMode.None(),
@@ -40,6 +43,17 @@ class ReaderFrameSmokeBenchmark {
     ) {
         val origin = readerLocator()
         check(origin.contains("cover.xhtml")) { "Fixture did not open on its image cover: $origin" }
+        val resources = InstrumentationRegistry.getInstrumentation().context.packageManager
+            .getResourcesForApplication(TARGET_PACKAGE)
+        val closeLabel = resources.getString(resources.getIdentifier("reader_close", "string", TARGET_PACKAGE))
+        device.click(device.displayWidth / 2, device.displayHeight * 4 / 5)
+        check(device.wait(Until.hasObject(By.desc(closeLabel)), 3_000)) {
+            "Center tap on cover did not open Reader chrome"
+        }
+        device.click(device.displayWidth / 2, device.displayHeight * 4 / 5)
+        check(device.wait(Until.gone(By.desc(closeLabel)), 3_000)) {
+            "Center tap did not dismiss Reader chrome"
+        }
         // The lower edge is outside the image, so this exercises navigation without image viewing.
         device.click(device.displayWidth * 19 / 20, device.displayHeight * 4 / 5)
         awaitReaderLocatorDeparture(origin)

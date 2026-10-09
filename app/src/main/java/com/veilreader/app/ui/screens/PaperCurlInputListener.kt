@@ -348,10 +348,12 @@ internal class PaperCurlInputListener(
         if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
-            // A reserved gesture that never became a horizontal turn is still
-            // consumed so the native renderer cannot finish it as a slide.
+            // Readium emits End for every touchend, including taps that never emitted Start.
+            // Consuming an unreserved End prevents the browser's synthesized click, so edge
+            // navigation, image viewing and center chrome taps never reach onTap.
+            val wasReserved = dragReserved
             resetDrag()
-            return true
+            return wasReserved
         }
 
         if (!state.active && navigationJob == null) {

@@ -62,7 +62,7 @@ jobs:
           gradle-version: '9.6.0'
 
       - name: Paper ownership regressions
-        run: gradle :app:testDebugUnitTest --tests 'com.veilreader.app.ui.reader.material.MaterialPagePreparationOwnershipTest' --stacktrace
+        run: gradle :app:testDebugUnitTest --tests 'com.veilreader.app.ui.reader.material.MaterialPagePreparationOwnershipTest' --tests 'com.veilreader.app.ui.reader.material.GpuPageShaderContractTest' --tests 'com.veilreader.app.ui.screens.PaperDiscreteTurnLifecycleTest' --stacktrace
 
       - name: Unit tests
         run: gradle :app:testDebugUnitTest --stacktrace

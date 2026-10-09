@@ -53,3 +53,37 @@ separately. A passing test/build does not establish device-level paper quality.
 Device gate: same book/device, first turn and immediate drag during preparation,
 slow finger tracking, release/cancel, next chapter, rapid turns, orientation and
 pause/resume. Collect actual presentation/frame evidence before claiming GREEN.
+
+
+## Follow-up: cover taps never become clicks
+
+User confirms the latest debug APK ignores swipes, edge taps and center taps on
+an image cover. Runtime regression head `5f0cdaa7` fails the actual cover edge-tap
+assertion on API 35 lavapipe. The swipe run crosses the cover and advances through
+chapters, then fails at the fixture's last page; extend the fixture from six to
+twelve chapters so fourteen deliberate forward turns do not hit its boundary.
+The reported phone swipe failure is still a separate acceptance requirement.
+
+Readium 3.4.0 primary-source evidence:
+`readium/navigator/src/main/assets/readium/scripts/readium-reflowable.js` sends
+`Android.onDragEnd` on **every** touchend, including touches with no Start/Move.
+If the returned value is true, it calls preventDefault and stops propagation.
+`R2BasicWebView.kt` forwards valid End events to the registered input listener.
+Paper's no-active-spec End branch returned true even when no drag was reserved.
+That suppresses the browser-generated click before image/edge/chrome tap policy.
+Return the actual reservation state after reset: retain ownership of short drags,
+but leave an unstarted tap End unconsumed. No duplicate native input bridge.
+
+Runtime logs also report `GPU page program link failed: Precisions of uniform
+'uShadowPass' differ between VERTEX and FRAGMENT shaders.` The two shader defaults
+were highp and mediump, including shared uShadowPass/uSideSign. Give shared
+uniforms and varyings explicit matching mediump precision while retaining highp
+vertex geometry. Local Mesa surfaceless EGL negative control links old source
+with status 0 and the exact precision error; changed source links with status 1
+and no error. This is actual shader linking, not a text-only declaration check.
+A regression compares effective shared-uniform precision across both stages.
+
+Real-input acceptance now opens and dismisses Reader chrome with center taps on
+the cover, edge-taps into chapter one, and checks actual Readium href/progression
+after every swipe and settling. Harness/probe/EPUB remain benchmark-only.
+Hosted after-fix runtime and phone verification must be recorded separately.

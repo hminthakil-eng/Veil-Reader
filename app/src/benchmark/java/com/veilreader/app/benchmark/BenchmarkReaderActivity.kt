@@ -125,7 +125,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
     }
 
     private fun ensureFixture(): File {
-        val target = File(cacheDir, "veil-reader-benchmark-cover-v2.epub")
+        val target = File(cacheDir, "veil-reader-benchmark-cover-v3.epub")
         if (target.isFile && target.length() > 0L) return target
 
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
@@ -140,13 +140,13 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 </container>""".trimIndent()
             )
 
-            val chapters = (1..6).joinToString("") { index ->
+            val chapters = (1..12).joinToString("") { index ->
                 """<item id="c$index" href="c$index.xhtml" media-type="application/xhtml+xml"/>"""
             }
-            val spine = (1..6).joinToString("") { index ->
+            val spine = (1..12).joinToString("") { index ->
                 """<itemref idref="c$index"/>"""
             }
-            val navEntries = (1..6).joinToString("") { index ->
+            val navEntries = (1..12).joinToString("") { index ->
                 """<li><a href="c$index.xhtml">Chapter $index</a></li>"""
             }
 
@@ -195,7 +195,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 </svg>"""
             )
 
-            repeat(6) { zeroBased ->
+            repeat(12) { zeroBased ->
                 val index = zeroBased + 1
                 val paragraph = buildString {
                     repeat(40) {

@@ -38,6 +38,29 @@ import org.robolectric.annotation.Config
 @Config(sdk = [37])
 class PaperDiscreteTurnLifecycleTest {
     @Test
+    fun `unstarted touch end preserves tap while reserved short drag stays consumed`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture()
+        val state = PaperCurlState()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() })
+        try {
+            assertFalse(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertFalse(listener.hasPendingTurn())
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertFalse(listener.hasPendingTurn())
+            assertFalse(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `accepted discrete preview restores exact origin when owner is disposed`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
