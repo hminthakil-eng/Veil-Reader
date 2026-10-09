@@ -535,10 +535,14 @@ fun ReaderScreen(
         mutableStateOf<SlideNavigationInputListener?>(null)
     }
     LaunchedEffect(paperInputListener, paperCurlState.rendererStatus, paperCurlState.active) {
-        if (paperCurlState.active &&
-            paperCurlState.rendererStatus != com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY) {
-            // Context loss/failure must retire an uncommitted preview before a replacement
-            // renderer or subsequent input can acquire its locator/visual ownership.
+        if (
+            paperCurlState.active &&
+            !com.veilreader.app.ui.reader.material.materialPageRendererCanPresent(
+                paperCurlState.rendererStatus
+            )
+        ) {
+            // Only a total loss of every Paper presentation backend retires the preview.
+            // GPU startup/failure may hand the same snapshot/state to the software mesh backend.
             paperInputListener?.forceCancelPendingTurn()
         }
     }
@@ -1200,9 +1204,12 @@ fun ReaderScreen(
         reducedMotion, readerSessionReady, closeInFlight) {
         val failure = paperRendererFailureNotice(paperCurlState.rendererStatus)
         if (failure == null) {
-            if (paperCurlState.rendererStatus ==
-                com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY &&
-                paperFailureNotice?.failure == PaperTurnVisualFailure.RENDERER_UNAVAILABLE) {
+            if (
+                com.veilreader.app.ui.reader.material.materialPageRendererCanPresent(
+                    paperCurlState.rendererStatus
+                ) &&
+                paperFailureNotice?.failure == PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+            ) {
                 paperFailureNotice = null
             }
             return@LaunchedEffect
