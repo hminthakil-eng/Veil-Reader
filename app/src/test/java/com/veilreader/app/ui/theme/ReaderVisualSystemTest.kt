@@ -109,6 +109,23 @@ class ReaderVisualSystemTest {
         assertTrue(ReaderVisualGeometry.TtsMiniPlayerRadius.value <= 16f)
     }
 
+
+    @Test
+    fun grayfogShellKeepsPremiumRetrievalHierarchy() {
+        assertEquals(16f, ShellVisualGeometry.HomeHeroRadius.value, 0f)
+        assertTrue(ShellVisualGeometry.RecentBookRadius.value <= ShellVisualGeometry.HomeHeroRadius.value)
+        assertTrue(
+            ShellVisualGeometry.ArchiveReturningCompactMinHeight.value <
+                ShellVisualGeometry.ArchiveEmptyCompactMinHeight.value
+        )
+        assertTrue(
+            ShellVisualGeometry.ArchiveReturningWideMinHeight.value <
+                ShellVisualGeometry.ArchiveEmptyWideMinHeight.value
+        )
+        assertTrue(ShellVisualOpacity.ReturningArchiveImage < 1f)
+        assertTrue(ShellVisualOpacity.RecentRule < ShellVisualOpacity.RecentAccent)
+    }
+
     @Test
     fun annotationChannelsRemainDistinct() {
         val highlights = listOf(
