@@ -131,8 +131,6 @@ import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderNavigationReason
 import com.veilreader.app.ui.reader.ReaderNavigationCommitPolicy
 import com.veilreader.app.ui.reader.ReaderNavigationSessionStateMachine
-import com.veilreader.app.ui.reader.ReaderInputOwner
-import com.veilreader.app.ui.reader.ReaderInputOwnership
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderIdentityJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
@@ -567,16 +565,6 @@ fun ReaderScreen(
         val paperSettled = paperInputListener?.hasPendingTurn() != true
         val slideSettled = slideInputListener?.hasPendingTurn() != true
 
-        // Ownership is computed from the live preview listeners, not a stale mode flag.
-        val previewOwner = when {
-            paperInputListener?.hasPendingTurn() == true -> ReaderInputOwner.PAPER
-            slideInputListener?.hasPendingTurn() == true -> ReaderInputOwner.SLIDE
-            else -> ReaderInputOwner.NONE
-        }
-        val previewOwnership = ReaderInputOwnership(
-            owner = previewOwner,
-            previewPending = previewOwner != ReaderInputOwner.NONE
-        )
         if (!paperSettled || !slideSettled) {
             paperInputListener?.forceCancelPendingTurn()
             slideInputListener?.forceCancelPendingTurn()
@@ -584,15 +572,6 @@ fun ReaderScreen(
                 "navigation_jump_blocked_unsettled_preview",
                 bookId = opened.book.id,
                 sessionId = readerSessionInstanceId
-            )
-            return false
-        }
-        if (!previewOwnership.canAcquire(ReaderInputOwner.PROGRAMMATIC)) {
-            ReaderTrace.event(
-                "navigation_jump_blocked_input_owner",
-                bookId = opened.book.id,
-                sessionId = readerSessionInstanceId,
-                details = "owner=${previewOwner.name}"
             )
             return false
         }
