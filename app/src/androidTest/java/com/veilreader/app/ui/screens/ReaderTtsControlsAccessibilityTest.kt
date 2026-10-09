@@ -18,6 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
+import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.theme.VeilTheme
 import java.util.Locale
@@ -30,6 +31,30 @@ class ReaderTtsControlsAccessibilityTest {
 
     @Test fun englishAtLargeText_keepsStopAndCloseReachable() = verify(Locale.ENGLISH, LayoutDirection.Ltr)
     @Test fun persianAtLargeText_keepsStopAndCloseReachable() = verify(Locale.forLanguageTag("fa"), LayoutDirection.Rtl)
+
+    @Test fun automaticPreviewUsesPlaybackDialectRanking() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        var previewed: String? = null
+        compose.setContent {
+            VeilTheme {
+                ReaderTtsControls(
+                    state = ReaderTtsState(), supported = true, settings = ReaderTtsSettings(),
+                    startPending = false, startFailed = false, publicationLanguage = "en-US",
+                    voiceCatalogSupported = true,
+                    voices = listOf(
+                        ReaderTtsVoice("gb", "en-GB", 500, false, true),
+                        ReaderTtsVoice("us", "en-US", 300, false, true)
+                    ),
+                    onStart = {}, onResume = {}, onPause = {}, onPrevious = {}, onNext = {},
+                    onStop = {}, onSettingsChange = {}, onDone = {},
+                    onPreviewVoice = { _, voice, _ -> previewed = voice }
+                )
+            }
+        }
+        compose.onNodeWithText(context.getString(R.string.tts_preview_voice))
+            .performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("us", previewed) }
+    }
 
     private fun verify(locale: Locale, direction: LayoutDirection) {
         val context = ApplicationProvider.getApplicationContext<Context>()

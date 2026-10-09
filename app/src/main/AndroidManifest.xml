@@ -20,7 +20,7 @@
         android:hardwareAccelerated="true"
         android:icon="@drawable/ic_veil_reader_icon"
         android:roundIcon="@drawable/ic_veil_reader_icon"
-        android:label="@string/app_name"
+        android:label="${veilAppLabel}"
         android:supportsRtl="true"
         android:theme="@style/Theme.VeilReader">
         <service

@@ -156,6 +156,9 @@ interface BookmarkDao {
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId ORDER BY createdAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<BookmarkEntity>>
 
+    @Query("SELECT * FROM bookmarks WHERE bookId = :bookId AND locatorJson = :locatorJson LIMIT 1")
+    suspend fun findByBookAndLocator(bookId: String, locatorJson: String): BookmarkEntity?
+
     @Upsert suspend fun upsert(bookmark: BookmarkEntity)
     @Upsert suspend fun upsertAll(bookmarks: List<BookmarkEntity>)
     @Query("DELETE FROM bookmarks WHERE id = :id") suspend fun deleteById(id: String)

@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import com.veilreader.app.ui.reader.awaitReaderVisualNavigationDeparture
@@ -163,7 +164,7 @@ internal class SlideNavigationInputListener(
             if (state.active) {
                 val operationToken = activeOperationGeneration
                 val origin = dragStartLocator
-                navigationJob = scope.launch(start = CoroutineStart.LAZY) {
+                navigationJob = launchPreview {
                     delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
                     if (
                         origin != null &&
@@ -178,7 +179,7 @@ internal class SlideNavigationInputListener(
                                     origin = origin
                                 )
                         if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
-                            return@launch
+                            return@launchPreview
                         }
                         if (
                             accepted &&
@@ -211,7 +212,7 @@ internal class SlideNavigationInputListener(
 
         if (spec == null) {
             val operationToken = activeOperationGeneration
-            completionJob = scope.launch(start = CoroutineStart.LAZY) {
+            completionJob = launchCompletion {
                 if (state.active && !isReducedMotion()) state.animateCancel()
                 if (state.active) state.clear()
                 if (operationIsCurrent(operationToken)) {
@@ -238,17 +239,17 @@ internal class SlideNavigationInputListener(
         )
 
         val operationToken = activeOperationGeneration
-        completionJob = scope.launch(start = CoroutineStart.LAZY) {
+        completionJob = launchCompletion {
             navigationJob?.join()
 
             if (!operationIsCurrent(operationToken)) {
-                if (!mayCleanCancelledOperation(operationToken)) return@launch
+                if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                 if (previewNavigationSucceeded) {
                     restoreDragStart(spec, forceRequest = true)
                 }
                 if (state.active) state.clearImmediately()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             if (cancellationRequested && !turnCommitted) {
@@ -256,7 +257,7 @@ internal class SlideNavigationInputListener(
                 if (state.active && !isReducedMotion()) state.animateCancel()
                 if (state.active) state.clear()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             if (state.active) {
@@ -289,13 +290,13 @@ internal class SlideNavigationInputListener(
                                     origin = origin
                                 )
                         if (!operationIsCurrent(operationToken)) {
-                            if (!mayCleanCancelledOperation(operationToken)) return@launch
+                            if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                             if (accepted) {
                                 navigator.go(origin, animated = false)
                             }
                             if (state.active) state.clearImmediately()
                             resetDrag()
-                            return@launch
+                            return@launchCompletion
                         }
                         if (moved) {
                             turnCommitted = true
@@ -333,12 +334,12 @@ internal class SlideNavigationInputListener(
                             origin = origin
                         )
                 if (!operationIsCurrent(operationToken)) {
-                    if (!mayCleanCancelledOperation(operationToken)) return@launch
+                    if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                     if (accepted) {
                         navigator.go(origin, animated = false)
                     }
                     resetDrag()
-                    return@launch
+                    return@launchCompletion
                 }
                 if (moved) {
                     turnCommitted = true
@@ -394,7 +395,7 @@ internal class SlideNavigationInputListener(
         cancellationRequested = true
         val spec = activeSpec
         if (spec == null) {
-            completionJob = scope.launch(start = CoroutineStart.LAZY) {
+            completionJob = launchCompletion {
                 if (state.active) state.clear()
                 resetDrag()
             }
@@ -403,7 +404,7 @@ internal class SlideNavigationInputListener(
         }
 
         if (completionJob == null) {
-            completionJob = scope.launch(start = CoroutineStart.LAZY) {
+            completionJob = launchCompletion {
                 navigationJob?.join()
                 if (previewNavigationSucceeded) restoreDragStart(spec)
                 if (state.active) state.clear()
@@ -508,14 +509,14 @@ internal class SlideNavigationInputListener(
         val visualReady = !reducedMotion && state.begin(navigator.publicationView)
         onInteraction()
 
-        completionJob = scope.launch(start = CoroutineStart.LAZY) {
+        completionJob = launchCompletion {
             if (visualReady) {
                 delay(com.veilreader.app.ui.theme.VeilMotion.FRAME_SETTLE_MS)
             }
             if (cancellationRequested || !operationIsCurrent(operationToken)) {
                 if (state.active) state.clear()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             val accepted = navigate(spec.direction)
@@ -527,13 +528,13 @@ internal class SlideNavigationInputListener(
                         origin = originLocator
                     )
             if (!operationIsCurrent(operationToken)) {
-                if (!mayCleanCancelledOperation(operationToken)) return@launch
+                if (!mayCleanCancelledOperation(operationToken)) return@launchCompletion
                 if (accepted) {
                     navigator.go(originLocator, animated = false)
                 }
                 if (state.active) state.clearImmediately()
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
             if (!moved) {
                 if (accepted) {
@@ -545,7 +546,7 @@ internal class SlideNavigationInputListener(
                     state.clear()
                 }
                 resetDrag()
-                return@launch
+                return@launchCompletion
             }
 
             turnCommitted = true
@@ -682,7 +683,50 @@ internal class SlideNavigationInputListener(
         // ReaderScreen already supplies the accepted SLIDE contract. Do not
         // re-check Readium's overflow flow here; it can lag preference changes
         // and create the same visible-mode/input-owner split that broke Paper.
-        isEnabled()
+        isEnabled() && scope.isActive
+
+    /** A failed/cancelled coroutine must not leave the next gesture permanently busy. */
+    private fun launchCompletion(block: suspend CoroutineScope.() -> Unit): Job {
+        val token = cleanupOperationToken()
+        return scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                block()
+            } finally {
+                releaseInterruptedOperation(token)
+            }
+        }
+    }
+
+    private fun launchPreview(block: suspend CoroutineScope.() -> Unit): Job {
+        val token = cleanupOperationToken()
+        return scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                block()
+            } catch (failure: Throwable) {
+                releaseInterruptedOperation(token)
+                throw failure
+            }
+        }
+    }
+
+    private fun cleanupOperationToken(): Long =
+        activeOperationGeneration.takeIf { it != 0L } ?: cancelledOperationAwaitingCleanup
+
+    private fun releaseInterruptedOperation(token: Long) {
+        // A late finally from the previous gesture must never clear a newer sheet or locator.
+        if (!operationIsCurrent(token) && !mayCleanCancelledOperation(token)) return
+        navigationJob?.cancel()
+        try {
+            if (!turnCommitted) activeSpec?.let { restoreDragStart(it, forceRequest = true) }
+        } finally {
+            try {
+                state.clearImmediately()
+            } finally {
+                activeOperationGeneration = 0L
+                resetDrag()
+            }
+        }
+    }
 
     private fun resetDrag() {
         cancelledOperationAwaitingCleanup = 0L

@@ -109,6 +109,37 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `startup drag ownership is separate from permission to move the page`() {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            GpuMaterialPageRendererStatus.entries.forEach { status ->
+                val expected = status == GpuMaterialPageRendererStatus.INITIALIZING ||
+                    status == GpuMaterialPageRendererStatus.READY
+                assertEquals(expected, paperRendererCanReserveDrag(false, status))
+            }
+            assertTrue(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
+            assertFalse(shouldAllowPaperNavigation(false,
+                GpuMaterialPageRendererStatus.INITIALIZING, visualActive = true))
+            MaterialPageEngineRollout.setDebugOverride(false)
+            assertFalse(paperRendererCanReserveDrag(false, GpuMaterialPageRendererStatus.READY))
+            assertFalse(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `renderer notices distinguish real unavailability from startup and reduced motion`() {
+        GpuMaterialPageRendererStatus.entries.forEach { status ->
+            val expected = if (status == GpuMaterialPageRendererStatus.FAILED ||
+                status == GpuMaterialPageRendererStatus.UNSUPPORTED) {
+                PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+            } else null
+            assertEquals(expected, paperRendererFailureNotice(status))
+        }
+    }
+
+    @Test
     fun `Reduced Motion keeps functional Paper navigation without a curl visual`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {

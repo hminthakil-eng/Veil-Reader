@@ -8,6 +8,9 @@ import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -48,6 +51,98 @@ class AnnotationDurabilityInstrumentedTest {
     fun tearDown() = runBlocking {
         repository.closeForTest()
         db.close()
+    }
+
+    @Test
+    fun bookmarkAcknowledgement_isAlreadyCommitted_withoutFlushOrObserverWait() = runBlocking {
+        importBookmarkBook()
+        assertTrue(repository.addBookmark("bookmark-book", "Saved", "{\"href\":\"one.xhtml\"}"))
+
+        // Query Room directly at the acknowledgement boundary, without flushing the write queue.
+        val stored = db.bookmarks().listAll().single()
+        assertEquals("Saved", stored.label)
+        assertFalse(repository.addBookmark("bookmark-book", "Duplicate", stored.locatorJson))
+        assertEquals(1, db.bookmarks().listAll().size)
+    }
+
+    @Test
+    fun concurrentBookmarkRequests_acknowledgeExactlyOneDurableRecord() = runBlocking {
+        importBookmarkBook()
+        val results = List(20) {
+            async {
+                repository.addBookmark("bookmark-book", "Rapid tap", "{\"href\":\"same.xhtml\"}")
+            }
+        }.awaitAll()
+        assertEquals(1, results.count { it })
+        assertEquals(1, db.bookmarks().listAll().size)
+    }
+
+    @Test
+    fun rejectedBookmarkWrite_doesNotAcknowledgeOrPublishPhantomRecord() = runBlocking {
+        importBookmarkBook()
+        repository.bookmarks.first { it.isEmpty() }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_bookmark BEFORE INSERT ON bookmarks " +
+                "BEGIN SELECT RAISE(ABORT, 'injected bookmark storage failure'); END"
+        )
+
+        var failure: Exception? = null
+        try {
+            repository.addBookmark("bookmark-book", "Must fail", "{\"href\":\"failure.xhtml\"}")
+        } catch (error: Exception) {
+            failure = error
+        }
+        assertTrue("Storage failure must reach the caller", failure != null)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+        assertTrue(repository.bookmarks.value.isEmpty())
+    }
+
+    @Test
+    fun bookmarkDeletion_isCommittedBeforeReturn_andIsIdempotent() = runBlocking {
+        importBookmarkBook()
+        repository.addBookmark("bookmark-book", "Saved", "{\"href\":\"delete.xhtml\"}")
+        val id = db.bookmarks().listAll().single().id
+        repository.deleteBookmark(id)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+        repository.deleteBookmark(id)
+        assertTrue(db.bookmarks().listAll().isEmpty())
+    }
+
+    @Test
+    fun rejectedBookmarkDeletion_preservesDurableAndVisibleRecord() = runBlocking {
+        importBookmarkBook()
+        repository.addBookmark("bookmark-book", "Keep", "{\"href\":\"keep.xhtml\"}")
+        val saved = db.bookmarks().listAll().single()
+        repository.bookmarks.first { bookmarks -> bookmarks.any { it.id == saved.id } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_bookmark_delete BEFORE DELETE ON bookmarks " +
+                "BEGIN SELECT RAISE(ABORT, 'injected bookmark deletion failure'); END"
+        )
+
+        var failure: Exception? = null
+        try {
+            repository.deleteBookmark(saved.id)
+        } catch (error: Exception) {
+            failure = error
+        }
+        assertTrue("Deletion failure must reach the caller", failure != null)
+        assertEquals(saved, db.bookmarks().listAll().single())
+        assertEquals(saved.id, repository.bookmarks.value.single().id)
+    }
+
+    private suspend fun importBookmarkBook() {
+        repository.addImportedBook(
+            Book(
+                id = "bookmark-book",
+                title = "Bookmark durability",
+                author = "QA",
+                format = BookFormat.EPUB,
+                sourceUri = "file:///bookmark.epub",
+                mediaType = "application/epub+zip",
+                addedAtEpochMs = 1L
+            )
+        )
+        repository.flushWrites()
     }
 
     @Test
@@ -169,6 +264,106 @@ class AnnotationDurabilityInstrumentedTest {
             "Belongs only to the second passage",
             persisted.getValue(second.id).note
         )
+    }
+
+    @Test
+    fun highlightAcknowledgement_isCommittedBeforeReturn_withoutFlush() = runBlocking {
+        importBookmarkBook()
+        val result = repository.commitSelectionHighlight("bookmark-book", "  Saved passage  ", "{\"href\":\"chapter.xhtml\"}")
+        assertTrue(result.created)
+        assertEquals(result.highlight.id, db.highlights().listAll().single().id)
+        assertEquals("Saved passage", db.highlights().listAll().single().quote)
+    }
+
+    @Test
+    fun concurrentHighlightRequests_createOneDurablePassage_withoutCacheAuthority() = runBlocking {
+        importBookmarkBook()
+        val results = List(20) {
+            async { repository.commitSelectionHighlight("bookmark-book", "Same passage", "{\"href\":\"chapter.xhtml\"}") }
+        }.awaitAll()
+        assertEquals(1, results.count { it.created })
+        assertEquals(1, results.map { it.highlight.id }.distinct().size)
+        assertEquals(1, db.highlights().listAll().size)
+    }
+
+    @Test
+    fun rejectedHighlightWrite_doesNotAcknowledgeOrPublishPhantomRecord() = runBlocking {
+        importBookmarkBook()
+        repository.highlights.first { it.isEmpty() }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_highlight BEFORE INSERT ON highlights " +
+                "BEGIN SELECT RAISE(ABORT, 'injected highlight storage failure'); END"
+        )
+        var failure: Exception? = null
+        try {
+            repository.addHighlight("bookmark-book", "Must fail", "{\"href\":\"failure.xhtml\"}")
+        } catch (error: Exception) { failure = error }
+        assertTrue("Storage failure must reach the caller", failure != null)
+        assertTrue(db.highlights().listAll().isEmpty())
+        assertTrue(repository.highlights.value.isEmpty())
+    }
+
+    @Test
+    fun noteUpdateAcknowledgementIsCommittedWithoutFlush() = runBlocking {
+        val highlight = savedHighlight()
+        assertTrue(repository.updateHighlightNote(highlight.id, "  Durable edit  "))
+        assertEquals("Durable edit", db.highlights().findById(highlight.id)?.note)
+    }
+
+    @Test
+    fun missingNoteTargetDoesNotRecreatePassageOrPoisonStorageQueue() = runBlocking {
+        importBookmarkBook()
+        assertFalse(repository.updateHighlightNote("missing", "Must not create"))
+        assertTrue(db.highlights().listAll().isEmpty())
+        assertTrue(repository.addBookmark("bookmark-book", "Still works", "{\"href\":\"chapter.xhtml\"}"))
+    }
+
+    @Test
+    fun rejectedNoteUpdatePreservesDurableAndVisibleNote() = runBlocking {
+        val highlight = savedHighlight()
+        assertTrue(repository.updateHighlightNote(highlight.id, "Keep this note"))
+        repository.highlights.first { list -> list.any { it.id == highlight.id && it.note == "Keep this note" } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_note_update BEFORE UPDATE ON highlights " +
+                "BEGIN SELECT RAISE(ABORT, 'injected note update failure'); END"
+        )
+        var failed = false
+        try { repository.updateHighlightNote(highlight.id, "Must fail") }
+        catch (_: Exception) { failed = true }
+        assertTrue(failed)
+        assertEquals("Keep this note", db.highlights().findById(highlight.id)?.note)
+        assertEquals("Keep this note", repository.highlights.value.single().note)
+    }
+
+    @Test
+    fun highlightDeletionAcknowledgementIsCommittedAndIdempotent() = runBlocking {
+        val highlight = savedHighlight()
+        repository.deleteHighlight(highlight.id)
+        assertNull(db.highlights().findById(highlight.id))
+        assertTrue(repository.highlights.value.isEmpty())
+        repository.deleteHighlight(highlight.id)
+        assertTrue(db.highlights().listAll().isEmpty())
+    }
+
+    @Test
+    fun rejectedHighlightDeletionPreservesDurableAndVisiblePassage() = runBlocking {
+        val highlight = savedHighlight()
+        repository.highlights.first { list -> list.any { it.id == highlight.id } }
+        db.openHelper.writableDatabase.execSQL(
+            "CREATE TRIGGER reject_highlight_delete BEFORE DELETE ON highlights " +
+                "BEGIN SELECT RAISE(ABORT, 'injected highlight deletion failure'); END"
+        )
+        var failed = false
+        try { repository.deleteHighlight(highlight.id) }
+        catch (_: Exception) { failed = true }
+        assertTrue(failed)
+        assertEquals(highlight.id, db.highlights().findById(highlight.id)?.id)
+        assertEquals(highlight.id, repository.highlights.value.single().id)
+    }
+
+    private suspend fun savedHighlight(): com.veilreader.app.domain.Highlight {
+        importBookmarkBook()
+        return repository.addHighlight("bookmark-book", "Durable passage", "{\"href\":\"chapter.xhtml\"}")
     }
 
     @Test

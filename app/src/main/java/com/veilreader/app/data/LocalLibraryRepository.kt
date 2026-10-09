@@ -59,6 +59,11 @@ import kotlinx.coroutines.withContext
  * share one queue so progress, annotations, derived metadata and backup snapshots have deterministic
  * ordering.
  */
+internal data class SelectionHighlightCommit(
+    val highlight: Highlight,
+    val created: Boolean
+)
+
 internal data class SelectionNoteCommit(
     val highlight: Highlight,
     val created: Boolean
@@ -79,6 +84,7 @@ class LocalLibraryRepository internal constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val readingPaceStore = ReadingPaceStore(appContext)
+    private val readerCrashCheckpointStore = ReaderCrashCheckpointStore(appContext)
     private val readingPaceGeneration = AtomicLong(0L)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
@@ -89,6 +95,7 @@ class LocalLibraryRepository internal constructor(
     private var nextReaderProgressWriterEpoch = 0L
     private val activeReaderProgressWriters = mutableMapOf<String, ReaderProgressWriterLease>()
     private val latestReaderProgressOrderByBook = mutableMapOf<String, ReaderProgressWriteOrder>()
+    private val latestProgressTimestampByBook = mutableMapOf<String, Long>()
     private val pendingReadingSessions = mutableMapOf<String, ReadingSessionSnapshot>()
     private val sessionFlushJobs = mutableMapOf<String, Job>()
     private val deletedHighlightIds = ConcurrentHashMap.newKeySet<String>()
@@ -209,27 +216,34 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean {
-        if (_bookmarks.value.any { it.bookId == bookId && it.locatorJson == locatorJson }) return false
-        val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
-        _bookmarks.value = listOf(bookmark) + _bookmarks.value
-        enqueue { database.bookmarks().upsert(bookmark.toEntity()) }
-        return true
-    }
-
-    fun deleteBookmark(id: String) {
-        _bookmarks.value = _bookmarks.value.filterNot { it.id == id }
-        enqueue { database.bookmarks().deleteById(id) }
-    }
-
-    fun updateHighlightNote(id: String, note: String) {
-        val cleanNote = note.trim()
-        _highlights.value.firstOrNull { it.id == id }?.copy(note = cleanNote)?.let { updated ->
-            _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
+    /**
+     * Acknowledges only a committed Room write. Duplicate detection uses durable state inside the
+     * ordered transaction, so rapid taps and stale observer snapshots cannot create duplicates.
+     * Room's observer publishes the result; failure must never create a phantom cached bookmark.
+     */
+    suspend fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean =
+        orderedWrite {
+            database.withTransaction {
+                if (database.bookmarks().findByBookAndLocator(bookId, locatorJson) != null) {
+                    return@withTransaction false
+                }
+                val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
+                database.bookmarks().upsert(bookmark.toEntity())
+                true
+            }
         }
-        enqueue {
-            val persisted = database.highlights().findById(id)?.toDomain() ?: return@enqueue
-            database.highlights().upsert(persisted.copy(note = cleanNote).toEntity())
+
+    suspend fun deleteBookmark(id: String) {
+        // Keep the visible record until Room commits, including when deletion fails.
+        orderedWrite { database.bookmarks().deleteById(id) }
+    }
+
+    suspend fun updateHighlightNote(id: String, note: String): Boolean = orderedWrite {
+        database.withTransaction {
+            val persisted = database.highlights().findById(id)?.toDomain()
+                ?: return@withTransaction false
+            database.highlights().upsert(persisted.copy(note = note.trim()).toEntity())
+            true
         }
     }
 
@@ -262,6 +276,12 @@ class LocalLibraryRepository internal constructor(
 
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
 
+    /** Read the durable book after migration; an empty cold-start cache is not a missing book. */
+    suspend fun loadBookForReaderOpen(id: String): Book? {
+        if (id.isBlank()) return null
+        return orderedWrite { database.books().findWithCollections(id)?.toDomain() }
+    }
+
     /**
      * Permanently removes one imported publication after all queued reader/session writes reach
      * Room. Reading sessions intentionally survive as historical records with a null bookId;
@@ -289,6 +309,7 @@ class LocalLibraryRepository internal constructor(
             if (session.bookId == bookId) session.copy(bookId = null) else session
         }
         try { readingPaceStore.remove(bookId) } catch (_: IOException) { }
+        readerCrashCheckpointStore.clear(bookId)
         _readingPaceProfiles.value = _readingPaceProfiles.value - bookId
 
         discardImportedArtifacts(deleted)
@@ -307,6 +328,7 @@ class LocalLibraryRepository internal constructor(
         }
         _books.value = _books.value.filterNot { it.id == book.id }
         try { readingPaceStore.remove(book.id) } catch (_: IOException) { }
+        readerCrashCheckpointStore.clear(book.id)
         _readingPaceProfiles.value = _readingPaceProfiles.value - book.id
         discardImportedArtifacts(book)
     }
@@ -369,7 +391,7 @@ class LocalLibraryRepository internal constructor(
     fun markOpened(id: String) {
         flushProgress(id)
         val current = getBook(id) ?: return
-        val openedAtEpochMs = System.currentTimeMillis()
+        val openedAtEpochMs = maxOf(System.currentTimeMillis(), current.lastOpenedAtEpochMs)
         val firstOpen = current.lastOpenedAtEpochMs <= 0L
         val updated = current.copy(lastOpenedAtEpochMs = openedAtEpochMs)
         replaceBookCached(updated)
@@ -449,7 +471,8 @@ class LocalLibraryRepository internal constructor(
         locatorJson: String,
         sequence: Long,
         completionSessionSnapshot: ReadingSessionSnapshot? = null,
-        nowEpochMs: Long = System.currentTimeMillis()
+        nowEpochMs: Long = System.currentTimeMillis(),
+        bypassDebounce: Boolean = false
     ): ReaderProgressSaveOutcome =
         synchronized(coalescingLock) {
             if (activeReaderProgressWriters[lease.bookId] != lease) {
@@ -490,16 +513,18 @@ class LocalLibraryRepository internal constructor(
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
 
-            val newlyFinished = saveProgressLocked(
+            val saveResult = saveProgressLocked(
                 id = lease.bookId,
                 progression = progression,
                 locatorJson = locatorJson,
                 traceSequence = sequence,
                 completionSessionSnapshot = completionSessionSnapshot,
                 nowEpochMs = nowEpochMs,
-                order = order
+                order = order,
+                bypassDebounce = bypassDebounce,
+                checkpointSessionId = lease.sessionId
             )
-            if (newlyFinished == null) {
+            if (saveResult == null) {
                 ReaderTrace.event(
                     "locator_save_rejected_missing_book",
                     bookId = lease.bookId,
@@ -508,10 +533,19 @@ class LocalLibraryRepository internal constructor(
                 )
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
+            if (!saveResult.crashCheckpointDurable) {
+                return@synchronized ReaderProgressSaveOutcome(
+                    accepted = false,
+                    crashCheckpointDurable = false,
+                    crashCheckpointLatencyNanos = saveResult.crashCheckpointLatencyNanos
+                )
+            }
             latestReaderProgressOrderByBook[lease.bookId] = order
             ReaderProgressSaveOutcome(
                 accepted = true,
-                newlyFinished = newlyFinished
+                newlyFinished = saveResult.newlyFinished,
+                crashCheckpointDurable = saveResult.crashCheckpointDurable,
+                crashCheckpointLatencyNanos = saveResult.crashCheckpointLatencyNanos
             )
         }
 
@@ -574,7 +608,7 @@ class LocalLibraryRepository internal constructor(
                 completionSessionSnapshot = completionSessionSnapshot,
                 nowEpochMs = nowEpochMs,
                 order = null
-            ) ?: false
+            )?.newlyFinished ?: false
         }
 
     private fun saveProgressLocked(
@@ -584,11 +618,17 @@ class LocalLibraryRepository internal constructor(
         traceSequence: Long?,
         completionSessionSnapshot: ReadingSessionSnapshot?,
         nowEpochMs: Long,
-        order: ReaderProgressWriteOrder?
-    ): Boolean? {
+        order: ReaderProgressWriteOrder?,
+        bypassDebounce: Boolean = false,
+        checkpointSessionId: String? = null
+    ): ProgressSaveResult? {
         val current = getBook(id) ?: return null
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
+        val committedAtEpochMs = nextReaderProgressTimestamp(
+            previousEpochMs = maxOf(current.lastOpenedAtEpochMs, latestProgressTimestampByBook[id] ?: 0L),
+            candidateEpochMs = nowEpochMs
+        )
         val finishedNow = safe >= 0.995f
         val newlyFinished = finishedNow && !current.finished
         val estimatedRead = if (current.totalPages > 0) {
@@ -598,15 +638,58 @@ class LocalLibraryRepository internal constructor(
             progress = safe,
             pagesRead = estimatedRead,
             locatorJson = locatorJson,
-            lastOpenedAtEpochMs = nowEpochMs,
+            lastOpenedAtEpochMs = committedAtEpochMs,
             finished = current.finished || finishedNow
         )
+
+        var crashCheckpointDurable = true
+        var crashCheckpointLatencyNanos: Long? = null
+        if (bypassDebounce && order != null && !checkpointSessionId.isNullOrBlank()) {
+            val checkpointWrite = readerCrashCheckpointStore.write(
+                ReaderCrashCheckpoint(
+                    bookId = id,
+                    sessionId = checkpointSessionId,
+                    writerEpoch = order.epoch,
+                    sequence = order.sequence,
+                    progression = safe.toDouble(),
+                    locatorJson = locatorJson,
+                    committedAtEpochMs = committedAtEpochMs
+                )
+            )
+            crashCheckpointDurable = checkpointWrite.durable
+            crashCheckpointLatencyNanos = checkpointWrite.elapsedNanos
+            ReaderTrace.event(
+                if (checkpointWrite.durable) {
+                    "locator_crash_checkpoint_durable"
+                } else {
+                    "locator_crash_checkpoint_failed"
+                },
+                bookId = id,
+                sessionId = checkpointSessionId,
+                details = buildString {
+                    append("epoch=").append(order.epoch)
+                    append(" seq=").append(order.sequence)
+                    append(" latencyUs=").append(checkpointWrite.elapsedNanos / 1_000L)
+                }
+            )
+        }
+
+        // A semantic commit may not escape into the cache/Room queue if the journal
+        // failed. Keep the previous accepted position and ordering so this save can retry.
+        if (!crashCheckpointDurable) {
+            return ProgressSaveResult(
+                newlyFinished = false,
+                crashCheckpointDurable = false,
+                crashCheckpointLatencyNanos = crashCheckpointLatencyNanos
+            )
+        }
+        latestProgressTimestampByBook[id] = committedAtEpochMs
         replaceBookCached(updated)
         val crossedMilestones = crossedReadingMilestones(
             bookId = id,
             previousProgress = current.progress,
             newProgress = safe,
-            reachedAtEpochMs = nowEpochMs,
+            reachedAtEpochMs = committedAtEpochMs,
             locatorJson = locatorJson
         )
         queueProgressWrite(
@@ -619,33 +702,40 @@ class LocalLibraryRepository internal constructor(
                 finished = updated.finished,
                 traceSequence = traceSequence,
                 order = order,
-                completionAtEpochMs = nowEpochMs.takeIf { newlyFinished },
+                completionAtEpochMs = committedAtEpochMs.takeIf { newlyFinished },
                 completionSessionSnapshot = completionSessionSnapshot.takeIf { newlyFinished },
                 completionBookSnapshot = updated.takeIf { newlyFinished },
                 milestones = crossedMilestones
             ),
-            immediate = newlyFinished
+            immediate = bypassDebounce || newlyFinished
         )
-        return newlyFinished
+        return ProgressSaveResult(
+            newlyFinished = newlyFinished,
+            crashCheckpointDurable = crashCheckpointDurable,
+            crashCheckpointLatencyNanos = crashCheckpointLatencyNanos
+        )
     }
 
-    fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight {
+    suspend fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight =
+        commitSelectionHighlight(bookId, quote, locatorJson).highlight
+
+    /** Duplicate authority and acknowledgement both come from the ordered Room transaction. */
+    internal suspend fun commitSelectionHighlight(
+        bookId: String, quote: String, locatorJson: String
+    ): SelectionHighlightCommit = orderedWrite {
         val cleanQuote = quote.trim()
-        _highlights.value.firstOrNull {
-            it.id !in deletedHighlightIds &&
-                it.bookId == bookId &&
-                it.locatorJson == locatorJson &&
-                it.quote == cleanQuote
-        }?.let { return it }
-        val record = Highlight(
-            id = UUID.randomUUID().toString(),
-            bookId = bookId,
-            quote = cleanQuote,
-            locatorJson = locatorJson
-        )
-        _highlights.value = listOf(record) + _highlights.value
-        enqueue { database.highlights().upsert(record.toEntity()) }
-        return record
+        require(bookId.isNotBlank() && cleanQuote.isNotBlank() && locatorJson.isNotBlank())
+        database.withTransaction {
+            val existing = database.highlights()
+                .findByBookLocatorAndQuote(bookId, locatorJson, cleanQuote)?.toDomain()
+            if (existing != null) return@withTransaction SelectionHighlightCommit(existing, false)
+            val record = Highlight(
+                id = UUID.randomUUID().toString(), bookId = bookId,
+                quote = cleanQuote, locatorJson = locatorJson
+            )
+            database.highlights().upsert(record.toEntity())
+            SelectionHighlightCommit(record, true)
+        }
     }
 
     /**
@@ -800,6 +890,7 @@ class LocalLibraryRepository internal constructor(
     suspend fun locatorJsonsForBook(bookId: String): Set<String> = orderedWrite {
         buildSet {
             database.books().findWithCollections(bookId)?.book?.locatorJson?.let(::add)
+            readerCrashCheckpointStore.read(bookId)?.locatorJson?.let(::add)
             database.bookmarks().listAll()
                 .filter { it.bookId == bookId }
                 .forEach { add(it.locatorJson) }
@@ -858,11 +949,13 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun deleteHighlight(id: String) {
+    suspend fun deleteHighlight(id: String) {
         if (id.isBlank()) return
-        deletedHighlightIds += id
+        orderedWrite {
+            database.highlights().deleteById(id)
+            deletedHighlightIds += id
+        }
         _highlights.value = _highlights.value.filterNot { it.id == id }
-        enqueue { database.highlights().deleteById(id) }
     }
 
     /**
@@ -934,6 +1027,30 @@ class LocalLibraryRepository internal constructor(
             rootJob.cancel()
             rootJob.join()
         }
+    }
+
+    internal suspend fun loadReaderCrashCheckpoint(book: Book): ReaderCrashCheckpoint? {
+        initialized.await()
+        return withContext(Dispatchers.IO) {
+            val durableBook = database.books().findWithCollections(book.id)?.toDomain()
+                ?: return@withContext null
+            val checkpoint = readerCrashCheckpointStore.read(book.id)
+            if (checkpoint?.isNewerThanRoom(durableBook) == true) {
+                checkpoint
+            } else {
+                // Another semantic turn may replace this record after the read.
+                checkpoint?.let(readerCrashCheckpointStore::clearIfMatches)
+                null
+            }
+        }
+    }
+
+    internal fun clearRecoveredReaderCrashCheckpoint(expected: ReaderCrashCheckpoint) {
+        readerCrashCheckpointStore.clearIfMatches(expected)
+    }
+
+    internal fun clearReaderCrashCheckpoint(bookId: String) {
+        readerCrashCheckpointStore.clear(bookId)
     }
 
     /** Ensures migration and all writes queued before this call have reached durable storage. */
@@ -1055,6 +1172,7 @@ class LocalLibraryRepository internal constructor(
         // must not outlive that replacement or block edits to legitimately restored highlights.
         deletedHighlightIds.clear()
         try { readingPaceStore.clear() } catch (_: IOException) { }
+        readerCrashCheckpointStore.clearAll()
         _readingPaceProfiles.value = emptyMap()
     }
 
@@ -1136,6 +1254,7 @@ class LocalLibraryRepository internal constructor(
             pendingProgress.remove(bookId)
             activeReaderProgressWriters.remove(bookId)
             latestReaderProgressOrderByBook.remove(bookId)
+            latestProgressTimestampByBook.remove(bookId)
             ReaderTrace.event(
                 "progress_writer_invalidated",
                 bookId = bookId
@@ -1150,6 +1269,7 @@ class LocalLibraryRepository internal constructor(
             pendingProgress.clear()
             activeReaderProgressWriters.clear()
             latestReaderProgressOrderByBook.clear()
+            latestProgressTimestampByBook.clear()
         }
     }
 
@@ -1232,6 +1352,20 @@ class LocalLibraryRepository internal constructor(
                 }
             } else {
                 persistProgress()
+            }
+
+            runCatching {
+                readerCrashCheckpointStore.clearIfCovered(
+                    bookId = value.id,
+                    persistedAtEpochMs = value.lastOpenedAtEpochMs,
+                    persistedLocatorJson = value.locatorJson
+                )
+            }.onFailure { error ->
+                ReaderTrace.event(
+                    "locator_crash_checkpoint_clear_failed",
+                    bookId = value.id,
+                    details = "error=${error::class.java.simpleName}"
+                )
             }
 
             ReaderTrace.event(
@@ -1404,6 +1538,12 @@ private data class DatabaseLibraryState(
     val readingCycles: List<ReadingCycleRecord>,
     val passageVisits: List<PassageVisit>,
     val readingMilestones: List<ReadingMilestoneRecord>
+)
+
+private data class ProgressSaveResult(
+    val newlyFinished: Boolean,
+    val crashCheckpointDurable: Boolean,
+    val crashCheckpointLatencyNanos: Long?
 )
 
 private data class PendingProgressWrite(

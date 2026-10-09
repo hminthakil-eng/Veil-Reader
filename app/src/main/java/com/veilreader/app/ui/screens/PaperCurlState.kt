@@ -115,9 +115,9 @@ internal class PaperCurlState {
 
     internal fun usingMaterialEngine(): Boolean = active
 
-    suspend fun prepareSnapshot(view: View): Boolean {
+    suspend fun prepareSnapshot(view: View, isSourceCurrent: () -> Boolean = { true }): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        return materialEngine.prepareSnapshot(view)
+        return materialEngine.prepareSnapshot(view, isSourceCurrent)
     }
 
     fun invalidateSnapshotSource() {

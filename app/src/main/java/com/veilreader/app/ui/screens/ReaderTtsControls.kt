@@ -3,19 +3,24 @@ package com.veilreader.app.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderTtsSettings
@@ -23,8 +28,216 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
+import com.veilreader.app.ui.reader.tts.eligibleOfflineTtsVoices
+import com.veilreader.app.ui.reader.tts.selectOfflineTtsVoice
+import com.veilreader.app.ui.theme.ReaderVisualGeometry
+import com.veilreader.app.ui.theme.ReaderVisualOpacity
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
+
+
+@Composable
+internal fun ReaderTtsMiniPlayer(
+    state: ReaderTtsState,
+    activeText: String?,
+    speed: Double,
+    background: Color,
+    foreground: Color,
+    accent: Color,
+    onPrevious: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onNext: () -> Unit,
+    onExpand: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val previousLabel = stringResource(R.string.tts_previous_segment)
+    val nextLabel = stringResource(R.string.tts_next_segment)
+    val pauseLabel = stringResource(R.string.tts_pause)
+    val playLabel = stringResource(R.string.tts_play)
+    val number = rememberVeilNumberFormatter()
+    val transportEnabled = state.phase !in setOf(
+        ReaderTtsPhase.STOPPED,
+        ReaderTtsPhase.CLOSED,
+        ReaderTtsPhase.FAILED
+    )
+    val playingOrPreparing =
+        state.phase == ReaderTtsPhase.PLAYING || state.phase == ReaderTtsPhase.PREPARING
+    val largeText = LocalDensity.current.fontScale >= 1.5f
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = ReaderVisualGeometry.TtsMiniPlayerMinHeight),
+        color = background.copy(alpha = ReaderVisualOpacity.ChromeSurface),
+        shape = RoundedCornerShape(ReaderVisualGeometry.TtsMiniPlayerRadius),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        if (largeText) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.tts_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        activeText?.takeIf { it.isNotBlank() }
+                            ?: stringResource(
+                                if (largeText) R.string.tts_intro else R.string.tts_compact_ready
+                            ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    TextButton(
+                        onClick = onPrevious,
+                        enabled = transportEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            .semantics { contentDescription = previousLabel }
+                    ) { Text("‹", color = foreground, maxLines = 1) }
+
+                    TextButton(
+                        onClick = if (playingOrPreparing) onPause else onResume,
+                        enabled = transportEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            .semantics {
+                                contentDescription = if (playingOrPreparing) pauseLabel else playLabel
+                            }
+                    ) {
+                        Text(if (playingOrPreparing) "Ⅱ" else "▶", color = accent, maxLines = 1)
+                    }
+
+                    TextButton(
+                        onClick = onNext,
+                        enabled = transportEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            .semantics { contentDescription = nextLabel }
+                    ) { Text("›", color = foreground, maxLines = 1) }
+
+                    TextButton(
+                        onClick = onExpand,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                    ) {
+                        Text(
+                            "${number(speed)}×",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accent,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.tts_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent
+                    )
+                    Text(
+                        activeText?.takeIf { it.isNotBlank() }
+                            ?: stringResource(
+                                if (largeText) R.string.tts_intro else R.string.tts_compact_ready
+                            ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+    
+                TextButton(
+                    onClick = onPrevious,
+                    enabled = transportEnabled,
+                    modifier = Modifier
+                        .defaultMinSize(
+                            minWidth = ReaderVisualGeometry.TouchTarget,
+                            minHeight = ReaderVisualGeometry.TouchTarget
+                        )
+                        .semantics { contentDescription = previousLabel }
+                ) { Text("‹", color = foreground) }
+    
+                TextButton(
+                    onClick = if (playingOrPreparing) onPause else onResume,
+                    enabled = transportEnabled,
+                    modifier = Modifier
+                        .defaultMinSize(
+                            minWidth = ReaderVisualGeometry.TouchTarget,
+                            minHeight = ReaderVisualGeometry.TouchTarget
+                        )
+                        .semantics {
+                            contentDescription = if (playingOrPreparing) pauseLabel else playLabel
+                        }
+                ) {
+                    Text(if (playingOrPreparing) "Ⅱ" else "▶", color = accent)
+                }
+    
+                TextButton(
+                    onClick = onNext,
+                    enabled = transportEnabled,
+                    modifier = Modifier
+                        .defaultMinSize(
+                            minWidth = ReaderVisualGeometry.TouchTarget,
+                            minHeight = ReaderVisualGeometry.TouchTarget
+                        )
+                        .semantics { contentDescription = nextLabel }
+                ) { Text("›", color = foreground) }
+    
+                TextButton(
+                    onClick = onExpand,
+                    modifier = Modifier.heightIn(min = ReaderVisualGeometry.TouchTarget)
+                ) {
+                    Text(
+                        "${number(speed)}×",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent
+                    )
+                }
+            }
+        }
+    }
+}
 
 /** Controls over the sole owned speech session; no visual locator/progress writer. */
 @Composable
@@ -74,6 +287,7 @@ internal fun ReaderTtsControls(
                 state.problem == ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE ->
                     R.string.tts_preferred_voice_unavailable
                 state.problem == ReaderTtsProblem.NO_ENGINE -> R.string.tts_initialization_failed
+                state.problem == ReaderTtsProblem.STORAGE -> R.string.tts_checkpoint_failed
                 state.problem != null -> R.string.tts_playback_failed
                 else -> null
             }
@@ -221,7 +435,7 @@ internal fun ReaderTtsControls(
                             sleepMenu = false
                         }
                     )
-                    listOf(15, 30, 45, 60).forEach { minutes ->
+                    listOf(10, 15, 30, 45, 60).forEach { minutes ->
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -304,13 +518,7 @@ private fun ReaderTtsVoicePicker(
             .sorted()
     }
     val preferredInitial = remember(publicationLanguage, languages) {
-        val requested = publicationLanguage
-            ?.let(Locale::forLanguageTag)
-            ?.language
-            ?.takeIf { it.isNotBlank() }
-        languages.firstOrNull {
-            Locale.forLanguageTag(it).language == requested
-        } ?: languages.firstOrNull()
+        readerTtsPickerLanguage(publicationLanguage, languages)
     }
     var selectedLanguage by remember(preferredInitial) {
         mutableStateOf(preferredInitial)
@@ -350,9 +558,7 @@ private fun ReaderTtsVoicePicker(
     }
 
     val currentLocale = Locale.forLanguageTag(selected)
-    val currentVoices = offlineVoices.filter {
-        Locale.forLanguageTag(it.languageTag).language == currentLocale.language
-    }
+    val currentVoices = eligibleOfflineTtsVoices(offlineVoices, selected)
     val preferredVoice = settings.preferredVoiceId(selected)
     val selectedVoice = currentVoices.firstOrNull { it.id == preferredVoice }
 
@@ -393,7 +599,11 @@ private fun ReaderTtsVoicePicker(
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
         ) {
             Text(
-                selectedVoice?.id ?: stringResource(R.string.tts_voice_automatic),
+                selectedVoice?.id ?: stringResource(
+                    if (preferredVoice != null) R.string.tts_preferred_voice_unavailable
+                    else if (currentVoices.isEmpty()) R.string.tts_missing_voice
+                    else R.string.tts_voice_automatic
+                ),
                 maxLines = 2
             )
         }
@@ -430,7 +640,7 @@ private fun ReaderTtsVoicePicker(
         }
     }
 
-    val previewVoice = selectedVoice ?: currentVoices.firstOrNull()
+    val previewVoice = selectOfflineTtsVoice(currentVoices, selected, preferredVoice)
     if (previewVoice != null) {
         val sample = when (currentLocale.language) {
             "fa" -> stringResource(R.string.tts_preview_sample_fa)
