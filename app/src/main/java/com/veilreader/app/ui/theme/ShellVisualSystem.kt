@@ -9,7 +9,10 @@ import androidx.compose.ui.unit.dp
  */
 object ShellVisualGeometry {
     val HomeHeroRadius = 16.dp
+    val HomeHeroActionRadius = 10.dp
+    val HomeHeroProgressHeight = 2.dp
     val RecentBookRadius = 12.dp
+    val RecentProgressHeight = 2.dp
     val ArchiveHeaderRadius = 14.dp
 
     val ArchiveReturningCompactMinHeight = 72.dp
@@ -19,7 +22,10 @@ object ShellVisualGeometry {
 }
 
 object ShellVisualOpacity {
-    const val RecentAccent = 0.44f
-    const val RecentRule = 0.22f
-    const val ReturningArchiveImage = 0.72f
+    const val HomeHeroBorder = 0.58f
+    const val HomeHeroActionBorder = 0.42f
+    const val HomeHeroOrnament = 0.12f
+    const val RecentAccent = 0.36f
+    const val RecentRule = 0.18f
+    const val ReturningArchiveImage = 0.60f
 }
