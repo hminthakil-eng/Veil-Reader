@@ -63,6 +63,20 @@ class MaterialPageRolloutContractTest {
                     visualActive = false
                 )
             )
+            assertFalse(
+                shouldAllowPaperNavigation(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.SOFTWARE_READY,
+                    visualActive = false
+                )
+            )
+            assertTrue(
+                shouldAllowPaperNavigation(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.SOFTWARE_READY,
+                    visualActive = true
+                )
+            )
             assertTrue(
                 shouldAllowPaperNavigation(
                     reducedMotion = false,
@@ -76,7 +90,7 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
-    fun `Paper input ownership falls back until GPU renderer is ready`() {
+    fun `Paper input ownership accepts GPU or software renderer readiness`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
             assertFalse(
@@ -103,6 +117,12 @@ class MaterialPageRolloutContractTest {
                     rendererStatus = GpuMaterialPageRendererStatus.READY
                 )
             )
+            assertTrue(
+                paperRendererCanOwnNavigationInput(
+                    reducedMotion = false,
+                    rendererStatus = GpuMaterialPageRendererStatus.SOFTWARE_READY
+                )
+            )
         } finally {
             MaterialPageEngineRollout.setDebugOverride(null)
         }
@@ -124,6 +144,8 @@ class MaterialPageRolloutContractTest {
                 GpuMaterialPageRendererStatus.UNSUPPORTED, visualActive = true))
             assertTrue(shouldAllowPaperNavigation(false,
                 GpuMaterialPageRendererStatus.READY, visualActive = true))
+            assertTrue(shouldAllowPaperNavigation(false,
+                GpuMaterialPageRendererStatus.SOFTWARE_READY, visualActive = true))
             MaterialPageEngineRollout.setDebugOverride(false)
             assertFalse(paperRendererCanReserveDrag(false, GpuMaterialPageRendererStatus.READY))
             assertFalse(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
