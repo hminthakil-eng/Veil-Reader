@@ -20,6 +20,7 @@ import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageReleaseDecision
 import com.veilreader.app.ui.reader.material.materialPageReleaseDecision
+import com.veilreader.app.ui.reader.material.materialPageRendererCanPresent
 import com.veilreader.app.ui.theme.VeilMotion
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
@@ -46,16 +47,16 @@ internal fun shouldCapturePaperTurnSnapshot(
 /**
  * Paper is a visual interaction contract, not merely a navigation label.
  *
- * Normal-motion input may commit only while the canonical GPU renderer is READY and the
- * source sheet was captured successfully. Reduced Motion deliberately permits a static
- * navigation path because accessibility policy removes the curl by design.
+ * Normal-motion input may commit only while a Paper renderer can actually present the
+ * source sheet. GPU remains preferred; the clean-room software mesh backend is a reliability
+ * fallback. Reduced Motion deliberately permits a static navigation path by accessibility policy.
  */
 internal fun paperRendererCanOwnNavigationInput(
     reducedMotion: Boolean,
     rendererStatus: GpuMaterialPageRendererStatus
 ): Boolean =
     MaterialPageEngineRollout.isEnabled() &&
-        (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY)
+        (reducedMotion || materialPageRendererCanPresent(rendererStatus))
 
 /**
  * Paper owns its drag sequence whenever the Paper engine rollout is selected.
@@ -656,7 +657,7 @@ internal class PaperCurlInputListener(
     ): Boolean {
         if (state.active) return true
         if (!shouldCapturePaperTurnSnapshot(isReducedMotion())) return false
-        if (state.rendererStatus != GpuMaterialPageRendererStatus.READY) return false
+        if (!materialPageRendererCanPresent(state.rendererStatus)) return false
 
         val view = navigator.publicationView
         if (view.width <= 0 || view.height <= 0) return false
