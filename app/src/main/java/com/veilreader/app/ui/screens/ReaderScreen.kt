@@ -4750,15 +4750,26 @@ internal fun EpubAppearancePanel(
             }
             Text(
                 stringResource(R.string.settings_appearance_title),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() },
+                style = if (condensedApproach) {
+                    MaterialTheme.typography.titleLarge
+                } else {
+                    MaterialTheme.typography.headlineMedium
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = if (condensedApproach) 1 else 2,
+                softWrap = !condensedApproach,
+                overflow = TextOverflow.Ellipsis
             )
-            Text(
-                stringResource(R.string.reader_changes_live),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            if (!condensedApproach) {
+                Text(
+                    stringResource(R.string.reader_changes_live),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
 
         if (!capabilities.fixedLayout) {
