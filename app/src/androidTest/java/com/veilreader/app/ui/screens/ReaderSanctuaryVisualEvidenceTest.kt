@@ -157,6 +157,36 @@ class ReaderSanctuaryVisualEvidenceTest {
     }
 
     @Test
+    fun ttsMiniIdleUsesCompactCopy() {
+        val localized = localizedContext("en", 1f)
+        present("en", 1f, highContrast = false) {
+            val theme = ReaderTheme.DUSK
+            val colors = readerAccessColors(theme)
+            Box(Modifier.fillMaxSize().background(readerCanvasColor(theme))) {
+                ReaderTtsMiniPlayer(
+                    state = ReaderTtsState(),
+                    activeText = null,
+                    speed = 1.0,
+                    background = colors.background,
+                    foreground = colors.foreground,
+                    accent = colors.accent,
+                    onPrevious = {},
+                    onPause = {},
+                    onResume = {},
+                    onNext = {},
+                    onExpand = {},
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(12.dp)
+                )
+            }
+        }
+
+        compose.onNodeWithText(localized.getString(R.string.tts_compact_ready)).assertIsDisplayed()
+        compose.onNodeWithText(localized.getString(R.string.tts_intro)).assertDoesNotExist()
+    }
+
+    @Test
     fun previousLocationEnglishStandard() {
         previousLocationEvidence("en", 1f, highContrast = false)
         capture("sanctuary-previous-location-en-100-standard")
