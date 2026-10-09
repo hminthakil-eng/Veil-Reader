@@ -127,7 +127,7 @@ internal object WindowPixelCopyPreparedMaterialPageSnapshotProvider :
         val started = SystemClock.elapsedRealtimeNanos()
         target.eraseColor(android.graphics.Color.TRANSPARENT)
         val result = withTimeoutOrNull(PIXEL_COPY_TIMEOUT_MS) {
-            suspendCancellableCoroutine { continuation ->
+            suspendCancellableCoroutine<Int> { continuation ->
                 PixelCopy.request(
                     window,
                     sourceRect,
