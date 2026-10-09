@@ -94,7 +94,9 @@ internal fun ReaderTtsMiniPlayer(
                     )
                     Text(
                         activeText?.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.tts_intro),
+                            ?: stringResource(
+                                if (largeText) R.string.tts_intro else R.string.tts_compact_ready
+                            ),
                         style = MaterialTheme.typography.labelSmall,
                         color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
                         maxLines = 2,
@@ -175,7 +177,9 @@ internal fun ReaderTtsMiniPlayer(
                     )
                     Text(
                         activeText?.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.tts_intro),
+                            ?: stringResource(
+                                if (largeText) R.string.tts_intro else R.string.tts_compact_ready
+                            ),
                         style = MaterialTheme.typography.labelSmall,
                         color = foreground.copy(alpha = ReaderVisualOpacity.EnabledSecondary),
                         maxLines = 1,
