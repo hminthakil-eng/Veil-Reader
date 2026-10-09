@@ -176,6 +176,71 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `Paper runtime mounts only for enabled reflowable EPUB Paper mode`() {
+        val paper = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+        val slide = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+        val scroll = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+
+        assertTrue(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = paper,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = paper,
+                materialPageEnabled = false
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = true,
+                appearance = paper,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.PDF,
+                fixedLayout = false,
+                appearance = paper,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = slide,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = scroll,
+                materialPageEnabled = true
+            )
+        )
+    }
+
+    @Test
     fun `Paper selector is unavailable when canonical engine rollout is disabled`() {
         assertFalse(
             readerPageTurnStyleEnabled(
