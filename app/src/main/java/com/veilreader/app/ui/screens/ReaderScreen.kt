@@ -1350,7 +1350,7 @@ fun ReaderScreen(
 
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
         val json = locator.toVeilPersistedJson(opened.format)
-        if (!navigationSessionState.mayCommitObservedEvent(event)) {
+        if (!navigationSessionState.mayCommitObservedEvent(event, json)) {
             ReaderTrace.event(
                 "exploration_checkpoint_suppressed",
                 bookId = opened.book.id,
@@ -2106,7 +2106,7 @@ fun ReaderScreen(
                 val commit = if (
                     settledNavigation?.commitPolicy ==
                         ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR ||
-                    !navigationSessionState.mayCommitObservedEvent(event)
+                    !navigationSessionState.mayCommitObservedEvent(event, json)
                 ) null else readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     expectedOpenInstanceId = readerSessionInstanceId,
