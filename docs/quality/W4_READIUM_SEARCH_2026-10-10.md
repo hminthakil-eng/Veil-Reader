@@ -40,3 +40,13 @@ Do not promote as complete until a reader can:
 Paper P0 (#442) and durability P0 (#451) remain separate blockers. Keep draft
 until exact-head Android CI, review and device acceptance. No user-facing
 search or production release is claimed here.
+
+## CI inheritance correction — 2026-10-10
+
+The first hosted Android CI run for this draft (#452, 38035978097) compiled
+search code and new tests, but 1 existing locator durability regression failed
+in the base Reader policy. The separately verified fix (#451) passed all four
+gates and was squashed into canonical Reader development as
+`6e637d7f235507e6706da517a70a010161f21327`.
+A fresh merge-base CI run against the updated canonical branch is required;
+the old red run is preserved as evidence, not relabeled a passing build.
