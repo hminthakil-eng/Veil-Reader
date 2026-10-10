@@ -13,6 +13,9 @@ is needed only for trusted push/manual runs.
 - Untrusted PR builds only use the already-pinned Anchore Syft action to
   produce a **source-tree CycloneDX JSON inventory**. They do not execute
   repository Gradle scripts with a write-capable token.
+- Push/manual `dependency-graph` job is restricted to the trusted canonical,
+  legacy Arena hardening, and main branch refs; dispatch from arbitrary feature
+  branches cannot invoke the write-capable job.
 - Push/manual `dependency-graph` job alone receives
   `contents: write` and retains Gradle dependency submission plus both
   existing CycloneDX JSON/XML outputs and 14-day artifact retention.
