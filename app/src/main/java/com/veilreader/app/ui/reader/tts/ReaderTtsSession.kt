@@ -64,6 +64,9 @@ internal class ReaderTtsSession(
     private val sourceMutex = Mutex()
     private var pendingRead: Deferred<ReaderTtsUtterance?>? = null
     private var preferences = ReaderTtsPreferences()
+    // Choose a narrator language once for this source. Per-segment HTML xml:lang
+    // metadata can vary within an EPUB and must not silently swap speakers.
+    private var narratorLanguageTag: String? = null
     private var playJob: Job? = null
     private var monitorJob: Job? = null
     private var serial = 0L
@@ -90,6 +93,7 @@ internal class ReaderTtsSession(
         if (closed) return
         resetSource()
         preferences = requestedPreferences.normalized()
+        narratorLanguageTag = null
         content = try {
             contentFactory(locator)
         } catch (_: Exception) {
@@ -170,9 +174,12 @@ internal class ReaderTtsSession(
                         return@launch
                     }
                     val language = preferences.languageTag
-                        ?: utterance.languageTag
-                        ?: publicationLanguage
-                        ?: Locale.getDefault().toLanguageTag()
+                        ?: narratorLanguageTag
+                        ?: (utterance.languageTag
+                            ?: publicationLanguage
+                            ?: Locale.getDefault().toLanguageTag()).also {
+                            narratorLanguageTag = it
+                        }
                     try {
                         withTimeout(initializationTimeoutMs.coerceAtLeast(1L)) {
                             commitCheckpoint(utterance.locator, preferences)
@@ -403,6 +410,7 @@ internal class ReaderTtsSession(
         pendingRead = null
         content = null
         current = null
+        narratorLanguageTag = null
         completedHistory.clear()
     }
 
