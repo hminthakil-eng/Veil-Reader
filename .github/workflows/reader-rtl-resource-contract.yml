@@ -1,0 +1,40 @@
+name: Reader RTL Resource Contract
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+      - main
+    paths:
+      - "app/src/main/res/values/strings.xml"
+      - "app/src/main/res/values-fa/strings.xml"
+      - "tools/verify_reader_localizations.py"
+      - "tools/tests/test_reader_localizations.py"
+      - ".github/workflows/reader-rtl-resource-contract.yml"
+  push:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+      - main
+    paths:
+      - "app/src/main/res/values/strings.xml"
+      - "app/src/main/res/values-fa/strings.xml"
+      - "tools/verify_reader_localizations.py"
+      - "tools/tests/test_reader_localizations.py"
+      - ".github/workflows/reader-rtl-resource-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile localization contract helper
+        run: python3 -m py_compile tools/verify_reader_localizations.py tools/tests/test_reader_localizations.py
+      - name: Check English and Persian resource parity
+        run: python3 tools/verify_reader_localizations.py
+      - name: Verify failure cases and reorder-safe formatting
+        run: python3 -m unittest discover -s tools/tests -p test_reader_localizations.py -v
