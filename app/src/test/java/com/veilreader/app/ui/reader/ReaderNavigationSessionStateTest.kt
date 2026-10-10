@@ -8,6 +8,37 @@ import org.junit.Test
 class ReaderNavigationSessionStateTest {
 
     @Test
+    fun repeatedScrollDestinationDoesNotPromoteExplorationWithoutMovement() {
+        val machine = ReaderNavigationSessionStateMachine("reading-anchor")
+        machine.onProgrammaticSettlement(
+            ReaderNavigationTransaction(
+                token = 7L,
+                originLocatorJson = "reading-anchor",
+                targetIdentity = null,
+                targetHref = "chapter.xhtml#result",
+                passageVisitLocatorJson = null,
+                startedAtElapsedMs = 7L,
+                reason = ReaderNavigationReason.SEARCH_RESULT,
+                commitPolicy = ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR
+            ),
+            "search-result"
+        )
+
+        assertFalse(machine.mayCommitObservedEvent(
+            ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT, "search-result"
+        ))
+        assertEquals("reading-anchor", machine.locatorForDurabilityFallback("search-result"))
+        assertTrue(machine.mayCommitObservedEvent(
+            ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT, "next-reading-position"
+        ))
+        machine.onDurableReadingCommitAccepted("next-reading-position", accepted = false)
+        assertTrue(machine.state.isExploring)
+        machine.onDurableReadingCommitAccepted("next-reading-position", accepted = true)
+        assertFalse(machine.state.isExploring)
+        assertEquals("next-reading-position", machine.state.readingAnchorJson)
+    }
+
+    @Test
     fun explorationSettlement_preservesReadingAnchor() {
         val machine = ReaderNavigationSessionStateMachine("anchor")
         val transaction = ReaderNavigationTransaction(
@@ -122,12 +153,12 @@ class ReaderNavigationSessionStateTest {
             ReaderLocatorEvent.RELAYOUT_CHECKPOINT,
             ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT,
             ReaderLocatorEvent.FINAL_SNAPSHOT
-        ).forEach { assertFalse(machine.mayCommitObservedEvent(it)) }
+        ).forEach { assertFalse(machine.mayCommitObservedEvent(it, "new-reading-position")) }
         listOf(
             ReaderLocatorEvent.NAVIGATOR_PAGE_TURN,
             ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT,
             ReaderLocatorEvent.PAPER_COMMIT
-        ).forEach { assertTrue(machine.mayCommitObservedEvent(it)) }
+        ).forEach { assertTrue(machine.mayCommitObservedEvent(it, "new-reading-position")) }
     }
 
     @Test

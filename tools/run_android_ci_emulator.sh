@@ -365,7 +365,7 @@ case "$MODE" in
       echo "PASS scenario=$scenario cycle=$cycle event=$event expected=$expected" >>"$REPORT"
     }
 
-    # 6 scenarios x 18 default cycles = 108 self-SIGKILL samples on each exact SHA.
+    # 8 scenarios x 18 default cycles = 144 self-SIGKILL samples on each exact SHA.
     for cycle in $(seq 1 "$CYCLES"); do
       run_durability_case page-forward page 0.20 0.21 destination "$cycle"
       run_durability_case page-backward page 0.60 0.59 destination "$cycle"
@@ -373,6 +373,8 @@ case "$MODE" in
       run_durability_case paper-preview-cancel preview 0.40 0.41 origin "$cycle"
       run_durability_case jump-commit jump 0.50 0.75 destination "$cycle"
       run_durability_case final-snapshot final 0.80 0.81 destination "$cycle"
+      run_durability_case scroll-final-snapshot scroll-final 0.10 0.12 destination "$cycle"
+      run_durability_case opening-final-snapshot opening-final 0.15 0.16 destination "$cycle"
     done
 
     {

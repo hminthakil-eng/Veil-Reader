@@ -108,7 +108,8 @@ class ReaderDurabilityProbeActivity : Activity() {
         val sessionId = requiredString(EXTRA_SESSION_ID)
         val destinationProgress = requiredProgress(EXTRA_DESTINATION_PROGRESS)
         val destinationKey = requiredString(EXTRA_DESTINATION_KEY)
-        val event = requiredString(EXTRA_EVENT).toReaderLocatorEvent()
+        val probeEvent = requiredString(EXTRA_EVENT)
+        val event = probeEvent.toReaderLocatorEvent()
 
         val repository = LocalLibraryRepository(applicationContext)
         repository.flushWrites()
@@ -129,6 +130,24 @@ class ReaderDurabilityProbeActivity : Activity() {
         }
         check(viewModel.confirmOpen(sessionId)) {
             "ReaderViewModel refused probe confirmation"
+        }
+
+        // Exercise the same-location upgrade through the real ViewModel before self-kill.
+        // Do not pause, flush or wait for the coalesced Room writer between these events.
+        val precedingEvent = when (probeEvent) {
+            "scroll-final" -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
+            "opening-final" -> ReaderLocatorEvent.OPENING_CHECKPOINT
+            else -> null
+        }
+        if (precedingEvent != null) {
+            check(viewModel.onLocatorUpdate(
+                bookId = BOOK_ID,
+                expectedOpenInstanceId = sessionId,
+                progression = destinationProgress,
+                locatorJson = locator(destinationKey),
+                locationKey = destinationKey,
+                event = precedingEvent
+            ) != null) { "Coalesced predecessor was rejected" }
         }
 
         val commit = viewModel.onLocatorUpdate(
@@ -262,7 +281,7 @@ class ReaderDurabilityProbeActivity : Activity() {
             "page" -> ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
             "paper" -> ReaderLocatorEvent.PAPER_COMMIT
             "jump" -> ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
-            "final" -> ReaderLocatorEvent.FINAL_SNAPSHOT
+            "final", "scroll-final", "opening-final" -> ReaderLocatorEvent.FINAL_SNAPSHOT
             "preview" -> ReaderLocatorEvent.NAVIGATOR_POSITION
             else -> error("Unknown probe event: $this")
         }

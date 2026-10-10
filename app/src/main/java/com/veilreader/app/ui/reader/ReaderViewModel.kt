@@ -299,6 +299,7 @@ class ReaderViewModel(
             return null
         }
 
+        val countsPageTurn = locatorDeduplicator.countsPageTurnFor(locationKey, event)
         if (!event.countsPageTurn) {
             current.resetReadingPaceAnchor()
             lastPaceProgression = null
@@ -306,7 +307,8 @@ class ReaderViewModel(
 
         if (!locatorDeduplicator.acceptCommit(
                 locationKey,
-                retryDurability = _uiState.value.progressSaveFailed && event.bypassProgressDebounce
+                retryDurability = _uiState.value.progressSaveFailed && event.bypassProgressDebounce,
+                requireDurability = event.bypassProgressDebounce
             )) {
             ReaderTrace.event(
                 "locator_duplicate_commit_ignored",
@@ -363,7 +365,7 @@ class ReaderViewModel(
             sessionId = current.sessionId,
             details = "seq=$sequence progress=$safe event=$event"
         )
-        if (event.countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
+        if (countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
             val previous = lastPaceProgression
             lastPaceProgression = progression.takeIf { it.isFinite() && it in 0.0..1.0 }
             current.recordPacedPageTurn()?.let { interval ->

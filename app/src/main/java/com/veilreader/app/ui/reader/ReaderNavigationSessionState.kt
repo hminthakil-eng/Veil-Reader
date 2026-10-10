@@ -73,10 +73,13 @@ internal class ReaderNavigationSessionStateMachine(
     fun mayPersistFinalSnapshot(): Boolean = !state.isExploring
 
     /** Layout, opening and jump observations cannot promote a temporary destination. */
-    fun mayCommitObservedEvent(event: ReaderLocatorEvent): Boolean =
+    fun mayCommitObservedEvent(event: ReaderLocatorEvent, locatorJson: String): Boolean =
         !state.isExploring || when (event) {
+            ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT ->
+                // Native scroll locators can repeat after a programmatic jump settles.
+                // An unchanged destination is observation, not a deliberate reading move.
+                locatorJson != state.explorationLocatorJson
             ReaderLocatorEvent.NAVIGATOR_PAGE_TURN,
-            ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT,
             ReaderLocatorEvent.PAPER_COMMIT -> true
             else -> false
         }

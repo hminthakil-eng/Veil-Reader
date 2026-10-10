@@ -12,7 +12,7 @@ This is an execution document, not a feature wishlist. A capability is GREEN onl
 - Aggregate tracking/review is PR #429. Bounded stacked reviews #430–#435 keep subsystem changes independently reviewable.
 - Current Grand Forge work already contains durability hardening for bookmarks/highlights/notes, precise navigation admission, Paper lifecycle fencing, adaptive columns, foreground TTS checkpoint work and a validated multilingual typography corpus.
 - Physical Paper quality, audible TTS, TalkBack, rendered RTL, low-memory, battery/thermal and physical-device performance remain unverified and therefore cannot be GREEN.
-- `ReadingAnchor` versus temporary exploration is still a P0 architectural gap. Existing `ReaderNavigationTransactionGate` prevents races but programmatic settlement still commits the destination as reading progress.
+- Rechecked 2026-10-10: `ReaderNavigationSessionState` and explicit `ReaderNavigationCommitPolicy` are integrated. Search/TOC/reference destinations preserve the reading anchor; lifecycle checkpoints are suppressed while exploring. Complete Android/device acceptance remains outstanding. Earlier unconditional-commit descriptions were stale.
 
 ## Status vocabulary
 

@@ -2,7 +2,7 @@ name: Reader Durability Fault Injection
 
 on:
   pull_request:
-    branches: [ "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "codex/reader-quality-hardening-20261007", "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
     paths:
       - "app/src/main/java/com/veilreader/app/data/LocalLibraryRepository.kt"
       - "app/src/main/java/com/veilreader/app/ui/reader/ReaderLocatorPolicy.kt"
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       cycles:
-        description: "Cycles per scenario (6 scenarios; 18 = 108 abrupt-process samples)"
+        description: "Cycles per scenario (8 scenarios; 18 = 144 abrupt-process samples)"
         required: false
         default: "18"
 

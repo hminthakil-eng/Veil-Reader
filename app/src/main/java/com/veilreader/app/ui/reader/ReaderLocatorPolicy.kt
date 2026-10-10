@@ -12,8 +12,8 @@ internal enum class ReaderLocatorEvent(
     /**
      * Skip the 250 ms progress coalescer for semantic commits that users perceive as complete.
      *
-     * This only moves the write into the existing serialized Room queue immediately; it does not
-     * claim a synchronous fsync or create a second progress writer.
+     * Session-owned saves must first succeed in the existing atomic crash checkpoint, then enter
+     * the serialized Room queue immediately. This does not add another long-term progress store.
      */
     val bypassProgressDebounce: Boolean
 ) {
@@ -105,11 +105,31 @@ internal data class ReaderLocatorCommit(
 internal class ReaderLocatorDeduplicator {
     private var lastCommittedLocationKey: String? = null
     private var previousCommittedLocationKey: String? = null
+    private var lastCommitRequiresDurability = false
+    private var previousCommitRequiresDurability = false
 
-    fun acceptCommit(locationKey: String, retryDurability: Boolean = false): Boolean {
-        if (locationKey == lastCommittedLocationKey) return retryDurability
+    /** Persisting an unchanged location more strongly is not another page turn. */
+    fun countsPageTurnFor(locationKey: String, event: ReaderLocatorEvent): Boolean =
+        event.countsPageTurn && locationKey != lastCommittedLocationKey
+
+    fun acceptCommit(
+        locationKey: String,
+        retryDurability: Boolean = false,
+        requireDurability: Boolean = false
+    ): Boolean {
+        if (locationKey == lastCommittedLocationKey) {
+            // A scroll/opening checkpoint may still be coalesced. Its final snapshot must
+            // reach the crash journal even when the semantic location has not changed.
+            if (!retryDurability && !(requireDurability && !lastCommitRequiresDurability)) {
+                return false
+            }
+            lastCommitRequiresDurability = lastCommitRequiresDurability || requireDurability
+            return true
+        }
         previousCommittedLocationKey = lastCommittedLocationKey
+        previousCommitRequiresDurability = lastCommitRequiresDurability
         lastCommittedLocationKey = locationKey
+        lastCommitRequiresDurability = requireDurability
         return true
     }
 
@@ -117,12 +137,16 @@ internal class ReaderLocatorDeduplicator {
     fun rejectCommit(locationKey: String) {
         if (lastCommittedLocationKey == locationKey) {
             lastCommittedLocationKey = previousCommittedLocationKey
+            lastCommitRequiresDurability = previousCommitRequiresDurability
             previousCommittedLocationKey = null
+            previousCommitRequiresDurability = false
         }
     }
 
     fun reset() {
         lastCommittedLocationKey = null
         previousCommittedLocationKey = null
+        lastCommitRequiresDurability = false
+        previousCommitRequiresDurability = false
     }
 }
