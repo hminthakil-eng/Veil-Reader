@@ -2,7 +2,6 @@ package com.veilreader.app.ui.screens
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
