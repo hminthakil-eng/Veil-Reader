@@ -1,0 +1,6 @@
+# Project-scoped Context7 pilot for trusted Codex workspaces.
+# This invokes a hosted documentation service, not an Android app dependency.
+# Anonymous endpoint: lower rate limits; no API keys or user data in Git.
+# Codex Cloud may require separate environment/tool configuration.
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
