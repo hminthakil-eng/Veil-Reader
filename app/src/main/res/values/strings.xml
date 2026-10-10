@@ -1351,6 +1351,8 @@
     <string name="pdf_bookmark_page" tools:ignore="PluralsCandidate">Page %1$d</string>
     <string name="reader_selection_lookup">Lookup</string>
     <string name="reader_selection_translate">Translate</string>
+    <string name="reader_selection_define">Define</string>
+    <string name="reader_define_failed">No compatible dictionary app can define this selection.</string>
     <string name="reader_translate_failed">No compatible translation app is available for this selection.</string>
     <string name="reader_lookup_failed">No installed app can look up the selected text.</string>
     <string name="tts_title">Read aloud</string>
