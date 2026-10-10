@@ -68,6 +68,23 @@ internal fun selectOfflineTtsVoice(
     ).firstOrNull()
 }
 
+/**
+ * Narration is an audiobook contract, not a best-effort voice search on every sentence.
+ * Keep the narrator selected at the start of a book even if Android reorders its
+ * installed voice inventory or downloads a higher-quality voice mid-playback.
+ * An explicit user selection always wins; loss of a pinned voice fails visibly.
+ */
+internal fun selectPinnedOfflineTtsVoice(
+    voices: List<ReaderTtsVoice>,
+    languageTag: String,
+    explicitPreferredId: String?,
+    pinnedVoiceId: String?
+): ReaderTtsVoice? = selectOfflineTtsVoice(
+    voices,
+    languageTag,
+    explicitPreferredId ?: pinnedVoiceId
+)
+
 /** Shared eligibility for playback, settings and previews; UI must not invent a fallback. */
 internal fun eligibleOfflineTtsVoices(
     voices: List<ReaderTtsVoice>,
