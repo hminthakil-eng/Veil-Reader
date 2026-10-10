@@ -100,6 +100,7 @@ import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import com.veilreader.app.domain.deriveReadingPace
 import com.veilreader.app.domain.estimateBookTimeRemaining
 import com.veilreader.app.ui.reader.tts.ReaderTtsPreferences
@@ -112,6 +113,7 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpoint
 import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
+import com.veilreader.app.ui.reader.tts.ReaderTtsSherpaEngineDiscovery
 import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -1269,6 +1271,15 @@ fun ReaderScreen(
             debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
         )
     }
+    val neuralTtsReviewEnabled = remember {
+        VeilFeatureGates.enabled(
+            VeilRiskyFeature.LOCAL_NEURAL_TTS,
+            debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
+        )
+    }
+    val sherpaEngineInstalled = remember(activity.applicationContext, readerSessionInstanceId) {
+        ReaderTtsSherpaEngineDiscovery.installed(activity.applicationContext)
+    }
     val foregroundTtsCheckpoint = remember(opened.book.id, readerSessionInstanceId, backgroundTtsEnabled) {
         if (backgroundTtsEnabled) null else {
             val store = ReaderTtsCheckpointStore(activity.applicationContext)
@@ -1303,7 +1314,9 @@ fun ReaderScreen(
                 ReaderTtsPreferences(
                     speed = latestTtsSettings.value.speed.toFloat(),
                     pitch = latestTtsSettings.value.pitch.toFloat(),
-                    preferredVoiceIds = latestTtsSettings.value.preferredVoiceIds
+                    preferredVoiceIds = latestTtsSettings.value.preferredVoiceIds,
+                    engine = if (neuralTtsReviewEnabled) latestTtsSettings.value.engine
+                        else ReaderTtsEngineChoice.SYSTEM
                 )
             ) { latestReaderSessionInstanceId.value == readerSessionInstanceId && !closeInFlight }
         } catch (cancelled: CancellationException) {
@@ -4278,6 +4291,8 @@ fun ReaderScreen(
                 startFailed = ttsStartFailed,
                 publicationLanguage = publicationLanguage,
                 voiceCatalogSupported = ttsServiceController != null,
+                neuralEngineReviewEnabled = neuralTtsReviewEnabled,
+                sherpaEngineInstalled = sherpaEngineInstalled,
                 voices = voiceCatalog,
                 voiceCatalogLoading = voiceCatalogLoading,
                 voiceCatalogProblem = voiceCatalogProblem,
@@ -4385,7 +4400,10 @@ fun ReaderScreen(
                                                 speed = latestTtsSettings.value.speed.toFloat(),
                                                 pitch = latestTtsSettings.value.pitch.toFloat(),
                                                 preferredVoiceIds =
-                                                    latestTtsSettings.value.preferredVoiceIds
+                                                    latestTtsSettings.value.preferredVoiceIds,
+                                                engine = if (neuralTtsReviewEnabled)
+                                                    latestTtsSettings.value.engine
+                                                else ReaderTtsEngineChoice.SYSTEM
                                             )
                                         )
                                     }
@@ -4424,7 +4442,9 @@ fun ReaderScreen(
                             ReaderTtsPreferences(
                                 speed = updated.speed.toFloat(),
                                 pitch = updated.pitch.toFloat(),
-                                preferredVoiceIds = updated.preferredVoiceIds
+                                preferredVoiceIds = updated.preferredVoiceIds,
+                                engine = if (neuralTtsReviewEnabled)
+                                    updated.engine else ReaderTtsEngineChoice.SYSTEM
                             )
                         )
                 },
