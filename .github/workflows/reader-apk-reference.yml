@@ -1,0 +1,30 @@
+name: Reader APK reference tool
+
+on:
+  pull_request:
+    paths:
+      - 'tools/reader_reference_inventory.py'
+      - 'tools/tests/test_reader_reference_inventory.py'
+      - '.github/workflows/reader-apk-reference.yml'
+  push:
+    paths:
+      - 'tools/reader_reference_inventory.py'
+      - 'tools/tests/test_reader_reference_inventory.py'
+      - '.github/workflows/reader-apk-reference.yml'
+
+jobs:
+  inventory-tests:
+    name: Metadata-only inventory tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test safe archive parsing, determinism and deduplication
+        env:
+          PYTHONPATH: tools
+        run: python -m unittest discover -s tools/tests -p test_reader_reference_inventory.py -v
