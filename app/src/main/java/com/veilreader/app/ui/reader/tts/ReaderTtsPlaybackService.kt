@@ -168,7 +168,10 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     val preferred = ReaderTtsPlaybackRequest.decodePreferredVoices(
                         args.getString(ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON)
                     )
-                    player.updateVoicePreferences(preferred)
+                    val engineChoice = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                        args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+                    )
+                    player.updateVoicePreferences(preferred, engineChoice)
                     Futures.immediateFuture(
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     )
