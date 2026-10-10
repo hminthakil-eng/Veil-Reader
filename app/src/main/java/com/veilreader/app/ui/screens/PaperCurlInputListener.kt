@@ -77,6 +77,30 @@ internal fun shouldAllowPaperNavigation(
     ) &&
         (reducedMotion || visualActive)
 
+/**
+ * One intentional Paper tap/drag must have an observable outcome.
+ * Render readiness is distinct from visible page capture; do not substitute
+ * native/static page movement when a Paper renderer cannot own the sheet.
+ */
+internal fun paperTurnUnavailableNotice(
+    reducedMotion: Boolean,
+    rendererStatus: GpuMaterialPageRendererStatus,
+    visualActive: Boolean
+): PaperTurnVisualFailure? {
+    if (reducedMotion) return null
+    return when (rendererStatus) {
+        GpuMaterialPageRendererStatus.FAILED,
+        GpuMaterialPageRendererStatus.UNSUPPORTED ->
+            PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+        GpuMaterialPageRendererStatus.INITIALIZING,
+        GpuMaterialPageRendererStatus.REDUCED_MOTION ->
+            PaperTurnVisualFailure.PRESENTATION
+        GpuMaterialPageRendererStatus.READY,
+        GpuMaterialPageRendererStatus.SOFTWARE_READY ->
+            if (visualActive) null else PaperTurnVisualFailure.SNAPSHOT
+    }
+}
+
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
     private val state: PaperCurlState,
@@ -210,9 +234,11 @@ internal class PaperCurlInputListener(
             // page turn when GPU/capture readiness is missing.
             invalidateOperation()
             resetDrag()
-            if (!reducedMotion && state.rendererStatus == GpuMaterialPageRendererStatus.READY) {
-                onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
-            }
+            paperTurnUnavailableNotice(
+                reducedMotion = reducedMotion,
+                rendererStatus = state.rendererStatus,
+                visualActive = visualReady
+            )?.let(onVisualFailure)
             return
         }
 
@@ -366,6 +392,13 @@ internal class PaperCurlInputListener(
             rendererStatus = state.rendererStatus,
             visualActive = state.active
         )
+        if (!navigationAllowed) {
+            paperTurnUnavailableNotice(
+                reducedMotion = reducedMotion,
+                rendererStatus = state.rendererStatus,
+                visualActive = state.active
+            )?.let(onVisualFailure)
+        }
         val commit = when {
             !navigationAllowed -> false
             state.usingMaterialEngine() ->
