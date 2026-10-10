@@ -214,16 +214,16 @@ class PageFlipPremiumLabActivity : Activity() {
                     val page = flip.firstPage ?: return
                     if (drawCommand == FULL) {
                         if (!page.isFirstTextureSet) {
-                            page.setFirstTexture(createPaper(pageIndex, page.width(), page.height()))
+                            uploadPaper(pageIndex, page.width(), page.height(), page::setFirstTexture)
                         }
                         flip.drawPageFrame()
                     } else {
                         val state = flip.flipState
                         if (state == PageFlipState.FORWARD_FLIP && !page.isSecondTextureSet) {
-                            page.setSecondTexture(createPaper(pageIndex + 1, page.width(), page.height()))
+                            uploadPaper(pageIndex + 1, page.width(), page.height(), page::setSecondTexture)
                         } else if (state == PageFlipState.BACKWARD_FLIP && !page.isFirstTextureSet) {
                             pageIndex = (pageIndex - 1).coerceAtLeast(0)
-                            page.setFirstTexture(createPaper(pageIndex, page.width(), page.height()))
+                            uploadPaper(pageIndex, page.width(), page.height(), page::setFirstTexture)
                         }
                         flip.drawFlipFrame()
                     }
@@ -260,6 +260,25 @@ class PageFlipPremiumLabActivity : Activity() {
             surfaceReady = false
             Log.e(TAG, message)
             post { report(pageIndex, message) }
+        }
+
+        /**
+         * PageFlip uses synchronous GLUtils.texImage2D and does not retain a
+         * bitmap lease. Always recycle the transient ARGB fixture after upload;
+         * otherwise repeated turns leak ~7 MiB per page.
+         */
+        private inline fun uploadPaper(
+            index: Int,
+            pageWidth: Float,
+            pageHeight: Float,
+            upload: (Bitmap) -> Unit
+        ) {
+            val texture = createPaper(index, pageWidth, pageHeight)
+            try {
+                upload(texture)
+            } finally {
+                texture.recycle()
+            }
         }
 
         private fun createPaper(index: Int, viewWidth: Float, viewHeight: Float): Bitmap {
@@ -318,8 +337,6 @@ class PageFlipPremiumLabActivity : Activity() {
             brass.textSize = 34f
             canvas.drawText("— ${index.coerceIn(0, PAGE_COUNT - 1) + 1} —", 342f, 1191f, brass)
             canvas.restore()
-            // PageFlip's upload uses the bitmap synchronously on the GL thread;
-            // caller retains its content until the texture update has finished.
             return bitmap
         }
     }
