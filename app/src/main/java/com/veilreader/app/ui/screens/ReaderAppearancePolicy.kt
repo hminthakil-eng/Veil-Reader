@@ -33,6 +33,24 @@ internal fun applyMaterialPageRolloutToAppearance(
         else -> appearance
     }
 
+/**
+ * Single source of truth for Paper's visual host and input ownership.
+ *
+ * A paged reflowable EPUB is the only publication type with a per-leaf GPU
+ * snapshot contract. A fixed-layout spread must not acquire Paper gestures
+ * until it supports independent leaves. The release rollout remains gated.
+ */
+internal fun shouldMountPaperCurlRuntime(
+    format: BookFormat,
+    fixedLayout: Boolean,
+    appearance: ReaderAppearance,
+    materialPageEnabled: Boolean
+): Boolean =
+    materialPageEnabled &&
+        format == BookFormat.EPUB &&
+        !fixedLayout &&
+        appearance.navigationMode == ReaderNavigationMode.PAPER_CURL
+
 internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
     fixedLayout: Boolean
