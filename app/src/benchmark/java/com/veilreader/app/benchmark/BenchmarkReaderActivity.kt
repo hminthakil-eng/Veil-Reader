@@ -1,10 +1,17 @@
 package com.veilreader.app.benchmark
 
 import android.net.Uri
+import android.animation.ValueAnimator
+import android.view.View
+import android.view.ViewGroup
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
+import org.readium.r2.navigator.Navigator
+import org.readium.r2.shared.ExperimentalReadiumApi
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +22,7 @@ import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.diagnostics.ReaderJankMonitor
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.GpuMaterialPageCurlView
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
@@ -31,6 +39,7 @@ import kotlinx.coroutines.withContext
  * reader. It is compiled and declared only by the explicit benchmark build; normal debug,
  * release, and Baseline Profile target variants never include this test-only entry point.
  */
+@OptIn(ExperimentalReadiumApi::class)
 class BenchmarkReaderActivity : FragmentActivity() {
     private lateinit var readerJankMonitor: ReaderJankMonitor
 
@@ -42,6 +51,29 @@ class BenchmarkReaderActivity : FragmentActivity() {
         MaterialPageEngineRollout.setDebugOverride(true)
 
         val benchmarkReaderSessionId = "benchmark-reader-session-${UUID.randomUUID()}"
+
+        // Test-only observation of the actual Readium locator, independent of gesture delivery.
+        // No navigation is driven by this probe. Normal app variants never include it.
+        lifecycleScope.launch {
+            var navigator: Navigator? = null
+            while (navigator == null) {
+                navigator = findNavigator(supportFragmentManager)
+                if (navigator == null) delay(50)
+            }
+            while (true) {
+                val locator = navigator.currentLocator.value
+                val progression = locator.locations.progression
+                if (progression != null) {
+                    val gpu = findGpuView(window.decorView)
+                    val probe = "benchmark-reader-locator:${locator.href}|$progression" +
+                        ";gpuEpoch=${gpu?.lastAcquiredSheetEpoch ?: -1L}" +
+                        ";gpuActive=${gpu?.isPageTurnActive ?: false}" +
+                        ";motion=${ValueAnimator.areAnimatorsEnabled()}"
+                    if (window.decorView.contentDescription != probe) window.decorView.contentDescription = probe
+                }
+                delay(50)
+            }
+        }
 
         lifecycleScope.launch {
             val context = applicationContext
@@ -97,8 +129,25 @@ class BenchmarkReaderActivity : FragmentActivity() {
         super.onPause()
     }
 
+    private fun findNavigator(manager: FragmentManager): Navigator? {
+        for (fragment in manager.fragments) {
+            (fragment as? Navigator)?.let { return it }
+            findNavigator(fragment.childFragmentManager)?.let { return it }
+        }
+        return null
+    }
+
+    private fun findGpuView(view: View): GpuMaterialPageCurlView? {
+        if (view is GpuMaterialPageCurlView) return view
+        if (view is ViewGroup) for (index in 0 until view.childCount) {
+            findGpuView(view.getChildAt(index))?.let { return it }
+        }
+        return null
+    }
+
     private fun ensureFixture(): File {
-        val target = File(cacheDir, "veil-reader-benchmark.epub")
+        val svgCover = intent.getBooleanExtra("benchmark_svg_cover", false)
+        val target = File(cacheDir, if (svgCover) "veil-reader-benchmark-svg-cover-v1.epub" else "veil-reader-benchmark-cover-v3.epub")
         if (target.isFile && target.length() > 0L) return target
 
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
@@ -113,13 +162,13 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 </container>""".trimIndent()
             )
 
-            val chapters = (1..6).joinToString("") { index ->
+            val chapters = (1..12).joinToString("") { index ->
                 """<item id="c$index" href="c$index.xhtml" media-type="application/xhtml+xml"/>"""
             }
-            val spine = (1..6).joinToString("") { index ->
+            val spine = (1..12).joinToString("") { index ->
                 """<itemref idref="c$index"/>"""
             }
-            val navEntries = (1..6).joinToString("") { index ->
+            val navEntries = (1..12).joinToString("") { index ->
                 """<li><a href="c$index.xhtml">Chapter $index</a></li>"""
             }
 
@@ -136,9 +185,11 @@ class BenchmarkReaderActivity : FragmentActivity() {
                   </metadata>
                   <manifest>
                     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+                    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
+                    <item id="coverImage" href="cover.svg" media-type="image/svg+xml" properties="cover-image"/>
                     $chapters
                   </manifest>
-                  <spine>$spine</spine>
+                  <spine><itemref idref="cover"/>$spine</spine>
                 </package>""".trimIndent()
             )
 
@@ -151,7 +202,32 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 </html>""".trimIndent()
             )
 
-            repeat(6) { zeroBased ->
+            zip.writeEntry(
+                "OEBPS/cover.xhtml",
+                if (svgCover) {
+                    // Same container geometry as the reported book, using only our test artwork.
+                    """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>SVG cover</title></head>
+                    <body style="margin:0;background:#000"><div>
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                    width="100%" height="100%" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid">
+                    <image width="600" height="800" xlink:href="cover.svg"/></svg>
+                    </div></body></html>"""
+                } else {
+                    """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Cover</title></head>
+                    <body style="margin:0;background:#000"><img src="cover.svg" alt="Veil test cover"
+                    style="display:block;width:90%;height:auto;margin:5% auto"/></body></html>"""
+                }
+            )
+            zip.writeEntry(
+                "OEBPS/cover.svg",
+                """<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+                <rect width="600" height="800" fill="#222"/>
+                <rect x="20" y="20" width="560" height="760" fill="none" stroke="#aaa"/>
+                <text x="300" y="380" text-anchor="middle" fill="#eee" font-size="40">Veil test cover</text>
+                </svg>"""
+            )
+
+            repeat(12) { zeroBased ->
                 val index = zeroBased + 1
                 val paragraph = buildString {
                     repeat(40) {
