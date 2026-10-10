@@ -94,6 +94,10 @@ internal class ReaderBookSearchSession(
 
                 val next = cursor.next()
                 resourcesRead++
+                if (closed.get()) {
+                    pending.clear()
+                    return@withLock ReaderBookSearchPage.Closed
+                }
                 if (next.isFailure) {
                     closeUnsafe()
                     return@withLock ReaderBookSearchPage.Failed
@@ -126,8 +130,9 @@ internal class ReaderBookSearchSession(
             closeUnsafe()
             throw cancelled
         } catch (_: Exception) {
+            val retiredByOwner = closed.get()
             closeUnsafe()
-            ReaderBookSearchPage.Failed
+            if (retiredByOwner) ReaderBookSearchPage.Closed else ReaderBookSearchPage.Failed
         }
     }
 
