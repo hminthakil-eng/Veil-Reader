@@ -15,6 +15,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from paper_apk_identity import verify_installed_apk
+
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 PACKAGE_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)+$")
 
@@ -49,6 +51,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source-sha", required=True, help="40-character executable source commit SHA")
     parser.add_argument("--package", default="com.veilreader.app.forgeqa")
     parser.add_argument("--apk", type=Path, help="Exact locally installed APK file; optional for a manually installed ZIP")
+    parser.add_argument("--verify-installed-apk", action="store_true",
+                        help="Read-only pull and SHA-256 comparison of the installed single-base APK against --apk")
     parser.add_argument("--serial", help="ADB serial; mandatory when multiple devices are connected")
     parser.add_argument("--output", type=Path, default=Path("paper-device-evidence"))
     parser.add_argument("--video", action="store_true", help="Explicitly opt into a local screen recording")
@@ -64,6 +68,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--duration must be between 10 and 180 seconds")
     if args.apk is not None and (not args.apk.is_file() or args.apk.suffix.lower() != ".apk"):
         parser.error("--apk must name an existing .apk file (extract any downloaded ZIP first)")
+    if args.verify_installed_apk and args.apk is None:
+        parser.error("--verify-installed-apk requires --apk from the extracted QA artifact")
 
     devices = online_devices(run(["adb", "devices"]))
     if args.serial:
@@ -112,6 +118,28 @@ def main(argv: list[str] | None = None) -> int:
     if args.apk:
         manifest["local_apk_sha256"] = sha256(args.apk)
         manifest["local_apk_path"] = str(args.apk)
+
+    if args.verify_installed_apk:
+        # Hash-match only proves *byte identity* with the supplied local artifact.
+        # It cannot establish the executable's source commit without build provenance.
+        try:
+            comparison = verify_installed_apk(adb, args.package, args.apk, run)
+            manifest["installed_apk_byte_identity"] = comparison
+            if not comparison["match"]:
+                (folder / "manifest.json").write_text(
+                    json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+                print("ERROR: Installed APK differs from supplied QA artifact; capture stopped.", file=sys.stderr)
+                return 2
+        except (ValueError, RuntimeError, subprocess.TimeoutExpired, OSError) as exc:
+            manifest["installed_apk_byte_identity"] = {
+                "status": "UNVERIFIED",
+                "error_type": type(exc).__name__,
+            }
+            (folder / "manifest.json").write_text(
+                json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"ERROR: Installed APK identity could not be verified ({type(exc).__name__}). "
+                  "Capture stopped.", file=sys.stderr)
+            return 2
 
     if args.video:
         remote = f"/sdcard/Movies/veil_paper_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.mp4"
