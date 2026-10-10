@@ -150,14 +150,9 @@ dependencies {
     // Apache-2.0: https://github.com/albertoirurueta/irurueta-android-gl-curl
     // The native view owns its bitmaps. Do not plug it into Readium until #408 device QA.
     debugImplementation("com.irurueta:irurueta-android-gl-curl:1.1.6")
-    // Apache-2.0, physically richer tunable 3D folds + independent edge/base shadows.
-    // Comparison candidate only: legacy JitPack artifact, verify resolution in CI.
-    // https://github.com/eschao/android-PageFlip
-    debugImplementation("com.github.eschao:android-PageFlip:1.0.2") {
-        // Upstream v1.0.2 declares support appcompat-v7:24.2.0 although the
-        // OpenGL core is Android framework-only. Veil uses AndroidX instead.
-        exclude(group = "com.android.support", module = "appcompat-v7")
-    }
+    // eschao PageFlip remains a research candidate, but its JitPack 1.0.2
+    // artifact is unavailable on clean CI. Keep the independent irurueta lab
+    // buildable; reintroduce eschao only with a verified, pinned artifact.
     debugImplementation("androidx.compose.ui:ui-tooling:1.12.1")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.12.1")
     testImplementation("junit:junit:4.13.2")

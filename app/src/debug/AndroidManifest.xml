@@ -1,17 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <!-- More configurable Apache-2.0 OpenGL fold engine, second A/B candidate.
-             Inert paper fixtures only, never exposed in production. -->
-        <activity
-            android:name=".debug.PageFlipPremiumLabActivity"
-            android:label="Veil · Premium PageFlip Lab"
-            android:exported="true"
-            android:taskAffinity="com.veilreader.app.pageflip.lab">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
         <!-- A separate DEBUG-only launcher for testing a real upstream paper-curl engine.
              Its pages are inert synthetic fixtures; the production Readium Reader is unchanged. -->
         <activity
