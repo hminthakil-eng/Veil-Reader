@@ -57,12 +57,20 @@ jobs:
       - name: Run Room instrumentation tests
         run: bash tools/run_android_ci_emulator.sh storage
 
+      - name: Assert real exported Grayfog review captures and font-scale changes
+        run: |
+          python3 -m unittest discover -s tools/tests -p test_grayfog_capture_evidence.py -v
+          python3 tools/verify_grayfog_capture_evidence.py \
+            --archive build/reports/grayfog-review.tar \
+            --report build/reports/grayfog-evidence-verification.json
+
       - name: Upload production Compose review captures
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-grayfog-shell-review
           path: |
+            build/reports/grayfog-evidence-verification.json
             build/reports/grayfog-review.tar
             build/reports/veil-grayfog-review/
             app/build/outputs/androidTest-results/connected/debug/TEST-*.xml
