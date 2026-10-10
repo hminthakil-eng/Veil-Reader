@@ -40,7 +40,8 @@ import org.readium.r2.shared.publication.Locator
 internal class ReaderTtsMediaPlayer(
     context: Context,
     private val checkpointStore: ReaderTtsCheckpointStore =
-        ReaderTtsCheckpointStore(context)
+        ReaderTtsCheckpointStore(context),
+    private val onTransportCommand: () -> Unit = {}
 ) : SimpleBasePlayer(Looper.getMainLooper()) {
     private val application = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -145,6 +146,7 @@ internal class ReaderTtsMediaPlayer(
 
     fun loadRequest(request: ReaderTtsPlaybackRequest, autoplay: Boolean) {
         verifyApplicationThread()
+        onTransportCommand()
         val safe = request.normalized() ?: return
         val ownerGeneration = ++generation
         loadJob?.cancel()
@@ -256,6 +258,7 @@ internal class ReaderTtsMediaPlayer(
      */
     fun setOwnerPlayIntent(playWhenReady: Boolean) {
         verifyApplicationThread()
+        onTransportCommand()
         desiredPlayWhenReady = playWhenReady
         invalidateState()
         if (playWhenReady) session?.resume() else session?.pause()
@@ -267,6 +270,7 @@ internal class ReaderTtsMediaPlayer(
     }
 
     override fun handleStop(): ListenableFuture<*> {
+        onTransportCommand()
         desiredPlayWhenReady = false
         ++generation
         loadJob?.cancel()
@@ -287,6 +291,7 @@ internal class ReaderTtsMediaPlayer(
         positionMs: Long,
         @Player.Command seekCommand: Int
     ): ListenableFuture<*> {
+        onTransportCommand()
         when (seekCommand) {
             Player.COMMAND_SEEK_TO_NEXT,
             Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
