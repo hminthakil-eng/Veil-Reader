@@ -1350,6 +1350,8 @@
     <!-- A page identifier, not a quantity requiring plural forms. -->
     <string name="pdf_bookmark_page" tools:ignore="PluralsCandidate">صفحهٔ %1$d</string>
     <string name="reader_selection_lookup">جست‌وجوی واژه</string>
+    <string name="reader_selection_translate">ترجمه</string>
+    <string name="reader_translate_failed">برنامهٔ سازگار با ترجمهٔ متن انتخاب‌شده در دسترس نیست.</string>
     <string name="reader_lookup_failed">هیچ برنامهٔ نصب‌شده‌ای برای جست‌وجوی متن انتخاب‌شده در دسترس نیست.</string>
     <string name="tts_title">خواندن با صدا</string>
     <string name="tts_intro">با صداهای آفلاینِ نصب‌شدهٔ اندروید گوش بده. کنترل پخش همیشه صریحاً در اختیار تو می‌ماند.</string>\n    <string name="tts_compact_ready">صداهای آفلاینِ نصب‌شده</string>
