@@ -216,3 +216,24 @@ reduced-motion and avoid animation on repeated reading actions.
 
 P0 annotation/selection/listening continuity remains ahead of speculative motion
 and AI. Fixtures are structurally validated, not visual goldens. No GREEN claim.
+
+## Current repository truth — 2026-10-10
+
+This section supersedes the historical verification boundaries above. Canonical a67586cf includes the subsequent navigation-session/semantic-reason/input-ownership work; the earlier statement that no ReadingAnchor/exploration separation exists no longer describes this head. A remaining repeated-scroll observation/final-snapshot defect is isolated in PR 446, not yet integrated.
+
+| Feature | Implemented | Integrated | Unit | Instrumented | Device | UX | Perf | Release | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| Durable highlight/note/delete acknowledgement | Yes | Reader + Archive | Full QA suite passes | New transaction regressions pass in QA suite | Pending | Pending S24 | No measured physical delta | Core available | YELLOW |
+| Async selection cleanup ownership | Yes | Reader tools | Owner-fence regressions pass | QA integration suite passes | Pending | Pending rapid reselection/TalkBack | Unmeasured | Core available | YELLOW |
+| Foreground TTS listening checkpoint | Yes, last publication | QA defaults to foreground system owner | Session/controller regressions pass | DataStore restoration test passes | Pending audible/kill QA | Pending | Start latency/storage cost unmeasured | Foreground core; service/neural/network gates OFF | YELLOW |
+| Reading anchor/exploration + preview input ownership | Yes | Canonical a67586cf | Navigation/input regressions pass | Full QA integration suite passes | Pending | Pending scroll/RTL/TalkBack | Unmeasured | Core available | YELLOW; residual PR 446 |
+| Atomic journal failure acknowledgement, GF-DUR-006 | Yes | 38a6bf10 | New rename-failure regression awaiting CI | Repository ordering/retry regression awaiting CI | Pending | Existing storage failure UI | Extra sync/readback cost awaiting evidence | Existing core path, no gate change | YELLOW |
+| Original multilingual typography corpus | Yes | QA fixture workflow | Determinism + EPUBCheck pass | No rendered corpus tests claimed | Pending | Rendered acceptance pending | Pending | Fixtures, not product renderer | YELLOW |
+
+Verified artifact: [a67586cf Forge QA](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37878688504/artifacts/11594068417). Full QA results: 1009 units / 174 suites and 174 Android tests, no reported failures/errors/skips. Independent APK verification confirms the pinned certificate; CI successfully restored its key cache. Actual phone update remains unverified. Physical status JSON remains untouched.
+
+Current new-code verification: QA run 38027688503 and process-kill run 38027688094 target 38a6bf10; performance run targets the same executable source with the later documentation commit. Local 39 policy checks, canonical Paper contract plus 4 guard tests, and 22 performance/release parser tests pass. No Android test is claimed from these local checks.
+
+PR 446 hosted build originally aborted its native Robolectric worker with `Class not found: java/nio/LongBuffer`; its incomplete 1016-test report includes one skipped test and is not a pass. A rerun preserves the original failure record; no test was excluded, weakened or moved to legacy graphics. Its storage, 144-sample abrupt-process and emulator performance lanes passed independently. Full-build success is required before integration.
+
+No feature gate changes, physical speedup claims or GREEN promotions. Separate visual-foundation and Paper-release branches are not part of the delivered QA artifact.
