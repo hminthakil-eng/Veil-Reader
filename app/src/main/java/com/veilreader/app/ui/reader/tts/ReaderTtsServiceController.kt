@@ -46,6 +46,9 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     private var controller: MediaController? = null
     private var pendingStart: PendingStart? = null
+    // Pause pressed while MediaController reconnects must also stop an already
+    // playing service owner, not only change the queued new-book autoplay.
+    private var pendingPauseOnConnect = false
 
     private val mutableState = MutableStateFlow(ReaderTtsState())
     val state: StateFlow<ReaderTtsState> = mutableState.asStateFlow()
@@ -102,6 +105,13 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 refreshActiveSegment()
                 refreshVoiceCatalog()
                 refreshSleepTimer()
+                if (pendingPauseOnConnect) {
+                    pendingPauseOnConnect = false
+                    connectedController.sendCustomCommand(
+                        SessionCommand(ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER, Bundle.EMPTY),
+                        Bundle.EMPTY
+                    )
+                }
                 pendingStart?.also {
                     pendingStart = null
                     start(it.bookId, it.locatorJson, it.settings, autoplay = it.autoplay)
@@ -118,6 +128,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         autoplay: Boolean = true
     ) {
         if (closed.get()) return
+        pendingPauseOnConnect = !autoplay
         val target = controller
         if (target == null) {
             pendingStart = PendingStart(bookId, locatorJson, settings.normalized(), autoplay)
@@ -160,6 +171,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     }
 
     fun resume() {
+        pendingPauseOnConnect = false
         pendingStart?.let { queued ->
             pendingStart = queued.copy(autoplay = true)
             mutableState.value = mutableState.value.copy(
@@ -174,6 +186,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     }
 
     fun pause() {
+        pendingPauseOnConnect = controller == null
         // An immediate Pause cancels pending autoplay even if the MediaController
         // has not connected or has no media item yet. This is not a no-op.
         pendingStart = pendingStart?.copy(autoplay = false)
@@ -185,6 +198,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     }
 
     fun stop() {
+        pendingPauseOnConnect = false
         pendingStart = null
         controller?.stop()
     }
@@ -373,6 +387,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         pendingStart = null
+        pendingPauseOnConnect = false
         mutableActiveSegmentText.value = null
         controller?.removeListener(playerListener)
         controller = null
