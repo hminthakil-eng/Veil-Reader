@@ -2322,13 +2322,11 @@ fun ReaderScreen(
                     navigator = nav,
                     isEnabled = {
                         latestReaderSessionReady.value &&
-                            (
-                                shouldUseStaticPagedDragNavigation(
-                                    format = opened.format,
-                                    scroll = latestAppearance.value.scroll,
-                                    pageTurnStyle = latestAppearance.value.pageTurnStyle
-                                )
-                                )
+                            shouldUseStaticPagedDragNavigation(
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     scope = scope,
                     onInteraction = ::markReaderNavigationInteraction,
