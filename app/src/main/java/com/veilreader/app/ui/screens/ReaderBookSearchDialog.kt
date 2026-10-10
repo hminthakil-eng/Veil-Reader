@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +26,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -169,7 +183,10 @@ internal fun ReaderBookSearchDialog(
         )
     ) {
         Box(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
+            modifier = Modifier.fillMaxSize()
+                .imePadding()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(12.dp),
             contentAlignment = Alignment.Center
         ) {
             Surface(
@@ -206,6 +223,8 @@ internal fun ReaderBookSearchDialog(
                         singleLine = true,
                         maxLines = 1,
                         label = { Text(stringResource(R.string.reader_search_query)) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { startSearch() }),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Button(
@@ -243,11 +262,16 @@ internal fun ReaderBookSearchDialog(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         itemsIndexed(results) { index, match ->
-                            val context = buildString {
+                            val context = buildAnnotatedString {
                                 append(match.text.before.orEmpty().takeLast(85))
-                                append(match.text.highlight.orEmpty().take(120))
+                                withStyle(SpanStyle(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = VeilPalette.Brass
+                                )) {
+                                    append(match.text.highlight.orEmpty().take(120))
+                                }
                                 append(match.text.after.orEmpty().take(85))
-                            }.trim()
+                            }
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -255,7 +279,8 @@ internal fun ReaderBookSearchDialog(
                                         resetSearch()
                                         onResult(match)
                                     }
-                                    .heightIn(min = 48.dp)
+                                    .semantics { role = Role.Button }
+                                    .heightIn(min = 56.dp)
                                     .padding(vertical = 8.dp)
                             ) {
                                 Text(
