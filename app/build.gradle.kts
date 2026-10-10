@@ -153,7 +153,11 @@ dependencies {
     // Apache-2.0, physically richer tunable 3D folds + independent edge/base shadows.
     // Comparison candidate only: legacy JitPack artifact, verify resolution in CI.
     // https://github.com/eschao/android-PageFlip
-    debugImplementation("com.github.eschao:android-PageFlip:1.0.2")
+    debugImplementation("com.github.eschao:android-PageFlip:1.0.2") {
+        // Upstream v1.0.2 declares support appcompat-v7:24.2.0 although the
+        // OpenGL core is Android framework-only. Veil uses AndroidX instead.
+        exclude(group = "com.android.support", module = "appcompat-v7")
+    }
     debugImplementation("androidx.compose.ui:ui-tooling:1.12.1")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.12.1")
     testImplementation("junit:junit:4.13.2")
