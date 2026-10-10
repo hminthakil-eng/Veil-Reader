@@ -1,0 +1,27 @@
+name: Grayfog Visual Evidence Unit
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+      - main
+    paths:
+      - "tools/verify_grayfog_capture_evidence.py"
+      - "tools/tests/test_grayfog_capture_evidence.py"
+      - ".github/workflows/grayfog-evidence-unit.yml"
+      - ".github/workflows/storage-instrumentation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile screenshot archive contract
+        run: python3 -m py_compile tools/verify_grayfog_capture_evidence.py tools/tests/test_grayfog_capture_evidence.py
+      - name: Verify complete, incomplete and corrupt offline fixtures
+        run: python3 -m unittest discover -s tools/tests -p test_grayfog_capture_evidence.py -v
