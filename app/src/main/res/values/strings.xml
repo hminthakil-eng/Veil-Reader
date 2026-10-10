@@ -1352,7 +1352,7 @@
     <string name="reader_selection_lookup">Lookup</string>
     <string name="reader_lookup_failed">No installed app can look up the selected text.</string>
     <string name="tts_title">Read aloud</string>
-    <string name="tts_intro">Listen using installed offline Android voices. Playback stays under your explicit control.</string>
+    <string name="tts_intro">Listen using installed offline Android voices. Playback stays under your explicit control.</string>\n    <string name="tts_compact_ready">Installed offline voices</string>
     <string name="tts_start">Start from visible text</string>
     <string name="tts_play">Play</string>
     <string name="tts_pause">Pause</string>

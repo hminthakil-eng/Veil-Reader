@@ -98,7 +98,11 @@ internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
     private var sensorySink: MaterialPageSensorySink? = null,
     private val snapshotProvider: MaterialPageImmediateSnapshotProvider =
-        ViewDrawImmediateMaterialPageSnapshotProvider
+        ViewDrawImmediateMaterialPageSnapshotProvider,
+    private val preparedSnapshotProvider: MaterialPagePreparedSnapshotProvider =
+        WindowPixelCopyPreparedMaterialPageSnapshotProvider,
+    private val awaitSourceVisualReady: suspend (View, Long) -> Boolean =
+        { view, revision -> awaitMaterialPageSourceVisualReady(view, revision) }
 ) {
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
@@ -181,6 +185,10 @@ internal class MaterialPageEngineState(
     private var height = 0f
     private var density = 1f
     private val snapshotBuffers = arrayOfNulls<Bitmap>(2)
+    // A suspended warm capture owns its CPU slot until it returns/cancels.
+    // GPU leases alone cannot protect begin() from reusing that same storage.
+    private val snapshotPreparationSlots = mutableSetOf<Int>()
+    private var snapshotPreparationGeneration = 0L
     private var snapshotBufferCursor = -1
     var snapshotSourceRevision: Long by mutableLongStateOf(1L)
         private set
@@ -275,7 +283,7 @@ internal class MaterialPageEngineState(
             snapshot == null
         ) {
             releaseUnleasedBuffers()
-            if (gpuUploadLeases.isEmpty()) {
+            if (gpuUploadLeases.isEmpty() && snapshotPreparationSlots.isEmpty()) {
                 snapshotBufferCursor = -1
                 releaseBuffersWhenUploadsSettle = false
             }
@@ -314,14 +322,12 @@ internal class MaterialPageEngineState(
         releaseBuffersWhenUploadsSettle = false
 
         val revision = snapshotSourceRevision
+        val preparationGeneration = snapshotPreparationGeneration
         val widthAtRequest = view.width
         val heightAtRequest = view.height
         val visualWaitStarted = SystemClock.elapsedRealtimeNanos()
         if (
-            !awaitMaterialPageSourceVisualReady(
-                root = view,
-                requestId = revision
-            )
+            !awaitSourceVisualReady(view, revision)
         ) {
             ReaderTrace.event(
                 name = "paper_snapshot_prepare_not_ready",
@@ -334,6 +340,7 @@ internal class MaterialPageEngineState(
                 .coerceAtLeast(0L)
         if (
             !isSourceCurrent() || active ||
+            preparationGeneration != snapshotPreparationGeneration ||
             revision != snapshotSourceRevision ||
             widthAtRequest != view.width ||
             heightAtRequest != view.height
@@ -348,54 +355,99 @@ internal class MaterialPageEngineState(
             view = view
         ) ?: return false
         snapshotBuffers[nextSlot] = target
+        snapshotPreparationSlots += nextSlot
 
-        val totalStarted = SystemClock.elapsedRealtimeNanos()
-        Trace.beginSection("paper.capture.prepare")
-        val capture = try {
-            snapshotProvider.capture(
-                view = view,
-                target = target,
-                sourceRevision = revision
+        try {
+            val totalStarted = SystemClock.elapsedRealtimeNanos()
+            Trace.beginSection("paper.capture.prepare")
+            val capture = try {
+                val hardwareCapture =
+                    if (materialPageVisibleWebView(view) != null) {
+                        preparedSnapshotProvider.capture(
+                            view = view,
+                            target = target,
+                            sourceRevision = revision
+                        )
+                    } else {
+                        null
+                    }
+
+                when (hardwareCapture) {
+                    is MaterialPageSnapshotCapture.Ready -> hardwareCapture
+                    else -> {
+                        // A turn or lifecycle handoff may have happened while the
+                        // hardware provider suspended. Do not draw an obsolete source.
+                        if (!isSourceCurrent() || active ||
+                            preparationGeneration != snapshotPreparationGeneration ||
+                            revision != snapshotSourceRevision ||
+                            widthAtRequest != view.width || heightAtRequest != view.height) {
+                            return false
+                        }
+                        if (hardwareCapture != null) {
+                            val fallbackReason = when (hardwareCapture) {
+                                is MaterialPageSnapshotCapture.NotReady -> hardwareCapture.reason
+                                is MaterialPageSnapshotCapture.Failed -> hardwareCapture.reason
+                                is MaterialPageSnapshotCapture.Ready -> null
+                            }
+                            ReaderTrace.event(
+                                name = "paper_snapshot_hardware_fallback",
+                                details =
+                                    "revision=$revision " +
+                                        "result=${hardwareCapture::class.java.simpleName} " +
+                                        "reason=$fallbackReason"
+                            )
+                        }
+                        snapshotProvider.capture(
+                            view = view,
+                            target = target,
+                            sourceRevision = revision
+                        )
+                    }
+                }
+            } finally {
+                Trace.endSection()
+            }
+            val totalNanos =
+                (SystemClock.elapsedRealtimeNanos() - totalStarted)
+                    .coerceAtLeast(0L)
+            val ready = capture as? MaterialPageSnapshotCapture.Ready
+                ?: return false
+            if (
+                !isSourceCurrent() || active ||
+                preparationGeneration != snapshotPreparationGeneration ||
+                !materialPageSnapshotCaptureIsCurrent(
+                    captureRevision = ready.sourceRevision,
+                    expectedRevision = snapshotSourceRevision
+                ) ||
+                ready.bitmap.width != view.width ||
+                ready.bitmap.height != view.height
+            ) {
+                return false
+            }
+
+            preparedSnapshot = MaterialPagePreparedSnapshot(
+                bitmap = ready.bitmap,
+                sourceRevision = ready.sourceRevision,
+                width = ready.bitmap.width,
+                height = ready.bitmap.height,
+                capturedAtElapsedNanos = SystemClock.elapsedRealtimeNanos(),
+                provider = ready.provider
             )
+            preparedSnapshotBufferSlot = nextSlot
+            ReaderTrace.event(
+                name = "paper_snapshot_prepared",
+                details =
+                    "provider=${ready.provider} revision=${ready.sourceRevision} " +
+                        "width=${ready.bitmap.width} height=${ready.bitmap.height} " +
+                        "visualWaitUs=${visualWaitNanos / 1_000L} " +
+                        "captureUs=${ready.elapsedNanos / 1_000L} " +
+                        "totalUs=${totalNanos / 1_000L}"
+            )
+            return true
         } finally {
-            Trace.endSection()
+            snapshotPreparationSlots -= nextSlot
+            releaseDeferredBuffersIfPossible()
         }
-        val totalNanos =
-            (SystemClock.elapsedRealtimeNanos() - totalStarted)
-                .coerceAtLeast(0L)
-        val ready = capture as? MaterialPageSnapshotCapture.Ready
-            ?: return false
-        if (
-            !isSourceCurrent() || active ||
-            !materialPageSnapshotCaptureIsCurrent(
-                captureRevision = ready.sourceRevision,
-                expectedRevision = snapshotSourceRevision
-            ) ||
-            ready.bitmap.width != view.width ||
-            ready.bitmap.height != view.height
-        ) {
-            return false
-        }
-
-        preparedSnapshot = MaterialPagePreparedSnapshot(
-            bitmap = ready.bitmap,
-            sourceRevision = ready.sourceRevision,
-            width = ready.bitmap.width,
-            height = ready.bitmap.height,
-            capturedAtElapsedNanos = SystemClock.elapsedRealtimeNanos(),
-            provider = ready.provider
-        )
-        preparedSnapshotBufferSlot = nextSlot
-        ReaderTrace.event(
-            name = "paper_snapshot_prepared",
-            details =
-                "provider=${ready.provider} revision=${ready.sourceRevision} " +
-                    "width=${ready.bitmap.width} height=${ready.bitmap.height} " +
-                    "visualWaitUs=${visualWaitNanos / 1_000L} " +
-                    "captureUs=${ready.elapsedNanos / 1_000L} " +
-                    "totalUs=${totalNanos / 1_000L}"
-        )
-        return true
     }
 
     fun begin(
@@ -416,6 +468,7 @@ internal class MaterialPageEngineState(
                 nowElapsedNanos = SystemClock.elapsedRealtimeNanos()
             ) &&
                 preparedSnapshotBufferSlot in snapshotBuffers.indices &&
+                preparedSnapshotBufferSlot !in snapshotPreparationSlots &&
                 prepared != null &&
                 snapshotBuffers[preparedSnapshotBufferSlot] === prepared.bitmap
         val capture =
@@ -871,11 +924,16 @@ internal class MaterialPageEngineState(
 
     fun releaseBufferIfIdle() {
         if (active || snapshot != null) return
+        // Non-reactive epoch: reject late preparations without restarting the
+        // Reader's snapshotSourceRevision-keyed effect when Paper is disabled.
+        snapshotPreparationGeneration =
+            nextMaterialPageSnapshotRevision(snapshotPreparationGeneration)
         preparedSnapshot = null
         preparedSnapshotBufferSlot = -1
-        releaseBuffersWhenUploadsSettle = gpuUploadLeases.isNotEmpty()
+        releaseBuffersWhenUploadsSettle =
+            gpuUploadLeases.isNotEmpty() || snapshotPreparationSlots.isNotEmpty()
         releaseUnleasedBuffers()
-        if (gpuUploadLeases.isEmpty()) {
+        if (gpuUploadLeases.isEmpty() && snapshotPreparationSlots.isEmpty()) {
             snapshotBufferCursor = -1
             releaseBuffersWhenUploadsSettle = false
         }
@@ -884,7 +942,7 @@ internal class MaterialPageEngineState(
     private fun releaseUnleasedBuffers() {
         snapshotBuffers.indices.forEach { slot ->
             val bitmap = snapshotBuffers[slot]
-            if (!snapshotHasPendingGpuUpload(bitmap)) {
+            if (slot !in snapshotPreparationSlots && !snapshotHasPendingGpuUpload(bitmap)) {
                 snapshotBuffers[slot] = null
             }
         }
@@ -967,7 +1025,8 @@ internal class MaterialPageEngineState(
         return sequenceOf(preferred, alternate)
             .distinct()
             .firstOrNull { slot ->
-                !snapshotHasPendingGpuUpload(snapshotBuffers[slot])
+                slot !in snapshotPreparationSlots &&
+                    !snapshotHasPendingGpuUpload(snapshotBuffers[slot])
             }
     }
 

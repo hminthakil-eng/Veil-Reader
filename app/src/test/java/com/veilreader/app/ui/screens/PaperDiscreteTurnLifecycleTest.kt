@@ -38,6 +38,29 @@ import org.robolectric.annotation.Config
 @Config(sdk = [37])
 class PaperDiscreteTurnLifecycleTest {
     @Test
+    fun `unstarted touch end preserves tap while reserved short drag stays consumed`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture()
+        val state = PaperCurlState()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() })
+        try {
+            assertFalse(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertFalse(listener.hasPendingTurn())
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertFalse(listener.hasPendingTurn())
+            assertFalse(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `accepted discrete preview restores exact origin when owner is disposed`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
@@ -339,7 +362,7 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
-    fun `presented sheet permits exactly one preview and one release commit`() = runTest {
+    fun `presented drag keeps original resource until release and commits exactly once`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         val fixture = NavigatorFixture().apply { settleImmediately = true }
         val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
@@ -364,7 +387,8 @@ class PaperDiscreteTurnLifecycleTest {
             assertEquals(0, fixture.requests)
             state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
             runCurrent()
-            assertEquals(1, fixture.requests)
+            assertEquals(0, fixture.requests)
+            assertEquals(fixture.origin, fixture.current.value)
             assertEquals(0, fixture.commits)
             assertTrue(listener.onDrag(drag(DragEvent.Type.End, -900f)))
             advanceUntilIdle()
@@ -427,6 +451,46 @@ class PaperDiscreteTurnLifecycleTest {
             assertFalse(listener.hasPendingTurn())
             assertEquals(0, fixture.requests)
             assertEquals(0, fixture.commits)
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `cancelled presented drag never opens destination resource`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val clock = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+                delay(16L)
+                return onFrame(testScheduler.currentTime * 1_000_000L)
+            }
+        }
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true },
+            CoroutineScope(coroutineContext + clock), onInteraction = {},
+            onCommittedTurn = { fixture.commit() })
+        try {
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
+            runCurrent()
+            state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
+            runCurrent()
+            assertEquals(0, fixture.requests)
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            advanceUntilIdle()
+            assertEquals(fixture.origin, fixture.current.value)
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertTrue(fixture.restores.isEmpty())
+            assertFalse(listener.hasPendingTurn())
         } finally {
             listener.forceCancelPendingTurn()
             state.dispose()

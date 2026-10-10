@@ -96,6 +96,19 @@ internal class GpuMaterialPageCurlView(
     private var submittedFrame: SubmittedFrame? = null
     private val pendingUploadLeases = mutableListOf<MaterialPageGpuUploadLease>()
     private var lastSubmittedActive = false
+    // Read-only observation of a real acquired GPU buffer; never drives presentation or navigation.
+    internal var lastAcquiredSheetEpoch = 0L
+        private set
+    internal val isPageTurnActive: Boolean get() = lastSubmittedActive
+    private var acquisitionCheckScheduled = false
+    private var lastLoggedAcquisitionTimestamp = Long.MIN_VALUE
+    private val acquisitionCheck = Runnable {
+        acquisitionCheckScheduled = false
+        if (isAttachedToWindow && isAvailable && !rendererPaused && lastSubmittedActive) {
+            surfaceTexture?.let(::acknowledgeAcquiredSheet)
+            scheduleSheetAcquisitionCheck()
+        }
+    }
     private var submittedSequence = 0L
     private var textureRevision = 0L
     private var textureSubmissionStartedAtNanos = 0L
@@ -163,35 +176,75 @@ internal class GpuMaterialPageCurlView(
         // acquired buffer, rather than a draw callback or a fixed-delay guess.
         surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
+                ReaderTrace.event("paper_gpu_surface_available", details = "width=$width height=$height")
                 surfaceDelegate?.onSurfaceTextureAvailable(surface, width, height)
             }
             override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
                 surfaceDelegate?.onSurfaceTextureSizeChanged(surface, width, height)
             }
             override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                cancelSheetAcquisitionCheck()
                 synchronized(frameLock) { completedSheetDraws.clear() }
                 return surfaceDelegate?.onSurfaceTextureDestroyed(surface) ?: true
             }
             override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
                 surfaceDelegate?.onSurfaceTextureUpdated(surface)
-                val acquiredTimestamp = surface.timestamp
-                val presented = synchronized(frameLock) {
-                    completedSheetDraws.firstOrNull { it.timestamp == acquiredTimestamp }.also {
-                        while (completedSheetDraws.isNotEmpty() && completedSheetDraws.first().timestamp <= acquiredTimestamp) {
-                            completedSheetDraws.removeFirst()
-                        }
-                    }
-                } ?: return
-                if (gpuMaterialSheetPresentationMatches(
-                        presented.timestamp, acquiredTimestamp,
-                        presented.generation, rendererGeneration,
-                        presented.viewport, viewportGeneration
-                    )) {
-                    onSheetPresented(presented.epoch)
-                }
+                acknowledgeAcquiredSheet(surface)
+                // API 35 TextureView.applyUpdate only queues HWUI's deferred layer update
+                // before this callback. RenderThread may acquire the buffer afterwards.
+                // Re-read its real timestamp on a frame callback; never infer presentation
+                // from the callback itself, GL submission, or elapsed time.
+                scheduleSheetAcquisitionCheck()
             }
         }
         renderMode = GLTextureView.RENDER_MODE_WHEN_DIRTY
+    }
+
+    private fun acknowledgeAcquiredSheet(surface: SurfaceTexture) {
+        val acquiredTimestamp = surface.timestamp
+        val presented = synchronized(frameLock) {
+            if (acquiredTimestamp != lastLoggedAcquisitionTimestamp) {
+                lastLoggedAcquisitionTimestamp = acquiredTimestamp
+                completedSheetDraws.lastOrNull()?.let { drawn ->
+                    ReaderTrace.event("paper_gpu_buffer_acquired",
+                        details = "acquiredNs=$acquiredTimestamp drawnNs=${drawn.timestamp} " +
+                            "epoch=${drawn.epoch} generation=${drawn.generation}/$rendererGeneration " +
+                            "viewport=${drawn.viewport}/$viewportGeneration pending=${completedSheetDraws.size}")
+                }
+            }
+            completedSheetDraws.firstOrNull { it.timestamp == acquiredTimestamp }.also {
+                while (completedSheetDraws.isNotEmpty() && completedSheetDraws.first().timestamp <= acquiredTimestamp) {
+                    completedSheetDraws.removeFirst()
+                }
+            }
+        } ?: return
+        if (gpuMaterialSheetPresentationMatches(
+                presented.timestamp, acquiredTimestamp,
+                presented.generation, rendererGeneration,
+                presented.viewport, viewportGeneration
+            )) {
+            lastAcquiredSheetEpoch = maxOf(lastAcquiredSheetEpoch, presented.epoch)
+            onSheetPresented(presented.epoch)
+        }
+    }
+
+    private fun scheduleSheetAcquisitionCheck() {
+        if (!acquisitionCheckScheduled && !rendererPaused && lastSubmittedActive &&
+            isAttachedToWindow && isAvailable && synchronized(frameLock) { completedSheetDraws.isNotEmpty() }) {
+            acquisitionCheckScheduled = true
+            postOnAnimation(acquisitionCheck)
+        }
+    }
+
+    private fun cancelSheetAcquisitionCheck() {
+        removeCallbacks(acquisitionCheck)
+        acquisitionCheckScheduled = false
+    }
+
+    override fun onDetachedFromWindow() {
+        cancelSheetAcquisitionCheck()
+        synchronized(frameLock) { completedSheetDraws.clear() }
+        super.onDetachedFromWindow()
     }
 
     fun submitFrame(
@@ -257,6 +310,7 @@ internal class GpuMaterialPageCurlView(
                 uploadRevision
             )
         }
+        if (!lastSubmittedActive) cancelSheetAcquisitionCheck()
         requestRender()
     }
 
@@ -616,6 +670,7 @@ internal class GpuMaterialPageCurlView(
     }
 
     fun pauseRenderer() {
+        cancelSheetAcquisitionCheck()
         if (rendererPaused) return
         runCatching { onPause() }
             .onSuccess {
@@ -1076,12 +1131,12 @@ internal class GpuMaterialPageCurlView(
             uniform float uCylinderTilt;
             uniform float uCylinderRadius;
             uniform float uPageAspect;
-            uniform float uSideSign;
-            uniform float uShadowPass;
+            uniform mediump float uSideSign;
+            uniform mediump float uShadowPass;
 
-            varying vec2 vTexCoord;
-            varying vec3 vNormal;
-            varying float vLift;
+            varying mediump vec2 vTexCoord;
+            varying mediump vec3 vNormal;
+            varying mediump float vLift;
 
             const float PI = 3.14159265358979323846;
 
@@ -1184,13 +1239,13 @@ internal class GpuMaterialPageCurlView(
             uniform float uEdgeStrength;
             uniform float uShadowStrength;
             uniform float uVisualAlpha;
-            uniform float uShadowPass;
+            uniform mediump float uShadowPass;
             uniform vec2 uTexelSize;
-            uniform float uSideSign;
+            uniform mediump float uSideSign;
 
-            varying vec2 vTexCoord;
-            varying vec3 vNormal;
-            varying float vLift;
+            varying mediump vec2 vTexCoord;
+            varying mediump vec3 vNormal;
+            varying mediump float vLift;
 
             float pageNoise(vec2 uv) {
                 float a = sin(uv.x * 173.0 + uMaterialPhase * 7.0);
@@ -1330,10 +1385,17 @@ internal class GpuMaterialPageCurlView(
 internal enum class GpuMaterialPageRendererStatus {
     INITIALIZING,
     READY,
+    SOFTWARE_READY,
     UNSUPPORTED,
     FAILED,
     REDUCED_MOTION
 }
+
+internal fun materialPageRendererCanPresent(
+    status: GpuMaterialPageRendererStatus
+): Boolean =
+    status == GpuMaterialPageRendererStatus.READY ||
+        status == GpuMaterialPageRendererStatus.SOFTWARE_READY
 
 internal fun shouldMountGpuMaterialPageRenderer(
     status: GpuMaterialPageRendererStatus
@@ -1456,15 +1518,23 @@ internal fun GpuMaterialPageOverlay(
     val rendererFailed = remember { mutableStateOf(false) }
     val rendererReady = remember { mutableStateOf(false) }
     val rendererFailureCount = remember { mutableIntStateOf(0) }
-    val status = when {
+
+    val gpuStatus = when {
         state.reducedMotion -> GpuMaterialPageRendererStatus.REDUCED_MOTION
         !supported -> GpuMaterialPageRendererStatus.UNSUPPORTED
         rendererFailed.value -> GpuMaterialPageRendererStatus.FAILED
         !rendererReady.value -> GpuMaterialPageRendererStatus.INITIALIZING
         else -> GpuMaterialPageRendererStatus.READY
     }
-    LaunchedEffect(status) {
-        onRendererStatus(status)
+    val effectiveStatus = when {
+        state.reducedMotion -> GpuMaterialPageRendererStatus.REDUCED_MOTION
+        gpuStatus == GpuMaterialPageRendererStatus.READY ->
+            GpuMaterialPageRendererStatus.READY
+        else -> GpuMaterialPageRendererStatus.SOFTWARE_READY
+    }
+
+    LaunchedEffect(effectiveStatus) {
+        onRendererStatus(effectiveStatus)
     }
     LaunchedEffect(
         rendererFailed.value,
@@ -1486,137 +1556,128 @@ internal fun GpuMaterialPageOverlay(
                 )
             )
             if (!state.reducedMotion) {
-                // FAILED unmounts the poisoned GL host. Clearing the failure flag
-                // re-enters INITIALIZING and mounts a fresh context exactly once
-                // per bounded retry attempt.
                 rendererFailed.value = false
             }
         }
     }
-    if (!shouldMountGpuMaterialPageRenderer(status)) {
-        // INITIALIZING must stay mounted: this GLTextureView creates the
-        // context and is the only path that can transition to READY.
-        return
-    }
 
     val highContrast = LocalVeilHighContrast.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val viewRef = remember { mutableStateOf<GpuMaterialPageCurlView?>(null) }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> viewRef.value?.resumeRenderer()
-                Lifecycle.Event.ON_PAUSE -> viewRef.value?.pauseRenderer()
-                else -> Unit
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            viewRef.value?.pauseRenderer()
-            viewRef.value = null
-            // A disposed GL host cannot remain authoritative READY state.
-            // The next mount must earn readiness from a new onSurfaceCreated().
-            rendererReady.value = false
-        }
-    }
 
-    val gpuView = viewRef.value
-    LaunchedEffect(gpuView, state, highContrast, rendererReady.value) {
-        if (gpuView == null) return@LaunchedEffect
-        snapshotFlow {
-            GpuOverlaySnapshot(
-                bitmap = state.snapshot,
-                active = state.active,
-                progress = state.progress,
-                verticalBias = state.verticalBias,
-                pullOriginY = state.pullOriginY,
-                diagonalPull = state.diagonalPull,
-                pointerTravel = state.pointerTravel,
-                edgeTravel = state.edgeTravel,
-                profile = state.profile,
-                patina = state.patina,
-                tone = state.tone,
-                visualAlpha = state.visualAlpha,
-                side = state.side,
-                sheetEpoch = state.sheetEpoch
-            )
-        }.collect { frame ->
-            val bitmap = frame.bitmap
-            val active =
-                rendererReady.value &&
-                    frame.active &&
-                    bitmap != null &&
-                    !bitmap.isRecycled
-            gpuView.submitFrame(
-                bitmap = bitmap,
-                active = active,
-                curl = gpuPageCurlFrame(
-                    progress = frame.progress,
-                    verticalBias = frame.verticalBias,
-                    pullOriginY = frame.pullOriginY,
-                    diagonalPull = frame.diagonalPull,
-                    pointerTravel = frame.pointerTravel,
-                    edgeTravel = frame.edgeTravel,
-                    pageAspect =
-                        if (bitmap != null && bitmap.width > 0) {
-                            bitmap.height.toFloat() / bitmap.width.toFloat()
-                        } else {
-                            1f
-                        },
-                    profile = frame.profile,
-                    side = frame.side
-                ),
-                profile = frame.profile,
-                patina = frame.patina,
-                tone = frame.tone,
-                visualAlpha = frame.visualAlpha,
-                highContrast = highContrast,
-                sheetEpoch = frame.sheetEpoch
-            )
-        }
-    }
-
-    AndroidView(
-        factory = { viewContext ->
-            GpuMaterialPageCurlView(
-                context = viewContext,
-                onRendererReady = { ready ->
-                    rendererReady.value = ready
-                    if (ready) {
-                        rendererFailed.value = false
-                        // Do not reset rendererFailureCount here. A context that
-                        // initializes successfully can still fail deterministically
-                        // on the first texture upload or draw. Resetting on READY
-                        // would turn the nominal two-attempt recovery policy into an
-                        // unbounded remount loop on a broken GPU/driver path.
-                    }
-                },
-                onRendererFailure = {
-                    rendererReady.value = false
-                    rendererFailureCount.intValue += 1
-                    rendererFailed.value = true
-                },
-                onRendererFramePresented = {
-                    // Reset only after the renderer proved it can upload and draw
-                    // a real frame. READY alone is insufficient because a broken
-                    // driver path may fail deterministically on first draw.
-                    rendererFailureCount.intValue = 0
-                },
-                onSheetPresented = state::acknowledgeSheetPresented,
-                onTextureUploadLeaseRequired = state::markSnapshotSubmittedForGpu,
-                onTextureUploaded = state::acknowledgeSnapshotUploaded,
-                onTextureUploadsInvalidated = state::abandonGpuUploadLeases
-            ).also { created ->
-                viewRef.value = created
-                if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                    created.pauseRenderer()
+    if (shouldMountGpuMaterialPageRenderer(gpuStatus)) {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val viewRef = remember { mutableStateOf<GpuMaterialPageCurlView?>(null) }
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> viewRef.value?.resumeRenderer()
+                    Lifecycle.Event.ON_PAUSE -> viewRef.value?.pauseRenderer()
+                    else -> Unit
                 }
             }
-        },
-        modifier = modifier,
-        update = { }
-    )
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+                viewRef.value?.pauseRenderer()
+                viewRef.value = null
+                rendererReady.value = false
+            }
+        }
+
+        val gpuView = viewRef.value
+        LaunchedEffect(gpuView, state, highContrast, rendererReady.value) {
+            if (gpuView == null) return@LaunchedEffect
+            snapshotFlow {
+                GpuOverlaySnapshot(
+                    bitmap = state.snapshot,
+                    active = state.active,
+                    progress = state.progress,
+                    verticalBias = state.verticalBias,
+                    pullOriginY = state.pullOriginY,
+                    diagonalPull = state.diagonalPull,
+                    pointerTravel = state.pointerTravel,
+                    edgeTravel = state.edgeTravel,
+                    profile = state.profile,
+                    patina = state.patina,
+                    tone = state.tone,
+                    visualAlpha = state.visualAlpha,
+                    side = state.side,
+                    sheetEpoch = state.sheetEpoch
+                )
+            }.collect { frame ->
+                val bitmap = frame.bitmap
+                val active =
+                    rendererReady.value &&
+                        frame.active &&
+                        bitmap != null &&
+                        !bitmap.isRecycled
+                gpuView.submitFrame(
+                    bitmap = bitmap,
+                    active = active,
+                    curl = gpuPageCurlFrame(
+                        progress = frame.progress,
+                        verticalBias = frame.verticalBias,
+                        pullOriginY = frame.pullOriginY,
+                        diagonalPull = frame.diagonalPull,
+                        pointerTravel = frame.pointerTravel,
+                        edgeTravel = frame.edgeTravel,
+                        pageAspect =
+                            if (bitmap != null && bitmap.width > 0) {
+                                bitmap.height.toFloat() / bitmap.width.toFloat()
+                            } else {
+                                1f
+                            },
+                        profile = frame.profile,
+                        side = frame.side
+                    ),
+                    profile = frame.profile,
+                    patina = frame.patina,
+                    tone = frame.tone,
+                    visualAlpha = frame.visualAlpha,
+                    highContrast = highContrast,
+                    sheetEpoch = frame.sheetEpoch
+                )
+            }
+        }
+
+        AndroidView(
+            factory = { viewContext ->
+                GpuMaterialPageCurlView(
+                    context = viewContext,
+                    onRendererReady = { ready ->
+                        rendererReady.value = ready
+                        if (ready) rendererFailed.value = false
+                    },
+                    onRendererFailure = {
+                        rendererReady.value = false
+                        rendererFailureCount.intValue += 1
+                        rendererFailed.value = true
+                    },
+                    onRendererFramePresented = {
+                        rendererFailureCount.intValue = 0
+                    },
+                    onSheetPresented = state::acknowledgeSheetPresented,
+                    onTextureUploadLeaseRequired = state::markSnapshotSubmittedForGpu,
+                    onTextureUploaded = state::acknowledgeSnapshotUploaded,
+                    onTextureUploadsInvalidated = state::abandonGpuUploadLeases
+                ).also { created ->
+                    viewRef.value = created
+                    if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                        created.pauseRenderer()
+                    }
+                }
+            },
+            modifier = modifier,
+            update = { }
+        )
+    }
+
+    if (effectiveStatus == GpuMaterialPageRendererStatus.SOFTWARE_READY) {
+        SoftwareMaterialPageCurlOverlay(
+            state = state,
+            modifier = modifier,
+            highContrast = highContrast
+        )
+    }
 }
 
 /** Exact acquired-buffer acknowledgement, fenced against old contexts and resized viewports. */

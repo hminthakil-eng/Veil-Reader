@@ -1,9 +1,16 @@
 package com.veilreader.app.ui.reader.material
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.os.Trace
+import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -37,6 +44,174 @@ internal fun interface MaterialPagePreparedSnapshotProvider {
         target: Bitmap,
         sourceRevision: Long
     ): MaterialPageSnapshotCapture
+}
+
+private tailrec fun materialPageActivity(context: Context): Activity? =
+    when (context) {
+        is Activity -> context
+        is ContextWrapper -> materialPageActivity(context.baseContext)
+        else -> null
+    }
+
+internal object WindowPixelCopyPreparedMaterialPageSnapshotProvider :
+    MaterialPagePreparedSnapshotProvider {
+
+    override suspend fun capture(
+        view: View,
+        target: Bitmap,
+        sourceRevision: Long
+    ): MaterialPageSnapshotCapture {
+        if (
+            view.width <= 0 ||
+            view.height <= 0 ||
+            !view.isAttachedToWindow
+        ) {
+            return MaterialPageSnapshotCapture.NotReady(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.VIEW_NOT_READY
+            )
+        }
+        if (target.isRecycled) {
+            return MaterialPageSnapshotCapture.Failed(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.TARGET_RECYCLED
+            )
+        }
+        if (
+            target.width != view.width ||
+            target.height != view.height ||
+            target.config != Bitmap.Config.ARGB_8888
+        ) {
+            return MaterialPageSnapshotCapture.Failed(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.TARGET_MISMATCH
+            )
+        }
+
+        val activity = materialPageActivity(view.context)
+            ?: return MaterialPageSnapshotCapture.NotReady(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.VIEW_NOT_READY
+            )
+        val window = activity.window
+        val decor = window.decorView
+        if (decor.width <= 0 || decor.height <= 0) {
+            return MaterialPageSnapshotCapture.NotReady(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.VIEW_NOT_READY
+            )
+        }
+
+        val location = IntArray(2)
+        view.getLocationInWindow(location)
+        val sourceRect = Rect(
+            location[0],
+            location[1],
+            location[0] + view.width,
+            location[1] + view.height
+        )
+        if (
+            sourceRect.left < 0 ||
+            sourceRect.top < 0 ||
+            sourceRect.right > decor.width ||
+            sourceRect.bottom > decor.height ||
+            sourceRect.width() != target.width ||
+            sourceRect.height() != target.height
+        ) {
+            return MaterialPageSnapshotCapture.NotReady(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.VIEW_NOT_READY
+            )
+        }
+
+        val temporary = runCatching {
+            Bitmap.createBitmap(
+                sourceRect.width(),
+                sourceRect.height(),
+                Bitmap.Config.ARGB_8888
+            )
+        }.getOrNull() ?: return MaterialPageSnapshotCapture.Failed(
+            sourceRevision = sourceRevision,
+            reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
+            errorType = "PixelCopyBufferAllocation"
+        )
+
+        val started = SystemClock.elapsedRealtimeNanos()
+        val result = withTimeoutOrNull(PIXEL_COPY_TIMEOUT_MS) {
+            suspendCancellableCoroutine<Int> { continuation ->
+                try {
+                    PixelCopy.request(
+                        window,
+                        sourceRect,
+                        temporary,
+                        { copyResult ->
+                            if (continuation.isActive) {
+                                continuation.resume(copyResult)
+                            } else if (!temporary.isRecycled) {
+                                // A timeout/cancel must never leave PixelCopy writing
+                                // into one of MaterialPageEngine's reusable buffers.
+                                temporary.recycle()
+                            }
+                        },
+                        Handler(Looper.getMainLooper())
+                    )
+                } catch (_: Exception) {
+                    if (continuation.isActive) {
+                        continuation.resume(PIXEL_COPY_REQUEST_EXCEPTION)
+                    }
+                }
+            }
+        }
+
+        if (result == null) {
+            // The accepted request can still complete after timeout. Its callback
+            // owns temporary recycling once the continuation is no longer active.
+            return MaterialPageSnapshotCapture.Failed(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
+                errorType = "PixelCopyTimeout"
+            )
+        }
+
+        if (result != PixelCopy.SUCCESS) {
+            if (!temporary.isRecycled) temporary.recycle()
+            return MaterialPageSnapshotCapture.Failed(
+                sourceRevision = sourceRevision,
+                reason = MaterialPageSnapshotFailureReason.DRAW_FAILED,
+                errorType = "PixelCopyResult:$result"
+            )
+        }
+
+        return try {
+            if (
+                !view.isAttachedToWindow ||
+                view.width != target.width ||
+                view.height != target.height
+            ) {
+                MaterialPageSnapshotCapture.NotReady(
+                    sourceRevision = sourceRevision,
+                    reason = MaterialPageSnapshotFailureReason.VIEW_NOT_READY
+                )
+            } else {
+                target.eraseColor(android.graphics.Color.TRANSPARENT)
+                Canvas(target).drawBitmap(temporary, 0f, 0f, null)
+                MaterialPageSnapshotCapture.Ready(
+                    bitmap = target,
+                    sourceRevision = sourceRevision,
+                    provider = PROVIDER_NAME,
+                    elapsedNanos =
+                        (SystemClock.elapsedRealtimeNanos() - started)
+                            .coerceAtLeast(0L)
+                )
+            }
+        } finally {
+            if (!temporary.isRecycled) temporary.recycle()
+        }
+    }
+
+    private const val PROVIDER_NAME = "window_pixel_copy"
+    private const val PIXEL_COPY_TIMEOUT_MS = 420L
+    private const val PIXEL_COPY_REQUEST_EXCEPTION = Int.MIN_VALUE
 }
 
 internal fun materialPageVisibleWebView(root: View): WebView? {
@@ -102,8 +277,16 @@ internal data class MaterialPagePreparedSnapshot(
     val provider: String
 )
 
+/**
+ * Prepared page pixels remain valid primarily by source revision + exact viewport.
+ *
+ * Readers routinely dwell on a page far longer than a few seconds. A short TTL forced Paper to
+ * discard its warm WebView snapshot just before the next human page turn and fall back to a
+ * synchronous gesture-time capture. Keep a generous safety ceiling while navigation, relayout,
+ * theme/decoration changes and viewport changes continue to invalidate the source revision.
+ */
 internal const val MATERIAL_PAGE_PREPARED_SNAPSHOT_MAX_AGE_NANOS =
-    3_000_000_000L
+    300_000_000_000L
 
 internal fun materialPagePreparedSnapshotIsCurrent(
     prepared: MaterialPagePreparedSnapshot?,
