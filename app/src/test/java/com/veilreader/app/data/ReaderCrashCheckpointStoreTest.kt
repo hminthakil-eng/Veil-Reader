@@ -64,6 +64,26 @@ class ReaderCrashCheckpointStoreTest {
         assertEquals(1L, recovered.sequence)
     }
 
+    @Test
+    fun failedAtomicRenameCannotAcknowledgeANewCheckpointAndCanRetry() {
+        val first = checkpoint(1, 100, "first.xhtml")
+        assertTrue(store.write(first).durable)
+        val root = java.io.File(RuntimeEnvironment.getApplication().filesDir, "reader-recovery")
+        val base = requireNotNull(root.listFiles()).single { it.name.endsWith(".json") }
+        assertTrue(base.delete())
+        assertTrue(base.mkdir())
+        java.io.File(base, "blocker").writeText("Nonempty directory blocks atomic rename")
+        try {
+            val destination = checkpoint(2, 101, "destination.xhtml")
+            assertFalse(store.write(destination).durable)
+            assertTrue(base.isDirectory)
+            assertTrue(base.deleteRecursively())
+            assertTrue(store.write(destination).durable)
+            assertEquals("destination.xhtml", org.json.JSONObject(
+                requireNotNull(store.read(first.bookId)).locatorJson).getString("href"))
+        } finally { base.deleteRecursively() }
+    }
+
     private fun checkpoint(sequence: Long, at: Long, href: String) = ReaderCrashCheckpoint(
         bookId = "checkpoint-test", sessionId = "session", writerEpoch = 1,
         sequence = sequence, progression = 0.2, locatorJson = """{"href":"$href"}""",

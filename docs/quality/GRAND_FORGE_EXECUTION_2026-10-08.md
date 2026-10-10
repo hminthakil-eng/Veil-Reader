@@ -556,3 +556,22 @@ foreground listening checkpoint, corpus/RTL/selection/PDF and device performance
 - Performance/accessibility/RTL: one ordered commit per user action; localized
   polite failure and non-gesture retry; actual latency, RTL editor and TalkBack
   pending. Rollback isolated commit; no schema/gate changes.
+
+## GF-DUR-006 — verify atomic checkpoint acknowledgement
+
+- Priority / subsystem: P0 / local Reader durability.
+- User impact: accepted navigation must not claim crash recovery when the journal rename failed.
+- Observed / expected: Android AtomicFile.finishWrite logs some sync/rename failures; require successful explicit file-descriptor sync and exact bounded readback of the committed base record before returning durable=true.
+- Evidence / root cause: AOSP Android 15 AtomicFile.finishWrite and rename log failure without propagating it. Previous Store.write treated a normal return as durable success.
+- Affected files / implementation: ReaderCrashCheckpoint.kt, ReaderCrashCheckpointStoreTest.kt, RoomRuntimeRepositoryInstrumentedTest.kt. Keep the existing ordered writer and journal; reject a failed commit before repository cache/order/Room advancement, then permit the identical sequence to retry.
+- Reuse: Android AtomicFile and existing 192 KiB bounded checkpoint reader; no new persistence format.
+- Risks / performance: explicit sync plus bounded readback adds synchronous I/O. elapsedNanos includes the cost; physical latency remains unverified. This proves process-death acknowledgement, not a hardware power-loss guarantee.
+- Tests: nonempty directory blocks the base-file rename; assert non-durable result, unchanged repository progress/order, and successful identical-sequence retry after removing the blocker. Unit and Android CI pending.
+- Accessibility / RTL: no input, direction or visual changes; existing storage-failure presentation applies.
+- Acceptance: both regression tests pass, full QA build/lint/storage checks pass, checkpoint cost measured before claiming performance GREEN.
+- Dependencies: existing journal acknowledgement fencing and repository writer lease.
+- Status: YELLOW, implemented; CI and device performance pending. Release gates unchanged.
+
+### Verified canonical baseline, 2026-10-10
+
+Forge QA run 37878688504 on a67586cf passed 1009 unit tests across 174 suites and 174 Android tests, with zero reported failures, errors or skipped tests. This covers the integrated annotation, note/delete, selection, foreground TTS checkpoint and navigation/input work on that revision. It does not verify GF-DUR-006 or physical-device UX/performance. PR 446 remains unintegrated: storage, process-kill and emulator performance checks passed, but full build failed in a native Robolectric Library accessibility worker; do not treat its incomplete suite as GREEN.

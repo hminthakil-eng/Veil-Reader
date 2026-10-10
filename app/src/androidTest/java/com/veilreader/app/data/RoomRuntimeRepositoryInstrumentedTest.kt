@@ -736,6 +736,44 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun failedAtomicCheckpointRenameDoesNotAdvanceProgressOrOrdering() = runBlocking<Unit> {
+        val repository = repository()
+        val origin = """{"href":"origin.xhtml"}"""
+        val destination = """{"href":"destination.xhtml"}"""
+        val id = "rename-failure-book"
+        repository.addImportedBook(Book(id = id, title = "Rename failure", author = "QA",
+            sourceUri = "file:///rename.epub", progress = 0.2f, locatorJson = origin, lastOpenedAtEpochMs = 100L))
+        val lease = repository.beginReaderProgressSession(id, "rename-session")
+        val store = ReaderCrashCheckpointStore(context)
+        val root = File(context.filesDir, "reader-recovery")
+        root.deleteRecursively()
+        assertTrue(store.write(ReaderCrashCheckpoint(id, lease.sessionId, lease.epoch,
+            1L, 0.2, origin, 100L)).durable)
+        val base = requireNotNull(root.listFiles()).single { it.name.endsWith(".json") }
+        assertTrue(base.delete())
+        assertTrue(base.mkdir())
+        File(base, "blocker").writeText("Block final rename")
+        try {
+            val failed = repository.saveReaderProgress(lease, 0.7, destination,
+                sequence = 1L, nowEpochMs = 101L, bypassDebounce = true)
+            assertFalse(failed.accepted)
+            assertFalse(failed.crashCheckpointDurable)
+            assertEquals(origin, repository.getBook(id)?.locatorJson)
+            repository.flushWrites()
+            assertEquals(origin, db.books().findEntity(id)?.locatorJson)
+            assertTrue(base.deleteRecursively())
+            val retry = repository.saveReaderProgress(lease, 0.7, destination,
+                sequence = 1L, nowEpochMs = 101L, bypassDebounce = true)
+            assertTrue(retry.accepted)
+            repository.flushWrites()
+            assertEquals(destination, db.books().findEntity(id)?.locatorJson)
+        } finally {
+            base.deleteRecursively()
+            repository.endReaderProgressSession(lease)
+        }
+    }
+
+    @Test
     fun malformedSemanticCheckpointCannotAdvanceCompletionOrOrdering() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(Book(
