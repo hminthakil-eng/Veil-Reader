@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
@@ -55,6 +56,8 @@ internal fun ReaderListeningMode(
     startFailed: Boolean,
     publicationLanguage: String? = null,
     voiceCatalogSupported: Boolean = false,
+    neuralEngineReviewEnabled: Boolean = false,
+    sherpaEngineInstalled: Boolean = false,
     voices: List<ReaderTtsVoice> = emptyList(),
     voiceCatalogLoading: Boolean = false,
     voiceCatalogProblem: ReaderTtsProblem? = null,
@@ -328,6 +331,58 @@ internal fun ReaderListeningMode(
                         modifier = Modifier.heightIn(min = 48.dp),
                         label = { Text("${number(speed)}×") }
                     )
+                }
+            }
+
+            if (neuralEngineReviewEnabled) {
+                Surface(
+                    modifier = Modifier.widthIn(max = 620.dp).fillMaxWidth(),
+                    color = VeilPalette.Archive.copy(alpha = 0.72f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(Modifier.padding(VeilSpacing.md)) {
+                        Text(
+                            "Voice engine · experimental",
+                            color = VeilPalette.Brass,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FilterChip(
+                                selected = settings.engine == ReaderTtsEngineChoice.SYSTEM,
+                                onClick = {
+                                    if (settings.engine != ReaderTtsEngineChoice.SYSTEM)
+                                        onSettingsChange(settings.copy(
+                                            engine = ReaderTtsEngineChoice.SYSTEM,
+                                            preferredVoiceIds = emptyMap()
+                                        ))
+                                },
+                                label = { Text("Android") }
+                            )
+                            FilterChip(
+                                selected = settings.engine == ReaderTtsEngineChoice.SHERPA_ONNX,
+                                enabled = sherpaEngineInstalled,
+                                onClick = {
+                                    if (settings.engine != ReaderTtsEngineChoice.SHERPA_ONNX)
+                                        onSettingsChange(settings.copy(
+                                            engine = ReaderTtsEngineChoice.SHERPA_ONNX,
+                                            preferredVoiceIds = emptyMap()
+                                        ))
+                                },
+                                label = { Text("Neural · Sherpa") }
+                            )
+                        }
+                        Text(
+                            if (sherpaEngineInstalled)
+                                "Select Kokoro in the installed Sherpa engine for English. Switching engines pauses playback and resets the selected voice; tap Play to resume."
+                            else
+                                "Sherpa-ONNX TTS Engine must be installed and configured with a downloaded voice model before neural playback is available.",
+                            color = VeilMaterials.TextSecondary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
 
