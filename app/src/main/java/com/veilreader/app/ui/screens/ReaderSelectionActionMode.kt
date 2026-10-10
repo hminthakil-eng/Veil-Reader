@@ -14,7 +14,8 @@ import org.readium.r2.shared.publication.Locator
 internal enum class ReaderSelectionAction {
     HIGHLIGHT,
     NOTE,
-    LOOKUP
+    LOOKUP,
+    TRANSLATE
 }
 
 /**
@@ -40,6 +41,7 @@ internal class ReaderSelectionActionModeCallback(
     private val highlightLabel: String,
     private val noteLabel: String,
     private val lookupLabel: String,
+    private val translateLabel: String = "Translate",
     private val onModeChanged: (Boolean) -> Unit = {},
     private val onAction: suspend (ReaderSelectionAction, Locator, String) -> Unit
 ) : BaseActionModeCallback() {
@@ -61,6 +63,10 @@ internal class ReaderSelectionActionModeCallback(
             menu.add(Menu.NONE, ACTION_LOOKUP, 2, lookupLabel)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         }
+        if (menu.findItem(ACTION_TRANSLATE) == null) {
+            menu.add(Menu.NONE, ACTION_TRANSLATE, 3, translateLabel)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        }
         return true
     }
 
@@ -69,6 +75,7 @@ internal class ReaderSelectionActionModeCallback(
             ACTION_HIGHLIGHT -> ReaderSelectionAction.HIGHLIGHT
             ACTION_NOTE -> ReaderSelectionAction.NOTE
             ACTION_LOOKUP -> ReaderSelectionAction.LOOKUP
+            ACTION_TRANSLATE -> ReaderSelectionAction.TRANSLATE
             else -> return false
         }
         if (activeMode !== mode) return false
@@ -141,5 +148,6 @@ internal class ReaderSelectionActionModeCallback(
         const val ACTION_HIGHLIGHT = 0x5648
         const val ACTION_NOTE = 0x564E
         const val ACTION_LOOKUP = 0x564C
+        const val ACTION_TRANSLATE = 0x5654
     }
 }
