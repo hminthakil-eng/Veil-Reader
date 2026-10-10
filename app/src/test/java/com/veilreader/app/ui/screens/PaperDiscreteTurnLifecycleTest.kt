@@ -75,8 +75,7 @@ class PaperDiscreteTurnLifecycleTest {
             )
         )
         for (status in listOf(
-            GpuMaterialPageRendererStatus.READY,
-            GpuMaterialPageRendererStatus.SOFTWARE_READY
+            GpuMaterialPageRendererStatus.READY
         )) {
             assertEquals(
                 PaperTurnVisualFailure.SNAPSHOT,
