@@ -1,5 +1,6 @@
 package com.veilreader.app
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Activity
 import android.app.UiAutomation
 import android.content.Intent
@@ -8,6 +9,9 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
 import android.os.SystemClock
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -21,19 +25,32 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReaderSafImportInstrumentedTest {
+    private var originalA11yFlags: Int? = null
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation: UiAutomation
         get() = instrumentation.uiAutomation
 
     @Before
     fun forcePortraitStart() {
+        val info = uiAutomation.serviceInfo
+        originalA11yFlags = info.flags
+        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        uiAutomation.serviceInfo = info
         uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_0)
         SystemClock.sleep(500)
     }
 
     @After
     fun releaseRotation() {
-        uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+        try {
+            uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+        } finally {
+            originalA11yFlags?.let { flags ->
+                val info = uiAutomation.serviceInfo
+                info.flags = flags
+                uiAutomation.serviceInfo = info
+            }
+        }
     }
 
     @Test
@@ -136,9 +153,56 @@ class ReaderSafImportInstrumentedTest {
     }
 
     private fun waitForViewId(vararg ids: String) {
-        waitForNode("viewId=${ids.joinToString()}") {
-            it.viewIdResourceName in ids
-        }.recycleSafely()
+        // UiAutomation's virtual Accessibility tree does not always expose
+        // embedded Readium WebViews on emulator ANGLE/Compose. Validate the
+        // actual visible native View tree of the RESUMED application as a
+        // second, equally concrete oracle. Never accept an invisible host or
+        // mere Reader startup callback as successful EPUB presentation.
+        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        val expectedIds = ids.toSet()
+        while (SystemClock.elapsedRealtime() < deadline) {
+            findNode { it.viewIdResourceName in expectedIds }?.let {
+                it.recycleSafely()
+                return
+            }
+            if (hasVisibleReadiumSurfaceInResumedActivity(expectedIds)) return
+            SystemClock.sleep(POLL_MS)
+        }
+        error(
+            "Timed out waiting for visible EPUB reader surface: ${ids.joinToString()} " +
+                "(a11yViewIdsEnabled=${uiAutomation.serviceInfo.flags and AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS != 0})"
+        )
+    }
+
+    private fun hasVisibleReadiumSurfaceInResumedActivity(ids: Set<String>): Boolean {
+        var seen = false
+        instrumentation.runOnMainSync {
+            val resumed = ActivityLifecycleMonitorRegistry.getInstance()
+                .getActivitiesInStage(Stage.RESUMED)
+            for (activity in resumed) {
+                if (activity.packageName != instrumentation.targetContext.packageName) continue
+                val views = ArrayDeque<View>()
+                views.add(activity.window.decorView)
+                while (views.isNotEmpty()) {
+                    val view = views.removeFirst()
+                    if (!view.isAttachedToWindow || !view.isShown ||
+                        view.width <= 0 || view.height <= 0) continue
+                    val resourceId = if (view.id != View.NO_ID) {
+                        runCatching { view.resources.getResourceName(view.id) }.getOrNull()
+                    } else null
+                    if (resourceId in ids || view is WebView) {
+                        seen = true
+                        return@runOnMainSync
+                    }
+                    if (view is ViewGroup) {
+                        for (index in 0 until view.childCount) {
+                            views.add(view.getChildAt(index))
+                        }
+                    }
+                }
+            }
+        }
+        return seen
     }
 
     private fun waitForNode(
