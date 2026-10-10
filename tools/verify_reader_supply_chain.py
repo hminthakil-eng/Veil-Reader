@@ -64,6 +64,13 @@ def check(text: str) -> list[str]:
     else:
         if "if: github.event_name != 'pull_request'" not in graph:
             problems.append("privileged graph job must exclude pull_request")
+        for allowed_ref in (
+            "refs/heads/grand-forge/p0-kindle-reader-quality-20261008",
+            "refs/heads/grand-forge/arena-app-hardening-v1",
+            "refs/heads/main",
+        ):
+            if f"github.ref == '{allowed_ref}'" not in graph:
+                problems.append(f"privileged graph job must allowlist trusted branch {allowed_ref}")
         if not re.search(r"(?m)^    permissions:\n      contents: write\s*$", graph):
             problems.append("graph job needs job-local contents:write")
         if "gradle/actions/dependency-submission@v6" not in graph:
