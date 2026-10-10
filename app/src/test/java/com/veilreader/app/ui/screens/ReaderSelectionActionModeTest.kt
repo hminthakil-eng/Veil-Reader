@@ -15,6 +15,7 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,6 +26,26 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [37])
 class ReaderSelectionActionModeTest {
+    @Test
+    fun translateActionIsLocalizedAndNotDuplicatedWhenToolbarRecreates() = runTest {
+        val callback = callback(mutableListOf())
+        val mode = TestActionMode()
+        callback.onCreateActionMode(mode, mode.menu)
+        callback.onCreateActionMode(mode, mode.menu)
+        assertEquals(4, mode.menu.size())
+        assertEquals("Translate", mode.menu.findItem(0x5654).title.toString())
+    }
+
+    @Test
+    @Config(sdk = [28])
+    fun translateActionIsHiddenBeforePlatformSupport() = runTest {
+        val callback = callback(mutableListOf())
+        val mode = TestActionMode()
+        callback.onCreateActionMode(mode, mode.menu)
+        assertEquals(3, mode.menu.size())
+        assertNull(mode.menu.findItem(0x5654))
+    }
+
     @Test
     fun currentModeDestruction_releasesSelectionOwnershipExactlyOnce() = runTest {
         val states = mutableListOf<Boolean>()
@@ -136,6 +157,7 @@ class ReaderSelectionActionModeTest {
             highlightLabel = "Highlight",
             noteLabel = "Note",
             lookupLabel = "Lookup",
+            translateLabel = "Translate",
             onModeChanged = { states += it },
             onAction = { _, _, _ -> }
         )
