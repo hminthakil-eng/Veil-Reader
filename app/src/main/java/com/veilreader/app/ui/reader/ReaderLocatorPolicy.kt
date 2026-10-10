@@ -123,6 +123,9 @@ internal class ReaderLocatorDeduplicator {
             if (!retryDurability && !(requireDurability && !lastCommitRequiresDurability)) {
                 return false
             }
+            // Upgrade/retry has the same owner, but still needs its own rollback snapshot.
+            previousCommittedLocationKey = lastCommittedLocationKey
+            previousCommitRequiresDurability = lastCommitRequiresDurability
             lastCommitRequiresDurability = lastCommitRequiresDurability || requireDurability
             return true
         }

@@ -5,6 +5,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderLocatorPolicyTest {
+    @Test
+    fun failedSameLocationDurabilityUpgradePreservesPriorLocationAndCanRetry() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("opening"))
+        assertTrue(gate.acceptCommit("opening", requireDurability = true))
+        gate.rejectCommit("opening")
+        assertFalse(gate.countsPageTurnFor("opening", ReaderLocatorEvent.NAVIGATOR_PAGE_TURN))
+        assertFalse(gate.acceptCommit("opening"))
+        assertTrue(gate.acceptCommit("opening", requireDurability = true))
+        assertFalse(gate.acceptCommit("opening", requireDurability = true))
+    }
+
 
     @Test
     fun durabilityUpgradeDoesNotAwardAnotherPageTurn() {
