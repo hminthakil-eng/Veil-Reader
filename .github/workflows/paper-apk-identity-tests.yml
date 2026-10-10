@@ -1,0 +1,31 @@
+name: Paper APK Identity Guard
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/paper-device-evidence-20261010
+      - codex/reader-apk-informed-paper-20261009
+      - grand-forge/p0-kindle-reader-quality-20261008
+    paths:
+      - "tools/collect_paper_device_evidence.py"
+      - "tools/paper_apk_identity.py"
+      - "tools/tests/test_paper_apk_identity.py"
+      - "tools/tests/test_collect_paper_device_evidence.py"
+      - ".github/workflows/paper-apk-identity-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Compile evidence and identity helpers
+        run: python3 -m py_compile tools/collect_paper_device_evidence.py tools/paper_apk_identity.py
+      - name: Verify Paper local capture and installed APK guards (no devices)
+        run: |
+          python3 -m unittest discover -s tools/tests -p test_collect_paper_device_evidence.py -v
+          python3 -m unittest discover -s tools/tests -p test_paper_apk_identity.py -v
