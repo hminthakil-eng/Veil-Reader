@@ -304,6 +304,10 @@ internal class ReaderTtsMediaPlayer(
         return Futures.immediateVoidFuture()
     }
 
+    fun selectedEngineChoice(): com.veilreader.app.domain.ReaderTtsEngineChoice =
+        currentRequest?.preferences?.engine
+            ?: com.veilreader.app.domain.ReaderTtsEngineChoice.SYSTEM
+
     fun activeSegmentText(): String? =
         sessionState.activeText
             ?.trim()
