@@ -24,6 +24,7 @@ import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import com.veilreader.app.domain.decodeReaderTapGrid
@@ -100,6 +101,7 @@ class SettingsStore(private val context: Context) {
         val volumeUpAction = stringPreferencesKey("reader_volume_up_action")
         val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
         val ttsSpeed = doublePreferencesKey("reader_tts_speed")
+        val ttsEngine = stringPreferencesKey("reader_tts_engine")
         val ttsPitch = doublePreferencesKey("reader_tts_pitch")
         val ttsPreferredVoices = stringPreferencesKey("reader_tts_preferred_voices")
         val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
@@ -325,6 +327,7 @@ class SettingsStore(private val context: Context) {
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.ttsSpeed] = normalized.speed
             prefs[Keys.ttsPitch] = normalized.pitch
+            prefs[Keys.ttsEngine] = normalized.engine.name
             if (normalized.preferredVoiceIds.isEmpty()) {
                 prefs.remove(Keys.ttsPreferredVoices)
             } else {
@@ -449,6 +452,12 @@ internal fun decodeReaderTtsPreferences(prefs: Preferences): ReaderTtsSettings {
     return ReaderTtsSettings(
         speed = values[doublePreferencesKey("reader_tts_speed")] as? Double ?: 1.0,
         pitch = values[doublePreferencesKey("reader_tts_pitch")] as? Double ?: 1.0,
+        engine = runCatching {
+            ReaderTtsEngineChoice.valueOf(
+                values[stringPreferencesKey("reader_tts_engine")] as? String
+                    ?: ReaderTtsEngineChoice.SYSTEM.name
+            )
+        }.getOrDefault(ReaderTtsEngineChoice.SYSTEM),
         preferredVoiceIds = decodeReaderTtsPreferredVoices(
             values[stringPreferencesKey("reader_tts_preferred_voices")] as? String
         )
