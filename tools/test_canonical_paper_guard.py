@@ -41,7 +41,7 @@ class CanonicalPaperGuardTest(unittest.TestCase):
         result = self.run_guard(
             lambda text: text.replace(
                 "fun paperModeSelected(): Boolean =",
-                "fun paperNeedsStaticFallback(): Boolean = false\\n            "
+                "fun paperNeedsStaticFallback(): Boolean = false\n            "
                 "fun paperModeSelected(): Boolean =",
             ),
             source=READER,
