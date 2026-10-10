@@ -219,9 +219,14 @@ internal class ReaderTtsMediaPlayer(
                     speechSession.state.collectLatest { newState ->
                         if (ownerGeneration != generation || released) return@collectLatest
                         sessionState = newState
-                        desiredPlayWhenReady =
-                            newState.phase == ReaderTtsPhase.PLAYING ||
-                                newState.phase == ReaderTtsPhase.PREPARING
+                        // The service's explicit user pause is authoritative:
+                        // a delayed PREPARING/PLAYING callback must not reset it
+                        // back to true and make the narrator start again.
+                        if (newState.phase !in setOf(
+                                ReaderTtsPhase.PLAYING,
+                                ReaderTtsPhase.PREPARING
+                            )
+                        ) desiredPlayWhenReady = false
                         invalidateState()
                         persistCheckpoint(newState)
                     }
@@ -244,16 +249,20 @@ internal class ReaderTtsMediaPlayer(
         loadRequest(request, autoplay = false)
     }
 
-    override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+    /**
+     * Works even while loadRequest() is still opening a publication and Media3
+     * has no media item/available COMMAND_PLAY_PAUSE yet. Never defer user pause
+     * behind database/Readium initialization.
+     */
+    fun setOwnerPlayIntent(playWhenReady: Boolean) {
+        verifyApplicationThread()
         desiredPlayWhenReady = playWhenReady
-        // Publish playWhenReady first. MediaSessionService can then promote itself to a media
-        // foreground service before AndroidReaderTtsBackend asks Android 15+ for audio focus.
         invalidateState()
-        if (playWhenReady) {
-            session?.resume()
-        } else {
-            session?.pause()
-        }
+        if (playWhenReady) session?.resume() else session?.pause()
+    }
+
+    override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
+        setOwnerPlayIntent(playWhenReady)
         return Futures.immediateVoidFuture()
     }
 
