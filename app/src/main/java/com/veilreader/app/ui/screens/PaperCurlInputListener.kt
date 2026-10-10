@@ -57,14 +57,18 @@ internal fun paperRendererCanOwnNavigationInput(
     MaterialPageEngineRollout.isEnabled() &&
         (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY)
 
-/** Reserve a Paper drag during GL startup; actual page movement still requires READY. */
+/**
+ * Reserve ALL Paper drags regardless of current GL readiness. The capture
+ * gate decides whether the sheet may move; returning false here hands an
+ * intentional Paper swipe to Readium/StaticPaged and makes failed Paper appear
+ * to be a valid slide. The diagnostic path owns the gesture and reports why
+ * Paper could not move, unless reduced motion explicitly permits static input.
+ */
+@Suppress("UNUSED_PARAMETER")
 internal fun paperRendererCanReserveDrag(
     reducedMotion: Boolean,
     rendererStatus: GpuMaterialPageRendererStatus
-): Boolean =
-    MaterialPageEngineRollout.isEnabled() &&
-        (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY ||
-            rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING)
+): Boolean = MaterialPageEngineRollout.isEnabled()
 
 internal fun shouldAllowPaperNavigation(
     reducedMotion: Boolean,
@@ -76,6 +80,29 @@ internal fun shouldAllowPaperNavigation(
         rendererStatus = rendererStatus
     ) &&
         (reducedMotion || visualActive)
+
+/**
+ * One intentional Paper tap/drag must have an observable outcome.
+ * Render readiness is distinct from visible page capture; do not substitute
+ * native/static page movement when a Paper renderer cannot own the sheet.
+ */
+internal fun paperTurnUnavailableNotice(
+    reducedMotion: Boolean,
+    rendererStatus: GpuMaterialPageRendererStatus,
+    visualActive: Boolean
+): PaperTurnVisualFailure? {
+    if (reducedMotion) return null
+    return when (rendererStatus) {
+        GpuMaterialPageRendererStatus.FAILED,
+        GpuMaterialPageRendererStatus.UNSUPPORTED ->
+            PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+        GpuMaterialPageRendererStatus.INITIALIZING,
+        GpuMaterialPageRendererStatus.REDUCED_MOTION ->
+            PaperTurnVisualFailure.PRESENTATION
+        GpuMaterialPageRendererStatus.READY ->
+            if (visualActive) null else PaperTurnVisualFailure.SNAPSHOT
+    }
+}
 
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
@@ -102,6 +129,7 @@ internal class PaperCurlInputListener(
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
     private var visualStartAttempted = false
+    private var visualFailureReported = false
     private var operationGeneration = 0L
     private var activeOperationGeneration = 0L
     private var cancelledOperationAwaitingCleanup = 0L
@@ -132,6 +160,12 @@ internal class PaperCurlInputListener(
             )
         )
         return true
+    }
+
+    private fun reportVisualFailureOnce(failure: PaperTurnVisualFailure) {
+        if (visualFailureReported) return
+        visualFailureReported = true
+        onVisualFailure(failure)
     }
 
     private fun paperInputBusy(): Boolean =
@@ -210,9 +244,11 @@ internal class PaperCurlInputListener(
             // page turn when GPU/capture readiness is missing.
             invalidateOperation()
             resetDrag()
-            if (!reducedMotion && state.rendererStatus == GpuMaterialPageRendererStatus.READY) {
-                onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
-            }
+            paperTurnUnavailableNotice(
+                reducedMotion = reducedMotion,
+                rendererStatus = state.rendererStatus,
+                visualActive = visualReady
+            )?.let(::reportVisualFailureOnce)
             return
         }
 
@@ -226,7 +262,7 @@ internal class PaperCurlInputListener(
                         state.clearImmediately()
                         activeOperationGeneration = 0L
                         resetDrag()
-                        onVisualFailure(PaperTurnVisualFailure.PRESENTATION)
+                        reportVisualFailureOnce(PaperTurnVisualFailure.PRESENTATION)
                     }
                     return@launchCompletion
                 }
@@ -342,10 +378,11 @@ internal class PaperCurlInputListener(
         if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
-            // A reserved gesture that never became a horizontal turn is still
-            // consumed so the native renderer cannot finish it as a slide.
+            // Unreserved touchend may synthesize a WebView click. Do not swallow
+            // actual links, image taps or the center Reader toolbar gesture.
+            val wasReserved = dragReserved
             resetDrag()
-            return true
+            return wasReserved
         }
 
         if (!state.active && navigationJob == null) {
@@ -366,6 +403,13 @@ internal class PaperCurlInputListener(
             rendererStatus = state.rendererStatus,
             visualActive = state.active
         )
+        if (!navigationAllowed) {
+            paperTurnUnavailableNotice(
+                reducedMotion = reducedMotion,
+                rendererStatus = state.rendererStatus,
+                visualActive = state.active
+            )?.let(::reportVisualFailureOnce)
+        }
         val commit = when {
             !navigationAllowed -> false
             state.usingMaterialEngine() ->
@@ -429,12 +473,18 @@ internal class PaperCurlInputListener(
                     }
                 }
 
-                commit && reducedMotion -> {
-                    // This branch is reachable without a visual only for Reduced Motion.
-                    // Normal-motion Paper fails closed before a static navigation fallback.
+                commit && (
+                    reducedMotion ||
+                        (state.active && state.materialEngine.presentedSheetEpoch.value ==
+                            state.materialEngine.sheetEpoch)
+                    ) -> {
+                    // Only the release may navigate Readium. During Move the
+                    // source WebView must remain alive to receive touchend,
+                    // particularly when the next page crosses an EPUB resource.
                     val origin =
                         dragStartLocator ?: navigator.currentLocator.value
                     val accepted = navigate(spec.direction)
+                    previewNavigationSucceeded = accepted
                     val moved =
                         accepted &&
                             awaitReaderVisualNavigationDeparture(
@@ -457,6 +507,7 @@ internal class PaperCurlInputListener(
                         turnCommitted = true
                         onCommittedTurn()
                         if (state.active && shouldAnimatePaperVisual()) {
+                            if (!reducedMotion) delay(VeilMotion.PAGE_REVEAL_MS)
                             state.animateComplete(
                                 releaseVelocityDpPerSec =
                                     releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -666,7 +717,7 @@ internal class PaperCurlInputListener(
             spec.direction
         )
         if (!visualReady) {
-            onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
+            reportVisualFailureOnce(PaperTurnVisualFailure.SNAPSHOT)
             return false
         }
 
@@ -677,42 +728,15 @@ internal class PaperCurlInputListener(
                 // An unpresented sheet must never enable the release-time static branch.
                 if (operationIsCurrent(operationToken)) {
                     state.clearImmediately()
-                    onVisualFailure(PaperTurnVisualFailure.PRESENTATION)
+                    reportVisualFailureOnce(PaperTurnVisualFailure.PRESENTATION)
                 }
                 return@launchPreview
             }
-            if (
-                !cancellationRequested &&
-                operationIsCurrent(operationToken) &&
-                shouldAllowPaperNavigation(isReducedMotion(), state.rendererStatus, state.active)
-            ) {
-                val origin = dragStartLocator
-                val accepted = navigate(spec.direction)
-                val moved =
-                    accepted &&
-                        origin != null &&
-                        awaitReaderVisualNavigationDeparture(
-                        currentLocator = navigator.currentLocator,
-                        origin = origin
-                            )
-                if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
-                    return@launchPreview
-                }
-                if (
-                    accepted &&
-                    (
-                        !moved ||
-                            cancellationRequested ||
-                            !operationIsCurrent(operationToken)
-                        )
-                ) {
-                    restoreDragStart(spec, forceRequest = true)
-                } else {
-                    previewNavigationSucceeded = moved
-                }
-            }
-            // Keep the previewed destination underneath the curl. The reverse
-            // face remains source-derived until a true opposite-leaf provider exists.
+            // The exact acquired GPU source sheet is the preview.
+            // Never move a Readium chapter while a drag is in flight: this
+            // would retire its touch receiver and silently lose touchend.
+            // End will validate the acquired epoch before a single navigation.
+
         }
         navigationJob?.start()
         return true
@@ -936,6 +960,7 @@ internal class PaperCurlInputListener(
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
         visualStartAttempted = false
+        visualFailureReported = false
     }
 
     private data class TurnSpec(

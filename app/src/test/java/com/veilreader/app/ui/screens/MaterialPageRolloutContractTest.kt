@@ -112,10 +112,18 @@ class MaterialPageRolloutContractTest {
     fun `startup drag ownership is separate from permission to move the page`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
+            // A selected Paper drag belongs to Paper even when the renderer
+            // is dead or not yet available. Ownership does not authorize
+            // navigation: the separate shouldAllowPaperNavigation gate rejects
+            // any non-READY renderer and reports a visible failure instead of
+            // leaking a native/static swipe disguised as Paper.
             GpuMaterialPageRendererStatus.entries.forEach { status ->
-                val expected = status == GpuMaterialPageRendererStatus.INITIALIZING ||
-                    status == GpuMaterialPageRendererStatus.READY
-                assertEquals(expected, paperRendererCanReserveDrag(false, status))
+                assertTrue("Paper input must not leak for $status",
+                    paperRendererCanReserveDrag(false, status))
+                if (status != GpuMaterialPageRendererStatus.READY) {
+                    assertFalse("Failed renderer must not advance a page for $status",
+                        shouldAllowPaperNavigation(false, status, visualActive = true))
+                }
             }
             assertTrue(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
             assertFalse(shouldAllowPaperNavigation(false,
