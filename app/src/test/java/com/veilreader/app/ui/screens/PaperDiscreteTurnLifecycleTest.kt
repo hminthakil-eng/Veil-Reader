@@ -38,6 +38,74 @@ import org.robolectric.annotation.Config
 @Config(sdk = [37])
 class PaperDiscreteTurnLifecycleTest {
     @Test
+    fun `unsupported or failed paper renderer never consumes gestures silently`() {
+        for (status in listOf(
+            GpuMaterialPageRendererStatus.FAILED,
+            GpuMaterialPageRendererStatus.UNSUPPORTED
+        )) {
+            assertEquals(
+                PaperTurnVisualFailure.RENDERER_UNAVAILABLE,
+                paperTurnUnavailableNotice(
+                    reducedMotion = false,
+                    rendererStatus = status,
+                    visualActive = false
+                )
+            )
+            // Renderer may die after a drag starts. Active state does not
+            // override the terminal GPU failure.
+            assertEquals(
+                PaperTurnVisualFailure.RENDERER_UNAVAILABLE,
+                paperTurnUnavailableNotice(
+                    reducedMotion = false,
+                    rendererStatus = status,
+                    visualActive = true
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `paper initializing and ready-without-a-sheet report distinct failures`() {
+        assertEquals(
+            PaperTurnVisualFailure.PRESENTATION,
+            paperTurnUnavailableNotice(
+                reducedMotion = false,
+                rendererStatus = GpuMaterialPageRendererStatus.INITIALIZING,
+                visualActive = false
+            )
+        )
+        for (status in listOf(
+            GpuMaterialPageRendererStatus.READY,
+            GpuMaterialPageRendererStatus.SOFTWARE_READY
+        )) {
+            assertEquals(
+                PaperTurnVisualFailure.SNAPSHOT,
+                paperTurnUnavailableNotice(
+                    reducedMotion = false,
+                    rendererStatus = status,
+                    visualActive = false
+                )
+            )
+            assertNull(paperTurnUnavailableNotice(
+                reducedMotion = false,
+                rendererStatus = status,
+                visualActive = true
+            ))
+        }
+    }
+
+    @Test
+    fun `reduced motion does not produce false paper failure notice`() {
+        GpuMaterialPageRendererStatus.entries.forEach { status ->
+            assertNull(paperTurnUnavailableNotice(
+                reducedMotion = true,
+                rendererStatus = status,
+                visualActive = false
+            ))
+        }
+    }
+
+    @Test
     fun `accepted discrete preview restores exact origin when owner is disposed`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
