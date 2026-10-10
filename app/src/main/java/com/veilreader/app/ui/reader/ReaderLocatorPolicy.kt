@@ -123,9 +123,17 @@ internal class ReaderLocatorDeduplicator {
             if (!retryDurability && !(requireDurability && !lastCommitRequiresDurability)) {
                 return false
             }
-            // Upgrade/retry has the same owner, but still needs its own rollback snapshot.
-            previousCommittedLocationKey = lastCommittedLocationKey
-            previousCommitRequiresDurability = lastCommitRequiresDurability
+            // A true strength upgrade must keep the existing location as its fallback:
+            // failure changes only durability, not the observed Reader position.
+            //
+            // A *retry* is different: its previously observed location has already
+            // failed a write and must retain the preceding saved location as fallback.
+            // Replacing the rollback slot with the current location makes a second
+            // rejected write appear committed, silently losing the saved origin.
+            if (!retryDurability && requireDurability && !lastCommitRequiresDurability) {
+                previousCommittedLocationKey = lastCommittedLocationKey
+                previousCommitRequiresDurability = lastCommitRequiresDurability
+            }
             lastCommitRequiresDurability = lastCommitRequiresDurability || requireDurability
             return true
         }

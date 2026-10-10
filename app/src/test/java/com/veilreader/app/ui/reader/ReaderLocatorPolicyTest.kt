@@ -90,6 +90,44 @@ class ReaderLocatorPolicyTest {
     }
 
     @Test
+    fun failedSamePositionRetryRestoresLastDurableOrigin() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved", requireDurability = true))
+        assertTrue(gate.acceptCommit("observed"))
+        assertTrue(gate.acceptCommit(
+            "observed", retryDurability = true, requireDurability = true
+        ))
+
+        // The failed retry must restore the durable saved page, not the
+        // unstable observation it was trying to checkpoint.
+        gate.rejectCommit("observed")
+        assertFalse(gate.acceptCommit("saved", requireDurability = true))
+        assertFalse(gate.countsPageTurnFor("saved", ReaderLocatorEvent.NAVIGATOR_PAGE_TURN))
+        assertTrue(gate.acceptCommit("observed", requireDurability = true))
+    }
+
+    @Test
+    fun strengthUpgradeAndRetryHaveDifferentRollbackOwnership() {
+        val upgrade = ReaderLocatorDeduplicator()
+        assertTrue(upgrade.acceptCommit("saved", requireDurability = true))
+        assertTrue(upgrade.acceptCommit("observed"))
+        assertTrue(upgrade.acceptCommit("observed", requireDurability = true))
+        upgrade.rejectCommit("observed")
+        // An upgrade has not changed the position, so it must be possible to
+        // promote the same observed location on a second attempt.
+        assertFalse(upgrade.acceptCommit("observed"))
+        assertTrue(upgrade.acceptCommit("observed", requireDurability = true))
+
+        val retry = ReaderLocatorDeduplicator()
+        assertTrue(retry.acceptCommit("saved", requireDurability = true))
+        assertTrue(retry.acceptCommit("observed"))
+        assertTrue(retry.acceptCommit("observed", retryDurability = true))
+        retry.rejectCommit("observed")
+        assertFalse(retry.acceptCommit("saved", requireDurability = true))
+        assertTrue(retry.acceptCommit("observed"))
+    }
+
+    @Test
     fun rejectedSaveAllowsRetryAndPreservesPreviousCommittedDuplicate() {
         val gate = ReaderLocatorDeduplicator()
         assertTrue(gate.acceptCommit("saved"))
