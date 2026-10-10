@@ -68,6 +68,10 @@ class BenchmarkReaderActivity : FragmentActivity() {
                     val probe = "benchmark-reader-locator:${locator.href}|$progression" +
                         ";gpuEpoch=${gpu?.lastAcquiredSheetEpoch ?: -1L}" +
                         ";gpuActive=${gpu?.isPageTurnActive ?: false}" +
+                        ";gpuHost=${gpu != null}" +
+                        ";gpuAttached=${gpu?.isAttachedToWindow ?: false}" +
+                        ";gpuSurface=${gpu?.isAvailable ?: false}" +
+                        ";gpuSize=${gpu?.width ?: 0}x${gpu?.height ?: 0}" +
                         ";motion=${ValueAnimator.areAnimatorsEnabled()}"
                     if (window.decorView.contentDescription != probe) window.decorView.contentDescription = probe
                 }
