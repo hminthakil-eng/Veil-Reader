@@ -31,6 +31,24 @@ import org.junit.Test
 class GpuMaterialPageVisibleDeformationTest {
     @get:Rule val compose = createComposeRule()
 
+    private fun paperInkFamily(color: Int): Int {
+        if (Color.alpha(color) < 32) return -1
+        val r = Color.red(color)
+        val g = Color.green(color)
+        val b = Color.blue(color)
+        if (maxOf(r, g, b) < 65) return -1
+        val threshold = 38
+        return when {
+            r > g + threshold && r > b + threshold -> 0
+            g > r + threshold && g > b + threshold -> 1
+            b > r + threshold && b > g + threshold -> 2
+            r > b + threshold && g > b + threshold -> 3
+            r > g + threshold && b > g + threshold -> 4
+            g > r + threshold && b > r + threshold -> 5
+            else -> -1
+        }
+    }
+
     @Test
     fun dragDeformsVisiblePaperRatherThanOnlyPublishingNewBufferEpochs() {
         val ready = AtomicBoolean(false)
@@ -115,6 +133,7 @@ class GpuMaterialPageVisibleDeformationTest {
             assertTrue(first.width == second.width && first.height == second.height)
             val total = first.width * first.height
             var changed = 0
+            var relocatedInk = 0
             var firstNonTransparent = 0
             var secondNonTransparent = 0
             val pixelsBefore = IntArray(total)
@@ -132,12 +151,25 @@ class GpuMaterialPageVisibleDeformationTest {
                     kotlin.math.abs(Color.green(a) - Color.green(b)) > 24 ||
                     kotlin.math.abs(Color.blue(a) - Color.blue(b)) > 24
                 ) changed++
+
+                // Mere light/shadow flicker must not masquerade as geometric curl.
+                // Track discrete source-ink color classes: a folded sheet visibly
+                // carries its colored ink into a different part of the viewport.
+                val beforeInk = paperInkFamily(a)
+                val afterInk = paperInkFamily(b)
+                if (beforeInk >= 0 && afterInk >= 0 && beforeInk != afterInk) {
+                    relocatedInk++
+                }
             }
             assertTrue("GPU produced no visible source material", firstNonTransparent > total / 3)
             assertTrue("GPU produced no visible deformed material", secondNonTransparent > total / 3)
             assertTrue(
                 "Paper drag published new epochs but did not visibly deform the rendered sheet: changed=$changed pixels of $total",
                 changed > total / 20
+            )
+            assertTrue(
+                "Page colors changed only in shading, not in their visible position: relocated=$relocatedInk pixels of $total",
+                relocatedInk > total / 100
             )
         } finally {
             compose.runOnIdle { view.get()?.pauseRenderer() }
