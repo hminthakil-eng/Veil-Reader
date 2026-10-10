@@ -36,10 +36,24 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         ReaderTtsSleepTimerStore(applicationContext)
     }
     private var sleepTimerJob: Job? = null
+    // A voice preview has its own Android TextToSpeech instance. It must be
+    // canceled before any media command; otherwise Pause may silence the book
+    // while a different preview narrator continues audibly.
+    private var previewJob: Job? = null
+    private var previewGeneration = 0L
+
+    private fun cancelActivePreview() {
+        previewGeneration += 1
+        previewJob?.cancel()
+        previewJob = null
+    }
 
     override fun onCreate() {
         super.onCreate()
-        player = ReaderTtsMediaPlayer(applicationContext)
+        player = ReaderTtsMediaPlayer(
+            applicationContext,
+            onTransportCommand = ::cancelActivePreview
+        )
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(SessionCallback())
             .build()
@@ -56,6 +70,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
     ): MediaSession = mediaSession
 
     override fun onDestroy() {
+        cancelActivePreview()
         sleepTimerJob?.cancel()
         sleepTimerJob = null
         mediaSession.release()
@@ -297,7 +312,9 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         }
 
         private fun previewVoice(args: Bundle): ListenableFuture<SessionResult> {
-            if (player.isPlaying) {
+            if (player.isPlaying || player.playWhenReady) {
+                // PREPARING is not yet "isPlaying", but a queued speech request
+                // can begin at any instant. Never overlap preview and narration.
                 return Futures.immediateFuture(
                     SessionResult(SessionError.ERROR_INVALID_STATE)
                 )
@@ -328,8 +345,10 @@ class ReaderTtsPlaybackService : MediaSessionService() {
 
             val speed = args.getFloat("speed", 1f)
             val pitch = args.getFloat("pitch", 1f)
+            cancelActivePreview()
+            val previewOwner = ++previewGeneration
             val future = SettableFuture.create<SessionResult>()
-            serviceScope.launch {
+            previewJob = serviceScope.launch {
                 val backend = AndroidReaderTtsBackend(applicationContext)
                 try {
                     val initProblem = try {
@@ -376,6 +395,10 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     future.set(SessionResult(SessionError.ERROR_UNKNOWN))
                 } finally {
                     backend.close()
+                    if (previewGeneration == previewOwner) previewJob = null
+                    if (!future.isDone) {
+                        future.set(SessionResult(SessionError.ERROR_INVALID_STATE))
+                    }
                 }
             }
             return future
