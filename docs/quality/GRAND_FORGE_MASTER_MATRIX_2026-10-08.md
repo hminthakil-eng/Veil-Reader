@@ -276,3 +276,13 @@ passes 145 affected Reader/input tests and app/instrumentation compilation.
 Final-source local lint, debug APK and instrumentation compilation PASS with no
 detectors disabled. Affected suite: 145 tests / 18 suites, zero failures or skips.
 Device/UX/performance/release gates remain unverified; no capability is GREEN.
+
+## Current delivery and combined source — 2026-10-10 terminal boundary
+
+GF-DUR-006 is verified in software on38a6bf10: 1010 units / 174 suites,175 Android tests, no failures/errors/skips, lint0 errors/174 warnings and108 abrupt-process cases. [Install verified QA ZIP](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38027688503/artifacts/11660629953), extract `VeilReader-ForgeQA-38a6bf10.apk`; actual SHA256796291c81ec9be4b6e7b1d3196cd0dcb4dbbc8f4734a9ce8090fe7be166befbb independently matches its manifest. APK v2 signature matches pinned QA certificate. Physical installation/UX/performance remain UNVERIFIED; status YELLOW.
+
+PR446 is merged into the canonical branch at8bae5d3f after all four hosted checks passed. Its full rerun produced1016 units /174 suites with no failures/errors/skips, and raw kill evidence has144 successful cases across8 scenarios. The native-worker failure from the first attempt remains retained. GF-DUR-007 at4ee2a2be fixes same-location failure rollback found in combined review; regression execution remains pending. Combined executable88ce3971 is running QA38029096124, normal/release Android38029166135 and process-kill38029098844. These later changes are not in the delivered38a6 APK. Duplicate manual process run38029095743 was cancelled in favor of the automatic exact-source run, not counted as a failure/pass.
+
+Draft evidence PR447 remains separate. Its7a0bbc3b process run38028207347 passed108 cases; derived footer count matches raw records. Retained90 durable checkpoint timing samples and0 failed events. Nearest-rank journal latency P506.146ms /P9510.120ms /maximum12.279ms. Those timings include Store.write sync/readback, exclude total navigation/UI latency, and have no retained paired pre-change baseline. Hosted software emulator, not S24 acceptance. Benchmark retention validation is still running.
+
+The tested38a6 executable's documentation-only successor2f9c27bb passed benchmark/profile packaging checks: startup TTID median606.847ms; Reader P50 median121ms, P95/P99 medians150ms, maximum reported per-runP99200ms. Jank100% on lavapipe; no physical improvement or production performance GREEN is inferred. All seven risky release gates remain OFF. Physical status JSON is unchanged.
