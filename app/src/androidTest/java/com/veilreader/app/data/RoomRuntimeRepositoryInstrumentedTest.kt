@@ -17,6 +17,10 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -32,13 +36,19 @@ import org.junit.runner.RunWith
 class RoomRuntimeRepositoryInstrumentedTest {
     private lateinit var context: Context
     private lateinit var db: VeilDatabase
+    private lateinit var roomQueryScopeJob: Job
     private lateinit var settings: SettingsStore
     private var repositoryUnderTest: LocalLibraryRepository? = null
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        // Room's Flow/invalidation queries can outlive the repository collector
+        // that scheduled them. Use a distinct Room query Job for EACH ephemeral
+        // database instead of leaking tasks through the shared IO dispatcher.
+        roomQueryScopeJob = SupervisorJob()
         db = Room.inMemoryDatabaseBuilder(context, VeilDatabase::class.java)
+            .setQueryCoroutineContext(roomQueryScopeJob + Dispatchers.IO)
             .allowMainThreadQueries()
             .build()
         settings = SettingsStore(context)
@@ -47,7 +57,15 @@ class RoomRuntimeRepositoryInstrumentedTest {
     @After
     fun tearDown() {
         runBlocking {
-            repositoryUnderTest?.closeForTest()
+            // Stop the repository first; then await all in-flight Room query
+            // coroutines (including invalidation observers) before closing its
+            // short-lived connection. A naked db.close() races Room's worker
+            // on the next test and crashes with SQLite "connection is closed".
+            try {
+                repositoryUnderTest?.closeForTest()
+            } finally {
+                roomQueryScopeJob.cancelAndJoin()
+            }
         }
         repositoryUnderTest = null
         db.close()
