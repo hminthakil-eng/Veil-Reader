@@ -104,20 +104,25 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 refreshSleepTimer()
                 pendingStart?.also {
                     pendingStart = null
-                    start(it.bookId, it.locatorJson, it.settings)
+                    start(it.bookId, it.locatorJson, it.settings, autoplay = it.autoplay)
                 }
             },
             mainExecutor
         )
     }
 
-    fun start(bookId: String, locatorJson: String, settings: ReaderTtsSettings) {
+    fun start(
+        bookId: String,
+        locatorJson: String,
+        settings: ReaderTtsSettings,
+        autoplay: Boolean = true
+    ) {
         if (closed.get()) return
         val target = controller
         if (target == null) {
-            pendingStart = PendingStart(bookId, locatorJson, settings.normalized())
+            pendingStart = PendingStart(bookId, locatorJson, settings.normalized(), autoplay)
             mutableState.value = mutableState.value.copy(
-                phase = ReaderTtsPhase.PREPARING,
+                phase = if (autoplay) ReaderTtsPhase.PREPARING else ReaderTtsPhase.PAUSED,
                 problem = null
             )
             return
@@ -141,12 +146,13 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         }
 
         mutableState.value = mutableState.value.copy(
-            phase = ReaderTtsPhase.PREPARING,
+            phase = if (autoplay) ReaderTtsPhase.PREPARING else ReaderTtsPhase.PAUSED,
             problem = null
         )
         target.sendCustomCommand(
             SessionCommand(
-                ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY,
+                if (autoplay) ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY
+                else ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED,
                 Bundle.EMPTY
             ),
             request.toBundle()
@@ -154,11 +160,28 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     }
 
     fun resume() {
-        controller?.play()
+        pendingStart?.let { queued ->
+            pendingStart = queued.copy(autoplay = true)
+            mutableState.value = mutableState.value.copy(
+                phase = ReaderTtsPhase.PREPARING,
+                problem = null
+            )
+        }
+        controller?.sendCustomCommand(
+            SessionCommand(ReaderTtsPlaybackRequest.ACTION_RESUME_OWNER, Bundle.EMPTY),
+            Bundle.EMPTY
+        )
     }
 
     fun pause() {
-        controller?.pause()
+        // An immediate Pause cancels pending autoplay even if the MediaController
+        // has not connected or has no media item yet. This is not a no-op.
+        pendingStart = pendingStart?.copy(autoplay = false)
+        mutableState.value = mutableState.value.copy(phase = ReaderTtsPhase.PAUSED)
+        controller?.sendCustomCommand(
+            SessionCommand(ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER, Bundle.EMPTY),
+            Bundle.EMPTY
+        )
     }
 
     fun stop() {
@@ -405,6 +428,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     private data class PendingStart(
         val bookId: String,
         val locatorJson: String,
-        val settings: ReaderTtsSettings
+        val settings: ReaderTtsSettings,
+        val autoplay: Boolean
     )
 }
