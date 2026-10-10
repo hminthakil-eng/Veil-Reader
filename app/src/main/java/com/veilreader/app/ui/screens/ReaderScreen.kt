@@ -3315,7 +3315,14 @@ fun ReaderScreen(
                             )
                         }
 
-                        if (opened.format == BookFormat.EPUB && navigator != null) {
+                        if (
+                            opened.format == BookFormat.EPUB &&
+                            navigator != null &&
+                            VeilFeatureGates.enabled(
+                                VeilRiskyFeature.IN_BOOK_SEARCH,
+                                debugReview = BuildConfig.DEBUG
+                            )
+                        ) {
                             ReaderChromeButton(
                                 ReaderAction.SEARCH,
                                 stringResource(R.string.reader_chrome_search),
