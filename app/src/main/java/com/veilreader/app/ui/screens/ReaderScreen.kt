@@ -42,7 +42,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -153,6 +152,9 @@ import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.ReaderVisualGeometry
+import com.veilreader.app.ui.theme.ReaderVisualOpacity
+import com.veilreader.app.ui.theme.readerVisualThemeArgb
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.withVeilTracking
@@ -533,10 +535,14 @@ fun ReaderScreen(
         mutableStateOf<SlideNavigationInputListener?>(null)
     }
     LaunchedEffect(paperInputListener, paperCurlState.rendererStatus, paperCurlState.active) {
-        if (paperCurlState.active &&
-            paperCurlState.rendererStatus != com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY) {
-            // Context loss/failure must retire an uncommitted preview before a replacement
-            // renderer or subsequent input can acquire its locator/visual ownership.
+        if (
+            paperCurlState.active &&
+            !com.veilreader.app.ui.reader.material.materialPageRendererCanPresent(
+                paperCurlState.rendererStatus
+            )
+        ) {
+            // Only a total loss of every Paper presentation backend retires the preview.
+            // GPU startup/failure may hand the same snapshot/state to the software mesh backend.
             paperInputListener?.forceCancelPendingTurn()
         }
     }
@@ -564,7 +570,6 @@ fun ReaderScreen(
         if (slideHadPendingTurn) slideInputListener?.cancelPendingTurnAndAwait()
         val paperSettled = paperInputListener?.hasPendingTurn() != true
         val slideSettled = slideInputListener?.hasPendingTurn() != true
-
         if (!paperSettled || !slideSettled) {
             paperInputListener?.forceCancelPendingTurn()
             slideInputListener?.forceCancelPendingTurn()
@@ -1199,9 +1204,12 @@ fun ReaderScreen(
         reducedMotion, readerSessionReady, closeInFlight) {
         val failure = paperRendererFailureNotice(paperCurlState.rendererStatus)
         if (failure == null) {
-            if (paperCurlState.rendererStatus ==
-                com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus.READY &&
-                paperFailureNotice?.failure == PaperTurnVisualFailure.RENDERER_UNAVAILABLE) {
+            if (
+                com.veilreader.app.ui.reader.material.materialPageRendererCanPresent(
+                    paperCurlState.rendererStatus
+                ) &&
+                paperFailureNotice?.failure == PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+            ) {
                 paperFailureNotice = null
             }
             return@LaunchedEffect
@@ -1327,6 +1335,12 @@ fun ReaderScreen(
             ttsServiceController?.close()
         }
     }
+    val ttsVisualStateFallback = remember {
+        kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState())
+    }
+    val ttsVisualStateSource =
+        ttsServiceController?.state ?: ttsSession?.state ?: ttsVisualStateFallback
+    val ttsVisualState by ttsVisualStateSource.collectAsStateWithLifecycle()
     DisposableEffect(ttsSession, lifecycle, backgroundTtsEnabled) {
         val observer = LifecycleEventObserver { _, event ->
             if (
@@ -2244,21 +2258,12 @@ fun ReaderScreen(
             }
 
             fun paperModeSelected(): Boolean =
-                shouldUsePaperCurlNavigation(
+                shouldMountPaperCurlRuntime(
                     format = opened.format,
-                    scroll = latestAppearance.value.scroll,
-                    pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    fixedLayout = fixedLayoutPublication,
+                    appearance = latestAppearance.value,
+                    materialPageEnabled = MaterialPageEngineRollout.isEnabled()
                 )
-
-            fun paperRendererOwnsNavigationInput(): Boolean =
-                paperModeSelected() &&
-                    paperRendererCanOwnNavigationInput(
-                        reducedMotion = latestReducedMotion.value,
-                        rendererStatus = paperCurlState.rendererStatus
-                    )
-
-            fun paperNeedsStaticFallback(): Boolean =
-                paperModeSelected() && !paperRendererOwnsNavigationInput()
 
             val paperListener = if (navigator is EpubNavigatorFragment) {
                 PaperCurlInputListener(
@@ -2273,8 +2278,7 @@ fun ReaderScreen(
                             )
                     },
                     isEnabled = {
-                        latestReaderSessionReady.value &&
-                            paperRendererOwnsNavigationInput()
+                        latestReaderSessionReady.value && paperModeSelected()
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
@@ -2338,9 +2342,8 @@ fun ReaderScreen(
                                     format = opened.format,
                                     scroll = latestAppearance.value.scroll,
                                     pageTurnStyle = latestAppearance.value.pageTurnStyle
-                                ) ||
-                                    paperNeedsStaticFallback()
                                 )
+                            )
                     },
                     scope = scope,
                     onInteraction = ::markReaderNavigationInteraction,
@@ -2393,11 +2396,7 @@ fun ReaderScreen(
                             nav.overflow.value.scroll
                         },
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
-                    ) ||
-                        (
-                            opened.format == BookFormat.EPUB &&
-                                paperNeedsStaticFallback()
-                            )
+                    )
                 },
                 onInteraction = ::markReaderNavigationInteraction,
                 onNavigationCommitted = {
@@ -2483,11 +2482,7 @@ fun ReaderScreen(
                     BookFormat.EPUB ->
                         when (latestAppearance.value.navigationMode) {
                             ReaderNavigationMode.PAPER_CURL ->
-                                if (paperRendererOwnsNavigationInput()) {
-                                    paperListener?.performDiscreteTurn(direction) == true
-                                } else {
-                                    performDirectPagedTurn()
-                                }
+                                paperListener?.performDiscreteTurn(direction) == true
 
                             ReaderNavigationMode.SLIDE ->
                                 slideListener?.performDiscreteTurn(direction) == true
@@ -3116,9 +3111,12 @@ fun ReaderScreen(
         }
 
         if (
-            opened.format == BookFormat.EPUB &&
-            !presentedReaderAppearance.scroll &&
-            presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
+            shouldMountPaperCurlRuntime(
+                format = opened.format,
+                fixedLayout = fixedLayoutPublication,
+                appearance = presentedReaderAppearance,
+                materialPageEnabled = MaterialPageEngineRollout.isEnabled()
+            )
         ) {
             PaperCurlOverlay(
                 state = paperCurlState,
@@ -3195,12 +3193,13 @@ fun ReaderScreen(
 
         AnimatedVisibility(
             visible =
-                !controlsVisible &&
+                !readerChromeAutoHideEnabled &&
+                    !controlsVisible &&
                     readerSessionReady &&
                     !showNotebook &&
                     !showAppearance &&
                     !showPdfZoom &&
-            !showTts &&
+                    !showTts &&
                     !selectionModeActive &&
                     !touchExplorationEnabled,
             modifier = Modifier
@@ -3263,12 +3262,16 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(start = 6.dp, top = 2.dp, end = 6.dp),
+                    .padding(
+                        start = ReaderVisualGeometry.HudHorizontalInset,
+                        top = ReaderVisualGeometry.HudTopPadding,
+                        end = ReaderVisualGeometry.HudHorizontalInset
+                    ),
                 shape = RoundedCornerShape(
                     topStart = 0.dp,
                     topEnd = 0.dp,
-                    bottomEnd = 10.dp,
-                    bottomStart = 10.dp
+                    bottomEnd = ReaderVisualGeometry.HudCornerRadius,
+                    bottomStart = ReaderVisualGeometry.HudCornerRadius
                 ),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
@@ -3278,10 +3281,10 @@ fun ReaderScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .padding(horizontal = 8.dp),
+                            .heightIn(min = ReaderVisualGeometry.HudTopRowMinHeight)
+                            .padding(horizontal = ReaderVisualGeometry.HudHorizontalInset),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceControlGap)
                     ) {
                         ReaderChromeButton(
                             ReaderAction.BACK,
@@ -3328,7 +3331,7 @@ fun ReaderScreen(
                         progress = { progress.coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(1.dp),
                         color = readerChromeAccent,
-                        trackColor = readerChromeForeground.copy(alpha = 0.10f),
+                        trackColor = readerChromeForeground.copy(alpha = ReaderVisualOpacity.HudProgressTrack),
                         drawStopIndicator = {}
                     )
                 }
@@ -3355,10 +3358,14 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(start = 6.dp, end = 6.dp, bottom = 4.dp),
+                    .padding(
+                        start = ReaderVisualGeometry.HudHorizontalInset,
+                        end = ReaderVisualGeometry.HudHorizontalInset,
+                        bottom = ReaderVisualGeometry.HudBottomPadding
+                    ),
                 shape = RoundedCornerShape(
-                    topStart = 10.dp,
-                    topEnd = 10.dp,
+                    topStart = ReaderVisualGeometry.HudCornerRadius,
+                    topEnd = ReaderVisualGeometry.HudCornerRadius,
                     bottomEnd = 0.dp,
                     bottomStart = 0.dp
                 ),
@@ -3375,7 +3382,7 @@ fun ReaderScreen(
                                 Brush.horizontalGradient(
                                     listOf(
                                         Color.Transparent,
-                                        readerChromeAccent.copy(alpha = 0.42f),
+                                        readerChromeAccent.copy(alpha = ReaderVisualOpacity.HudAccentHairline),
                                         Color.Transparent
                                     )
                                 )
@@ -3386,7 +3393,7 @@ fun ReaderScreen(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.HudControlGap),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         ReaderControl(
@@ -3500,14 +3507,54 @@ fun ReaderScreen(
                     }
 
                     if (ttsSession != null || ttsServiceController != null) {
-                        TextButton(
-                            onClick = {
-                                readerViewModel.onUserInteraction(readerSessionInstanceId)
-                                selectionActionModeCallback.dismissSelection()
-                                showTts = true
-                            },
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                        ) { Text(stringResource(R.string.tts_title), color = readerChromeAccent) }
+                        val ttsActive = ttsVisualState.phase in setOf(
+                            com.veilreader.app.ui.reader.tts.ReaderTtsPhase.PLAYING,
+                            com.veilreader.app.ui.reader.tts.ReaderTtsPhase.PAUSED,
+                            com.veilreader.app.ui.reader.tts.ReaderTtsPhase.PREPARING
+                        )
+                        if (ttsActive) {
+                            ReaderTtsMiniPlayer(
+                                state = ttsVisualState,
+                                activeText = ttsVisualState.activeText,
+                                speed = speechSettingsState.value.speed,
+                                background = readerChromeBackground,
+                                foreground = readerChromeForeground,
+                                accent = readerChromeAccent,
+                                onPrevious = {
+                                    ttsServiceController?.previous() ?: ttsSession?.previous()
+                                },
+                                onPause = {
+                                    ttsServiceController?.pause() ?: ttsSession?.pause()
+                                },
+                                onResume = {
+                                    ttsServiceController?.resume() ?: ttsSession?.resume()
+                                },
+                                onNext = {
+                                    ttsServiceController?.next() ?: ttsSession?.next()
+                                },
+                                onExpand = {
+                                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                                    selectionActionModeCallback.dismissSelection()
+                                    showTts = true
+                                }
+                            )
+                        } else {
+                            TextButton(
+                                onClick = {
+                                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                                    selectionActionModeCallback.dismissSelection()
+                                    showTts = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = ReaderVisualGeometry.TouchTarget)
+                            ) {
+                                Text(
+                                    stringResource(R.string.tts_title),
+                                    color = readerChromeAccent
+                                )
+                            }
+                        }
                     }
                     etaLabel?.let { label ->
                         Text(label, color = readerChromeMuted, style = MaterialTheme.typography.labelSmall,
@@ -3524,7 +3571,7 @@ fun ReaderScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
-                .padding(top = 56.dp),
+                .padding(top = ReaderVisualGeometry.PreviousLocationTopOffset),
             enter = fadeIn(
                 tween(
                     if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
@@ -3538,32 +3585,14 @@ fun ReaderScreen(
                 )
             )
         ) {
-            OutlinedButton(
-                onClick = ::returnToPreviousLocation,
-                shape = MaterialTheme.shapes.extraSmall,
-                border = BorderStroke(1.dp, readerChromeAccent.copy(alpha = 0.34f)),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = readerChromeBackground,
-                    contentColor = readerChromeForeground
-                ),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(1.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.reader_return),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass.copy(alpha = 0.84f)
-                    )
-                    Text(
-                        stringResource(R.string.reader_previous_location),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
+            PreviousLocationChip(
+                returnLabel = stringResource(R.string.reader_return),
+                locationLabel = stringResource(R.string.reader_previous_location),
+                background = readerChromeBackground,
+                foreground = readerChromeForeground,
+                accent = readerChromeAccent,
+                onClick = ::returnToPreviousLocation
+            )
         }
 
         SnackbarHost(
@@ -4154,10 +4183,7 @@ fun ReaderScreen(
     }
 
     if (showTts) {
-        val speechStateSource = ttsServiceController?.state
-            ?: ttsSession?.state
-            ?: remember { kotlinx.coroutines.flow.MutableStateFlow(ReaderTtsState()) }
-        val speechState by speechStateSource.collectAsStateWithLifecycle()
+        val speechState = ttsVisualState
         val voiceCatalogSource = ttsServiceController?.voices
             ?: remember {
                 kotlinx.coroutines.flow.MutableStateFlow<List<ReaderTtsVoice>>(emptyList())
@@ -4614,173 +4640,6 @@ private data class ReaderFootnote(
     val text: String
 )
 
-internal enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
-
-@Composable
-internal fun ReaderChromeButton(
-    action: ReaderAction,
-    accessibilityLabel: String,
-    tint: Color = VeilPalette.Brass,
-    onClick: () -> Unit
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier
-            .size(48.dp)
-            .semantics { contentDescription = accessibilityLabel }
-    ) {
-        ReaderActionIcon(
-            action = action,
-            modifier = Modifier.size(21.dp),
-            tint = tint
-        )
-    }
-}
-
-@Composable
-private fun ReaderControl(
-    action: ReaderAction,
-    label: String,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    accent: Color = VeilPalette.Brass,
-    foreground: Color = VeilPalette.Moon,
-    onClick: () -> Unit
-) {
-    TextButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 56.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = foreground,
-            disabledContentColor = foreground.copy(alpha = 0.28f)
-        )
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            ReaderActionIcon(
-                action = action,
-                modifier = Modifier.size(
-                    if (action == ReaderAction.APPEARANCE) 24.dp else 18.dp
-                ),
-                tint = if (enabled) accent else foreground.copy(alpha = 0.28f)
-            )
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = if (enabled) foreground.copy(alpha = 0.78f)
-                    else foreground.copy(alpha = 0.28f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Color) {
-    if (action == ReaderAction.APPEARANCE) {
-        Box(modifier, contentAlignment = Alignment.Center) {
-            Text("Aa", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = tint)
-        }
-        return
-    }
-
-    Canvas(modifier) {
-        val stroke = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-        val w = size.width
-        val h = size.height
-        when (action) {
-            ReaderAction.BACK -> {
-                val tipX = if (layoutDirection == LayoutDirection.Rtl) {
-                    w * .66f
-                } else {
-                    w * .34f
-                }
-                val tailX = if (layoutDirection == LayoutDirection.Rtl) {
-                    w * .28f
-                } else {
-                    w * .72f
-                }
-                drawLine(
-                    tint,
-                    Offset(tailX, h * .20f),
-                    Offset(tipX, h * .50f),
-                    stroke.width,
-                    StrokeCap.Round
-                )
-                drawLine(
-                    tint,
-                    Offset(tipX, h * .50f),
-                    Offset(tailX, h * .80f),
-                    stroke.width,
-                    StrokeCap.Round
-                )
-            }
-            ReaderAction.NOTEBOOK -> {
-                drawRoundRect(
-                    color = tint,
-                    topLeft = Offset(w * .18f, h * .14f),
-                    size = Size(w * .64f, h * .72f),
-                    cornerRadius = CornerRadius(3.dp.toPx()),
-                    style = stroke
-                )
-                drawLine(tint, Offset(w * .34f, h * .34f), Offset(w * .68f, h * .34f), stroke.width, StrokeCap.Round)
-                drawLine(tint, Offset(w * .34f, h * .50f), Offset(w * .68f, h * .50f), stroke.width, StrokeCap.Round)
-                drawLine(tint, Offset(w * .34f, h * .66f), Offset(w * .58f, h * .66f), stroke.width, StrokeCap.Round)
-            }
-            ReaderAction.BOOKMARK -> {
-                val path = Path().apply {
-                    moveTo(w * .28f, h * .12f)
-                    lineTo(w * .72f, h * .12f)
-                    lineTo(w * .72f, h * .86f)
-                    lineTo(w * .50f, h * .69f)
-                    lineTo(w * .28f, h * .86f)
-                    close()
-                }
-                drawPath(path, tint, style = stroke)
-            }
-            ReaderAction.FOCUS -> {
-                drawRoundRect(
-                    color = tint,
-                    topLeft = Offset(w * .14f, h * .22f),
-                    size = Size(w * .72f, h * .56f),
-                    cornerRadius = CornerRadius(2.dp.toPx()),
-                    style = stroke
-                )
-                drawLine(
-                    tint,
-                    Offset(w * .18f, h * .50f),
-                    Offset(w * .82f, h * .50f),
-                    stroke.width,
-                    StrokeCap.Round
-                )
-            }
-            ReaderAction.APPEARANCE -> Unit
-            ReaderAction.ZOOM -> {
-                drawCircle(
-                    color = tint,
-                    radius = w * .22f,
-                    center = Offset(w * .43f, h * .40f),
-                    style = stroke
-                )
-                drawLine(
-                    tint,
-                    Offset(w * .58f, h * .56f),
-                    Offset(w * .80f, h * .80f),
-                    stroke.width,
-                    StrokeCap.Round
-                )
-            }
-        }
-    }
-}
-
 @Composable
 internal fun EpubAppearancePanel(
     appearance: ReaderAppearance,
@@ -4866,9 +4725,12 @@ internal fun EpubAppearancePanel(
         modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = VeilSpacing.lg, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = ReaderVisualGeometry.AppearanceSheetHorizontalPadding)
+            .padding(
+                top = ReaderVisualGeometry.AppearanceSheetTopPadding,
+                bottom = ReaderVisualGeometry.AppearanceSheetBottomPadding
+            ),
+        verticalArrangement = Arrangement.spacedBy(ReaderVisualGeometry.AppearanceSectionGap)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             if (!condensedApproach) {
@@ -4880,15 +4742,26 @@ internal fun EpubAppearancePanel(
             }
             Text(
                 stringResource(R.string.settings_appearance_title),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() },
+                style = if (condensedApproach) {
+                    MaterialTheme.typography.titleLarge
+                } else {
+                    MaterialTheme.typography.headlineMedium
+                },
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = if (condensedApproach) 1 else 2,
+                softWrap = !condensedApproach,
+                overflow = TextOverflow.Ellipsis
             )
-            Text(
-                stringResource(R.string.reader_changes_live),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            if (!condensedApproach) {
+                Text(
+                    stringResource(R.string.reader_changes_live),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
 
         if (!capabilities.fixedLayout) {
@@ -4988,48 +4861,10 @@ internal fun EpubAppearancePanel(
         }
 
         if (!capabilities.fixedLayout) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                listOf(
-                    false to stringResource(R.string.reader_quick),
-                    true to stringResource(R.string.reader_advanced)
-                ).forEach { (advanced, label) ->
-                val selected = showAdvanced == advanced
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .selectable(
-                            selected = selected,
-                            role = Role.Tab
-                        ) { showAdvanced = advanced },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilMaterials.ElevatedSurface
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.78f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                    )
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        VeilMicroLabel(
-                            text = label,
-                            color = if (selected) {
-                                VeilPalette.Moon
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                }
-            }
-        }
+            ReaderAppearanceModeTabs(
+                advanced = showAdvanced,
+                onAdvancedChange = { showAdvanced = it }
+            )
         }
 
         if (!showAdvanced) {
@@ -5635,62 +5470,6 @@ private fun <T> ReaderAppearanceChoiceGroup(
 }
 
 @Composable
-private fun ReaderAppearanceChoice(
-    label: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    onClick: () -> Unit
-) {
-    val foreground = when {
-        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-        selected -> VeilPalette.Moon
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Surface(
-        modifier = modifier
-            .heightIn(min = 48.dp)
-            .selectable(
-                selected = selected,
-                enabled = enabled,
-                role = Role.RadioButton,
-                onClick = onClick
-            ),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilMaterials.ElevatedSurface
-        } else {
-            VeilPalette.Archive.copy(alpha = 0.66f)
-        },
-        contentColor = foreground,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-        border = BorderStroke(
-            if (selected) 1.5.dp else 1.dp,
-            if (selected) {
-                VeilPalette.Brass.copy(alpha = 0.76f)
-            } else {
-                VeilPalette.Brass.copy(alpha = 0.22f)
-            }
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge,
-                color = foreground,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
 private fun ReaderAppearanceSlider(
     label: String,
     value: Float,
@@ -5905,601 +5684,6 @@ private fun ReaderAppearanceTriState(
     }
 }
 
-@Composable
-private fun ReaderAppearancePreview(
-    appearance: ReaderAppearance,
-    typographyEnabled: Boolean = true,
-    modifier: Modifier = Modifier
-) {
-    val (paperArgb, inkArgb) = readiumThemeColors(appearance.theme)
-    val paper = Color(paperArgb)
-    val ink = Color(inkArgb)
-    val previewMargins = if (typographyEnabled) appearance.pageMargins.toFloat() else 1f
-    val previewScale = if (typographyEnabled) appearance.fontScale.toFloat() else 1f
-    val previewLineHeight = if (typographyEnabled) appearance.lineHeight.toFloat() else 1.45f
-    val margin = (14f + 12f * previewMargins).dp
-    val sampleSize = (15f * previewScale).coerceIn(11f, 23f).sp
-    val sampleLineHeight =
-        (sampleSize.value * previewLineHeight).coerceIn(15f, 38f).sp
-    val sampleProgression = if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
-        ReadingProgression.RTL
-    } else {
-        ReadingProgression.LTR
-    }
-
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Column(
-            Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val stackPreviewHeader = shouldStackDenseChoices(
-                    widthDp = maxWidth.value.toInt(),
-                    fontScale = LocalDensity.current.fontScale,
-                    optionCount = 2
-                )
-                if (stackPreviewHeader) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        VeilMicroLabel(
-                            text = stringResource(R.string.reader_sample_preview),
-                            strong = true
-                        )
-                        Text(
-                            localizedReaderMotionSummary(appearance),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        VeilMicroLabel(
-                            text = stringResource(R.string.reader_sample_preview),
-                            modifier = Modifier.weight(1f),
-                            strong = true
-                        )
-                        Text(
-                            localizedReaderMotionSummary(appearance),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.End
-                        )
-                    }
-                }
-            }
-
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 150.dp)
-                    .background(paper, MaterialTheme.shapes.extraSmall)
-                    .border(
-                        1.dp,
-                        if (appearance.theme == ReaderTheme.OLED) {
-                            Color.White.copy(alpha = 0.08f)
-                        } else {
-                            Color(0xFF6E5D42).copy(alpha = 0.24f)
-                        },
-                        MaterialTheme.shapes.extraSmall
-                    )
-            ) {
-                ReaderPageAtmosphere(
-                    theme = appearance.theme,
-                    navigationMode = appearance.navigationMode,
-                    paperPatina = appearance.paperPatina.toFloat(),
-                    progress = 0.42f,
-                    progression = sampleProgression,
-                    modifier = Modifier.matchParentSize()
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = margin, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.reader_sample_chapter),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ink.copy(alpha = 0.58f)
-                    )
-                    Text(
-                        stringResource(R.string.reader_sample_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = ink
-                    )
-                    Text(
-                        stringResource(R.string.reader_sample_body),
-                        fontSize = sampleSize,
-                        lineHeight = sampleLineHeight,
-                        color = ink.copy(alpha = 0.92f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun localizedReaderMotionSummary(appearance: ReaderAppearance): String {
-    if (appearance.readingMode == ReaderReadingMode.SCROLL) {
-        return stringResource(R.string.settings_mode_scroll)
-    }
-
-    val readingMode = stringResource(R.string.settings_mode_paged)
-    val pageTurn = stringResource(
-        when (appearance.pageTurnStyle) {
-            PageTurnStyle.PAPER -> R.string.settings_mode_curl
-            PageTurnStyle.SLIDE -> R.string.settings_mode_slide
-            PageTurnStyle.NONE -> R.string.settings_page_turn_none
-        }
-    )
-    return "$readingMode · $pageTurn"
-}
-
-@Composable
-internal fun localizedPageTurnStyleDescription(style: PageTurnStyle): String =
-    stringResource(
-        when (style) {
-            PageTurnStyle.PAPER -> R.string.settings_mode_curl_description
-            PageTurnStyle.SLIDE -> R.string.settings_mode_slide_description
-            PageTurnStyle.NONE -> R.string.settings_mode_paged_description
-        }
-    )
-
-@Composable
-internal fun ReaderReadingModeSelector(
-    selected: ReaderReadingMode,
-    scrollEnabled: Boolean,
-    onSelect: (ReaderReadingMode) -> Unit
-) {
-    val choices = listOf(
-        ReaderReadingMode.PAGED to ReaderNavigationMode.PAGED,
-        ReaderReadingMode.SCROLL to ReaderNavigationMode.SCROLL
-    )
-
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stacked = shouldStackDenseChoices(
-            widthDp = maxWidth.value.toInt(),
-            fontScale = LocalDensity.current.fontScale,
-            optionCount = choices.size
-        )
-
-        if (stacked) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectableGroup(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                choices.forEach { (mode, previewMode) ->
-                    val active = selected == mode
-                    val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
-                    ReaderModeChoice(
-                        label = stringResource(
-                            if (mode == ReaderReadingMode.SCROLL) {
-                                R.string.settings_mode_scroll
-                            } else {
-                                R.string.settings_mode_paged
-                            }
-                        ),
-                        previewMode = previewMode,
-                        active = active,
-                        enabled = enabled,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { onSelect(mode) }
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                choices.forEach { (mode, previewMode) ->
-                    val active = selected == mode
-                    val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
-                    ReaderModeChoice(
-                        label = stringResource(
-                            if (mode == ReaderReadingMode.SCROLL) {
-                                R.string.settings_mode_scroll
-                            } else {
-                                R.string.settings_mode_paged
-                            }
-                        ),
-                        previewMode = previewMode,
-                        active = active,
-                        enabled = enabled,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSelect(mode) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-internal fun readerPageTurnStyleEnabled(
-    style: PageTurnStyle,
-    selectorEnabled: Boolean,
-    materialPageEnabled: Boolean
-): Boolean =
-    selectorEnabled &&
-        (style != PageTurnStyle.PAPER || materialPageEnabled)
-
-@Composable
-internal fun ReaderPageTurnSelector(
-    selected: PageTurnStyle,
-    enabled: Boolean = true,
-    paperEnabled: Boolean = MaterialPageEngineRollout.isEnabled(),
-    onSelect: (PageTurnStyle) -> Unit
-) {
-    val choices = listOf(
-        Triple(
-            PageTurnStyle.PAPER,
-            ReaderNavigationMode.PAPER_CURL,
-            stringResource(R.string.settings_mode_curl)
-        ),
-        Triple(
-            PageTurnStyle.SLIDE,
-            ReaderNavigationMode.SLIDE,
-            stringResource(R.string.settings_mode_slide)
-        ),
-        Triple(
-            PageTurnStyle.NONE,
-            ReaderNavigationMode.PAGED,
-            stringResource(R.string.settings_page_turn_none)
-        )
-    )
-
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stacked = shouldStackDenseChoices(
-            widthDp = maxWidth.value.toInt(),
-            fontScale = LocalDensity.current.fontScale,
-            optionCount = choices.size
-        )
-
-        if (stacked) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectableGroup(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                choices.forEach { (style, previewMode, label) ->
-                    val choiceEnabled = readerPageTurnStyleEnabled(
-                        style = style,
-                        selectorEnabled = enabled,
-                        materialPageEnabled = paperEnabled
-                    )
-                    ReaderModeChoice(
-                        label = label,
-                        previewMode = previewMode,
-                        active = selected == style,
-                        enabled = choiceEnabled,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { if (choiceEnabled) onSelect(style) }
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                choices.forEach { (style, previewMode, label) ->
-                    val choiceEnabled = readerPageTurnStyleEnabled(
-                        style = style,
-                        selectorEnabled = enabled,
-                        materialPageEnabled = paperEnabled
-                    )
-                    ReaderModeChoice(
-                        label = label,
-                        previewMode = previewMode,
-                        active = selected == style,
-                        enabled = choiceEnabled,
-                        modifier = Modifier.weight(1f),
-                        onClick = { if (choiceEnabled) onSelect(style) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ReaderModeChoice(
-    label: String,
-    previewMode: ReaderNavigationMode,
-    active: Boolean,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .heightIn(min = 58.dp)
-            .selectable(
-                selected = active,
-                enabled = enabled,
-                role = Role.RadioButton,
-                onClick = onClick
-            ),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (active) {
-            VeilMaterials.ElevatedSurface
-        } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (active) {
-                VeilPalette.Brass.copy(alpha = 0.82f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-            }
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            ReaderMotionPreview(
-                mode = previewMode,
-                active = active,
-                modifier = Modifier
-                    .width(44.dp)
-                    .height(28.dp)
-            )
-            Text(
-                label,
-                style = MaterialTheme.typography.labelMedium,
-                color = when {
-                    !enabled ->
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                    active -> VeilPalette.Moon
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-internal fun ReaderMotionPreview(
-    mode: ReaderNavigationMode,
-    active: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val lineColor = if (active) {
-        VeilPalette.Brass
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
-    }
-    val faint = lineColor.copy(alpha = 0.38f)
-
-    Canvas(modifier) {
-        val stroke = 1.15.dp.toPx()
-        val radius = 1.5.dp.toPx()
-        val inset = 1.5.dp.toPx()
-        val pageTop = size.height * 0.08f
-        val pageHeight = size.height * 0.84f
-
-        when (mode) {
-            ReaderNavigationMode.PAPER_CURL -> {
-                drawRoundRect(
-                    color = faint,
-                    topLeft = Offset(inset, pageTop),
-                    size = Size(size.width - inset * 2f, pageHeight),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(stroke)
-                )
-                val fold = Path().apply {
-                    moveTo(size.width * 0.67f, pageTop)
-                    lineTo(size.width * 0.60f, size.height * 0.48f)
-                    lineTo(size.width * 0.78f, size.height * 0.92f)
-                }
-                drawPath(
-                    path = fold,
-                    color = lineColor,
-                    style = Stroke(stroke, cap = StrokeCap.Round)
-                )
-                drawLine(
-                    color = lineColor.copy(alpha = 0.54f),
-                    start = Offset(size.width * 0.67f, pageTop),
-                    end = Offset(size.width * 0.92f, size.height * 0.25f),
-                    strokeWidth = stroke
-                )
-            }
-
-            ReaderNavigationMode.SLIDE -> {
-                val pageWidth = size.width * 0.46f
-                drawRoundRect(
-                    color = faint,
-                    topLeft = Offset(-pageWidth * 0.28f, pageTop),
-                    size = Size(pageWidth, pageHeight),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(stroke)
-                )
-                drawRoundRect(
-                    color = lineColor,
-                    topLeft = Offset(size.width * 0.42f, pageTop),
-                    size = Size(pageWidth, pageHeight),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(stroke)
-                )
-                drawLine(
-                    color = lineColor.copy(alpha = 0.55f),
-                    start = Offset(size.width * 0.35f, size.height * 0.50f),
-                    end = Offset(size.width * 0.55f, size.height * 0.50f),
-                    strokeWidth = stroke,
-                    cap = StrokeCap.Round
-                )
-            }
-
-            ReaderNavigationMode.PAGED -> {
-                drawRoundRect(
-                    color = lineColor,
-                    topLeft = Offset(size.width * 0.18f, pageTop),
-                    size = Size(size.width * 0.64f, pageHeight),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(stroke)
-                )
-                repeat(3) { index ->
-                    val y = size.height * (0.34f + index * 0.15f)
-                    drawLine(
-                        color = faint,
-                        start = Offset(size.width * 0.31f, y),
-                        end = Offset(size.width * 0.69f, y),
-                        strokeWidth = stroke * 0.75f,
-                        cap = StrokeCap.Round
-                    )
-                }
-            }
-
-            ReaderNavigationMode.SCROLL -> {
-                drawRoundRect(
-                    color = faint,
-                    topLeft = Offset(size.width * 0.20f, pageTop),
-                    size = Size(size.width * 0.60f, pageHeight),
-                    cornerRadius = CornerRadius(radius, radius),
-                    style = Stroke(stroke)
-                )
-                repeat(4) { index ->
-                    val y = size.height * (0.24f + index * 0.16f)
-                    val shift = if (index % 2 == 0) 0f else size.width * 0.06f
-                    drawLine(
-                        color = if (index == 2) lineColor else faint,
-                        start = Offset(size.width * 0.30f + shift, y),
-                        end = Offset(size.width * 0.70f, y),
-                        strokeWidth = stroke * 0.8f,
-                        cap = StrokeCap.Round
-                    )
-                }
-                drawLine(
-                    color = lineColor,
-                    start = Offset(size.width * 0.82f, size.height * 0.30f),
-                    end = Offset(size.width * 0.82f, size.height * 0.70f),
-                    strokeWidth = stroke,
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    color = lineColor,
-                    start = Offset(size.width * 0.76f, size.height * 0.64f),
-                    end = Offset(size.width * 0.82f, size.height * 0.70f),
-                    strokeWidth = stroke,
-                    cap = StrokeCap.Round
-                )
-                drawLine(
-                    color = lineColor,
-                    start = Offset(size.width * 0.88f, size.height * 0.64f),
-                    end = Offset(size.width * 0.82f, size.height * 0.70f),
-                    strokeWidth = stroke,
-                    cap = StrokeCap.Round
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AppearancePreset(
-    label: String,
-    theme: ReaderTheme,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val (paperArgb, inkArgb) = readiumThemeColors(theme)
-    val paper = Color(paperArgb)
-    val ink = Color(inkArgb)
-
-    Surface(
-        modifier = modifier
-            .heightIn(min = 86.dp)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                onClick = onClick
-            ),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilMaterials.ElevatedSurface
-        } else {
-            Color.Transparent
-        },
-        border = BorderStroke(
-            1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Column(
-            Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 64.dp)
-                    .background(paper, MaterialTheme.shapes.extraSmall)
-                    .border(
-                        1.dp,
-                        ink.copy(alpha = 0.18f),
-                        MaterialTheme.shapes.extraSmall
-                    )
-            ) {
-                Text(
-                    stringResource(R.string.reader_theme_specimen),
-                    modifier = Modifier.align(Alignment.Center).padding(VeilSpacing.sm),
-                    color = ink,
-                    style = MaterialTheme.typography.titleLarge
-                )
-            }
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (selected) VeilPalette.Moon
-                    else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                if (selected) {
-                    Text(
-                        "●",
-                        color = VeilPalette.Brass,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalReadiumApi::class)
 internal fun ReaderAppearance.toEpubPreferences(
     fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO
@@ -6582,12 +5766,10 @@ internal fun readerHighlightTint(theme: ReaderTheme): Int =
         ReaderTheme.OLED -> 0xFFD1B15B.toInt()
     }
 
-internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
-    ReaderTheme.PAPER -> 0xFFE9DEC5.toInt() to 0xFF2A251F.toInt()
-    ReaderTheme.SEPIA -> 0xFFE2D0AA.toInt() to 0xFF362E24.toInt()
-    ReaderTheme.DUSK -> 0xFF18151D.toInt() to 0xFFF5F0F7.toInt()
-    ReaderTheme.OLED -> 0xFF000000.toInt() to 0xFFF5F0F7.toInt()
-}
+internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> =
+    readerVisualThemeArgb(theme).let { colors ->
+        colors.background to colors.text
+    }
 
 @OptIn(ExperimentalReadiumApi::class)
 internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumPreferences(
