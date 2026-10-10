@@ -13,6 +13,31 @@
 | [oleksandrbalan pagecurl](https://github.com/oleksandrbalan/pagecurl) | Jetpack Compose-based curl, state-driven composables and drag gestures; Maven Central | Verify current root LICENSE before reuse | High for Readium: arbitrary Compose child pages not equal to live EPUB WebView pages | Alternate UX/gesture comparison; do not silently replace native Reader |
 | [Peyilo libreadview](https://github.com/Peyilo/libreadview) | Multi-mode Android reading views incl. iBook and Google curl / slide | MIT | High: custom reader surface may conflict with current Readium navigation and annotations | Study interaction patterns, not a drop-in Reader replacement |
 
+## Higher-fidelity contender added: eschao PageFlip (unverified)
+
+**Decision hierarchy:** PageFlip is the **visual-physics candidate** because its OpenGL mesh exposes semi-cylinder radius, fine mesh pixels, independent fold-edge/base shadow color and widths, backside fold masking and exactly defined finish/cancel states. Irurueta is the **more native-integration-friendly contender** because `CurlTextureView` is part of ordinary Android composition and accepts separate front/back textures. Neither is product-green without physical evidence.
+
+**Second, separate DEBUG launcher:** `Veil · Premium PageFlip Lab` is implemented by `PageFlipPremiumLabActivity` using the existing JitPack repository and `debugImplementation("com.github.eschao:android-PageFlip:1.0.2")`. The lab exposes original fictional paper fixtures, native GLSurfaceView surface, 6-pixel geometry spacing, 0.65 fold semi-perimeter, independent fold/base shadows and finger-driven release. In the lab, backing textures are uploaded on the GL thread, intermediate ARGB bitmaps are recycled after synchronous GL upload, and accepted/canceled backward turns are treated transactionally. This is **not** production Readium integration.
+
+**Dependencies and risk:** upstream PageFlip 1.0.2 is from a significantly older Android/Gradle era and some developers reported JitPack dependency resolution failures. The library must resolve and compile with Veil Android Gradle versions; a green release-only lane cannot substitute for the debug variant. A dependency issue is a blocker, not permission to silently remove the premium candidate.
+
+**Side-by-side physical scoring (record video, do not guess)**:
+
+| Criterion | Irurueta lab | eschao PageFlip lab |
+| --- | --- | --- |
+| Genuine ink displacement with finger | UNVERIFIED | UNVERIFIED |
+| Fold silhouette / correct corner lift | UNVERIFIED | UNVERIFIED |
+| Contact shadow changing with lift | UNVERIFIED | UNVERIFIED |
+| Crease-edge shadow and back-side feel | UNVERIFIED | UNVERIFIED |
+| Reverse/cancel without visual jump | UNVERIFIED | UNVERIFIED |
+| Texture memory bounded after 100 turns | UNVERIFIED | UNVERIFIED |
+| 60/120Hz device frame pacing | UNVERIFIED | UNVERIFIED |
+| EPUB Readium prefetch / durable locator | NOT CONNECTED | NOT CONNECTED |
+| RTL and chapter/spine boundary | NOT CONNECTED | NOT CONNECTED |
+| Compiler+device QA | PENDING | PENDING |
+
+Treat the generated APK as *sample only*. Do not silently route the main Reader to the winning lab; use an explicit feature gate, real snapshots and clean rollback.
+
 ## Implementation in this pilot
 
 Only the **debug variant** depends on `com.irurueta:irurueta-android-gl-curl:1.1.6`, without vendoring upstream source. Its Apache-2.0 license stays attributable to the original project.
