@@ -310,10 +310,14 @@ internal class ReaderTtsMediaPlayer(
             ?.takeIf { it.isNotEmpty() }
             ?.take(4_096)
 
-    fun updateVoicePreferences(preferredVoiceIds: Map<String, String>) {
+    fun updateVoicePreferences(
+        preferredVoiceIds: Map<String, String>,
+        engineChoice: com.veilreader.app.domain.ReaderTtsEngineChoice
+    ) {
         val request = currentRequest ?: return
         val updatedPreferences = request.preferences.copy(
-            preferredVoiceIds = preferredVoiceIds
+            preferredVoiceIds = preferredVoiceIds,
+            engine = engineChoice
         ).normalized()
         currentRequest = request.copy(preferences = updatedPreferences)
         session?.updatePreferences(updatedPreferences)
