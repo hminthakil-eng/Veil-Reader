@@ -32,6 +32,7 @@ internal sealed interface ReaderBookSearchOpen {
 internal sealed interface ReaderBookSearchPage {
     data class Hits(val locators: List<Locator>, val isLast: Boolean) : ReaderBookSearchPage
     data object Failed : ReaderBookSearchPage
+    data object TooBroad : ReaderBookSearchPage
     data object Closed : ReaderBookSearchPage
 }
 
@@ -68,6 +69,8 @@ internal class ReaderBookSearchSession(
     private val lock = Mutex()
     private val pending = ArrayDeque<Locator>()
     private var ended = false
+    private val maxResourcesPerPage = 64
+    private val maxMatchesPerResource = 5_000
     private val closed = AtomicBoolean(false)
 
     suspend fun nextPage(limit: Int = 40): ReaderBookSearchPage = lock.withLock {
@@ -78,8 +81,9 @@ internal class ReaderBookSearchSession(
         require(limit in 1..100) { "Search page size must be between 1 and 100" }
 
         val hits = ArrayList<Locator>(limit)
+        var resourcesRead = 0
         try {
-            while (hits.size < limit) {
+            while (hits.size < limit && resourcesRead < maxResourcesPerPage) {
                 currentCoroutineContext().ensureActive()
 
                 if (pending.isNotEmpty()) {
@@ -89,6 +93,7 @@ internal class ReaderBookSearchSession(
                 if (ended) break
 
                 val next = cursor.next()
+                resourcesRead++
                 if (next.isFailure) {
                     closeUnsafe()
                     return@withLock ReaderBookSearchPage.Failed
@@ -101,6 +106,10 @@ internal class ReaderBookSearchSession(
                 if (collection == null) {
                     ended = true
                     break
+                }
+                if (collection.locators.size > maxMatchesPerResource) {
+                    closeUnsafe()
+                    return@withLock ReaderBookSearchPage.TooBroad
                 }
                 pending.addAll(collection.locators)
                 // Empty resource pages are allowed; Readium advances its cursor.
