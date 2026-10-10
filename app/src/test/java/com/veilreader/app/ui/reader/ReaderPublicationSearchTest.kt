@@ -95,6 +95,38 @@ class ReaderPublicationSearchTest {
     }
 
     @Test
+    fun emptyResourcesHaveAWorkBudgetWithoutDiscardingFutureMatches() = runTest {
+        val cursor = FakeCursor(
+            List(64) { Try.success(LocatorCollection()) } +
+                listOf(
+                    Try.success(LocatorCollection(locators = listOf(locator(65)))),
+                    Try.success(null)
+                )
+        )
+        val session = (openReaderBookSearch("rare") { cursor } as ReaderBookSearchOpen.Ready).session
+        val first = session.nextPage() as ReaderBookSearchPage.Hits
+        assertTrue(first.locators.isEmpty())
+        assertFalse(first.isLast)
+        assertEquals(64, cursor.nextCalls)
+        val second = session.nextPage() as ReaderBookSearchPage.Hits
+        assertEquals(listOf(65), second.locators.map { it.locations.position })
+        assertTrue(second.isLast)
+        assertEquals(66, cursor.nextCalls)
+        assertEquals(1, cursor.closeCalls)
+    }
+
+    @Test
+    fun pathologicalSingleResourceMatchCountIsNotSilentlyTruncated() = runTest {
+        val cursor = FakeCursor(listOf(
+            Try.success(LocatorCollection(locators = List(5_001) { locator(it) }))
+        ))
+        val session = (openReaderBookSearch("a") { cursor } as ReaderBookSearchOpen.Ready).session
+        assertEquals(ReaderBookSearchPage.TooBroad, session.nextPage())
+        assertEquals(1, cursor.closeCalls)
+        assertEquals(ReaderBookSearchPage.Closed, session.nextPage())
+    }
+
+    @Test
     fun closingSearchIsIdempotentAndDiscardsFutureQueries() = runTest {
         val cursor = FakeCursor(listOf(Try.success(LocatorCollection(locators = listOf(locator(1))))))
         val session = (openReaderBookSearch("dream") { cursor } as ReaderBookSearchOpen.Ready).session
