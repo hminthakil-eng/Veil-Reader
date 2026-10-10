@@ -101,6 +101,10 @@ internal class GpuMaterialPageCurlView(
         private set
     // Benchmark-only native host probe; no input or gesture state is changed.
     internal val isPageTurnActive: Boolean get() = lastSubmittedActive
+    // Read-only test probe: distinguish a new source-sheet submission from an
+    // actual acquired TextureView buffer. This never acknowledges presentation.
+    internal val lastSubmittedSheetEpoch: Long
+        get() = synchronized(frameLock) { submittedFrame?.sheetEpoch ?: -1L }
     private var acquisitionCheckScheduled = false
     private var lastLoggedAcquisitionTimestamp = Long.MIN_VALUE
     private val acquisitionCheck = Runnable {
