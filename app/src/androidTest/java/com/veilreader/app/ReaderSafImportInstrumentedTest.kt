@@ -1,6 +1,7 @@
 package com.veilreader.app
 
 import android.app.Activity
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.UiAutomation
 import android.content.Intent
 import android.content.ContentValues
@@ -9,6 +10,8 @@ import android.provider.MediaStore
 import android.util.Base64
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.View
+import android.view.ViewGroup
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
@@ -21,12 +24,19 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReaderSafImportInstrumentedTest {
+    private var originalAccessibilityFlags: Int? = null
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation: UiAutomation
         get() = instrumentation.uiAutomation
 
     @Before
     fun forcePortraitStart() {
+        // Resource-ID queries require an explicit service capability; do not rely on
+        // whichever flags a previous instrumentation class left on UiAutomation.
+        val info = uiAutomation.serviceInfo
+        originalAccessibilityFlags = info.flags
+        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        uiAutomation.serviceInfo = info
         uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_0)
         SystemClock.sleep(500)
     }
@@ -34,6 +44,11 @@ class ReaderSafImportInstrumentedTest {
     @After
     fun releaseRotation() {
         uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+        originalAccessibilityFlags?.let { flags ->
+            val info = uiAutomation.serviceInfo
+            info.flags = flags
+            uiAutomation.serviceInfo = info
+        }
     }
 
     @Test
@@ -149,6 +164,19 @@ class ReaderSafImportInstrumentedTest {
         while (SystemClock.elapsedRealtime() < deadline) {
             findNode(predicate)?.let { return it }
             SystemClock.sleep(POLL_MS)
+        }
+        android.util.Log.e("VeilSafQa", "Missing $label; accessibility flags=${uiAutomation.serviceInfo.flags}")
+        instrumentation.runOnMainSync {
+            val queue = ArrayDeque<View>()
+            ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
+                .forEach { queue.add(it.window.decorView) }
+            var remaining = 120
+            while (queue.isNotEmpty() && remaining-- > 0) {
+                val view = queue.removeFirst()
+                val id = runCatching { view.resources.getResourceName(view.id) }.getOrDefault("none")
+                android.util.Log.e("VeilSafQa", "native=${view.javaClass.simpleName} id=$id shown=${view.isShown} a11y=${view.importantForAccessibility}")
+                if (view is ViewGroup) for (index in 0 until view.childCount) queue.add(view.getChildAt(index))
+            }
         }
         error("Timed out waiting for $label")
     }

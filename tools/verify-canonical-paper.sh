@@ -9,12 +9,14 @@ fail() {
 legacy_draw="app/src/main/java/com/veilreader/app/ui/screens/PaperCurlDraw.kt"
 legacy_geometry="app/src/main/java/com/veilreader/app/ui/screens/PaperCurlGeometry.kt"
 gpu="app/src/main/java/com/veilreader/app/ui/reader/material/GpuMaterialPageCurlView.kt"
+software="app/src/main/java/com/veilreader/app/ui/reader/material/SoftwareMaterialPageCurlOverlay.kt"
 engine="app/src/main/java/com/veilreader/app/ui/reader/material/MaterialPageEngine.kt"
 input="app/src/main/java/com/veilreader/app/ui/screens/PaperCurlInputListener.kt"
 
 [ ! -e "$legacy_draw" ] || fail "legacy Canvas PaperCurlDraw runtime returned"
 [ ! -e "$legacy_geometry" ] || fail "legacy Canvas PaperCurlGeometry runtime returned"
 [ -f "$gpu" ] || fail "canonical GPU renderer is missing"
+[ -f "$software" ] || fail "Paper software mesh reliability backend is missing"
 [ -f "$engine" ] || fail "canonical Material Page engine is missing"
 
 if grep -nE 'uBackTexture|uHasBackTexture|destinationInk|backSnapshot|captureBack\('   "$gpu" "$engine" "$input"; then
@@ -27,8 +29,19 @@ grep -q 'glGenTextures(1, ids, 0)' "$gpu" ||
 grep -q 'shouldAllowPaperNavigation' "$input" ||
   fail "normal-motion Paper fail-closed gate is missing"
 
-grep -q 'GpuMaterialPageRendererStatus.READY' "$input" ||
-  fail "Paper input no longer requires renderer readiness"
+grep -q 'materialPageRendererCanPresent' "$input" ||
+  fail "Paper input no longer requires a presentable renderer"
+grep -q 'GpuMaterialPageRendererStatus.READY' "$gpu" ||
+  fail "GPU Paper readiness state is missing"
+grep -q 'GpuMaterialPageRendererStatus.SOFTWARE_READY' "$gpu" ||
+  fail "software Paper readiness state is missing"
+grep -q 'drawBitmapMesh' "$software" ||
+  fail "software Paper backend no longer deforms a page mesh"
+grep -q 'gpuPageCurlFrame' "$software" ||
+  fail "software Paper backend diverged from canonical Material Page geometry"
+if grep -nE 'SlideNavigationInputListener|PageTurnStyle[.]SLIDE|static pagination' "$software"; then
+  fail "software Paper backend may not degrade to Slide/static navigation"
+fi
 
 grep -q 'GpuMaterialPageRendererStatus.INITIALIZING' "$gpu" ||
   fail "GPU initialization lifecycle state is missing"

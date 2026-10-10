@@ -87,10 +87,10 @@ class ReaderPreferenceMappingTest {
 
     @Test
     fun `reader themes expose deterministic background and text colors`() {
-        assertEquals(0xFFE9DEC5.toInt() to 0xFF2A251F.toInt(), readiumThemeColors(ReaderTheme.PAPER))
-        assertEquals(0xFFE2D0AA.toInt() to 0xFF362E24.toInt(), readiumThemeColors(ReaderTheme.SEPIA))
-        assertEquals(0xFF18151D.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.DUSK))
-        assertEquals(0xFF000000.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.OLED))
+        assertEquals(0xFFF4EFDF.toInt() to 0xFF29271F.toInt(), readiumThemeColors(ReaderTheme.PAPER))
+        assertEquals(0xFFE9DDC3.toInt() to 0xFF372F24.toInt(), readiumThemeColors(ReaderTheme.SEPIA))
+        assertEquals(0xFF141517.toInt() to 0xFFD8D6D0.toInt(), readiumThemeColors(ReaderTheme.DUSK))
+        assertEquals(0xFF000000.toInt() to 0xFFD5D5D2.toInt(), readiumThemeColors(ReaderTheme.OLED))
     }
 
     @Test

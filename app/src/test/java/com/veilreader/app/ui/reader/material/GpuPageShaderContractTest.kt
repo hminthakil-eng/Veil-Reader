@@ -44,9 +44,25 @@ class GpuPageShaderContractTest {
     }
 
     @Test
+    fun `shared shader uniforms have equal effective precision`() {
+        val declaration = Regex("""\buniform\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(u\w+)\s*;""")
+        fun uniforms(shader: String): Map<String, String> {
+            val defaultPrecision = Regex("""precision\s+(\w+)\s+float""").find(shader)!!.groupValues[1]
+            return declaration.findAll(shader).associate { match ->
+                match.groupValues[3] to "${match.groupValues[2]}:${match.groupValues[1].ifEmpty { defaultPrecision }}"
+            }
+        }
+        val vertex = uniforms(GpuMaterialPageCurlView.VERTEX_SHADER)
+        val fragment = uniforms(GpuMaterialPageCurlView.FRAGMENT_SHADER)
+        val shared = vertex.keys intersect fragment.keys
+        assertTrue(shared.isNotEmpty())
+        shared.forEach { name -> assertEquals("Shared uniform $name cannot link with mismatched precision", vertex[name], fragment[name]) }
+    }
+
+    @Test
     fun `vertex and fragment varyings match exactly`() {
         val varyingRegex =
-            Regex("""\bvarying\s+(\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
+            Regex("""\bvarying\s+((?:lowp|mediump|highp)\s+\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
         fun varyings(shader: String): Map<String, String> =
             varyingRegex.findAll(shader)
                 .associate { match ->
@@ -274,7 +290,7 @@ class GpuPageShaderContractTest {
 
     private fun assertShaderUniformContract(shader: String) {
         val declarationRegex =
-            Regex("""\buniform\s+\w+\s+(u[A-Za-z0-9_]+)\s*;""")
+            Regex("""\buniform\s+(?:(?:lowp|mediump|highp)\s+)?\w+\s+(u[A-Za-z0-9_]+)\s*;""")
         val tokenRegex =
             Regex("""\b(u[A-Z][A-Za-z0-9_]*)\b""")
 

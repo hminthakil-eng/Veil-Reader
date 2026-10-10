@@ -33,6 +33,17 @@ internal fun applyMaterialPageRolloutToAppearance(
         else -> appearance
     }
 
+internal fun shouldMountPaperCurlRuntime(
+    format: BookFormat,
+    fixedLayout: Boolean,
+    appearance: ReaderAppearance,
+    materialPageEnabled: Boolean
+): Boolean =
+    materialPageEnabled &&
+        format == BookFormat.EPUB &&
+        !fixedLayout &&
+        appearance.navigationMode == ReaderNavigationMode.PAPER_CURL
+
 internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
     fixedLayout: Boolean
