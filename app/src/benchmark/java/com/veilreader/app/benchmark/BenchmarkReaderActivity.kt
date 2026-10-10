@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.view.View
 import android.view.ViewGroup
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
@@ -26,6 +27,7 @@ import com.veilreader.app.ui.reader.material.GpuMaterialPageCurlView
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
+import java.util.ArrayDeque
 import java.util.UUID
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
@@ -60,18 +62,39 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 navigator = findNavigator(supportFragmentManager)
                 if (navigator == null) delay(50)
             }
+            // Benchmark-only recent transitions. Captures submissions and actual acquired
+            // buffers *during* a gesture, not only after UIAutomator swipe() returns.
+            // Bounded history avoids hiding the underlying page or spamming CI logs.
+            val probeStartedAt = SystemClock.uptimeMillis()
+            val gpuHistory = ArrayDeque<String>(12)
+            var lastGpuSignature: String? = null
             while (true) {
                 val locator = navigator.currentLocator.value
                 val progression = locator.locations.progression
                 if (progression != null) {
                     val gpu = findGpuView(window.decorView)
+                    val submitted = gpu?.lastSubmittedSheetEpoch ?: -1L
+                    val acquired = gpu?.lastAcquiredSheetEpoch ?: -1L
+                    val active = gpu?.isPageTurnActive ?: false
+                    val signature = "${locator.href}|$progression|$submitted|$acquired|$active"
+                    if (signature != lastGpuSignature) {
+                        lastGpuSignature = signature
+                        if (gpuHistory.size == 12) gpuHistory.removeFirst()
+                        gpuHistory.addLast(
+                            "${SystemClock.uptimeMillis() - probeStartedAt}ms:" +
+                                "${locator.href.substringAfterLast('/')}@$progression:" +
+                                "$submitted/$acquired/${if (active) 1 else 0}"
+                        )
+                    }
                     val probe = "benchmark-reader-locator:${locator.href}|$progression" +
-                        ";gpuEpoch=${gpu?.lastAcquiredSheetEpoch ?: -1L}" +
-                        ";gpuActive=${gpu?.isPageTurnActive ?: false}" +
+                        ";gpuEpoch=$acquired" +
+                        ";gpuSubmitted=$submitted" +
+                        ";gpuActive=$active" +
                         ";gpuHost=${gpu != null}" +
                         ";gpuAttached=${gpu?.isAttachedToWindow ?: false}" +
                         ";gpuSurface=${gpu?.isAvailable ?: false}" +
                         ";gpuSize=${gpu?.width ?: 0}x${gpu?.height ?: 0}" +
+                        ";gpuHistory=${gpuHistory.joinToString(",")}" +
                         ";motion=${ValueAnimator.areAnimatorsEnabled()}"
                     if (window.decorView.contentDescription != probe) window.decorView.contentDescription = probe
                 }
