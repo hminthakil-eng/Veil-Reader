@@ -497,6 +497,29 @@ class ReaderTtsSessionTest {
     }
 
     @Test
+    fun userPauseAfterFocusGainButBeforeDeferredResumeWinsTheRace() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend }, "en", { true }, StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            assertEquals(1, backend.requests.size)
+
+            backend.onInterruption?.invoke(ReaderTtsInterruption.TRANSIENT_FOCUS)
+            backend.onFocusGained?.invoke() // queues deferred resume
+            session.pause() // user acts before that continuation runs
+            runCurrent()
+
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(1, backend.requests.size)
+            assertTrue(backend.abandonFocusStops >= 1)
+        } finally { session.close() }
+    }
+
+    @Test
     fun userPauseDuringTransientFocusLossCancelsAutomaticResume() = runTest {
         val backend = FakeBackend()
         val session = ReaderTtsSession(
