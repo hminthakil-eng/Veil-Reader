@@ -50,7 +50,8 @@ jobs:
 
   dependency-graph:
     name: dependency-graph
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/grand-forge/p0-kindle-reader-quality-20261008' || github.ref == 'refs/heads/grand-forge/arena-app-hardening-v1' || github.ref == 'refs/heads/main')
+    # Restrict manual dispatch to the same trusted branch allowlist as push.
     # The upload requires contents:write; the PR job cannot inherit this.
     permissions:
       contents: write
