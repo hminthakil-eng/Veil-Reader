@@ -148,7 +148,12 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
         val preferredVoiceId = safe.preferredVoiceId(languageTag)
         val stableVoiceId = preferredVoiceId
             ?: narratorVoiceId?.takeIf { narratorLanguageTag == languageTag }
-        val chosen = selectOfflineTtsVoice(metadata, languageTag, stableVoiceId)
+        val chosen = selectPinnedOfflineTtsVoice(
+            voices = metadata,
+            languageTag = languageTag,
+            explicitPreferredId = preferredVoiceId,
+            pinnedVoiceId = narratorVoiceId?.takeIf { narratorLanguageTag == languageTag }
+        )
             ?: return if (stableVoiceId != null) {
                 ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
             } else {
