@@ -212,6 +212,58 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `Paper overlay and input share a strict reflowable EPUB runtime gate`() {
+        val paper = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+        val slide = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+        val scroll = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+        assertTrue(shouldMountPaperCurlRuntime(
+            format = BookFormat.EPUB,
+            fixedLayout = false,
+            appearance = paper,
+            materialPageEnabled = true
+        ))
+        assertFalse(shouldMountPaperCurlRuntime(
+            format = BookFormat.EPUB,
+            fixedLayout = false,
+            appearance = paper,
+            materialPageEnabled = false
+        ))
+        assertFalse(shouldMountPaperCurlRuntime(
+            format = BookFormat.EPUB,
+            fixedLayout = true,
+            appearance = paper,
+            materialPageEnabled = true
+        ))
+        assertFalse(shouldMountPaperCurlRuntime(
+            format = BookFormat.PDF,
+            fixedLayout = false,
+            appearance = paper,
+            materialPageEnabled = true
+        ))
+        assertFalse(shouldMountPaperCurlRuntime(
+            format = BookFormat.EPUB,
+            fixedLayout = false,
+            appearance = slide,
+            materialPageEnabled = true
+        ))
+        assertFalse(shouldMountPaperCurlRuntime(
+            format = BookFormat.EPUB,
+            fixedLayout = false,
+            appearance = scroll,
+            materialPageEnabled = true
+        ))
+    }
+
+    @Test
     fun `disabled GPU Paper degrades to static paged not slide`() {
         val requested = ReaderAppearance(
             scroll = false,
