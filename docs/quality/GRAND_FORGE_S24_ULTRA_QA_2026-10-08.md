@@ -2,15 +2,18 @@
 
 Target phone reported by user: Galaxy S24 Ultra.
 Connection: user will install APK and test manually; no remote connection established.
-Executable source: 06a94b57f17b13edd4c8e1cc513ac868bdaa0d24.
-APK SHA-256: be7d21606bf0e11bfe13f1a5a6d94254a080e01427c65e953a171c49a5da9948.
-Build artifact: Android CI37752444851 / artifact11539007013.
-APK artifact: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37752444851/artifacts/11539007013.
-Automated evidence: 961 unit tests and163 instrumented tests pass;36 abrupt-process samples pass.
+Latest verified APK: `VeilReader-ForgeQA-38a6bf10.apk`, version `0.10.0-forge-38a6bf10`.
+Executable source: 38a6bf10b0f57189e03ee72f84ad655057a56da0.
+APK SHA-256: 796291c81ec9be4b6e7b1d3196cd0dcb4dbbc8f4734a9ce8090fe7be166befbb.
+Build artifact: Forge QA38027688503 / artifact11660629953.
+APK artifact: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38027688503/artifacts/11660629953.
+Automated evidence: 1010 unit tests and175 instrumented tests pass;108 abrupt-process samples pass.
 Release APK/AAB compilation/archive verification and performance smoke/profile budgets pass.
 This is a debug test APK; physical acceptance is still UNVERIFIED.
 Android/One UI version, model variant, observed refresh rate: not recorded.
 Status: UNVERIFIED. This document is a test protocol, not test results.
+
+Install this separate Forge QA app as an update to existing Forge QA; keep the original Veil app and data. GitHub login and ZIP extraction are required. Its v2 signature independently matches the pinned QA certificate. This APK includes the atomic-checkpoint failure/retry fix. Later final-snapshot integration and deduplication rollback changes are still undergoing combined CI and are not in this APK.
 
 Use the exact-head debug APK only after automated checks pass. Do not substitute
 an older APK or call the debug-only Paper review a release-enabled capability.

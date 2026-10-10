@@ -575,3 +575,20 @@ foreground listening checkpoint, corpus/RTL/selection/PDF and device performance
 ### Verified canonical baseline, 2026-10-10
 
 Forge QA run 37878688504 on a67586cf passed 1009 unit tests across 174 suites and 174 Android tests, with zero reported failures, errors or skipped tests. This covers the integrated annotation, note/delete, selection, foreground TTS checkpoint and navigation/input work on that revision. It does not verify GF-DUR-006 or physical-device UX/performance. PR 446 remains unintegrated: storage, process-kill and emulator performance checks passed, but full build failed in a native Robolectric Library accessibility worker; do not treat its incomplete suite as GREEN.
+
+## GF-DUR-007 — retain owner on rejected same-location durability upgrade
+
+- Priority / subsystem / impact: P0 Reader deduplication; a failed final save must neither forget the already counted location nor prevent retry.
+- Observed / expected / root cause: the same-key upgrade in ReaderLocatorDeduplicator.acceptCommit updated its durability flag without snapshotting the current owner. rejectCommit then restored an older owner. Snapshot both current key and durability requirement before an admitted upgrade/retry.
+- Evidence / files: review of integrated PR 446; ReaderLocatorPolicy.kt and ReaderLocatorPolicyTest.kt. New regression covers opening checkpoint, failed stronger save, no duplicate page credit, successful retry, and subsequent duplicate suppression. Hosted execution pending; no baseline test run claimed.
+- Reuse / implementation: existing deduplicator rollback; no new store, UI, schema or release gate.
+- Risks / performance / accessibility / RTL: two field assignments per same-location retry/upgrade; no measured latency delta or input/direction change. Physical reading behavior remains pending.
+- Acceptance / dependencies / status: new regression and full combined QA pass; depends on PR 446 final-snapshot durability distinction. YELLOW, implemented on 4ee2a2be, combined CI pending.
+
+### Terminal GF-DUR-006 evidence and subsequent integration
+
+38a6bf10: Forge QA38027688503 passed 1010 unit tests / 174 suites and 175 Android tests, zero failures/errors/skips, including the blocked atomic rename and identical-sequence retry regressions. Fault injection38027688094 passed 108 cases. Benchmark38027792956 on documentation-only successor2f9c27bb passed profile generation, release-profile packaging and emulator smoke budgets; raw TTID median606.847ms, Reader P50 median121ms, P95/P99 medians150ms, highest per-runP99200ms and100% software-emulator jank. These unpaired observations establish no physical speedup or production performance acceptance.
+
+QA artifact11660629953: version0.10.0-forge-38a6bf10, SHA256796291c81ec9be4b6e7b1d3196cd0dcb4dbbc8f4734a9ce8090fe7be166befbb; independently verified v2 signature matches pinned QA certificate.
+
+PR 446 rerun38021631380 passed 1016 unit tests / 174 suites, zero failures/errors/skips, lint and debug/optimized release/harness builds. Storage and 144 raw verified kill cases passed, including opening/scroll-to-final cases. Initial native Robolectric crash remains a retained failure, not erased by rerun. Its report footer miscounted108 while raw case records total144; draft PR447 derives the count and retains checkpoint latencies/benchmark evidence. PR446 integrated at8bae5d3f; additional GF-DUR-007 fix4ee2a2be still requires combined checks. Do not attribute these later changes to the delivered38a6 APK. No physical GREEN or feature-gate promotion.
