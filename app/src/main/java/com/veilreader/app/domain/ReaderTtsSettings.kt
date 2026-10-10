@@ -15,8 +15,8 @@ enum class ReaderTtsEngineChoice {
 data class ReaderTtsSettings(
     val speed: Double = 1.0,
     val pitch: Double = 1.0,
-    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM,
-    val preferredVoiceIds: Map<String, String> = emptyMap()
+    val preferredVoiceIds: Map<String, String> = emptyMap(),
+    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM
 ) {
     fun normalized(): ReaderTtsSettings =
         copy(
