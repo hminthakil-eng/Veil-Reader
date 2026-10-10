@@ -1,5 +1,6 @@
 package com.veilreader.app
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Activity
 import android.app.UiAutomation
 import android.content.Intent
@@ -21,19 +22,34 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ReaderSafImportInstrumentedTest {
+    private var initialAccessibilityFlags: Int? = null
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation: UiAutomation
         get() = instrumentation.uiAutomation
 
     @Before
     fun forcePortraitStart() {
+        // Explicitly opt in to resource IDs: one preceding instrumented test
+        // must not determine whether this SAF import test can find the Reader.
+        val info = uiAutomation.serviceInfo
+        initialAccessibilityFlags = info.flags
+        info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        uiAutomation.serviceInfo = info
         uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_0)
         SystemClock.sleep(500)
     }
 
     @After
     fun releaseRotation() {
-        uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+        try {
+            uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+        } finally {
+            initialAccessibilityFlags?.let { flags ->
+                val info = uiAutomation.serviceInfo
+                info.flags = flags
+                uiAutomation.serviceInfo = info
+            }
+        }
     }
 
     @Test
@@ -150,7 +166,10 @@ class ReaderSafImportInstrumentedTest {
             findNode(predicate)?.let { return it }
             SystemClock.sleep(POLL_MS)
         }
-        error("Timed out waiting for $label")
+        val flags = uiAutomation.serviceInfo.flags
+        val viewIdsReported =
+            flags and AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS != 0
+        error("Timed out waiting for $label (view ID reporting enabled=$viewIdsReported)")
     }
 
     private fun findNode(
