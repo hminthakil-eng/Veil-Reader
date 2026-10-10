@@ -10,16 +10,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.theme.readerVisualThemeArgb
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import org.readium.r2.navigator.preferences.ReadingProgression
 
-internal fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
-    ReaderTheme.PAPER -> Color(0xFFE9DEC5)
-    ReaderTheme.SEPIA -> Color(0xFFE2D0AA)
-    ReaderTheme.DUSK -> Color(0xFF18151D)
-    ReaderTheme.OLED -> Color.Black
-}
+internal fun readerCanvasColor(theme: ReaderTheme): Color =
+    Color(readerVisualThemeArgb(theme).background)
 
 @Composable
 internal fun ReaderBoundaryPulse(

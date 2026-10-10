@@ -109,17 +109,21 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
-    fun `startup drag ownership is separate from permission to move the page`() {
+    fun `Paper owns drag even while renderer is unavailable but movement still waits for readiness`() {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
             GpuMaterialPageRendererStatus.entries.forEach { status ->
-                val expected = status == GpuMaterialPageRendererStatus.INITIALIZING ||
-                    status == GpuMaterialPageRendererStatus.READY
-                assertEquals(expected, paperRendererCanReserveDrag(false, status))
+                assertTrue(paperRendererCanReserveDrag(false, status))
             }
             assertTrue(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
             assertFalse(shouldAllowPaperNavigation(false,
                 GpuMaterialPageRendererStatus.INITIALIZING, visualActive = true))
+            assertFalse(shouldAllowPaperNavigation(false,
+                GpuMaterialPageRendererStatus.FAILED, visualActive = true))
+            assertFalse(shouldAllowPaperNavigation(false,
+                GpuMaterialPageRendererStatus.UNSUPPORTED, visualActive = true))
+            assertTrue(shouldAllowPaperNavigation(false,
+                GpuMaterialPageRendererStatus.READY, visualActive = true))
             MaterialPageEngineRollout.setDebugOverride(false)
             assertFalse(paperRendererCanReserveDrag(false, GpuMaterialPageRendererStatus.READY))
             assertFalse(paperRendererCanReserveDrag(true, GpuMaterialPageRendererStatus.REDUCED_MOTION))
@@ -169,6 +173,71 @@ class MaterialPageRolloutContractTest {
         } finally {
             MaterialPageEngineRollout.setDebugOverride(null)
         }
+    }
+
+    @Test
+    fun `Paper runtime mounts only for enabled reflowable EPUB Paper mode`() {
+        val paper = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+        val slide = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+        val scroll = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+
+        assertTrue(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = paper,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = paper,
+                materialPageEnabled = false
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = true,
+                appearance = paper,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.PDF,
+                fixedLayout = false,
+                appearance = paper,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = slide,
+                materialPageEnabled = true
+            )
+        )
+        assertFalse(
+            shouldMountPaperCurlRuntime(
+                format = BookFormat.EPUB,
+                fixedLayout = false,
+                appearance = scroll,
+                materialPageEnabled = true
+            )
+        )
     }
 
     @Test
