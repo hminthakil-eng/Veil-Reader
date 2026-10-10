@@ -50,10 +50,10 @@ class ReaderSupplyChainContractTest(unittest.TestCase):
         self.assertIn("PR job must not submit dependency graph or obtain write token", check(broken))
 
     def test_rejects_unrestricted_graph_job(self):
-        broken = self.original.replace(
-            "    if: github.event_name != 'pull_request'\n",
-            "    if: always()\n", 1
-        )
+        old_condition = next(line for line in self.original.splitlines()
+                             if line.startswith("    if: github.event_name != 'pull_request'"))
+        broken = self.original.replace(old_condition, "    if: always()", 1)
+        self.assertNotEqual(broken, self.original)
         self.assertIn("privileged graph job must exclude pull_request", check(broken))
 
     def test_rejects_untrusted_manual_dispatch_branch(self):
