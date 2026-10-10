@@ -168,8 +168,8 @@ jobs:
             fi
           )
 
-      - name: Upload benchmark traces and reports for failures or manual runs
-        if: failure() || github.event_name == 'workflow_dispatch'
+      - name: Preserve benchmark traces and reports
+        if: always()
         continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
@@ -184,7 +184,7 @@ jobs:
             performance/dashboard-smoke.json
             build/reports/
           if-no-files-found: warn
-          retention-days: 1
+          retention-days: 14
 
       # Emulator metrics are regression smoke signals only. The dashboard emits early warnings but
       # does not hard-fail on gradual drift. Absolute budgets and PR delta budgets remain the gates.

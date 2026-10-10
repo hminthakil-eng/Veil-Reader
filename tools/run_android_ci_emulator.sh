@@ -274,7 +274,7 @@ case "$MODE" in
 
       rm -f "$marker_file"
       "$ADB" -s "$SERIAL" logcat -c
-      "$ADB" -s "$SERIAL" logcat -v brief -s VeilDurabilityProbe:I '*:S' >"$marker_file" 2>&1 &
+      "$ADB" -s "$SERIAL" logcat -v brief -s VeilDurabilityProbe:I VeilReaderTrace:D '*:S' >"$marker_file" 2>&1 &
       logcat_pid="$!"
 
       # The debug probe kills its own process immediately after onLocatorUpdate() returns.
@@ -290,6 +290,9 @@ case "$MODE" in
           "$ADB" -s "$SERIAL" shell am force-stop "$PACKAGE" >/dev/null 2>&1 || true
           kill "$logcat_pid" >/dev/null 2>&1 || true
           wait "$logcat_pid" 2>/dev/null || true
+          # Keep measured journal latency before the next case clears logcat. These are
+          # emulator observations, not a physical-device performance acceptance result.
+          grep -E 'event=locator_crash_checkpoint_(durable|failed)( |$)' "$marker_file" >>"$MARKER_LOG" || true
 
           for _ in $(seq 1 100); do
             if [[ -z "$("$ADB" -s "$SERIAL" shell pidof "$PACKAGE" 2>/dev/null | tr -d '\r')" ]]; then
@@ -378,7 +381,7 @@ case "$MODE" in
     {
       echo "completed_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
       echo "result=PASS"
-      echo "samples=$((CYCLES * 6))"
+      echo "samples=$(grep -c '^PASS scenario=' "$REPORT")"
     } >>"$REPORT"
     ;;
 
