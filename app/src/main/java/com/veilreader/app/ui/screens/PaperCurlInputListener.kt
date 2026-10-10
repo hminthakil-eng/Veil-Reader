@@ -378,10 +378,11 @@ internal class PaperCurlInputListener(
         if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
-            // A reserved gesture that never became a horizontal turn is still
-            // consumed so the native renderer cannot finish it as a slide.
+            // Unreserved touchend may synthesize a WebView click. Do not swallow
+            // actual links, image taps or the center Reader toolbar gesture.
+            val wasReserved = dragReserved
             resetDrag()
-            return true
+            return wasReserved
         }
 
         if (!state.active && navigationJob == null) {
@@ -472,12 +473,18 @@ internal class PaperCurlInputListener(
                     }
                 }
 
-                commit && reducedMotion -> {
-                    // This branch is reachable without a visual only for Reduced Motion.
-                    // Normal-motion Paper fails closed before a static navigation fallback.
+                commit && (
+                    reducedMotion ||
+                        (state.active && state.materialEngine.presentedSheetEpoch.value ==
+                            state.materialEngine.sheetEpoch)
+                    ) -> {
+                    // Only the release may navigate Readium. During Move the
+                    // source WebView must remain alive to receive touchend,
+                    // particularly when the next page crosses an EPUB resource.
                     val origin =
                         dragStartLocator ?: navigator.currentLocator.value
                     val accepted = navigate(spec.direction)
+                    previewNavigationSucceeded = accepted
                     val moved =
                         accepted &&
                             awaitReaderVisualNavigationDeparture(
@@ -500,6 +507,7 @@ internal class PaperCurlInputListener(
                         turnCommitted = true
                         onCommittedTurn()
                         if (state.active && shouldAnimatePaperVisual()) {
+                            if (!reducedMotion) delay(VeilMotion.PAGE_REVEAL_MS)
                             state.animateComplete(
                                 releaseVelocityDpPerSec =
                                     releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -724,38 +732,11 @@ internal class PaperCurlInputListener(
                 }
                 return@launchPreview
             }
-            if (
-                !cancellationRequested &&
-                operationIsCurrent(operationToken) &&
-                shouldAllowPaperNavigation(isReducedMotion(), state.rendererStatus, state.active)
-            ) {
-                val origin = dragStartLocator
-                val accepted = navigate(spec.direction)
-                val moved =
-                    accepted &&
-                        origin != null &&
-                        awaitReaderVisualNavigationDeparture(
-                        currentLocator = navigator.currentLocator,
-                        origin = origin
-                            )
-                if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
-                    return@launchPreview
-                }
-                if (
-                    accepted &&
-                    (
-                        !moved ||
-                            cancellationRequested ||
-                            !operationIsCurrent(operationToken)
-                        )
-                ) {
-                    restoreDragStart(spec, forceRequest = true)
-                } else {
-                    previewNavigationSucceeded = moved
-                }
-            }
-            // Keep the previewed destination underneath the curl. The reverse
-            // face remains source-derived until a true opposite-leaf provider exists.
+            // The exact acquired GPU source sheet is the preview.
+            // Never move a Readium chapter while a drag is in flight: this
+            // would retire its touch receiver and silently lose touchend.
+            // End will validate the acquired epoch before a single navigation.
+
         }
         navigationJob?.start()
         return true
