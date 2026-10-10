@@ -813,6 +813,7 @@ fun ReaderScreen(
         estimateBookTimeRemaining(opened.book.totalPages, progress, readingPace)
     }
     var showNotebook by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var showReaderSearch by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
 
     LaunchedEffect(readerAppearance, opened.book.id, readerSessionInstanceId) {
         ReaderTrace.event(
@@ -1631,6 +1632,7 @@ fun ReaderScreen(
     BackHandler(
         enabled =
             !showNotebook &&
+            !showReaderSearch &&
             !showAppearance &&
             !showPdfZoom &&
             !showTts &&
@@ -3313,6 +3315,25 @@ fun ReaderScreen(
                             )
                         }
 
+                        if (
+                            opened.format == BookFormat.EPUB &&
+                            navigator != null &&
+                            VeilFeatureGates.enabled(
+                                VeilRiskyFeature.IN_BOOK_SEARCH,
+                                debugReview = BuildConfig.DEBUG
+                            )
+                        ) {
+                            ReaderChromeButton(
+                                ReaderAction.SEARCH,
+                                stringResource(R.string.reader_chrome_search),
+                                tint = readerChromeAccent
+                            ) {
+                                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                                selectionActionModeCallback.dismissSelection()
+                                showReaderSearch = true
+                            }
+                        }
+
                         Text(
                             progressLabel,
                             modifier = Modifier.semantics {
@@ -3905,6 +3926,64 @@ fun ReaderScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (showReaderSearch) {
+        key(readerSessionInstanceId) {
+            ReaderBookSearchDialog(
+                publication = opened.publication,
+                onDismiss = { showReaderSearch = false },
+                onResult = { result ->
+                    showReaderSearch = false
+                    val expectedSessionId = readerSessionInstanceId
+                    scope.launch {
+                        if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                            readerMessage = savedLocationFailedMessage
+                            return@launch
+                        }
+                        if (
+                            closeInFlight ||
+                            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) ||
+                            !readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) return@launch
+                        val nav = latestNavigator.value ?: return@launch
+                        val origin = nav.currentLocator.value
+                        val targetIdentity = result.toReaderNavigationIdentity()
+                        if (!shouldStartReaderIdentityJump(
+                                origin = origin.toReaderNavigationIdentity(),
+                                target = targetIdentity
+                            )
+                        ) {
+                            controlsVisible = false
+                            return@launch
+                        }
+                        readerViewModel.onUserInteraction(expectedSessionId)
+                        game.rebasePagePacing()
+                        val token = beginProgrammaticNavigation(
+                            originLocatorJson = origin.toVeilPersistedJson(opened.format),
+                            targetIdentity = targetIdentity,
+                            // A search hit is exploration, not a bookmark/note visit.
+                            // The existing SEARCH_RESULT policy preserves the saved
+                            // reading anchor until the user actually reads onward.
+                            reason = ReaderNavigationReason.SEARCH_RESULT
+                        )
+                        if (nav.go(
+                                result,
+                                animated = shouldAnimateReaderJump(latestReducedMotion.value)
+                            )
+                        ) {
+                            controlsVisible = false
+                        } else {
+                            cancelProgrammaticNavigation(token)
+                            readerMessage = savedLocationFailedMessage
+                        }
+                    }
+                }
+            )
         }
     }
 
@@ -4614,7 +4693,7 @@ private data class ReaderFootnote(
     val text: String
 )
 
-internal enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
+internal enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM, SEARCH }
 
 @Composable
 internal fun ReaderChromeButton(
@@ -4696,6 +4775,14 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
         val w = size.width
         val h = size.height
         when (action) {
+            ReaderAction.SEARCH -> {
+                drawCircle(color = tint, radius = w * 0.27f,
+                    center = Offset(w * 0.43f, h * 0.42f), style = stroke)
+                drawLine(color = tint,
+                    start = Offset(w * 0.64f, h * 0.64f),
+                    end = Offset(w * 0.84f, h * 0.84f),
+                    strokeWidth = stroke.width, cap = StrokeCap.Round)
+            }
             ReaderAction.BACK -> {
                 val tipX = if (layoutDirection == LayoutDirection.Rtl) {
                     w * .66f
