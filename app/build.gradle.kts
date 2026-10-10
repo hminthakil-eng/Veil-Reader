@@ -146,6 +146,13 @@ dependencies {
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
+    // Independent open-source 3D curl pilot; DEBUG ONLY, never packaged into release.
+    // Apache-2.0: https://github.com/albertoirurueta/irurueta-android-gl-curl
+    // The native view owns its bitmaps. Do not plug it into Readium until #408 device QA.
+    debugImplementation("com.irurueta:irurueta-android-gl-curl:1.1.6")
+    // eschao PageFlip remains a research candidate, but its JitPack 1.0.2
+    // artifact is unavailable on clean CI. Keep the independent irurueta lab
+    // buildable; reintroduce eschao only with a verified, pinned artifact.
     debugImplementation("androidx.compose.ui:ui-tooling:1.12.1")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.12.1")
     testImplementation("junit:junit:4.13.2")
