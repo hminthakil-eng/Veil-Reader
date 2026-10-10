@@ -104,6 +104,8 @@ class SettingsStore(private val context: Context) {
         val ttsEngine = stringPreferencesKey("reader_tts_engine")
         val ttsPitch = doublePreferencesKey("reader_tts_pitch")
         val ttsPreferredVoices = stringPreferencesKey("reader_tts_preferred_voices")
+        val ttsSystemVoices = stringPreferencesKey("reader_tts_saved_system_voices")
+        val ttsSherpaVoices = stringPreferencesKey("reader_tts_saved_sherpa_voices")
         val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
         val focusGuideLastActiveMode = stringPreferencesKey("reader_focus_guide_last_active_mode")
         val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
@@ -328,6 +330,12 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.ttsSpeed] = normalized.speed
             prefs[Keys.ttsPitch] = normalized.pitch
             prefs[Keys.ttsEngine] = normalized.engine.name
+            if (normalized.savedSystemVoices.isEmpty()) prefs.remove(Keys.ttsSystemVoices)
+            else prefs[Keys.ttsSystemVoices] =
+                encodeReaderTtsPreferredVoices(normalized.savedSystemVoices)
+            if (normalized.savedSherpaVoices.isEmpty()) prefs.remove(Keys.ttsSherpaVoices)
+            else prefs[Keys.ttsSherpaVoices] =
+                encodeReaderTtsPreferredVoices(normalized.savedSherpaVoices)
             if (normalized.preferredVoiceIds.isEmpty()) {
                 prefs.remove(Keys.ttsPreferredVoices)
             } else {
@@ -460,6 +468,12 @@ internal fun decodeReaderTtsPreferences(prefs: Preferences): ReaderTtsSettings {
         }.getOrDefault(ReaderTtsEngineChoice.SYSTEM),
         preferredVoiceIds = decodeReaderTtsPreferredVoices(
             values[stringPreferencesKey("reader_tts_preferred_voices")] as? String
+        ),
+        savedSystemVoices = decodeReaderTtsPreferredVoices(
+            values[stringPreferencesKey("reader_tts_saved_system_voices")] as? String
+        ),
+        savedSherpaVoices = decodeReaderTtsPreferredVoices(
+            values[stringPreferencesKey("reader_tts_saved_sherpa_voices")] as? String
         )
     ).normalized()
 }
