@@ -105,6 +105,24 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
+    fun `Paper gesture is always reserved even when renderer fails`() {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            GpuMaterialPageRendererStatus.entries.forEach { status ->
+                assertTrue(
+                    "Paper was silently handed to native/StaticPaged while GPU=$status",
+                    paperRendererCanReserveDrag(
+                        reducedMotion = false,
+                        rendererStatus = status
+                    )
+                )
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `unavailable renderer drag gives one notice and never moves Readium`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
