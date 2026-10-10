@@ -46,7 +46,7 @@ class GpuPageShaderContractTest {
     @Test
     fun `vertex and fragment varyings match exactly`() {
         val varyingRegex =
-            Regex("""\bvarying\s+(\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
+            Regex("""\bvarying\s+(?:(?:lowp|mediump|highp)\s+)?(\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
         fun varyings(shader: String): Map<String, String> =
             varyingRegex.findAll(shader)
                 .associate { match ->
@@ -57,6 +57,41 @@ class GpuPageShaderContractTest {
             varyings(GpuMaterialPageCurlView.VERTEX_SHADER),
             varyings(GpuMaterialPageCurlView.FRAGMENT_SHADER)
         )
+    }
+
+    @Test
+    fun `shared shader symbols use identical effective precision on both stages`() {
+        val vertex = GpuMaterialPageCurlView.VERTEX_SHADER
+        val fragment = GpuMaterialPageCurlView.FRAGMENT_SHADER
+
+        fun precision(shader: String, qualifier: String, symbol: String): String? {
+            val pattern = Regex(
+                """\\b${qualifier}\\s+(?:(lowp|mediump|highp)\\s+)?(?:float|vec2|vec3|vec4)\\s+${symbol}\\s*;"""
+            )
+            val match = pattern.find(shader) ?: return null
+            val explicitlyDeclared = match.groupValues[1]
+            if (explicitlyDeclared.isNotEmpty()) return explicitlyDeclared
+
+            // GLSL ES 1.00: vertex float defaults to highp while fragment
+            // float defaults to mediump. A matching type alone is insufficient
+            // and failed to link the actual Material Page shader in CI.
+            return if (shader === vertex) "highp" else "mediump"
+        }
+
+        val shared = mapOf(
+            "uSideSign" to "uniform",
+            "uShadowPass" to "uniform",
+            "vTexCoord" to "varying",
+            "vNormal" to "varying",
+            "vLift" to "varying"
+        )
+        shared.forEach { (symbol, qualifier) ->
+            val v = precision(vertex, qualifier, symbol)
+            val f = precision(fragment, qualifier, symbol)
+            assertTrue("No vertex precision for $symbol", v != null)
+            assertTrue("No fragment precision for $symbol", f != null)
+            assertEquals("GLSL ES program link precision mismatch: $symbol", v, f)
+        }
     }
 
     @Test
@@ -274,7 +309,7 @@ class GpuPageShaderContractTest {
 
     private fun assertShaderUniformContract(shader: String) {
         val declarationRegex =
-            Regex("""\buniform\s+\w+\s+(u[A-Za-z0-9_]+)\s*;""")
+            Regex("""\buniform\s+(?:(?:lowp|mediump|highp)\s+)?\w+\s+(u[A-Za-z0-9_]+)\s*;""")
         val tokenRegex =
             Regex("""\b(u[A-Z][A-Za-z0-9_]*)\b""")
 
