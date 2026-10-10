@@ -60,6 +60,23 @@ class ReaderTtsNeuralEngineSelectionTest {
     }
 
     @Test
+    fun switchingBackToSystemRestoresItsSavedNarrator() {
+        val system = ReaderTtsSettings().withPreferredVoice("en-US", "google-original")
+        val neural = system.withEngine(ReaderTtsEngineChoice.SHERPA_ONNX)
+        assertEquals(ReaderTtsEngineChoice.SHERPA_ONNX, neural.engine)
+        assertEquals("google-original", neural.savedSystemVoices["en-US"])
+        assertTrue(neural.preferredVoiceIds.isEmpty())
+
+        val configured = neural.withPreferredVoice("en-US", "kokoro-premium")
+        val back = configured.withEngine(ReaderTtsEngineChoice.SYSTEM)
+        assertEquals("google-original", back.preferredVoiceId("en-US"))
+        assertEquals("kokoro-premium", back.savedSherpaVoices["en-US"])
+
+        val again = back.withEngine(ReaderTtsEngineChoice.SHERPA_ONNX)
+        assertEquals("kokoro-premium", again.preferredVoiceId("en-US"))
+    }
+
+    @Test
     fun selectedEngineIsNotAClaimOfAnInstalledModel() {
         val spec = ReaderTtsNeuralModelSpec(
             packageId = "kokoro-en",
