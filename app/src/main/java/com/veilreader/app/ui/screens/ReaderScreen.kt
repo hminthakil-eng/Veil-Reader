@@ -407,7 +407,9 @@ fun ReaderScreen(
     val selectionNoteLabel =
         stringResource(R.string.reader_selection_note)
     val selectionLookupLabel = stringResource(R.string.reader_selection_lookup)
+    val selectionTranslateLabel = stringResource(R.string.reader_selection_translate)
     val lookupFailedMessage = stringResource(R.string.reader_lookup_failed)
+    val translationFailedMessage = stringResource(R.string.reader_translate_failed)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
     val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
@@ -998,7 +1000,9 @@ fun ReaderScreen(
         selectionHighlightLabel,
         selectionNoteLabel,
         selectionLookupLabel,
+        selectionTranslateLabel,
         lookupFailedMessage,
+        translationFailedMessage,
         highlightedMessage,
         alreadyHighlightedMessage,
         passageSaveFailedMessage
@@ -1009,6 +1013,7 @@ fun ReaderScreen(
             highlightLabel = selectionHighlightLabel,
             noteLabel = selectionNoteLabel,
             lookupLabel = selectionLookupLabel,
+            translateLabel = selectionTranslateLabel,
             onModeChanged = { active ->
                 selectionModeActive = active
                 if (active) controlsVisible = true
@@ -1026,13 +1031,21 @@ fun ReaderScreen(
                     }
                     return@onAction
                 }
+                if (action == ReaderSelectionAction.TRANSLATE) {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    if (!ReaderSelectionTranslation.launch(activity, quote)) {
+                        readerMessage = translationFailedMessage
+                    }
+                    return@onAction
+                }
                 try {
                     val locatorJson = locator.toVeilPersistedJson(opened.format)
                     val existing = library.highlightsFor(opened.book.id).firstOrNull {
                         it.locatorJson == locatorJson && it.quote == quote
                     }
                     when (action) {
-                        ReaderSelectionAction.LOOKUP -> Unit
+                        ReaderSelectionAction.LOOKUP,
+                        ReaderSelectionAction.TRANSLATE -> Unit
                         ReaderSelectionAction.HIGHLIGHT -> {
                             val committed = library.commitSelectionHighlight(
                                 bookId = opened.book.id, quote = quote, locatorJson = locatorJson
