@@ -248,10 +248,12 @@ internal fun PaperCurlOverlay(
     }
 
     val presentedEpoch by state.materialEngine.presentedSheetEpoch.collectAsState()
-    Box(modifier = modifier) {
+    // A nested GLTextureView must not occlude Readium's native touch recipient.
+    // Share sibling hit-testing at the full visual overlay boundary.
+    Box(modifier = modifier.readerVisualOnlyInput()) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
             onRendererStatus = state::updateRendererStatus
         )
 
