@@ -12,6 +12,9 @@ import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import com.veilreader.app.domain.ReaderTtsEngineChoice
+import com.veilreader.app.BuildConfig
+import com.veilreader.app.feature.VeilFeatureGates
+import com.veilreader.app.feature.VeilRiskyFeature
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.ContextCompat
 import kotlin.coroutines.resume
@@ -98,6 +101,12 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     override suspend fun initialize(): ReaderTtsProblem? {
         checkMainThread()
         if (closed) return ReaderTtsProblem.NO_ENGINE
+        if (selectedEngine == ReaderTtsEngineChoice.SHERPA_ONNX &&
+            !VeilFeatureGates.enabled(
+                VeilRiskyFeature.LOCAL_NEURAL_TTS,
+                debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
+            )
+        ) return ReaderTtsProblem.NO_ENGINE
         if (engine != null) return if (initialized) null else ReaderTtsProblem.NO_ENGINE
         val generation = ++initializationGeneration
         return suspendCancellableCoroutine { continuation ->
