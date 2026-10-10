@@ -38,6 +38,16 @@ class VeilFeatureGatesTest {
     }
 
     @Test
+    fun inBookSearch_canBeReviewedInDebugWithoutShippingUnverifiedReaderChrome() {
+        assertFalse(VeilFeatureGates.releaseEnabled(VeilRiskyFeature.IN_BOOK_SEARCH))
+        assertFalse(VeilFeatureGates.enabled(VeilRiskyFeature.IN_BOOK_SEARCH))
+        assertEquals(
+            true,
+            VeilFeatureGates.enabled(VeilRiskyFeature.IN_BOOK_SEARCH, debugReview = true)
+        )
+    }
+
+    @Test
     fun materialPageReleaseDefault_matchesCentralGate() {
         assertEquals(
             VeilFeatureGates.releaseEnabled(VeilRiskyFeature.GPU_MATERIAL_PAGE),
