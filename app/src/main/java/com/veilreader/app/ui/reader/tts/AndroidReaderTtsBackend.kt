@@ -30,6 +30,10 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     private var focusHeld = false
     private var resumeOnFocusGain = false
     private var requestSequence = 0L
+    // Android TTS voice inventory/order can change while a book is playing.
+    // Lock the resolved offline voice until the user explicitly selects another.
+    private var narratorVoiceId: String? = null
+    private var narratorLanguageTag: String? = null
     private var activeRequestId: String? = null
     private var activeContinuation: CancellableContinuation<ReaderTtsProblem?>? = null
     override var onInterruption: ((ReaderTtsInterruption) -> Unit)? = null
@@ -142,8 +146,10 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in voice.features.orEmpty()
         ) }
         val preferredVoiceId = safe.preferredVoiceId(languageTag)
-        val chosen = selectOfflineTtsVoice(metadata, languageTag, preferredVoiceId)
-            ?: return if (preferredVoiceId != null) {
+        val stableVoiceId = preferredVoiceId
+            ?: narratorVoiceId?.takeIf { narratorLanguageTag == languageTag }
+        val chosen = selectOfflineTtsVoice(metadata, languageTag, stableVoiceId)
+            ?: return if (stableVoiceId != null) {
                 ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
             } else {
                 ReaderTtsProblem.NO_OFFLINE_VOICE
@@ -154,6 +160,10 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             target.voice?.name != chosen.id || target.voice?.isNetworkConnectionRequired != false) {
             return ReaderTtsProblem.NO_OFFLINE_VOICE
         }
+        // A missing previously resolved voice is a visible error; never let Android
+        // silently switch to a different installed voice between two sentences.
+        narratorVoiceId = chosen.id
+        narratorLanguageTag = languageTag
         if (target.setSpeechRate(safe.speed) != TextToSpeech.SUCCESS ||
             target.setPitch(safe.pitch) != TextToSpeech.SUCCESS) return ReaderTtsProblem.SYNTHESIS
         if (!focusHeld) {
@@ -247,6 +257,8 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     private fun releaseEngine() {
         initializationGeneration += 1
         initialized = false
+        narratorVoiceId = null
+        narratorLanguageTag = null
         val released = engine
         engine = null
         runCatching { released?.setOnUtteranceProgressListener(null) }
