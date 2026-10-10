@@ -95,8 +95,7 @@ internal fun paperTurnUnavailableNotice(
         GpuMaterialPageRendererStatus.INITIALIZING,
         GpuMaterialPageRendererStatus.REDUCED_MOTION ->
             PaperTurnVisualFailure.PRESENTATION
-        GpuMaterialPageRendererStatus.READY,
-        GpuMaterialPageRendererStatus.SOFTWARE_READY ->
+        GpuMaterialPageRendererStatus.READY ->
             if (visualActive) null else PaperTurnVisualFailure.SNAPSHOT
     }
 }
