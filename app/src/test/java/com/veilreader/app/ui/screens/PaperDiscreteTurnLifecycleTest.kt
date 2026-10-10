@@ -38,6 +38,27 @@ import org.robolectric.annotation.Config
 @Config(sdk = [37])
 class PaperDiscreteTurnLifecycleTest {
     @Test
+    fun `unreserved touch end does not swallow book link or center tap`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture()
+        val state = PaperCurlState()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() })
+        try {
+            assertFalse(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertFalse(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `accepted discrete preview restores exact origin when owner is disposed`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
@@ -339,7 +360,7 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
-    fun `presented sheet permits exactly one preview and one release commit`() = runTest {
+    fun `presented drag holds original Readium resource and commits exactly once on release`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         val fixture = NavigatorFixture().apply { settleImmediately = true }
         val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
@@ -364,13 +385,57 @@ class PaperDiscreteTurnLifecycleTest {
             assertEquals(0, fixture.requests)
             state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
             runCurrent()
-            assertEquals(1, fixture.requests)
+            assertEquals(0, fixture.requests)
+            assertEquals(fixture.origin, fixture.current.value)
             assertEquals(0, fixture.commits)
             assertTrue(listener.onDrag(drag(DragEvent.Type.End, -900f)))
             advanceUntilIdle()
             assertEquals(1, fixture.requests)
             assertEquals(1, fixture.commits)
             assertTrue(failures.isEmpty())
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `cancelled acquired Paper drag never navigates into another chapter`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val clock = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+                delay(16L)
+                return onFrame(testScheduler.currentTime * 1_000_000L)
+            }
+        }
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true },
+            CoroutineScope(coroutineContext + clock), onInteraction = {},
+            onCommittedTurn = { fixture.commit() })
+        try {
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -900f)))
+            runCurrent()
+            state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
+            runCurrent()
+            assertEquals(0, fixture.requests)
+            assertEquals(fixture.origin, fixture.current.value)
+            // User pulls back before lifting a finger. A preview must not have
+            // replaced the current Readium resource or written progress.
+            assertTrue(listener.onDrag(drag(DragEvent.Type.Move, 0f)))
+            assertTrue(listener.onDrag(drag(DragEvent.Type.End, 0f)))
+            advanceUntilIdle()
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertEquals(fixture.origin, fixture.current.value)
+            assertTrue(fixture.restores.isEmpty())
             assertFalse(listener.hasPendingTurn())
         } finally {
             listener.forceCancelPendingTurn()
