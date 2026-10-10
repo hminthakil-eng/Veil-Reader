@@ -6,49 +6,49 @@ import android.content.Intent
 import android.os.Build
 
 /**
- * Minimal external translation boundary for text selected through Readium.
+ * Platform-only context tools for Readium's native selection toolbar.
  *
- * No network requests, history, clipboard writes, translation SDKs or provider-specific
- * dependencies originate here. A transfer happens only when the reader explicitly taps
- * Translate in Android's selection toolbar. Android chooses the installed handler.
- *
- * This is deliberately separate from the existing LOOKUP behavior so a missing translation
- * provider never silently turns into a web search or changes another reading action.
+ * No automatic network/clipboard/web-search fallback and no vendor-specific
+ * dependency. The user must explicitly request a text transfer. The receiving
+ * dictionary/translation app owns its own privacy and offline behavior.
  */
-internal object ReaderSelectionTranslation {
-    private const val MAX_SELECTION_CHARS = 8_192
+internal enum class ReaderExternalTextAction(
+    val platformAction: String,
+    val maxSelectionChars: Int
+) {
+    DEFINE(Intent.ACTION_DEFINE, 256),
+    TRANSLATE(Intent.ACTION_TRANSLATE, 8_192)
+}
 
-    /**
-     * Build an Android platform request, not a vendor-specific intent. API 29 introduced
-     * ACTION_TRANSLATE and ACTION_DEFINE; earlier devices must fail visibly instead
-     * of advertising an action which cannot be handled by the platform contract.
-     */
+internal object ReaderSelectionExternalText {
     fun intentFor(
+        action: ReaderExternalTextAction,
         quote: String,
         sdkInt: Int = Build.VERSION.SDK_INT
     ): Intent? {
         if (sdkInt < Build.VERSION_CODES.Q) return null
-        val text = quote.trim()
-        if (text.isBlank() || text.length > MAX_SELECTION_CHARS || '\u0000' in text) return null
 
-        return Intent(Intent.ACTION_TRANSLATE).apply {
+        val text = quote.trim()
+        if (
+            text.isBlank() ||
+            text.length > action.maxSelectionChars ||
+            '\u0000' in text
+        ) return null
+
+        return Intent(action.platformAction).apply {
             putExtra(Intent.EXTRA_TEXT, text)
         }
     }
 
-    /**
-     * An injected launcher permits verifying error-handling without package-manager
-     * visibility assumptions. A failed dispatch is reported to Reader chrome; no
-     * implicit online service, browser or clipboard fallback is attempted.
-     */
     fun dispatch(
+        action: ReaderExternalTextAction,
         quote: String,
         sdkInt: Int = Build.VERSION.SDK_INT,
         launch: (Intent) -> Unit
     ): Boolean {
-        val intent = intentFor(quote, sdkInt) ?: return false
+        val request = intentFor(action, quote, sdkInt) ?: return false
         return try {
-            launch(intent)
+            launch(request)
             true
         } catch (_: ActivityNotFoundException) {
             false
@@ -57,8 +57,64 @@ internal object ReaderSelectionTranslation {
         }
     }
 
-    fun launch(activity: Activity?, quote: String): Boolean {
+    fun launch(
+        activity: Activity?,
+        action: ReaderExternalTextAction,
+        quote: String
+    ): Boolean {
         val host = activity ?: return false
-        return dispatch(quote) { intent -> host.startActivity(intent) }
+        return dispatch(action, quote) { intent -> host.startActivity(intent) }
     }
+}
+
+/** Kept as a narrow facade so existing translation callers/tests stay stable. */
+internal object ReaderSelectionTranslation {
+    fun intentFor(
+        quote: String,
+        sdkInt: Int = Build.VERSION.SDK_INT
+    ): Intent? = ReaderSelectionExternalText.intentFor(
+        ReaderExternalTextAction.TRANSLATE,
+        quote,
+        sdkInt
+    )
+
+    fun dispatch(
+        quote: String,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+        launch: (Intent) -> Unit
+    ): Boolean = ReaderSelectionExternalText.dispatch(
+        ReaderExternalTextAction.TRANSLATE,
+        quote,
+        sdkInt,
+        launch
+    )
+
+    fun launch(activity: Activity?, quote: String): Boolean =
+        ReaderSelectionExternalText.launch(activity, ReaderExternalTextAction.TRANSLATE, quote)
+}
+
+/** Dictionary definition is a separate explicit choice, not a disguised web lookup. */
+internal object ReaderSelectionDefinition {
+    fun intentFor(
+        quote: String,
+        sdkInt: Int = Build.VERSION.SDK_INT
+    ): Intent? = ReaderSelectionExternalText.intentFor(
+        ReaderExternalTextAction.DEFINE,
+        quote,
+        sdkInt
+    )
+
+    fun dispatch(
+        quote: String,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+        launch: (Intent) -> Unit
+    ): Boolean = ReaderSelectionExternalText.dispatch(
+        ReaderExternalTextAction.DEFINE,
+        quote,
+        sdkInt,
+        launch
+    )
+
+    fun launch(activity: Activity?, quote: String): Boolean =
+        ReaderSelectionExternalText.launch(activity, ReaderExternalTextAction.DEFINE, quote)
 }
