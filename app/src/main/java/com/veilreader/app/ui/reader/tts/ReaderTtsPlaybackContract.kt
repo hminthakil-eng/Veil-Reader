@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.reader.tts
 
 import android.os.Bundle
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -38,6 +39,7 @@ internal data class ReaderTtsPlaybackRequest(
         putString(KEY_LOCATOR_JSON, locatorJson)
         putFloat(KEY_SPEED, preferences.speed)
         putFloat(KEY_PITCH, preferences.pitch)
+        putString(KEY_ENGINE_CHOICE, preferences.engine.name)
         putString(KEY_LANGUAGE_TAG, preferences.languageTag)
         putString(KEY_PREFERRED_VOICES, encodePreferredVoices(preferences.preferredVoiceIds))
     }
@@ -47,6 +49,7 @@ internal data class ReaderTtsPlaybackRequest(
         .put(KEY_LOCATOR_JSON, locatorJson)
         .put(KEY_SPEED, preferences.speed.toDouble())
         .put(KEY_PITCH, preferences.pitch.toDouble())
+        .put(KEY_ENGINE_CHOICE, preferences.engine.name)
         .put(KEY_LANGUAGE_TAG, preferences.languageTag)
         .put(KEY_PREFERRED_VOICES, encodePreferredVoices(preferences.preferredVoiceIds))
 
@@ -69,6 +72,7 @@ internal data class ReaderTtsPlaybackRequest(
         const val EXTRA_VOICES_JSON = "voices_json"
         const val EXTRA_LANGUAGE_TAG = "language_tag"
         const val EXTRA_VOICE_ID = "voice_id"
+        const val EXTRA_ENGINE_CHOICE = "tts_engine_choice"
         const val EXTRA_SAMPLE = "sample"
         const val EXTRA_PROBLEM = "problem"
         const val EXTRA_PREFERRED_VOICES_JSON = "preferred_voices_json"
@@ -80,6 +84,7 @@ internal data class ReaderTtsPlaybackRequest(
         private const val KEY_LOCATOR_JSON = "locator_json"
         private const val KEY_SPEED = "speed"
         private const val KEY_PITCH = "pitch"
+        private const val KEY_ENGINE_CHOICE = EXTRA_ENGINE_CHOICE
         private const val KEY_LANGUAGE_TAG = "language_tag"
         private const val KEY_PREFERRED_VOICES = EXTRA_PREFERRED_VOICES_JSON
 
@@ -147,6 +152,10 @@ internal data class ReaderTtsPlaybackRequest(
             }
         }
 
+        fun decodeEngineChoice(raw: String?): ReaderTtsEngineChoice =
+            ReaderTtsEngineChoice.entries.firstOrNull { it.name == raw }
+                ?: ReaderTtsEngineChoice.SYSTEM
+
         fun fromBundle(bundle: Bundle): ReaderTtsPlaybackRequest? =
             ReaderTtsPlaybackRequest(
                 bookId = bundle.getString(KEY_BOOK_ID).orEmpty(),
@@ -154,6 +163,7 @@ internal data class ReaderTtsPlaybackRequest(
                 preferences = ReaderTtsPreferences(
                     speed = bundle.getFloat(KEY_SPEED, 1f),
                     pitch = bundle.getFloat(KEY_PITCH, 1f),
+                    engine = decodeEngineChoice(bundle.getString(KEY_ENGINE_CHOICE)),
                     languageTag = bundle.getString(KEY_LANGUAGE_TAG),
                     preferredVoiceIds = decodePreferredVoices(
                         bundle.getString(KEY_PREFERRED_VOICES)
@@ -168,6 +178,7 @@ internal data class ReaderTtsPlaybackRequest(
                 preferences = ReaderTtsPreferences(
                     speed = json.optDouble(KEY_SPEED, 1.0).toFloat(),
                     pitch = json.optDouble(KEY_PITCH, 1.0).toFloat(),
+                    engine = decodeEngineChoice(json.optString(KEY_ENGINE_CHOICE)),
                     languageTag = json.optString(KEY_LANGUAGE_TAG).takeIf { it.isNotBlank() },
                     preferredVoiceIds = decodePreferredVoices(
                         json.optString(KEY_PREFERRED_VOICES).takeIf { it.isNotBlank() }
