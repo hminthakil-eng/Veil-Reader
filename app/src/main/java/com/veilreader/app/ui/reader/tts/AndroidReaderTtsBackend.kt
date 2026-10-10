@@ -28,7 +28,9 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     override fun selectEngine(choice: ReaderTtsEngineChoice) {
         checkMainThread()
         // Sessions close/recreate the native backend on a user engine switch.
-        check(engine == null) { "TTS engine cannot change while initialized" }
+        check(engine == null || selectedEngine == choice) {
+            "TTS engine cannot change while initialized"
+        }
         selectedEngine = choice
     }
     private var closed = false
