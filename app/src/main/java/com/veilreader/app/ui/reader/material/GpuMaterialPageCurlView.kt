@@ -99,6 +99,8 @@ internal class GpuMaterialPageCurlView(
     // Exact GPU buffer acquisition is different from a successful GL draw.
     internal var lastAcquiredSheetEpoch = 0L
         private set
+    // Benchmark-only native host probe; no input or gesture state is changed.
+    internal val isPageTurnActive: Boolean get() = lastSubmittedActive
     private var acquisitionCheckScheduled = false
     private var lastLoggedAcquisitionTimestamp = Long.MIN_VALUE
     private val acquisitionCheck = Runnable {
