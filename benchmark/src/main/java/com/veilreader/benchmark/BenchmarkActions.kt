@@ -87,7 +87,15 @@ internal fun MacrobenchmarkScope.awaitGpuSheetSettled(previousEpoch: Long) {
             lastProbe = probe
         }
         val epoch = probe.substringAfter(";gpuEpoch=").substringBefore(';').toLong()
-        if (epoch > previousEpoch && probe.contains(";gpuActive=false;motion=true")) return
+        // The probe includes GPU host/surface/size fields between active and motion.
+        // Requiring the two fields to be adjacent makes this gate impossible to pass
+        // even when an actual new GPU sheet was acquired and Paper has settled.
+        // Keep all three independent requirements: new acquired epoch, inactive,
+        // and full-motion presentation (no Slide/StaticPaged or reduced motion).
+        if (epoch > previousEpoch &&
+            probe.contains(";gpuActive=false;") &&
+            probe.endsWith(";motion=true")
+        ) return
         Thread.sleep(50)
     }
     error(
