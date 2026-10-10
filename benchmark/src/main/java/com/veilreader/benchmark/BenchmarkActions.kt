@@ -72,14 +72,29 @@ internal fun MacrobenchmarkScope.gpuSheetEpoch(): Long =
     readerVisualProbe().substringAfter(";gpuEpoch=").substringBefore(';').toLong()
 
 internal fun MacrobenchmarkScope.awaitGpuSheetSettled(previousEpoch: Long) {
-    val deadline = SystemClock.uptimeMillis() + 8_000L
+    val startedAt = SystemClock.uptimeMillis()
+    val deadline = startedAt + 8_000L
+    // Preserve exact observed state transitions when a Paper turn stalls. A locator
+    // change alone must never pass this gate: it can hide a native Slide fallback.
+    // Keep this bounded so a failed emulator run cannot flood its CI log.
+    val transitions = mutableListOf<String>()
+    var lastProbe: String? = null
     while (SystemClock.uptimeMillis() < deadline) {
         val probe = readerVisualProbe()
+        if (probe != lastProbe) {
+            if (transitions.size == 12) transitions.removeAt(0)
+            transitions.add("t+${SystemClock.uptimeMillis() - startedAt}ms ${probe}")
+            lastProbe = probe
+        }
         val epoch = probe.substringAfter(";gpuEpoch=").substringBefore(';').toLong()
         if (epoch > previousEpoch && probe.contains(";gpuActive=false;motion=true")) return
         Thread.sleep(50)
     }
-    error("No new acquired GPU sheet and completed Paper animation: ${readerVisualProbe()}")
+    error(
+        "No new acquired GPU sheet and completed Paper animation; " +
+            "previousEpoch=$previousEpoch; elapsedMs=${SystemClock.uptimeMillis() - startedAt}; " +
+            "transitions=${transitions.joinToString(" | ")}; final=${readerVisualProbe()}"
+    )
 }
 
 internal fun MacrobenchmarkScope.awaitReaderLocatorDeparture(origin: String) {
