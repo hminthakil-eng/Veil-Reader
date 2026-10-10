@@ -71,6 +71,22 @@ internal fun MacrobenchmarkScope.readerLocator(): String = readerVisualProbe().s
 internal fun MacrobenchmarkScope.gpuSheetEpoch(): Long =
     readerVisualProbe().substringAfter(";gpuEpoch=").substringBefore(';').toLong()
 
+/**
+ * Pure benchmark oracle. A Readium locator change is insufficient: require a
+ * newer *acquired* GPU sheet, a settled curl, attached live GPU surface and
+ * enabled motion. Independent probe fields must not be treated as adjacent.
+ */
+internal fun gpuPaperTurnSettled(previousEpoch: Long, probe: String): Boolean {
+    val acquired = probe.substringAfter(";gpuEpoch=", "").substringBefore(';').toLongOrNull()
+        ?: return false
+    return acquired > previousEpoch &&
+        probe.contains(";gpuActive=false;") &&
+        probe.contains(";gpuHost=true;") &&
+        probe.contains(";gpuAttached=true;") &&
+        probe.contains(";gpuSurface=true;") &&
+        probe.endsWith(";motion=true")
+}
+
 internal fun MacrobenchmarkScope.awaitGpuSheetSettled(previousEpoch: Long) {
     val startedAt = SystemClock.uptimeMillis()
     val deadline = startedAt + 8_000L
@@ -86,16 +102,7 @@ internal fun MacrobenchmarkScope.awaitGpuSheetSettled(previousEpoch: Long) {
             transitions.add("t+${SystemClock.uptimeMillis() - startedAt}ms ${probe}")
             lastProbe = probe
         }
-        val epoch = probe.substringAfter(";gpuEpoch=").substringBefore(';').toLong()
-        // The probe includes GPU host/surface/size fields between active and motion.
-        // Requiring the two fields to be adjacent makes this gate impossible to pass
-        // even when an actual new GPU sheet was acquired and Paper has settled.
-        // Keep all three independent requirements: new acquired epoch, inactive,
-        // and full-motion presentation (no Slide/StaticPaged or reduced motion).
-        if (epoch > previousEpoch &&
-            probe.contains(";gpuActive=false;") &&
-            probe.endsWith(";motion=true")
-        ) return
+        if (gpuPaperTurnSettled(previousEpoch, probe)) return
         Thread.sleep(50)
     }
     error(
