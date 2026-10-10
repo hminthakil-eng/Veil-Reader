@@ -1,0 +1,27 @@
+name: Grand Forge Skill Pack Validation
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+      - main
+    paths:
+      - ".agents/skills/**"
+      - ".claude/skills/veil-grand-forge-orchestration/**"
+      - "docs/research/GRAND_FORGE_*"
+      - "tools/validate_veil_skill_pack.py"
+      - ".github/workflows/grand-forge-skill-lint.yml"
+      - ".github/workflows/dependency-review.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate curated skill pack
+        run: python3 tools/validate_veil_skill_pack.py

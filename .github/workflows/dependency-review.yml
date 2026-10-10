@@ -2,7 +2,7 @@ name: Dependency Review
 
 on:
   pull_request:
-    branches: [ "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
 permissions:
   contents: read
 
