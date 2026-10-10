@@ -105,6 +105,92 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
+    fun `unavailable renderer drag gives one notice and never moves Readium`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            listOf(
+                GpuMaterialPageRendererStatus.UNSUPPORTED,
+                GpuMaterialPageRendererStatus.FAILED,
+                GpuMaterialPageRendererStatus.INITIALIZING
+            ).forEach { status ->
+                val fixture = NavigatorFixture().apply { layoutView() }
+                val state = PaperCurlState()
+                state.updateRendererStatus(status)
+                val failures = mutableListOf<PaperTurnVisualFailure>()
+                val listener = PaperCurlInputListener(
+                    fixture.navigator,
+                    state,
+                    isEnabled = { true },
+                    scope = this,
+                    onInteraction = {},
+                    onCommittedTurn = { fixture.commit() },
+                    onVisualFailure = { failures += it }
+                )
+                try {
+                    assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+                    assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -380f)))
+                    assertTrue(listener.onDrag(drag(DragEvent.Type.End, -380f)))
+                    advanceUntilIdle()
+                    assertEquals(
+                        listOf(
+                            if (status == GpuMaterialPageRendererStatus.INITIALIZING) {
+                                PaperTurnVisualFailure.PRESENTATION
+                            } else {
+                                PaperTurnVisualFailure.RENDERER_UNAVAILABLE
+                            }
+                        ),
+                        failures
+                    )
+                    assertEquals(0, fixture.requests)
+                    assertEquals(0, fixture.commits)
+                    assertFalse(listener.hasPendingTurn())
+                } finally {
+                    listener.forceCancelPendingTurn()
+                    state.dispose()
+                }
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `failed paper snapshot during drag reports only once on release`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        try {
+            val fixture = NavigatorFixture().apply { layoutView() }
+            val state = PaperCurlState()
+            state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+            val failures = mutableListOf<PaperTurnVisualFailure>()
+            val listener = PaperCurlInputListener(
+                fixture.navigator,
+                state,
+                isEnabled = { true },
+                scope = this,
+                onInteraction = {},
+                onCommittedTurn = { fixture.commit() },
+                onVisualFailure = { failures += it }
+            )
+            try {
+                assertTrue(listener.onDrag(drag(DragEvent.Type.Start, 0f)))
+                assertTrue(listener.onDrag(drag(DragEvent.Type.Move, -340f)))
+                assertEquals(listOf(PaperTurnVisualFailure.SNAPSHOT), failures)
+                assertTrue(listener.onDrag(drag(DragEvent.Type.End, -340f)))
+                advanceUntilIdle()
+                assertEquals(listOf(PaperTurnVisualFailure.SNAPSHOT), failures)
+                assertEquals(0, fixture.requests)
+                assertEquals(0, fixture.commits)
+                assertFalse(listener.hasPendingTurn())
+            } finally {
+                listener.forceCancelPendingTurn()
+                state.dispose()
+            }
+        } finally {
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `accepted discrete preview restores exact origin when owner is disposed`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         try {
