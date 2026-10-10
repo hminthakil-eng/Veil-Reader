@@ -125,6 +125,7 @@ internal class PaperCurlInputListener(
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
     private var visualStartAttempted = false
+    private var visualFailureReported = false
     private var operationGeneration = 0L
     private var activeOperationGeneration = 0L
     private var cancelledOperationAwaitingCleanup = 0L
@@ -155,6 +156,12 @@ internal class PaperCurlInputListener(
             )
         )
         return true
+    }
+
+    private fun reportVisualFailureOnce(failure: PaperTurnVisualFailure) {
+        if (visualFailureReported) return
+        visualFailureReported = true
+        onVisualFailure(failure)
     }
 
     private fun paperInputBusy(): Boolean =
@@ -237,7 +244,7 @@ internal class PaperCurlInputListener(
                 reducedMotion = reducedMotion,
                 rendererStatus = state.rendererStatus,
                 visualActive = visualReady
-            )?.let(onVisualFailure)
+            )?.let(::reportVisualFailureOnce)
             return
         }
 
@@ -251,7 +258,7 @@ internal class PaperCurlInputListener(
                         state.clearImmediately()
                         activeOperationGeneration = 0L
                         resetDrag()
-                        onVisualFailure(PaperTurnVisualFailure.PRESENTATION)
+                        reportVisualFailureOnce(PaperTurnVisualFailure.PRESENTATION)
                     }
                     return@launchCompletion
                 }
@@ -396,7 +403,7 @@ internal class PaperCurlInputListener(
                 reducedMotion = reducedMotion,
                 rendererStatus = state.rendererStatus,
                 visualActive = state.active
-            )?.let(onVisualFailure)
+            )?.let(::reportVisualFailureOnce)
         }
         val commit = when {
             !navigationAllowed -> false
@@ -698,7 +705,7 @@ internal class PaperCurlInputListener(
             spec.direction
         )
         if (!visualReady) {
-            onVisualFailure(PaperTurnVisualFailure.SNAPSHOT)
+            reportVisualFailureOnce(PaperTurnVisualFailure.SNAPSHOT)
             return false
         }
 
@@ -709,7 +716,7 @@ internal class PaperCurlInputListener(
                 // An unpresented sheet must never enable the release-time static branch.
                 if (operationIsCurrent(operationToken)) {
                     state.clearImmediately()
-                    onVisualFailure(PaperTurnVisualFailure.PRESENTATION)
+                    reportVisualFailureOnce(PaperTurnVisualFailure.PRESENTATION)
                 }
                 return@launchPreview
             }
@@ -968,6 +975,7 @@ internal class PaperCurlInputListener(
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
         visualStartAttempted = false
+        visualFailureReported = false
     }
 
     private data class TurnSpec(
