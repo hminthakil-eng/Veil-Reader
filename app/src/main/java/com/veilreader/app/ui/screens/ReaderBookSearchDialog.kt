@@ -195,7 +195,7 @@ internal fun ReaderBookSearchDialog(
                                 onDismiss()
                             },
                             modifier = Modifier.heightIn(min = 48.dp)
-                        ) { Text(stringResource(R.string.common_close)) }
+                        ) { Text(stringResource(R.string.reader_image_viewer_close)) }
                     }
                     OutlinedTextField(
                         value = query,
