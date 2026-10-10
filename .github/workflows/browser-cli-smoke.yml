@@ -1,0 +1,40 @@
+name: Browser CLI Tooling Smoke
+
+on:
+  pull_request:
+    paths:
+      - '.agents/skills/supabase/**'
+      - '.agents/skills/veil-supabase-offline-first-gate/**'
+      - 'tools/browser-qa/**'
+      - 'docs/research/SUPABASE_PLAYWRIGHT_TOOLING_2026-10-10.md'
+      - '.github/workflows/browser-cli-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright-cli-startup:
+    name: Pinned Playwright CLI startup (no browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install reviewed development CLI in temporary runner
+        run: npm install --global '@playwright/cli@0.1.22' --ignore-scripts --no-audit --no-fund
+      - name: Verify command is executable without browser or credentials
+        run: |
+          command -v playwright-cli
+          playwright-cli --help
+      - name: Check skills and project scope without credentials
+        shell: bash
+        run: |
+          test -s .agents/skills/supabase/SKILL.md
+          test -s .agents/skills/supabase/LICENSE
+          test -s .agents/skills/veil-supabase-offline-first-gate/SKILL.md
+          test -s tools/browser-qa/install-playwright-cli.ps1
+          grep -q '^name: supabase$' .agents/skills/supabase/SKILL.md
+          grep -q '^name: veil-supabase-offline-first-gate$' .agents/skills/veil-supabase-offline-first-gate/SKILL.md
