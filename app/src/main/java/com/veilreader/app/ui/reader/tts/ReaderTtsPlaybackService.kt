@@ -269,7 +269,9 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         private fun queryVoices(): ListenableFuture<SessionResult> {
             val future = SettableFuture.create<SessionResult>()
             serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext)
+                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                    selectEngine(player.selectedEngineChoice())
+                }
                 try {
                     val problem = try {
                         withTimeout(5_000L) { backend.initialize() }
@@ -352,7 +354,9 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             val previewOwner = ++previewGeneration
             val future = SettableFuture.create<SessionResult>()
             previewJob = serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext)
+                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                    selectEngine(player.selectedEngineChoice())
+                }
                 try {
                     val initProblem = try {
                         withTimeout(5_000L) { backend.initialize() }
