@@ -342,10 +342,12 @@ internal class PaperCurlInputListener(
         if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
-            // A reserved gesture that never became a horizontal turn is still
-            // consumed so the native renderer cannot finish it as a slide.
+            // Readium can emit a touchend without a drag Start. Preserve the
+            // subsequent synthesized tap for center chrome, links and images.
+            // Only gestures we actually reserved are consumed as Paper.
+            val wasReserved = dragReserved
             resetDrag()
-            return true
+            return wasReserved
         }
 
         if (!state.active && navigationJob == null) {
@@ -429,12 +431,19 @@ internal class PaperCurlInputListener(
                     }
                 }
 
-                commit && reducedMotion -> {
-                    // This branch is reachable without a visual only for Reduced Motion.
-                    // Normal-motion Paper fails closed before a static navigation fallback.
+                commit && (reducedMotion || (
+                    state.active &&
+                        state.materialEngine.presentedSheetEpoch.value ==
+                            state.materialEngine.sheetEpoch
+                    )) -> {
+                    // Release owns the only forward/backward navigation. A
+                    // folded source sheet can track the finger during Move,
+                    // but moving Readium before touchend would retire the
+                    // currently receiving WebView at a chapter boundary.
                     val origin =
                         dragStartLocator ?: navigator.currentLocator.value
                     val accepted = navigate(spec.direction)
+                    previewNavigationSucceeded = accepted
                     val moved =
                         accepted &&
                             awaitReaderVisualNavigationDeparture(
@@ -457,6 +466,7 @@ internal class PaperCurlInputListener(
                         turnCommitted = true
                         onCommittedTurn()
                         if (state.active && shouldAnimatePaperVisual()) {
+                            if (!reducedMotion) delay(VeilMotion.PAGE_REVEAL_MS)
                             state.animateComplete(
                                 releaseVelocityDpPerSec =
                                     releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -681,38 +691,11 @@ internal class PaperCurlInputListener(
                 }
                 return@launchPreview
             }
-            if (
-                !cancellationRequested &&
-                operationIsCurrent(operationToken) &&
-                shouldAllowPaperNavigation(isReducedMotion(), state.rendererStatus, state.active)
-            ) {
-                val origin = dragStartLocator
-                val accepted = navigate(spec.direction)
-                val moved =
-                    accepted &&
-                        origin != null &&
-                        awaitReaderVisualNavigationDeparture(
-                        currentLocator = navigator.currentLocator,
-                        origin = origin
-                            )
-                if (!operationIsCurrent(operationToken) && !mayCleanCancelledOperation(operationToken)) {
-                    return@launchPreview
-                }
-                if (
-                    accepted &&
-                    (
-                        !moved ||
-                            cancellationRequested ||
-                            !operationIsCurrent(operationToken)
-                        )
-                ) {
-                    restoreDragStart(spec, forceRequest = true)
-                } else {
-                    previewNavigationSucceeded = moved
-                }
-            }
-            // Keep the previewed destination underneath the curl. The reverse
-            // face remains source-derived until a true opposite-leaf provider exists.
+            // Do not call navigator.goForward/goBackward until DragEvent.End.
+            // A chapter-crossing navigation here would replace the WebView
+            // before Readium can deliver touchend to the original touch target.
+            // This coroutine proves the exact source sheet was acquired only.
+            // The destination is revealed under the curl after release.
         }
         navigationJob?.start()
         return true
