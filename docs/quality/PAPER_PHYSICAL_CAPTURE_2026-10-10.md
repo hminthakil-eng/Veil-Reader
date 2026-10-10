@@ -31,3 +31,26 @@ The companion capture helper records read-only device properties and GFX metadat
    python -m unittest discover -s tools/tests -p test_collect_paper_device_evidence.py -v
 
 These parser tests passed locally before committing; live ADB recording, optical inspection, and CI execution of this new helper remain unverified.
+
+## Optional installed APK byte-identity verification (added as separate stacked PR)
+
+The prior `--apk` option only hashed the extracted local QA file; it did not establish that the phone had that same APK installed. Before recording, opt into the new strictly read-only check with both `--apk` and `--verify-installed-apk`:
+
+```sh
+python tools/collect_paper_device_evidence.py \
+  --source-sha 243888f75232fb0054a4c8253c772736554f1f42 \
+  --package com.veilreader.app.forgeqa \
+  --apk /path/to/extracted/VeilReader-ForgeQA-<commit>.apk \
+  --verify-installed-apk --video --duration 90 \
+  --output ./private-paper-evidence
+```
+
+This resolves the selected Android package using `adb shell pm path`, **pulls its single base.apk into a temporary local directory**, compares its SHA-256 to the supplied extracted artifact, and deletes the temporary copy. It never installs an APK or changes application data. If the hashes differ, the package is missing, multiple split APKs are reported, a pull fails, or the path is malformed, it stops *before* video/logcat collection and leaves an UNVERIFIED manifest. Split APK installations intentionally require separate future support. Pulling an installed package may require appropriate USB debugging/OS permissions.
+
+A hash match proves **byte identity between the local file and the on-device APK**, **not** that a requested source SHA was built, that signing provenance is trustworthy, or that the animation looks correct. Verify the source metadata and signing certificate against the separate QA CI `BUILD.txt`, `SHA256SUMS`, `APK-METADATA.txt` and `SIGNATURE.txt` evidence, and still review optical Paper results on physical hardware. Never report this helper's synthetic tests as physical acceptance.
+
+Offline synthetic checks:
+
+```sh
+python3 -m unittest discover -s tools/tests -p test_paper_apk_identity.py -v
+```
