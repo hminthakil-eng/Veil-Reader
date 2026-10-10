@@ -66,7 +66,7 @@ class GpuPageShaderContractTest {
 
         fun precision(shader: String, qualifier: String, symbol: String): String? {
             val pattern = Regex(
-                """\\b${qualifier}\\s+(?:(lowp|mediump|highp)\\s+)?(?:float|vec2|vec3|vec4)\\s+${symbol}\\s*;"""
+                """\b${qualifier}\s+(?:(lowp|mediump|highp)\s+)?(?:float|vec2|vec3|vec4)\s+${symbol}\s*;"""
             )
             val match = pattern.find(shader) ?: return null
             val explicitlyDeclared = match.groupValues[1]
