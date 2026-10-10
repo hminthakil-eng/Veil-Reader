@@ -74,3 +74,17 @@ Files on current branch:
 - No copying or rebranding competitor proprietary implementation.
 - No release or production merge without real device evidence.
 - No duplicate Reader states or silent fallback.
+
+## P0 base follow-up — 2026-10-10
+
+The first W2 verification CI (#450, run 38034995333) compiled the new
+Readium selection tools and executed 1,044 unit tests, but failed one inherited
+locator durability regression in the canonical Reader base. The isolated
+rollback repair (#451) has now passed all four exact-source Android/Room/
+process-death/performance gates and was merged into the *development branch*
+`grand-forge/p0-kindle-reader-quality-20261008` at
+`6e637d7f235507e6706da517a70a010161f21327`.
+
+This commit intentionally retriggers W2 exact-head verification against the
+corrected base. Previous failure stays on record. Do not claim native external
+translation/definition is an offline in-app language engine or claim phone QA.
