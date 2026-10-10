@@ -57,14 +57,18 @@ internal fun paperRendererCanOwnNavigationInput(
     MaterialPageEngineRollout.isEnabled() &&
         (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY)
 
-/** Reserve a Paper drag during GL startup; actual page movement still requires READY. */
+/**
+ * Reserve ALL Paper drags regardless of current GL readiness. The capture
+ * gate decides whether the sheet may move; returning false here hands an
+ * intentional Paper swipe to Readium/StaticPaged and makes failed Paper appear
+ * to be a valid slide. The diagnostic path owns the gesture and reports why
+ * Paper could not move, unless reduced motion explicitly permits static input.
+ */
+@Suppress("UNUSED_PARAMETER")
 internal fun paperRendererCanReserveDrag(
     reducedMotion: Boolean,
     rendererStatus: GpuMaterialPageRendererStatus
-): Boolean =
-    MaterialPageEngineRollout.isEnabled() &&
-        (reducedMotion || rendererStatus == GpuMaterialPageRendererStatus.READY ||
-            rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING)
+): Boolean = MaterialPageEngineRollout.isEnabled()
 
 internal fun shouldAllowPaperNavigation(
     reducedMotion: Boolean,
