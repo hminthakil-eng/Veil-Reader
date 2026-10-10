@@ -114,3 +114,25 @@ source-suffixed version. Import one test publication into that app.
   from cache and future update installation remain unverified.
 
 No uninstall or production-data migration is required for this test installation.
+
+## Verified delivery — a67586cf, 2026-10-10
+
+This supersedes the older efa3fb20 test artifact above.
+
+- [Download Forge QA ZIP](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37878688504/artifacts/11594068417), sign into GitHub, extract and install `VeilReader-ForgeQA-a67586cf.apk`.
+- App label: **Veil Reader Forge QA**. Version: `0.10.0-forge-a67586cf`.
+- Source: `a67586cfa54122b60f04c1acc47265a68c07b2ff`.
+- APK SHA-256: `4d4c3b6fb024dbd5524c28efbff51ab9da5022cf5894522d16b54d8236b48b98`.
+- Independent Google apksig verification: valid v2 signature; same pinned QA certificate `94ad4e5da523b1af8383c3e5d49e4713b22a3fd867b0bb3111f906422ad53e8c`.
+- QA CI: 1009 unit tests / 174 suites and 174 Android tests; zero failures/errors/skips. Physical S24 Ultra verification remains pending.
+
+Install as an update to the existing **Forge QA** app. Keep the separate original Veil installation and its data. This APK contains annotation acknowledgement, durable note editing/deletion, selection ownership fencing, foreground TTS checkpoint restoration and navigation/input corrections. It does not contain the later atomic-checkpoint acknowledgement fix (38a6bf10), pending CI, or the separate visual-foundation/Paper-release PRs.
+
+Test these concrete differences in a text chapter:
+
+1. Create a highlight and attached note. Once saved, immediately force-stop through App info, reopen and confirm both at the original quote. Delete the highlight, force-stop and confirm it stays deleted. Repeat note editing/deletion through Archive.
+2. Start system TTS in this QA app. Pause after a recognizable sentence, force-stop and reopen the same publication. Listening position should restore paused; it must not autoplay. The current implementation retains the last listened publication, not independent checkpoints for every book.
+3. Select text, immediately dismiss/reselect elsewhere, then use selection tools. The newer selection must remain the owner; closing an old toolbar must not clear it.
+4. Explore via search/TOC, return to reading and check that temporary exploration did not replace the reading anchor. Also report immediate closing after scroll; the extra same-location final-snapshot correction in PR 446 is still under verification.
+
+Record version and observed outcomes. Cover-page appearance alone cannot verify these behavioral changes. Release feature gates remain disabled and no physical performance improvement is claimed.
