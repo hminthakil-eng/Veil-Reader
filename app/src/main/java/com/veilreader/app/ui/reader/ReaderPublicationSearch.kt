@@ -3,6 +3,7 @@
 package com.veilreader.app.ui.reader
 
 import java.io.Closeable
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -67,10 +68,13 @@ internal class ReaderBookSearchSession(
     private val lock = Mutex()
     private val pending = ArrayDeque<Locator>()
     private var ended = false
-    private var closed = false
+    private val closed = AtomicBoolean(false)
 
     suspend fun nextPage(limit: Int = 40): ReaderBookSearchPage = lock.withLock {
-        if (closed) return@withLock ReaderBookSearchPage.Closed
+        if (closed.get()) {
+            pending.clear()
+            return@withLock ReaderBookSearchPage.Closed
+        }
         require(limit in 1..100) { "Search page size must be between 1 and 100" }
 
         val hits = ArrayList<Locator>(limit)
@@ -89,6 +93,10 @@ internal class ReaderBookSearchSession(
                     closeUnsafe()
                     return@withLock ReaderBookSearchPage.Failed
                 }
+                if (closed.get()) {
+                    pending.clear()
+                    return@withLock ReaderBookSearchPage.Closed
+                }
                 val collection = next.getOrNull()
                 if (collection == null) {
                     ended = true
@@ -98,6 +106,10 @@ internal class ReaderBookSearchSession(
                 // Empty resource pages are allowed; Readium advances its cursor.
             }
 
+            if (closed.get()) {
+                pending.clear()
+                return@withLock ReaderBookSearchPage.Closed
+            }
             val isLast = ended && pending.isEmpty()
             if (isLast) closeUnsafe()
             ReaderBookSearchPage.Hits(hits, isLast)
@@ -117,10 +129,9 @@ internal class ReaderBookSearchSession(
     }
 
     private fun closeUnsafe() {
-        if (closed) return
-        closed = true
-        ended = true
-        pending.clear()
+        if (!closed.compareAndSet(false, true)) return
+        // pending is touched only by nextPage(), which owns the mutex; close()
+        // must never clear that queue concurrently from another thread.
         runCatching { cursor.close() }
     }
 }
