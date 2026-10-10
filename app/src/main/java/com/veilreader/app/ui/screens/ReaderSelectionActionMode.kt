@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import android.os.Build
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
@@ -63,7 +64,9 @@ internal class ReaderSelectionActionModeCallback(
             menu.add(Menu.NONE, ACTION_LOOKUP, 2, lookupLabel)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         }
-        if (menu.findItem(ACTION_TRANSLATE) == null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            menu.findItem(ACTION_TRANSLATE) == null
+        ) {
             menu.add(Menu.NONE, ACTION_TRANSLATE, 3, translateLabel)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         }
