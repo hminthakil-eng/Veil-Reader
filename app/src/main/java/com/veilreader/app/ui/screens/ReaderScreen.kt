@@ -3966,7 +3966,10 @@ fun ReaderScreen(
                         val token = beginProgrammaticNavigation(
                             originLocatorJson = origin.toVeilPersistedJson(opened.format),
                             targetIdentity = targetIdentity,
-                            reason = ReaderNavigationReason.SAVED_PASSAGE
+                            // A search hit is exploration, not a bookmark/note visit.
+                            // The existing SEARCH_RESULT policy preserves the saved
+                            // reading anchor until the user actually reads onward.
+                            reason = ReaderNavigationReason.SEARCH_RESULT
                         )
                         if (nav.go(
                                 result,
