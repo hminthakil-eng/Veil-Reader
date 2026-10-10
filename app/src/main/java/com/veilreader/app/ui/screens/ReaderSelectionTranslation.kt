@@ -57,6 +57,8 @@ internal object ReaderSelectionTranslation {
         }
     }
 
-    fun launch(activity: Activity?, quote: String): Boolean =
-        activity != null && dispatch(quote) { intent -> activity.startActivity(intent) }
+    fun launch(activity: Activity?, quote: String): Boolean {
+        val host = activity ?: return false
+        return dispatch(quote) { intent -> host.startActivity(intent) }
+    }
 }
