@@ -56,6 +56,22 @@ class ReaderSupplyChainContractTest(unittest.TestCase):
         )
         self.assertIn("privileged graph job must exclude pull_request", check(broken))
 
+    def test_rejects_untrusted_manual_dispatch_branch(self):
+        broken = self.original.replace(
+            "github.ref == 'refs/heads/grand-forge/p0-kindle-reader-quality-20261008'",
+            "github.ref == 'refs/heads/unreviewed-feature'"
+        )
+        self.assertTrue(any("must allowlist trusted branch" in error
+                            for error in check(broken)))
+
+    def test_rejects_missing_manual_dispatch_allowlist(self):
+        clause = (" && (github.ref == 'refs/heads/grand-forge/p0-kindle-reader-quality-20261008'"
+                  " || github.ref == 'refs/heads/grand-forge/arena-app-hardening-v1'"
+                  " || github.ref == 'refs/heads/main')")
+        self.assertIn(clause, self.original)
+        self.assertTrue(any("must allowlist trusted branch" in error
+                            for error in check(self.original.replace(clause, "", 1))))
+
     def test_requires_pinned_pr_inventory(self):
         broken = self.original.replace(SYFT, "anchore/sbom-action@v0", 1)
         self.assertIn("PR source inventory must use pinned Syft CycloneDX", check(broken))
