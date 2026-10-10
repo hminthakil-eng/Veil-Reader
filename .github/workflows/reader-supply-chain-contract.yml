@@ -1,0 +1,38 @@
+name: Reader Supply Chain Contract
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+      - main
+    paths:
+      - ".github/workflows/dependency-baseline.yml"
+      - ".github/workflows/reader-supply-chain-contract.yml"
+      - "tools/verify_reader_supply_chain.py"
+      - "tools/tests/test_reader_supply_chain.py"
+  push:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+      - main
+    paths:
+      - ".github/workflows/dependency-baseline.yml"
+      - ".github/workflows/reader-supply-chain-contract.yml"
+      - "tools/verify_reader_supply_chain.py"
+      - "tools/tests/test_reader_supply_chain.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile supply-chain guard
+        run: python3 -m py_compile tools/verify_reader_supply_chain.py tools/tests/test_reader_supply_chain.py
+      - name: Enforce supply-chain permission split
+        run: python3 tools/verify_reader_supply_chain.py
+      - name: Check regression and rejection paths
+        run: python3 -m unittest discover -s tools/tests -p test_reader_supply_chain.py -v
