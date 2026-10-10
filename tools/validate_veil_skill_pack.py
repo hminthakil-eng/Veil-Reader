@@ -38,7 +38,7 @@ def check():
         match = re.search(r"(?m)^description:\s*(\S.+)$", frontmatter)
         if not match or len(match.group(1).strip()) < 25:
             errors.append(f"{name}: descriptive frontmatter is missing")
-        if len(body.split("\\n---\\n", 1)[-1].strip()) < 500:
+        if len(body) < 600:
             errors.append(f"{name}: skill instructions are too thin to be actionable")
     bridge = ROOT / ".claude" / "skills" / "veil-grand-forge-orchestration" / "SKILL.md"
     if not bridge.is_file():
