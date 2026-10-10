@@ -145,6 +145,7 @@ internal class ReaderTtsSession(
                     it.onInterruption = ::handleInterruption
                     it.onFocusGained = ::handleFocusGained
                 }
+                engine.selectEngine(preferences.engine)
                 val problem = withTimeout(initializationTimeoutMs.coerceAtLeast(1L)) {
                     engine.initialize()
                 }
@@ -328,7 +329,16 @@ internal class ReaderTtsSession(
 
     /** Main-thread preference update; applies on the next bounded synthesis request. */
     fun updatePreferences(value: ReaderTtsPreferences) {
-        if (!closed) preferences = value.normalized()
+        if (closed) return
+        val normalized = value.normalized()
+        if (normalized.engine != preferences.engine) {
+            // A different TTS engine is a new native owner. Stop and close the
+            // old narrator first. Do not restart without explicit Play.
+            pause()
+            backend?.close()
+            backend = null
+        }
+        preferences = normalized
     }
 
     /** Foreground timer: altering its deadline never restarts synthesis or the content iterator. */
