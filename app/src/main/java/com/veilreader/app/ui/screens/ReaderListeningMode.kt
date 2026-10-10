@@ -354,10 +354,7 @@ internal fun ReaderListeningMode(
                                 selected = settings.engine == ReaderTtsEngineChoice.SYSTEM,
                                 onClick = {
                                     if (settings.engine != ReaderTtsEngineChoice.SYSTEM)
-                                        onSettingsChange(settings.copy(
-                                            engine = ReaderTtsEngineChoice.SYSTEM,
-                                            preferredVoiceIds = emptyMap()
-                                        ))
+                                        onSettingsChange(settings.withEngine(ReaderTtsEngineChoice.SYSTEM))
                                 },
                                 label = { Text("Android") }
                             )
@@ -366,17 +363,14 @@ internal fun ReaderListeningMode(
                                 enabled = sherpaEngineInstalled,
                                 onClick = {
                                     if (settings.engine != ReaderTtsEngineChoice.SHERPA_ONNX)
-                                        onSettingsChange(settings.copy(
-                                            engine = ReaderTtsEngineChoice.SHERPA_ONNX,
-                                            preferredVoiceIds = emptyMap()
-                                        ))
+                                        onSettingsChange(settings.withEngine(ReaderTtsEngineChoice.SHERPA_ONNX))
                                 },
                                 label = { Text("Neural · Sherpa") }
                             )
                         }
                         Text(
                             if (sherpaEngineInstalled)
-                                "Select Kokoro in the installed Sherpa engine for English. Switching engines pauses playback and resets the selected voice; tap Play to resume."
+                                "Select Kokoro in the installed Sherpa engine for English. Switching pauses playback; your voice choices are saved separately for each engine. Tap Play to resume."
                             else
                                 "Sherpa-ONNX TTS Engine must be installed and configured with a downloaded voice model before neural playback is available.",
                             color = VeilMaterials.TextSecondary,
