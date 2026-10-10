@@ -2537,6 +2537,9 @@ fun ReaderScreen(
                         !latestReaderSessionReady.value ||
                             rendererPreferencesSettling ||
                             showNotebook ||
+                            // Modal search must own hardware keys/drag/tap while visible.
+                            // Dialog touch interception alone does not fence Readium input.
+                            showReaderSearch ||
                             showAppearance ||
                             showPdfZoom ||
                             showTts ||
