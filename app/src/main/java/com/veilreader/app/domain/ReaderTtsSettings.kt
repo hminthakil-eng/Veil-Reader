@@ -16,7 +16,9 @@ data class ReaderTtsSettings(
     val speed: Double = 1.0,
     val pitch: Double = 1.0,
     val preferredVoiceIds: Map<String, String> = emptyMap(),
-    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM
+    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM,
+    val savedSystemVoices: Map<String, String> = emptyMap(),
+    val savedSherpaVoices: Map<String, String> = emptyMap()
 ) {
     fun normalized(): ReaderTtsSettings =
         copy(
@@ -44,8 +46,46 @@ data class ReaderTtsSettings(
                 }
                 .distinctBy { it.first }
                 .take(MAX_PREFERRED_VOICES)
-                .toMap()
+                .toMap(),
+            savedSystemVoices = normalizeEngineVoices(savedSystemVoices),
+            savedSherpaVoices = normalizeEngineVoices(savedSherpaVoices)
         )
+
+    /**
+     * Switch owners without deleting a voice chosen for the other engine.
+     * A voice ID is local to an installed Android TTS engine, never global.
+     */
+    fun withEngine(choice: ReaderTtsEngineChoice): ReaderTtsSettings {
+        val current = normalized()
+        if (choice == current.engine) return current
+        return when (current.engine) {
+            ReaderTtsEngineChoice.SYSTEM -> current.copy(
+                savedSystemVoices = current.preferredVoiceIds,
+                preferredVoiceIds = current.savedSherpaVoices,
+                engine = ReaderTtsEngineChoice.SHERPA_ONNX
+            )
+            ReaderTtsEngineChoice.SHERPA_ONNX -> current.copy(
+                savedSherpaVoices = current.preferredVoiceIds,
+                preferredVoiceIds = current.savedSystemVoices,
+                engine = ReaderTtsEngineChoice.SYSTEM
+            )
+        }.normalized()
+    }
+
+    private fun normalizeEngineVoices(values: Map<String, String>): Map<String, String> =
+        values.entries.asSequence()
+            .mapNotNull { (language, rawVoice) ->
+                val locale = Locale.forLanguageTag(language.trim())
+                    .takeUnless { it.language.isBlank() || it.language == "und" }
+                    ?: return@mapNotNull null
+                val voice = rawVoice.trim().takeIf {
+                    it.isNotEmpty() && it.length <= 256
+                } ?: return@mapNotNull null
+                locale.toLanguageTag() to voice
+            }
+            .distinctBy { it.first }
+            .take(MAX_PREFERRED_VOICES)
+            .toMap()
 
     fun preferredVoiceId(languageTag: String?): String? {
         val locale = languageTag
