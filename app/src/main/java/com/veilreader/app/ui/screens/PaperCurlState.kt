@@ -2,9 +2,12 @@ package com.veilreader.app.ui.screens
 
 import android.graphics.PointF
 import android.view.View
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
@@ -26,6 +29,7 @@ import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageSide
 import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.reader.material.materialPageRendererCanPresent
 
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
@@ -90,11 +94,16 @@ internal class PaperCurlState {
 
     fun updateRendererStatus(value: GpuMaterialPageRendererStatus) {
         rendererStatus = value
-        if (value != GpuMaterialPageRendererStatus.READY) materialEngine.invalidateSheetPresentation()
+        if (!materialPageRendererCanPresent(value)) materialEngine.invalidateSheetPresentation()
         when (value) {
             GpuMaterialPageRendererStatus.READY -> {
                 rendererEverReady = true
                 if (!active && performancePhase == PaperPerformancePhase.GL_RECREATE) {
+                    performancePhase = PaperPerformancePhase.IDLE
+                }
+            }
+            GpuMaterialPageRendererStatus.SOFTWARE_READY -> {
+                if (!active) {
                     performancePhase = PaperPerformancePhase.IDLE
                 }
             }
@@ -133,7 +142,7 @@ internal class PaperCurlState {
             debugBeginAttempts += 1
         }
         if (
-            rendererStatus != GpuMaterialPageRendererStatus.READY ||
+            !materialPageRendererCanPresent(rendererStatus) ||
             active
         ) {
             return false
@@ -261,6 +270,8 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · DISABLED"
                 state.rendererStatus == GpuMaterialPageRendererStatus.INITIALIZING ->
                     "PAPER · GPU CANONICAL · INITIALIZING · A${state.debugBeginAttempts}"
+                state.rendererStatus == GpuMaterialPageRendererStatus.SOFTWARE_READY ->
+                    "PAPER · SOFTWARE MESH · READY · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
                     "PAPER · GPU CANONICAL · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
                 state.rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
@@ -285,7 +296,13 @@ internal fun PaperCurlOverlay(
                 color = Color(0xFFFFC857),
                 modifier = Modifier
                     .align(Alignment.TopStart)
+                    .statusBarsPadding()
                     .padding(6.dp)
+                    .background(
+                        color = Color(0xDD111318),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 5.dp)
                     .clearAndSetSemantics { }
             )
         }

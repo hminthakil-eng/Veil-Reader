@@ -98,7 +98,9 @@ internal class MaterialPageEngineState(
     initialProfile: MaterialPageProfile = MaterialPageProfiles.MatteBook,
     private var sensorySink: MaterialPageSensorySink? = null,
     private val snapshotProvider: MaterialPageImmediateSnapshotProvider =
-        ViewDrawImmediateMaterialPageSnapshotProvider
+        ViewDrawImmediateMaterialPageSnapshotProvider,
+    private val preparedSnapshotProvider: MaterialPagePreparedSnapshotProvider =
+        WindowPixelCopyPreparedMaterialPageSnapshotProvider
 ) {
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
@@ -352,11 +354,41 @@ internal class MaterialPageEngineState(
         val totalStarted = SystemClock.elapsedRealtimeNanos()
         Trace.beginSection("paper.capture.prepare")
         val capture = try {
-            snapshotProvider.capture(
-                view = view,
-                target = target,
-                sourceRevision = revision
-            )
+            val hardwareCapture =
+                if (materialPageVisibleWebView(view) != null) {
+                    preparedSnapshotProvider.capture(
+                        view = view,
+                        target = target,
+                        sourceRevision = revision
+                    )
+                } else {
+                    null
+                }
+
+            when (hardwareCapture) {
+                is MaterialPageSnapshotCapture.Ready -> hardwareCapture
+                else -> {
+                    if (hardwareCapture != null) {
+                        val fallbackReason = when (hardwareCapture) {
+                            is MaterialPageSnapshotCapture.NotReady -> hardwareCapture.reason
+                            is MaterialPageSnapshotCapture.Failed -> hardwareCapture.reason
+                            is MaterialPageSnapshotCapture.Ready -> null
+                        }
+                        ReaderTrace.event(
+                            name = "paper_snapshot_hardware_fallback",
+                            details =
+                                "revision=$revision " +
+                                    "result=${hardwareCapture::class.java.simpleName} " +
+                                    "reason=$fallbackReason"
+                        )
+                    }
+                    snapshotProvider.capture(
+                        view = view,
+                        target = target,
+                        sourceRevision = revision
+                    )
+                }
+            }
         } finally {
             Trace.endSection()
         }
