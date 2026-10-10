@@ -82,7 +82,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
                         if (gpuHistory.size == 12) gpuHistory.removeFirst()
                         gpuHistory.addLast(
                             "${SystemClock.uptimeMillis() - probeStartedAt}ms:" +
-                                "${locator.href.substringAfterLast('/')}@$progression:" +
+                                "${locator.href.toString().substringAfterLast('/')}@$progression:" +
                                 "$submitted/$acquired/${if (active) 1 else 0}"
                         )
                     }
