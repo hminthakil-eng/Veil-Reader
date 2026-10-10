@@ -32,8 +32,9 @@ class ReaderSelectionActionModeTest {
         val mode = TestActionMode()
         callback.onCreateActionMode(mode, mode.menu)
         callback.onCreateActionMode(mode, mode.menu)
-        assertEquals(4, mode.menu.size())
+        assertEquals(5, mode.menu.size())
         assertEquals("Translate", mode.menu.findItem(0x5654).title.toString())
+        assertEquals("Define", mode.menu.findItem(0x5644).title.toString())
     }
 
     @Test
@@ -44,6 +45,7 @@ class ReaderSelectionActionModeTest {
         callback.onCreateActionMode(mode, mode.menu)
         assertEquals(3, mode.menu.size())
         assertNull(mode.menu.findItem(0x5654))
+        assertNull(mode.menu.findItem(0x5644))
     }
 
     @Test
@@ -158,6 +160,7 @@ class ReaderSelectionActionModeTest {
             noteLabel = "Note",
             lookupLabel = "Lookup",
             translateLabel = "Translate",
+            defineLabel = "Define",
             onModeChanged = { states += it },
             onAction = { _, _, _ -> }
         )
