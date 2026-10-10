@@ -1076,12 +1076,12 @@ internal class GpuMaterialPageCurlView(
             uniform float uCylinderTilt;
             uniform float uCylinderRadius;
             uniform float uPageAspect;
-            uniform float uSideSign;
-            uniform float uShadowPass;
+            uniform mediump float uSideSign;
+            uniform mediump float uShadowPass;
 
-            varying vec2 vTexCoord;
-            varying vec3 vNormal;
-            varying float vLift;
+            varying mediump vec2 vTexCoord;
+            varying mediump vec3 vNormal;
+            varying mediump float vLift;
 
             const float PI = 3.14159265358979323846;
 
@@ -1184,13 +1184,13 @@ internal class GpuMaterialPageCurlView(
             uniform float uEdgeStrength;
             uniform float uShadowStrength;
             uniform float uVisualAlpha;
-            uniform float uShadowPass;
+            uniform mediump float uShadowPass;
             uniform vec2 uTexelSize;
-            uniform float uSideSign;
+            uniform mediump float uSideSign;
 
-            varying vec2 vTexCoord;
-            varying vec3 vNormal;
-            varying float vLift;
+            varying mediump vec2 vTexCoord;
+            varying mediump vec3 vNormal;
+            varying mediump float vLift;
 
             float pageNoise(vec2 uv) {
                 float a = sin(uv.x * 173.0 + uMaterialPhase * 7.0);
