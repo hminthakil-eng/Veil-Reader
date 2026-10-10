@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,7 +83,7 @@ internal fun ReaderBookSearchDialog(
 ) {
     val scope = rememberCoroutineScope()
     var query by remember(publication) { mutableStateOf("") }
-    var results by remember(publication) { mutableStateOf<List<Locator>>(emptyList()) }
+    val results = remember(publication) { mutableStateListOf<Locator>() }
     var status by remember(publication) { mutableStateOf(ReaderSearchStatus.IDLE) }
     var loading by remember(publication) { mutableStateOf(false) }
     var lastPage by remember(publication) { mutableStateOf(false) }
@@ -96,7 +97,7 @@ internal fun ReaderBookSearchDialog(
         work = null
         session?.close()
         session = null
-        results = emptyList()
+        results.clear()
         lastPage = false
         loading = false
         status = ReaderSearchStatus.IDLE
@@ -111,7 +112,7 @@ internal fun ReaderBookSearchDialog(
                 if (generation != token || session !== active) return@launch
                 when (page) {
                     is ReaderBookSearchPage.Hits -> {
-                        results = results + page.locators
+                        results.addAll(page.locators)
                         lastPage = page.isLast
                         status = ReaderSearchStatus.RESULTS
                     }
@@ -227,8 +228,11 @@ internal fun ReaderBookSearchDialog(
                         keyboardActions = KeyboardActions(onSearch = { startSearch() }),
                         modifier = Modifier.fillMaxWidth()
                     )
+                    if (query.trim().length > 128) {
+                        Text(stringResource(R.string.reader_search_invalid))
+                    }
                     Button(
-                        enabled = !loading && query.isNotBlank() && query.length <= 128,
+                        enabled = !loading && query.isNotBlank() && query.trim().length <= 128,
                         onClick = { startSearch() },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                     ) { Text(stringResource(R.string.reader_search_submit)) }
