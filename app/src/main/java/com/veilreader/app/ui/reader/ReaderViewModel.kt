@@ -300,7 +300,7 @@ class ReaderViewModel(
         }
 
         val countsPageTurn = locatorDeduplicator.countsPageTurnFor(locationKey, event)
-        if (!countsPageTurn) {
+        if (!event.countsPageTurn) {
             current.resetReadingPaceAnchor()
             lastPaceProgression = null
         }
