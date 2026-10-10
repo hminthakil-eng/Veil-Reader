@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -105,6 +106,8 @@ import com.veilreader.app.ui.reader.tts.ReaderTtsPreferences
 import com.veilreader.app.ui.reader.tts.readerCanPlayForegroundTts
 import com.veilreader.app.ui.reader.tts.readerCanCompleteTtsStart
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
+import com.veilreader.app.ui.reader.tts.ReaderForegroundTtsCheckpointController
+import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpointStore
 import com.veilreader.app.ui.reader.tts.ReaderTtsCheckpoint
 import com.veilreader.app.ui.reader.tts.ReaderTtsServiceController
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
@@ -125,6 +128,9 @@ import com.veilreader.app.ui.reader.ReaderNavigationIdentity
 import com.veilreader.app.ui.reader.hasReachedObservedDestination
 import com.veilreader.app.ui.reader.passageVisitAfterSettlement
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
+import com.veilreader.app.ui.reader.ReaderNavigationReason
+import com.veilreader.app.ui.reader.ReaderNavigationCommitPolicy
+import com.veilreader.app.ui.reader.ReaderNavigationSessionStateMachine
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderIdentityJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
@@ -233,6 +239,9 @@ fun ReaderScreen(
         "Veil Reader requires a FragmentActivity host."
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var readerLifecycleResumed by remember(lifecycle, readerSessionInstanceId) {
+        mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
     val scope = rememberCoroutineScope()
     val latestReaderSessionInstanceId = rememberUpdatedState(readerSessionInstanceId)
     val formatPercent = rememberVeilPercentFormatter()
@@ -289,6 +298,12 @@ fun ReaderScreen(
             .distinctUntilChanged()
     }
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
+    val progressFailureFlow = remember(readerViewModel, opened.book.id, readerSessionInstanceId) {
+        readerViewModel.uiState.map { state ->
+            state.bookId == opened.book.id && state.progressSaveFailed
+        }.distinctUntilChanged()
+    }
+    val progressSaveFailed by progressFailureFlow.collectAsStateWithLifecycle(initialValue = false)
 
     var navigator by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
@@ -334,21 +349,30 @@ fun ReaderScreen(
             activeFixedLayoutSpread = fixedLayoutSpread
         }
     }
-    val effectiveReaderAppearance = remember(
-        readerAppearance,
-        fixedLayoutPublication
-    ) {
-        val publicationAppearance =
-            effectiveReaderAppearanceForPublication(
-                appearance = readerAppearance,
-                fixedLayout = fixedLayoutPublication
-            )
+    val typesettingViewportWidth = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value.toDouble()
+    }
+    val typesettingAccessibilityScale = LocalDensity.current.fontScale.toDouble()
+    fun effectiveAppearance(requested: ReaderAppearance): ReaderAppearance =
         applyMaterialPageRolloutToAppearance(
-            appearance = publicationAppearance,
+            appearance = AdaptiveTypesettingPolicy.resolve(
+                appearance = effectiveReaderAppearanceForPublication(requested, fixedLayoutPublication),
+                format = opened.format,
+                fixedLayout = fixedLayoutPublication,
+                viewportWidthDp = typesettingViewportWidth,
+                accessibilityFontScale = typesettingAccessibilityScale
+            ),
             format = opened.format,
             debugReview = BuildConfig.DEBUG,
             materialPageEnabled = MaterialPageEngineRollout.isEnabled()
         )
+    val effectiveReaderAppearance = remember(
+        readerAppearance,
+        fixedLayoutPublication,
+        typesettingViewportWidth,
+        typesettingAccessibilityScale
+    ) {
+        effectiveAppearance(readerAppearance)
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(effectiveReaderAppearance)
@@ -389,6 +413,8 @@ fun ReaderScreen(
     val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
     val readerOpenFailedMessage = stringResource(R.string.notice_open_failed)
     val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
+    val bookmarkSaveFailedMessage = stringResource(R.string.reader_bookmark_save_failed)
+    val bookmarkDeleteFailedMessage = stringResource(R.string.reader_bookmark_delete_failed)
     val bookmarkDuplicateMessage = stringResource(R.string.reader_bookmark_duplicate)
     val noteSavedMessage = stringResource(R.string.reader_note_saved)
     val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
@@ -416,6 +442,12 @@ fun ReaderScreen(
     val boundaryEndMessage =
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    val progressSaveFailedMessage = stringResource(R.string.reader_progress_save_failed)
+    LaunchedEffect(progressSaveFailed, opened.book.id, readerSessionInstanceId) {
+        if (progressSaveFailed) {
+            readerMessage = progressSaveFailedMessage
+        }
+    }
     var paperFailureNotice by remember(readerSessionInstanceId) {
         mutableStateOf<ReaderPaperFailureNotice?>(null)
     }
@@ -511,6 +543,11 @@ fun ReaderScreen(
     val navigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
         ReaderNavigationTransactionGate()
     }
+    val navigationSessionState = remember(opened.book.id, readerSessionInstanceId) {
+        ReaderNavigationSessionStateMachine(
+            opened.initialLocator?.toVeilPersistedJson(opened.format)
+        )
+    }
     DisposableEffect(navigationTransactionGate) {
         onDispose { navigationTransactionGate.reset() }
     }
@@ -521,14 +558,12 @@ fun ReaderScreen(
         val slideHadPendingTurn =
             slideInputListener?.hasPendingTurn() == true
 
-        val paperSettled =
-            !paperHadPendingTurn ||
-                paperInputListener?.cancelPendingTurnAndAwait() == true ||
-                paperInputListener?.hasPendingTurn() != true
-        val slideSettled =
-            !slideHadPendingTurn ||
-                slideInputListener?.cancelPendingTurnAndAwait() == true ||
-                slideInputListener?.hasPendingTurn() != true
+        // Cancellation acknowledgement alone is insufficient: a listener may still own
+        // a preview when it reports completion. Recheck both listeners after cancellation.
+        if (paperHadPendingTurn) paperInputListener?.cancelPendingTurnAndAwait()
+        if (slideHadPendingTurn) slideInputListener?.cancelPendingTurnAndAwait()
+        val paperSettled = paperInputListener?.hasPendingTurn() != true
+        val slideSettled = slideInputListener?.hasPendingTurn() != true
 
         if (!paperSettled || !slideSettled) {
             paperInputListener?.forceCancelPendingTurn()
@@ -548,6 +583,7 @@ fun ReaderScreen(
         targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
         passageVisitLocatorJson: String? = null,
+        reason: ReaderNavigationReason,
         expectedPdfPage: Int? = null
     ): Long {
         val transaction = navigationTransactionGate.begin(
@@ -556,6 +592,7 @@ fun ReaderScreen(
             targetIdentity = targetIdentity,
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson,
+            reason = reason,
             expectedPdfPage = expectedPdfPage,
             originPdfPage = if (expectedPdfPage != null) {
                 latestNavigator.value?.currentLocator?.value?.let(::pdfPageNumber)
@@ -649,12 +686,7 @@ fun ReaderScreen(
         expectedAppearance: ReaderAppearance? = null
     ) {
         appearanceCloseJob?.cancel()
-        val normalizedExpected = expectedAppearance?.let {
-            effectiveReaderAppearanceForPublication(
-                appearance = it,
-                fixedLayout = fixedLayoutPublication
-            )
-        }
+        val normalizedExpected = expectedAppearance?.let(::effectiveAppearance)
         appearanceCloseJob = scope.launch {
             // Give a final slider commit one frame to propagate into the parent state before
             // deciding whether the renderer is settled. Then keep the chamber above the renderer
@@ -694,10 +726,11 @@ fun ReaderScreen(
         reducedMotion,
         paperCurlState.active,
         paperCurlState.snapshotSourceRevision,
+        readerLifecycleResumed,
         readerSessionInstanceId
     ) {
         if (
-            !readerSessionReady ||
+            !readerSessionReady || !readerLifecycleResumed ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
             !shouldCapturePaperTurnSnapshot(reducedMotion)
@@ -714,13 +747,19 @@ fun ReaderScreen(
         // the gesture falls back to a fresh immediate capture.
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
-            !paperCurlState.active &&
+            !paperCurlState.active && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
             )
         ) {
-            paperCurlState.prepareSnapshot(nav.publicationView)
+            paperCurlState.prepareSnapshot(nav.publicationView) {
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                    readerAsyncResultBelongsToSession(
+                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                        expectedSessionInstanceId = readerSessionInstanceId
+                    )
+            }
         }
     }
     LaunchedEffect(
@@ -729,10 +768,11 @@ fun ReaderScreen(
         presentedReaderAppearance,
         reducedMotion,
         slidePageState.active,
+        readerLifecycleResumed,
         readerSessionInstanceId
     ) {
         if (
-            !readerSessionReady ||
+            !readerSessionReady || !readerLifecycleResumed ||
             opened.format != BookFormat.EPUB ||
             presentedReaderAppearance.navigationMode != ReaderNavigationMode.SLIDE ||
             reducedMotion
@@ -745,7 +785,7 @@ fun ReaderScreen(
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
         delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
-            !slidePageState.active &&
+            !slidePageState.active && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
@@ -773,6 +813,7 @@ fun ReaderScreen(
         estimateBookTimeRemaining(opened.book.totalPages, progress, readingPace)
     }
     var showNotebook by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var showReaderSearch by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
 
     LaunchedEffect(readerAppearance, opened.book.id, readerSessionInstanceId) {
         ReaderTrace.event(
@@ -989,22 +1030,15 @@ fun ReaderScreen(
                     when (action) {
                         ReaderSelectionAction.LOOKUP -> Unit
                         ReaderSelectionAction.HIGHLIGHT -> {
-                            val highlight = existing ?: library.addHighlight(
-                                bookId = opened.book.id,
-                                quote = quote,
-                                locatorJson = locatorJson
+                            val committed = library.commitSelectionHighlight(
+                                bookId = opened.book.id, quote = quote, locatorJson = locatorJson
                             )
-                            val isNew = existing == null
+                            if (!readerAsyncResultBelongsToSession(
+                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                    expectedSessionInstanceId = readerSessionInstanceId
+                                )) return@onAction
+                            val isNew = committed.created
                             if (isNew) {
-                                library.flushWrites()
-                                if (
-                                    !readerAsyncResultBelongsToSession(
-                                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                        expectedSessionInstanceId = readerSessionInstanceId
-                                    )
-                                ) {
-                                    return@onAction
-                                }
                                 readerViewModel.onHighlightAdded(readerSessionInstanceId)
                                 onSensoryEvent(VeilSensoryEvent.MARK)
                             } else {
@@ -1115,6 +1149,36 @@ fun ReaderScreen(
         }
     }
 
+    val transitionUnavailableReason = readerTransitionUnavailableReason(
+        appearance = readerAppearance,
+        format = opened.format,
+        fixedLayout = fixedLayoutPublication,
+        materialPageEnabled = MaterialPageEngineRollout.isEnabled()
+    )
+    val transitionUnavailableMessage = when (transitionUnavailableReason) {
+        ReaderTransitionUnavailableReason.PAPER_ROLLOUT_DISABLED ->
+            stringResource(R.string.reader_paper_rollout_unavailable)
+        ReaderTransitionUnavailableReason.FIXED_LAYOUT_LEAF_UNSUPPORTED ->
+            stringResource(R.string.reader_fixed_layout_transition_unavailable)
+        null -> null
+    }
+    var announcedTransitionReason by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<ReaderTransitionUnavailableReason?>(null)
+    }
+    LaunchedEffect(transitionUnavailableReason, readerSessionReady, closeInFlight,
+        readerSessionInstanceId) {
+        val reason = transitionUnavailableReason ?: return@LaunchedEffect
+        if (!readerSessionReady || closeInFlight || announcedTransitionReason == reason) {
+            return@LaunchedEffect
+        }
+        announcedTransitionReason = reason
+        snackbarHostState.showSnackbar(
+            message = transitionUnavailableMessage ?: return@LaunchedEffect,
+            withDismissAction = true,
+            duration = SnackbarDuration.Long
+        )
+    }
+
     val latestRequestedReaderAppearance = rememberUpdatedState(readerAppearance)
     val latestReaderAppearanceChange = rememberUpdatedState(onReaderAppearanceChange)
 
@@ -1202,8 +1266,14 @@ fun ReaderScreen(
     val backgroundTtsEnabled = remember {
         VeilFeatureGates.enabled(
             VeilRiskyFeature.BACKGROUND_TTS,
-            debugReview = BuildConfig.DEBUG
+            debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
         )
+    }
+    val foregroundTtsCheckpoint = remember(opened.book.id, readerSessionInstanceId, backgroundTtsEnabled) {
+        if (backgroundTtsEnabled) null else {
+            val store = ReaderTtsCheckpointStore(activity.applicationContext)
+            ReaderForegroundTtsCheckpointController(opened.book.id, store::read, store::save)
+        }
     }
     val ttsSession = remember(
         opened.book.id,
@@ -1215,9 +1285,31 @@ fun ReaderScreen(
             null
         } else {
             val ownerId = readerSessionInstanceId
-            createReadiumReaderTtsSession(activity.applicationContext, opened) {
+            createReadiumReaderTtsSession(
+                activity.applicationContext, opened,
+                commitCheckpoint = { locator, preferences ->
+                    requireNotNull(foregroundTtsCheckpoint).commit(locator, preferences)
+                }
+            ) {
                 latestReaderSessionInstanceId.value == ownerId && latestTtsCanPlay.value()
             }
+        }
+    }
+    LaunchedEffect(ttsSession, foregroundTtsCheckpoint) {
+        val session = ttsSession ?: return@LaunchedEffect
+        try {
+            foregroundTtsCheckpoint?.restore(
+                session,
+                ReaderTtsPreferences(
+                    speed = latestTtsSettings.value.speed.toFloat(),
+                    pitch = latestTtsSettings.value.pitch.toFloat(),
+                    preferredVoiceIds = latestTtsSettings.value.preferredVoiceIds
+                )
+            ) { latestReaderSessionInstanceId.value == readerSessionInstanceId && !closeInFlight }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            readerMessage = activity.getString(R.string.tts_checkpoint_failed)
         }
     }
     val ttsServiceController = remember(
@@ -1259,6 +1351,15 @@ fun ReaderScreen(
 
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
         val json = locator.toVeilPersistedJson(opened.format)
+        if (!navigationSessionState.mayCommitObservedEvent(event, json)) {
+            ReaderTrace.event(
+                "exploration_checkpoint_suppressed",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId,
+                details = "event=${event.name}"
+            )
+            return
+        }
         readerViewModel.onLocatorUpdate(
             bookId = opened.book.id,
             expectedOpenInstanceId = readerSessionInstanceId,
@@ -1268,6 +1369,7 @@ fun ReaderScreen(
             locationKey = "${opened.book.id}:$json",
             event = event
         )?.let { commit ->
+            navigationSessionState.onDurableReadingCommit(commit.locatorJson)
             onLocatorCheckpoint(commit.locatorJson)
         }
     }
@@ -1329,6 +1431,7 @@ fun ReaderScreen(
                 originLocatorJson =
                     originLocator.toVeilPersistedJson(opened.format),
                 targetIdentity = targetIdentity,
+                reason = ReaderNavigationReason.RETURN_PREVIOUS,
                 expectedPdfPage =
                     if (opened.format == BookFormat.PDF) {
                         pdfPageNumber(locator)
@@ -1359,7 +1462,10 @@ fun ReaderScreen(
         ) ?: return
         val json = locator.toVeilPersistedJson(opened.format)
         previousLocationJson = settled.originLocatorJson?.takeIf { it != json }
-        recordLocator(locator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+        navigationSessionState.onProgrammaticSettlement(settled, json)
+        if (settled.commitPolicy == ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT) {
+            recordLocator(locator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+        }
         settled.passageVisitAfterSettlement(pdfPageNumber(locator))?.let {
             library.recordPassageVisitForLocator(bookId = opened.book.id, locatorJson = it)
         }
@@ -1435,10 +1541,15 @@ fun ReaderScreen(
                     previousLocationJson =
                         cancelledNavigation.originLocatorJson
                             ?.takeIf { it != json }
-                    recordLocator(
-                        currentLocator,
-                        ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+                    navigationSessionState.onProgrammaticSettlement(
+                        cancelledNavigation,
+                        json
                     )
+                    if (cancelledNavigation.commitPolicy ==
+                        ReaderNavigationCommitPolicy.COMMIT_ON_SETTLEMENT
+                    ) {
+                        recordLocator(currentLocator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+                    }
                     cancelledNavigation
                         .passageVisitAfterSettlement(
                             if (opened.format == BookFormat.PDF) {
@@ -1474,6 +1585,9 @@ fun ReaderScreen(
                     }
                 }
 
+                check(!readerViewModel.uiState.value.progressSaveFailed) {
+                    "Reader progress checkpoint is not durable."
+                }
                 ReaderTrace.event(
                     "reader_close_durability_wait",
                     bookId = opened.book.id,
@@ -1518,6 +1632,7 @@ fun ReaderScreen(
     BackHandler(
         enabled =
             !showNotebook &&
+            !showReaderSearch &&
             !showAppearance &&
             !showPdfZoom &&
             !showTts &&
@@ -1621,7 +1736,8 @@ fun ReaderScreen(
                                     val token = beginProgrammaticNavigation(
                                         originLocatorJson =
                                             currentLocator.toVeilPersistedJson(opened.format),
-                                        targetHref = targetHref
+                                        targetHref = targetHref,
+                                        reason = ReaderNavigationReason.INTERNAL_LINK
                                     )
                                     game.rebasePagePacing()
                                     if (
@@ -1660,7 +1776,8 @@ fun ReaderScreen(
                                 val transaction = navigationTransactionGate.begin(
                                     originLocatorJson = origin,
                                     nowElapsedMs = SystemClock.elapsedRealtime(),
-                                    targetHref = targetHref
+                                    targetHref = targetHref,
+                                    reason = ReaderNavigationReason.INTERNAL_LINK
                                 )
                                 ReaderTrace.event(
                                     "navigation_jump_requested",
@@ -1735,7 +1852,9 @@ fun ReaderScreen(
                     readerMessage = previousLocationFailedMessage
                 } else if (pdfPageNumber(nav.currentLocator.value) != pdfPageNumber(target)) {
                     val token = beginProgrammaticNavigation(
-                        currentLocatorJson(), expectedPdfPage = pdfPageNumber(target)
+                        currentLocatorJson(),
+                        reason = ReaderNavigationReason.PDF_INTERNAL_LINK,
+                        expectedPdfPage = pdfPageNumber(target)
                     )
                     readerViewModel.onUserInteraction(readerSessionInstanceId)
                     game.rebasePagePacing()
@@ -1804,6 +1923,7 @@ fun ReaderScreen(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
+                    readerLifecycleResumed = true
                     if (latestReaderSessionReady.value) {
                         readerViewModel.onResume(readerSessionInstanceId)
                     }
@@ -1811,6 +1931,7 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
+                    readerLifecycleResumed = false
                     if (latestReaderSessionReady.value) {
                         // Lifecycle teardown may cancel the composition scope immediately. Restore an
                         // uncommitted preview synchronously before any final locator can be flushed.
@@ -1946,6 +2067,7 @@ fun ReaderScreen(
                     observedPdfPage = if (opened.format == BookFormat.PDF) pdfPageNumber(locator) else null
                 )
                 if (settledNavigation != null) {
+                    navigationSessionState.onProgrammaticSettlement(settledNavigation, json)
                     previousLocationJson = settledNavigation.originLocatorJson
                         ?.takeIf { origin -> origin != json }
                     settledNavigation.passageVisitAfterSettlement(
@@ -1983,7 +2105,11 @@ fun ReaderScreen(
                 )
                 val wasInitialLocator = initialLocatorPending
                 initialLocatorPending = false
-                val commit = readerViewModel.onLocatorUpdate(
+                val commit = if (
+                    settledNavigation?.commitPolicy ==
+                        ReaderNavigationCommitPolicy.PRESERVE_READING_ANCHOR ||
+                    !navigationSessionState.mayCommitObservedEvent(event, json)
+                ) null else readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     expectedOpenInstanceId = readerSessionInstanceId,
                     progression = locator.locations.totalProgression
@@ -1993,6 +2119,7 @@ fun ReaderScreen(
                     event = event
                 )
                 commit?.let { accepted ->
+                    navigationSessionState.onDurableReadingCommit(accepted.locatorJson)
                     onLocatorCheckpoint(accepted.locatorJson)
                 }
 
@@ -2119,21 +2246,12 @@ fun ReaderScreen(
             }
 
             fun paperModeSelected(): Boolean =
-                shouldUsePaperCurlNavigation(
+                shouldMountPaperCurlRuntime(
                     format = opened.format,
-                    scroll = latestAppearance.value.scroll,
-                    pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    fixedLayout = fixedLayoutPublication,
+                    appearance = latestAppearance.value,
+                    materialPageEnabled = MaterialPageEngineRollout.isEnabled()
                 )
-
-            fun paperRendererOwnsNavigationInput(): Boolean =
-                paperModeSelected() &&
-                    paperRendererCanOwnNavigationInput(
-                        reducedMotion = latestReducedMotion.value,
-                        rendererStatus = paperCurlState.rendererStatus
-                    )
-
-            fun paperNeedsStaticFallback(): Boolean =
-                paperModeSelected() && !paperRendererOwnsNavigationInput()
 
             val paperListener = if (navigator is EpubNavigatorFragment) {
                 PaperCurlInputListener(
@@ -2148,8 +2266,7 @@ fun ReaderScreen(
                             )
                     },
                     isEnabled = {
-                        latestReaderSessionReady.value &&
-                            paperRendererOwnsNavigationInput()
+                        latestReaderSessionReady.value && paperModeSelected()
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
@@ -2208,14 +2325,11 @@ fun ReaderScreen(
                     navigator = nav,
                     isEnabled = {
                         latestReaderSessionReady.value &&
-                            (
-                                shouldUseStaticPagedDragNavigation(
-                                    format = opened.format,
-                                    scroll = latestAppearance.value.scroll,
-                                    pageTurnStyle = latestAppearance.value.pageTurnStyle
-                                ) ||
-                                    paperNeedsStaticFallback()
-                                )
+                            shouldUseStaticPagedDragNavigation(
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     scope = scope,
                     onInteraction = ::markReaderNavigationInteraction,
@@ -2268,11 +2382,7 @@ fun ReaderScreen(
                             nav.overflow.value.scroll
                         },
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
-                    ) ||
-                        (
-                            opened.format == BookFormat.EPUB &&
-                                paperNeedsStaticFallback()
-                            )
+                    )
                 },
                 onInteraction = ::markReaderNavigationInteraction,
                 onNavigationCommitted = {
@@ -2358,11 +2468,7 @@ fun ReaderScreen(
                     BookFormat.EPUB ->
                         when (latestAppearance.value.navigationMode) {
                             ReaderNavigationMode.PAPER_CURL ->
-                                if (paperRendererOwnsNavigationInput()) {
-                                    paperListener?.performDiscreteTurn(direction) == true
-                                } else {
-                                    performDirectPagedTurn()
-                                }
+                                paperListener?.performDiscreteTurn(direction) == true
 
                             ReaderNavigationMode.SLIDE ->
                                 slideListener?.performDiscreteTurn(direction) == true
@@ -2410,6 +2516,9 @@ fun ReaderScreen(
                         !latestReaderSessionReady.value ||
                             rendererPreferencesSettling ||
                             showNotebook ||
+                            // Modal search must own hardware keys/drag/tap while visible.
+                            // Dialog touch interception alone does not fence Readium input.
+                            showReaderSearch ||
                             showAppearance ||
                             showPdfZoom ||
                             showTts ||
@@ -2991,9 +3100,12 @@ fun ReaderScreen(
         }
 
         if (
-            opened.format == BookFormat.EPUB &&
-            !presentedReaderAppearance.scroll &&
-            presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
+            shouldMountPaperCurlRuntime(
+                format = opened.format,
+                fixedLayout = fixedLayoutPublication,
+                appearance = presentedReaderAppearance,
+                materialPageEnabled = MaterialPageEngineRollout.isEnabled()
+            )
         ) {
             PaperCurlOverlay(
                 state = paperCurlState,
@@ -3188,6 +3300,25 @@ fun ReaderScreen(
                             )
                         }
 
+                        if (
+                            opened.format == BookFormat.EPUB &&
+                            navigator != null &&
+                            VeilFeatureGates.enabled(
+                                VeilRiskyFeature.IN_BOOK_SEARCH,
+                                debugReview = BuildConfig.DEBUG
+                            )
+                        ) {
+                            ReaderChromeButton(
+                                ReaderAction.SEARCH,
+                                stringResource(R.string.reader_chrome_search),
+                                tint = readerChromeAccent
+                            ) {
+                                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                                selectionActionModeCallback.dismissSelection()
+                                showReaderSearch = true
+                            }
+                        }
+
                         Text(
                             progressLabel,
                             modifier = Modifier.semantics {
@@ -3288,22 +3419,34 @@ fun ReaderScreen(
                             selectionActionModeCallback.dismissSelection()
                             val locator = navigator?.currentLocator?.value
                             if (locator != null) {
-                                val added = library.addBookmark(
-                                    opened.book.id,
+                                val expectedSessionId = readerSessionInstanceId
+                                val bookId = opened.book.id
+                                val locatorJson = locator.toVeilPersistedJson(opened.format)
+                                val label =
                                     if (opened.format == BookFormat.PDF && pdfPageNumber(locator) != null) {
                                         activity.getString(R.string.pdf_bookmark_page, pdfPageNumber(locator))
                                     } else {
                                         "${formatPercent(progress)} · ${locator.title?.takeIf { it.isNotBlank() } ?: readerBookTitle}"
-                                    },
-                                    locator.toVeilPersistedJson(opened.format)
-                                )
-                                if (added) {
-                                    onSensoryEvent(VeilSensoryEvent.MARK)
-                                }
-                                readerMessage = if (added) {
-                                    bookmarkSavedMessage
-                                } else {
-                                    bookmarkDuplicateMessage
+                                    }
+                                scope.launch {
+                                    try {
+                                        val added = library.addBookmark(bookId, label, locatorJson)
+                                        if (!readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            )
+                                        ) return@launch
+                                        if (added) onSensoryEvent(VeilSensoryEvent.MARK)
+                                        readerMessage = if (added) bookmarkSavedMessage else bookmarkDuplicateMessage
+                                    } catch (cancelled: CancellationException) {
+                                        throw cancelled
+                                    } catch (_: Exception) {
+                                        if (readerAsyncResultBelongsToSession(
+                                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                                expectedSessionInstanceId = expectedSessionId
+                                            )
+                                        ) readerMessage = bookmarkSaveFailedMessage
+                                    }
                                 }
                             }
                         }
@@ -3771,6 +3914,64 @@ fun ReaderScreen(
         }
     }
 
+    if (showReaderSearch) {
+        key(readerSessionInstanceId) {
+            ReaderBookSearchDialog(
+                publication = opened.publication,
+                onDismiss = { showReaderSearch = false },
+                onResult = { result ->
+                    showReaderSearch = false
+                    val expectedSessionId = readerSessionInstanceId
+                    scope.launch {
+                        if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                            readerMessage = savedLocationFailedMessage
+                            return@launch
+                        }
+                        if (
+                            closeInFlight ||
+                            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) ||
+                            !readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) return@launch
+                        val nav = latestNavigator.value ?: return@launch
+                        val origin = nav.currentLocator.value
+                        val targetIdentity = result.toReaderNavigationIdentity()
+                        if (!shouldStartReaderIdentityJump(
+                                origin = origin.toReaderNavigationIdentity(),
+                                target = targetIdentity
+                            )
+                        ) {
+                            controlsVisible = false
+                            return@launch
+                        }
+                        readerViewModel.onUserInteraction(expectedSessionId)
+                        game.rebasePagePacing()
+                        val token = beginProgrammaticNavigation(
+                            originLocatorJson = origin.toVeilPersistedJson(opened.format),
+                            targetIdentity = targetIdentity,
+                            // A search hit is exploration, not a bookmark/note visit.
+                            // The existing SEARCH_RESULT policy preserves the saved
+                            // reading anchor until the user actually reads onward.
+                            reason = ReaderNavigationReason.SEARCH_RESULT
+                        )
+                        if (nav.go(
+                                result,
+                                animated = shouldAnimateReaderJump(latestReducedMotion.value)
+                            )
+                        ) {
+                            controlsVisible = false
+                        } else {
+                            cancelProgrammaticNavigation(token)
+                            readerMessage = savedLocationFailedMessage
+                        }
+                    }
+                }
+            )
+        }
+    }
+
     if (showNotebook) {
         key(readerSessionInstanceId) {
             ReaderNotebook(
@@ -3825,6 +4026,7 @@ fun ReaderScreen(
                                 originLocator.toVeilPersistedJson(opened.format),
                             targetIdentity = targetIdentity,
                             passageVisitLocatorJson = json,
+                            reason = ReaderNavigationReason.SAVED_PASSAGE,
                             expectedPdfPage =
                                 if (opened.format == BookFormat.PDF) {
                                     pdfPageNumber(locator)
@@ -3891,7 +4093,8 @@ fun ReaderScreen(
                         val transactionToken = beginProgrammaticNavigation(
                             originLocatorJson =
                                 current.toVeilPersistedJson(opened.format),
-                            targetHref = targetHref
+                            targetHref = targetHref,
+                            reason = ReaderNavigationReason.TABLE_OF_CONTENTS
                         )
                         if (
                             nav.go(
@@ -3911,8 +4114,7 @@ fun ReaderScreen(
             },
             onSaveNote = onSaveNote@{ id, note ->
                 val expectedSessionId = readerSessionInstanceId
-                library.updateHighlightNote(id, note)
-                library.flushWrites()
+                check(library.updateHighlightNote(id, note)) { "The saved passage was removed." }
                 if (
                     !readerAsyncResultBelongsToSession(
                         currentSessionInstanceId = latestReaderSessionInstanceId.value,
@@ -3925,8 +4127,33 @@ fun ReaderScreen(
                 onSensoryEvent(VeilSensoryEvent.NOTE)
                 readerMessage = noteSavedMessage
             },
-            onDeleteHighlight = library::deleteHighlight,
-            onDeleteBookmark = library::deleteBookmark
+            onDeleteHighlight = { id ->
+                scope.launch {
+                    try { library.deleteHighlight(id) }
+                    catch (cancelled: CancellationException) { throw cancelled }
+                    catch (_: Exception) {
+                        if (latestReaderSessionInstanceId.value == readerSessionInstanceId) {
+                            readerMessage = activity.getString(R.string.notice_highlight_delete_failed)
+                        }
+                    }
+                }
+            },
+            onDeleteBookmark = { id ->
+                val expectedSessionId = readerSessionInstanceId
+                scope.launch {
+                    try {
+                        library.deleteBookmark(id)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        if (readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) readerMessage = bookmarkDeleteFailedMessage
+                    }
+                }
+            }
             )
         }
     }
@@ -4014,6 +4241,7 @@ fun ReaderScreen(
             }
         val previewProblem by previewProblemSource.collectAsStateWithLifecycle()
         val checkpointSource = ttsServiceController?.checkpoint
+            ?: foregroundTtsCheckpoint?.checkpoint
             ?: remember {
                 kotlinx.coroutines.flow.MutableStateFlow<ReaderTtsCheckpoint?>(null)
             }
@@ -4022,6 +4250,7 @@ fun ReaderScreen(
             it.request.bookId == opened.book.id
         }
         val sleepDeadlineSource = ttsServiceController?.sleepDeadlineEpochMs
+            ?: ttsSession?.sleepDeadlineEpochMs
             ?: remember { kotlinx.coroutines.flow.MutableStateFlow<Long?>(null) }
         val sleepDeadlineEpochMs by sleepDeadlineSource.collectAsStateWithLifecycle()
 
@@ -4042,7 +4271,7 @@ fun ReaderScreen(
             ReaderListeningMode(
                 book = opened.book,
                 state = speechState,
-                activeText = activeSegmentText,
+                activeText = activeSegmentText ?: speechState.activeText,
                 supported = ttsSession != null || ttsServiceController != null,
                 settings = speechSettingsState.value,
                 startPending = ttsStartPending,
@@ -4055,7 +4284,11 @@ fun ReaderScreen(
                 previewProblem = previewProblem,
                 sleepDeadlineEpochMs = sleepDeadlineEpochMs,
                 onSetSleepTimer = { minutes ->
-                    ttsServiceController?.setSleepTimer(minutes)
+                    if (ttsServiceController != null) {
+                        ttsServiceController.setSleepTimer(minutes)
+                    } else {
+                        ttsSession?.setSleepTimer(minutes)
+                    }
                 },
                 listeningPositionAvailable = activeListeningCheckpoint != null,
                 onSyncListeningPosition = {
@@ -4085,7 +4318,8 @@ fun ReaderScreen(
                             val token = beginProgrammaticNavigation(
                                 originLocatorJson =
                                     origin.toVeilPersistedJson(opened.format),
-                                targetIdentity = targetIdentity
+                                targetIdentity = targetIdentity,
+                                reason = ReaderNavigationReason.LISTENING_POSITION
                             )
                             if (
                                 nav.go(
@@ -4444,7 +4678,7 @@ private data class ReaderFootnote(
     val text: String
 )
 
-internal enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
+internal enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM, SEARCH }
 
 @Composable
 internal fun ReaderChromeButton(
@@ -4526,6 +4760,14 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
         val w = size.width
         val h = size.height
         when (action) {
+            ReaderAction.SEARCH -> {
+                drawCircle(color = tint, radius = w * 0.27f,
+                    center = Offset(w * 0.43f, h * 0.42f), style = stroke)
+                drawLine(color = tint,
+                    start = Offset(w * 0.64f, h * 0.64f),
+                    end = Offset(w * 0.84f, h * 0.84f),
+                    strokeWidth = stroke.width, cap = StrokeCap.Round)
+            }
             ReaderAction.BACK -> {
                 val tipX = if (layoutDirection == LayoutDirection.Rtl) {
                     w * .66f
@@ -5100,6 +5342,13 @@ internal fun EpubAppearancePanel(
                     )
                 }
             )
+            if (capabilities.columnsEditable) {
+                Text(
+                    stringResource(R.string.reader_columns_adaptive_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
                 Text(
                     stringResource(R.string.reader_columns_paged_only),

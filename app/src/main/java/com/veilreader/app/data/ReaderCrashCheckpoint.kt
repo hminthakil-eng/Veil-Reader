@@ -68,7 +68,16 @@ internal class ReaderCrashCheckpointStore(
             val output = atomic.startWrite()
             try {
                 output.write(bytes)
+                // AtomicFile logs some fsync/rename failures instead of throwing. Require an
+                // observable sync and the complete new base record before durable acknowledgement.
+                output.fd.sync()
                 atomic.finishWrite(output)
+                val committed = atomic.openRead().use {
+                    readBoundedReaderCheckpoint(it, MAX_RECORD_BYTES)
+                }
+                check(committed?.contentEquals(bytes) == true) {
+                    "Reader crash checkpoint was not committed."
+                }
             } catch (error: Throwable) {
                 atomic.failWrite(output)
                 throw error

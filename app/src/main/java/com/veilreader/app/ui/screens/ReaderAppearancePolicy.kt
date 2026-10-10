@@ -4,6 +4,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderReadingMode
+import com.veilreader.app.domain.ReaderNavigationMode
 
 /**
  * Pure Reader appearance/capability policy.
@@ -31,6 +32,24 @@ internal fun applyMaterialPageRolloutToAppearance(
 
         else -> appearance
     }
+
+/**
+ * Single source of truth for Paper's visual host and input ownership.
+ *
+ * A paged reflowable EPUB is the only publication type with a per-leaf GPU
+ * snapshot contract. A fixed-layout spread must not acquire Paper gestures
+ * until it supports independent leaves. The release rollout remains gated.
+ */
+internal fun shouldMountPaperCurlRuntime(
+    format: BookFormat,
+    fixedLayout: Boolean,
+    appearance: ReaderAppearance,
+    materialPageEnabled: Boolean
+): Boolean =
+    materialPageEnabled &&
+        format == BookFormat.EPUB &&
+        !fixedLayout &&
+        appearance.navigationMode == ReaderNavigationMode.PAPER_CURL
 
 internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
@@ -115,4 +134,31 @@ internal fun usesCjkReaderTypography(languageTag: String?): Boolean {
         ?.lowercase(java.util.Locale.ROOT)
         .orEmpty()
     return primary in setOf("zh", "ja", "ko")
+}
+
+
+internal enum class ReaderTransitionUnavailableReason {
+    PAPER_ROLLOUT_DISABLED,
+    FIXED_LAYOUT_LEAF_UNSUPPORTED
+}
+
+/** Explains a capability remap without changing the user's requested preference. */
+internal fun readerTransitionUnavailableReason(
+    appearance: ReaderAppearance,
+    format: BookFormat,
+    fixedLayout: Boolean,
+    materialPageEnabled: Boolean
+): ReaderTransitionUnavailableReason? {
+    if (format != BookFormat.EPUB) return null
+    val mode = appearance.navigationMode
+    if (fixedLayout && mode in setOf(
+            ReaderNavigationMode.PAPER_CURL,
+            ReaderNavigationMode.SLIDE,
+            ReaderNavigationMode.SCROLL
+        )
+    ) return ReaderTransitionUnavailableReason.FIXED_LAYOUT_LEAF_UNSUPPORTED
+    if (!materialPageEnabled && mode == ReaderNavigationMode.PAPER_CURL) {
+        return ReaderTransitionUnavailableReason.PAPER_ROLLOUT_DISABLED
+    }
+    return null
 }

@@ -115,9 +115,9 @@ internal class PaperCurlState {
 
     internal fun usingMaterialEngine(): Boolean = active
 
-    suspend fun prepareSnapshot(view: View): Boolean {
+    suspend fun prepareSnapshot(view: View, isSourceCurrent: () -> Boolean = { true }): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        return materialEngine.prepareSnapshot(view)
+        return materialEngine.prepareSnapshot(view, isSourceCurrent)
     }
 
     fun invalidateSnapshotSource() {
@@ -248,10 +248,12 @@ internal fun PaperCurlOverlay(
     }
 
     val presentedEpoch by state.materialEngine.presentedSheetEpoch.collectAsState()
-    Box(modifier = modifier) {
+    // A nested GLTextureView must not occlude Readium's native touch recipient.
+    // Share sibling hit-testing at the full visual overlay boundary.
+    Box(modifier = modifier.readerVisualOnlyInput()) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
             onRendererStatus = state::updateRendererStatus
         )
 

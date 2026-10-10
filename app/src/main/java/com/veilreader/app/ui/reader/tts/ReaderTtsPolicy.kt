@@ -106,6 +106,7 @@ internal enum class ReaderTtsProblem {
     AUDIO_FOCUS,
     SYNTHESIS,
     CONTENT,
+    STORAGE,
     TIMEOUT
 }
 internal enum class ReaderTtsPhase { STOPPED, PREPARING, PLAYING, PAUSED, ENDED, FAILED, CLOSED }

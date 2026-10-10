@@ -24,7 +24,8 @@ data class ReaderUiState(
     val progress: Float = 0f,
     val activeMillis: Long = 0L,
     val sessionStartProgress: Float = 0f,
-    val sessionProgressDelta: Float = 0f
+    val sessionProgressDelta: Float = 0f,
+    val progressSaveFailed: Boolean = false
 )
 
 /**
@@ -298,12 +299,17 @@ class ReaderViewModel(
             return null
         }
 
+        val countsPageTurn = locatorDeduplicator.countsPageTurnFor(locationKey, event)
         if (!event.countsPageTurn) {
             current.resetReadingPaceAnchor()
             lastPaceProgression = null
         }
 
-        if (!locatorDeduplicator.acceptCommit(locationKey)) {
+        if (!locatorDeduplicator.acceptCommit(
+                locationKey,
+                retryDurability = _uiState.value.progressSaveFailed && event.bypassProgressDebounce,
+                requireDurability = event.bypassProgressDebounce
+            )) {
             ReaderTrace.event(
                 "locator_duplicate_commit_ignored",
                 bookId = bookId,
@@ -315,22 +321,11 @@ class ReaderViewModel(
 
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
 
-        if (event.countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
-            val previous = lastPaceProgression
-            lastPaceProgression = progression.takeIf { it.isFinite() && it in 0.0..1.0 }
-            current.recordPacedPageTurn()?.let { interval ->
-                normalizedReadingPaceInterval(
-                    interval, previous, progression,
-                    library.books.value.firstOrNull { it.id == bookId }?.totalPages ?: 0
-                )?.let { calibrated -> library.recordReadingPaceInterval(bookId, calibrated) }
-            }
-        }
-
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
         val sequence = ++locatorSequence
         ReaderTrace.event(
-            "locator_committed",
+            "locator_commit_requested",
             bookId = bookId,
             sessionId = current.sessionId,
             details = "seq=$sequence progress=$safe event=$event"
@@ -352,6 +347,10 @@ class ReaderViewModel(
             bypassDebounce = event.bypassProgressDebounce
         )
         if (!saveOutcome.accepted) {
+            locatorDeduplicator.rejectCommit(locationKey)
+            if (!saveOutcome.crashCheckpointDurable) {
+                _uiState.value = _uiState.value.copy(progressSaveFailed = true)
+            }
             ReaderTrace.event(
                 "locator_save_rejected",
                 bookId = bookId,
@@ -359,6 +358,22 @@ class ReaderViewModel(
                 details = "epoch=${writerLease.epoch} seq=$sequence event=$event"
             )
             return null
+        }
+        ReaderTrace.event(
+            "locator_committed",
+            bookId = bookId,
+            sessionId = current.sessionId,
+            details = "seq=$sequence progress=$safe event=$event"
+        )
+        if (countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
+            val previous = lastPaceProgression
+            lastPaceProgression = progression.takeIf { it.isFinite() && it in 0.0..1.0 }
+            current.recordPacedPageTurn()?.let { interval ->
+                normalizedReadingPaceInterval(
+                    interval, previous, progression,
+                    library.books.value.firstOrNull { it.id == bookId }?.totalPages ?: 0
+                )?.let { calibrated -> library.recordReadingPaceInterval(bookId, calibrated) }
+            }
         }
         ReaderTrace.event(
             "locator_save_enqueued",
@@ -371,7 +386,8 @@ class ReaderViewModel(
         _uiState.value = _uiState.value.copy(
             progress = safe,
             activeMillis = current.activeMillis,
-            sessionProgressDelta = (safe - sessionStart).coerceIn(-1f, 1f)
+            sessionProgressDelta = (safe - sessionStart).coerceIn(-1f, 1f),
+            progressSaveFailed = if (event.bypassProgressDebounce) false else _uiState.value.progressSaveFailed
         )
         persistSession()
         return ReaderLocatorCommit(sequence, locatorJson, safe)

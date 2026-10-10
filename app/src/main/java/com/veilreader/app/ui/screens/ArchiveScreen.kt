@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalConfiguration
@@ -50,6 +52,8 @@ import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.NumberFormat
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
 internal enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
@@ -77,7 +81,7 @@ fun ArchiveScreen(
     passageVisits: List<PassageVisit>,
     onClose: () -> Unit,
     onOpenPassage: (Book, String) -> Unit,
-    onSaveNote: (String, String) -> Unit,
+    onSaveNote: suspend (String, String) -> Unit,
     onDeleteHighlight: (String) -> Unit,
     onDeleteBookmark: (String) -> Unit
 ) {
@@ -95,7 +99,7 @@ internal fun ArchiveRecordContent(
     passageVisits: List<PassageVisit>,
     onClose: () -> Unit,
     onOpenPassage: (Book, String) -> Unit,
-    onSaveNote: (String, String) -> Unit,
+    onSaveNote: suspend (String, String) -> Unit,
     onDeleteHighlight: (String) -> Unit,
     onDeleteBookmark: (String) -> Unit,
     initialSection: NotebookSection = NotebookSection.NOTES
@@ -104,6 +108,9 @@ internal fun ArchiveRecordContent(
     var selectedSectionName by rememberSaveable { mutableStateOf(initialSection.name) }
     var editingHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var noteDraft by rememberSaveable { mutableStateOf("") }
+    var noteSaving by remember { mutableStateOf(false) }
+    var noteSaveFailed by remember(editingHighlightId) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteBookmarkId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedCapsuleSealCode by rememberSaveable { mutableStateOf<String?>(null) }
@@ -507,11 +514,13 @@ internal fun ArchiveRecordContent(
     editingHighlightId?.let { highlightId ->
         Dialog(
             onDismissRequest = {
-                editingHighlightId = null
-                noteDraft = ""
+                if (!noteSaving) {
+                    editingHighlightId = null
+                    noteDraft = ""
+                }
             },
             properties = DialogProperties(
-                dismissOnBackPress = true,
+                dismissOnBackPress = !noteSaving,
                 dismissOnClickOutside = false,
                 usePlatformDefaultWidth = false
             )
@@ -560,6 +569,7 @@ internal fun ArchiveRecordContent(
                             BrassRule(Modifier.fillMaxWidth())
                             OutlinedTextField(
                                 value = noteDraft,
+                                enabled = !noteSaving,
                                 onValueChange = { noteDraft = it },
                                 placeholder = {
                                     Text(stringResource(R.string.archive_note_hint))
@@ -568,11 +578,19 @@ internal fun ArchiveRecordContent(
                                 maxLines = 8,
                                 modifier = Modifier.fillMaxWidth()
                             )
+                            if (noteSaveFailed) {
+                                Text(
+                                    stringResource(R.string.notice_note_save_failed),
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                                )
+                            }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                             ) {
                                 OutlinedButton(
+                                    enabled = !noteSaving,
                                     onClick = {
                                         editingHighlightId = null
                                         noteDraft = ""
@@ -585,10 +603,22 @@ internal fun ArchiveRecordContent(
                                     Text(stringResource(R.string.common_cancel))
                                 }
                                 Button(
+                                    enabled = !noteSaving,
                                     onClick = {
-                                        onSaveNote(highlightId, noteDraft)
-                                        editingHighlightId = null
-                                        noteDraft = ""
+                                        val requestedNote = noteDraft
+                                        noteSaving = true
+                                        noteSaveFailed = false
+                                        scope.launch {
+                                            try {
+                                                onSaveNote(highlightId, requestedNote)
+                                                editingHighlightId = null
+                                                noteDraft = ""
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (_: Exception) {
+                                                noteSaveFailed = true
+                                            } finally { noteSaving = false }
+                                        }
                                     },
                                     modifier = Modifier
                                         .weight(1f)
@@ -599,7 +629,7 @@ internal fun ArchiveRecordContent(
                                         contentColor = Color(0xFF17120A)
                                     )
                                 ) {
-                                    Text(stringResource(R.string.common_save))
+                                    Text(stringResource(if (noteSaving) R.string.reader_notebook_saving else R.string.common_save))
                                 }
                             }
                         }

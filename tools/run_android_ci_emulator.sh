@@ -2,6 +2,7 @@
 set -euo pipefail
 
 MODE="${1:-}"
+VEIL_TEST_APPLICATION_ID="${VEIL_TEST_APPLICATION_ID:-com.veilreader.app}"
 case "$MODE" in
   storage|performance|durability) ;;
   *) echo "Usage: $0 {storage|performance|durability}" >&2; exit 2 ;;
@@ -45,10 +46,10 @@ cleanup() {
   # Only the inert Compose review directory; never export publication/history files.
   # Preserve the original test exit code even when optional capture collection fails.
   if [[ "$MODE" == "storage" ]] &&
-     "$ADB" -s "$SERIAL" shell run-as com.veilreader.app test -d files/grayfog-review >/dev/null 2>&1; then
-    if "$ADB" -s "$SERIAL" exec-out run-as com.veilreader.app \
+     "$ADB" -s "$SERIAL" shell run-as "$VEIL_TEST_APPLICATION_ID" test -d files/grayfog-review >/dev/null 2>&1; then
+    if "$ADB" -s "$SERIAL" exec-out run-as "$VEIL_TEST_APPLICATION_ID" \
         tar -C files -cf - grayfog-review >build/reports/grayfog-review.tar; then
-      echo "Saved production Compose review captures: build/reports/grayfog-review.tar"
+      echo "Saved Compose review captures: build/reports/grayfog-review.tar"
     else
       rm -f build/reports/grayfog-review.tar
       echo "Optional Grayfog capture collection failed; test status remains $status." >&2
@@ -200,8 +201,8 @@ case "$MODE" in
     run_gradle :app:installDebug --stacktrace
     assert_emulator_alive
 
-    PACKAGE="com.veilreader.app"
-    COMPONENT="${PACKAGE}/.debug.ReaderDurabilityProbeActivity"
+    PACKAGE="$VEIL_TEST_APPLICATION_ID"
+    COMPONENT="${PACKAGE}/com.veilreader.app.debug.ReaderDurabilityProbeActivity"
     RESULT_FILE="files/reader-durability-probe-result.txt"
     REPLAY_GUARD_FILE="files/reader-durability-probe-replay-guard.txt"
     REPORT="build/reports/reader-durability-fault-injection.txt"
@@ -364,7 +365,7 @@ case "$MODE" in
       echo "PASS scenario=$scenario cycle=$cycle event=$event expected=$expected" >>"$REPORT"
     }
 
-    # 6 scenarios x 18 default cycles = 108 self-SIGKILL samples on each exact SHA.
+    # 8 scenarios x 18 default cycles = 144 self-SIGKILL samples on each exact SHA.
     for cycle in $(seq 1 "$CYCLES"); do
       run_durability_case page-forward page 0.20 0.21 destination "$cycle"
       run_durability_case page-backward page 0.60 0.59 destination "$cycle"
@@ -372,6 +373,8 @@ case "$MODE" in
       run_durability_case paper-preview-cancel preview 0.40 0.41 origin "$cycle"
       run_durability_case jump-commit jump 0.50 0.75 destination "$cycle"
       run_durability_case final-snapshot final 0.80 0.81 destination "$cycle"
+      run_durability_case scroll-final-snapshot scroll-final 0.10 0.12 destination "$cycle"
+      run_durability_case opening-final-snapshot opening-final 0.15 0.16 destination "$cycle"
     done
 
     {

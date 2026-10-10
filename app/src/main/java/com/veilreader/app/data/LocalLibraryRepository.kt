@@ -59,6 +59,11 @@ import kotlinx.coroutines.withContext
  * share one queue so progress, annotations, derived metadata and backup snapshots have deterministic
  * ordering.
  */
+internal data class SelectionHighlightCommit(
+    val highlight: Highlight,
+    val created: Boolean
+)
+
 internal data class SelectionNoteCommit(
     val highlight: Highlight,
     val created: Boolean
@@ -211,27 +216,34 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean {
-        if (_bookmarks.value.any { it.bookId == bookId && it.locatorJson == locatorJson }) return false
-        val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
-        _bookmarks.value = listOf(bookmark) + _bookmarks.value
-        enqueue { database.bookmarks().upsert(bookmark.toEntity()) }
-        return true
-    }
-
-    fun deleteBookmark(id: String) {
-        _bookmarks.value = _bookmarks.value.filterNot { it.id == id }
-        enqueue { database.bookmarks().deleteById(id) }
-    }
-
-    fun updateHighlightNote(id: String, note: String) {
-        val cleanNote = note.trim()
-        _highlights.value.firstOrNull { it.id == id }?.copy(note = cleanNote)?.let { updated ->
-            _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
+    /**
+     * Acknowledges only a committed Room write. Duplicate detection uses durable state inside the
+     * ordered transaction, so rapid taps and stale observer snapshots cannot create duplicates.
+     * Room's observer publishes the result; failure must never create a phantom cached bookmark.
+     */
+    suspend fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean =
+        orderedWrite {
+            database.withTransaction {
+                if (database.bookmarks().findByBookAndLocator(bookId, locatorJson) != null) {
+                    return@withTransaction false
+                }
+                val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
+                database.bookmarks().upsert(bookmark.toEntity())
+                true
+            }
         }
-        enqueue {
-            val persisted = database.highlights().findById(id)?.toDomain() ?: return@enqueue
-            database.highlights().upsert(persisted.copy(note = cleanNote).toEntity())
+
+    suspend fun deleteBookmark(id: String) {
+        // Keep the visible record until Room commits, including when deletion fails.
+        orderedWrite { database.bookmarks().deleteById(id) }
+    }
+
+    suspend fun updateHighlightNote(id: String, note: String): Boolean = orderedWrite {
+        database.withTransaction {
+            val persisted = database.highlights().findById(id)?.toDomain()
+                ?: return@withTransaction false
+            database.highlights().upsert(persisted.copy(note = note.trim()).toEntity())
+            true
         }
     }
 
@@ -521,6 +533,13 @@ class LocalLibraryRepository internal constructor(
                 )
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
+            if (!saveResult.crashCheckpointDurable) {
+                return@synchronized ReaderProgressSaveOutcome(
+                    accepted = false,
+                    crashCheckpointDurable = false,
+                    crashCheckpointLatencyNanos = saveResult.crashCheckpointLatencyNanos
+                )
+            }
             latestReaderProgressOrderByBook[lease.bookId] = order
             ReaderProgressSaveOutcome(
                 accepted = true,
@@ -655,6 +674,15 @@ class LocalLibraryRepository internal constructor(
             )
         }
 
+        // A semantic commit may not escape into the cache/Room queue if the journal
+        // failed. Keep the previous accepted position and ordering so this save can retry.
+        if (!crashCheckpointDurable) {
+            return ProgressSaveResult(
+                newlyFinished = false,
+                crashCheckpointDurable = false,
+                crashCheckpointLatencyNanos = crashCheckpointLatencyNanos
+            )
+        }
         latestProgressTimestampByBook[id] = committedAtEpochMs
         replaceBookCached(updated)
         val crossedMilestones = crossedReadingMilestones(
@@ -688,23 +716,26 @@ class LocalLibraryRepository internal constructor(
         )
     }
 
-    fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight {
+    suspend fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight =
+        commitSelectionHighlight(bookId, quote, locatorJson).highlight
+
+    /** Duplicate authority and acknowledgement both come from the ordered Room transaction. */
+    internal suspend fun commitSelectionHighlight(
+        bookId: String, quote: String, locatorJson: String
+    ): SelectionHighlightCommit = orderedWrite {
         val cleanQuote = quote.trim()
-        _highlights.value.firstOrNull {
-            it.id !in deletedHighlightIds &&
-                it.bookId == bookId &&
-                it.locatorJson == locatorJson &&
-                it.quote == cleanQuote
-        }?.let { return it }
-        val record = Highlight(
-            id = UUID.randomUUID().toString(),
-            bookId = bookId,
-            quote = cleanQuote,
-            locatorJson = locatorJson
-        )
-        _highlights.value = listOf(record) + _highlights.value
-        enqueue { database.highlights().upsert(record.toEntity()) }
-        return record
+        require(bookId.isNotBlank() && cleanQuote.isNotBlank() && locatorJson.isNotBlank())
+        database.withTransaction {
+            val existing = database.highlights()
+                .findByBookLocatorAndQuote(bookId, locatorJson, cleanQuote)?.toDomain()
+            if (existing != null) return@withTransaction SelectionHighlightCommit(existing, false)
+            val record = Highlight(
+                id = UUID.randomUUID().toString(), bookId = bookId,
+                quote = cleanQuote, locatorJson = locatorJson
+            )
+            database.highlights().upsert(record.toEntity())
+            SelectionHighlightCommit(record, true)
+        }
     }
 
     /**
@@ -918,11 +949,13 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun deleteHighlight(id: String) {
+    suspend fun deleteHighlight(id: String) {
         if (id.isBlank()) return
-        deletedHighlightIds += id
+        orderedWrite {
+            database.highlights().deleteById(id)
+            deletedHighlightIds += id
+        }
         _highlights.value = _highlights.value.filterNot { it.id == id }
-        enqueue { database.highlights().deleteById(id) }
     }
 
     /**

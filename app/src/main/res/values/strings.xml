@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="reader_progress_save_failed">Your new reading position could not be saved. Free some device storage, then turn a page or try closing the book again.</string>
+    <string name="reader_columns_adaptive_hint">Two columns appear when there is enough room for your text size. Narrow windows and large text use one column; your preference is kept.</string>
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">Reading</string>
     <string name="nav_library">Library</string>
@@ -187,6 +189,18 @@
     <string name="reader_mark">Mark</string>
     <string name="reader_type">Type</string>
     <string name="reader_zoom">Zoom</string>
+    <string name="reader_chrome_search">Search</string>
+    <string name="reader_search_title">Search this book</string>
+    <string name="reader_search_query">Words or phrase</string>
+    <string name="reader_search_submit">Find in book</string>
+    <string name="reader_search_loading">Searching this book…</string>
+    <string name="reader_search_invalid">Enter 1–128 characters.</string>
+    <string name="reader_search_unsupported">Search is not available for this book format.</string>
+    <string name="reader_search_failed">Book search failed. Try another phrase.</string>
+    <string name="reader_search_too_broad">Too many matches. Try a longer phrase.</string>
+    <string name="reader_search_empty">No matches in this book.</string>
+    <string name="reader_search_result">Match %1$d</string>
+    <string name="reader_search_more">Load more matches</string>
     <string name="reader_chrome_notebook">Notebook</string>
     <string name="reader_chrome_bookmark">Bookmark</string>
     <string name="reader_menu_auto_hide">Automatically hide reading menu</string>
@@ -1419,4 +1433,10 @@
     <string name="reader_paper_presentation_failed">The paper turn could not be displayed. Try again or use Slide.</string>
     <string name="reader_paper_renderer_unavailable">Paper animation is unavailable right now. Simple paging still works; you can use Slide.</string>
     <string name="reader_paper_use_slide">Use Slide</string>
+    <string name="reader_bookmark_save_failed">Couldn’t save the bookmark. Your saved bookmarks are unchanged.</string>
+    <string name="reader_bookmark_delete_failed">Couldn’t remove the bookmark. It is still saved.</string>
+    <string name="reader_paper_rollout_unavailable">Paper animation is unavailable in this version. Using simple paging; your saved preference is unchanged.</string>
+    <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
+    <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
+    <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
 </resources>

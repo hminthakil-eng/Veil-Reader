@@ -1,0 +1,141 @@
+# Veil Reader S24 Ultra verification
+
+Target phone reported by user: Galaxy S24 Ultra.
+Connection: user will install APK and test manually; no remote connection established.
+Latest verified APK: `VeilReader-ForgeQA-38a6bf10.apk`, version `0.10.0-forge-38a6bf10`.
+Executable source: 38a6bf10b0f57189e03ee72f84ad655057a56da0.
+APK SHA-256: 796291c81ec9be4b6e7b1d3196cd0dcb4dbbc8f4734a9ce8090fe7be166befbb.
+Build artifact: Forge QA38027688503 / artifact11660629953.
+APK artifact: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38027688503/artifacts/11660629953.
+Automated evidence: 1010 unit tests and175 instrumented tests pass;108 abrupt-process samples pass.
+Release APK/AAB compilation/archive verification and performance smoke/profile budgets pass.
+This is a debug test APK; physical acceptance is still UNVERIFIED.
+Android/One UI version, model variant, observed refresh rate: not recorded.
+Status: UNVERIFIED. This document is a test protocol, not test results.
+
+Install this separate Forge QA app as an update to existing Forge QA; keep the original Veil app and data. GitHub login and ZIP extraction are required. Its v2 signature independently matches the pinned QA certificate. This APK includes the atomic-checkpoint failure/retry fix. Later final-snapshot integration and deduplication rollback changes are still undergoing combined CI and are not in this APK.
+
+Use the exact-head debug APK only after automated checks pass. Do not substitute
+an older APK or call the debug-only Paper review a release-enabled capability.
+
+## First verification: current Wave 1 changes
+
+1. Import a real reflowable EPUB. Open it, move to a recognizable sentence and
+   create a bookmark. Confirm “saved” appears. Immediately force-stop Veil from
+   Android App info, reopen the book and return to the bookmark. The saved
+   sentence/locator must match. Record each result, not just “app opened.”
+2. Tap Bookmark repeatedly at the same location. Notebook must contain exactly
+   one bookmark, with one successful creation and explicit duplicate feedback.
+   Repeat after reopening the app.
+3. Delete that bookmark from Reader Notebook. Once it disappears, force-stop and
+   reopen. It must remain deleted. Repeat using Archive deletion.
+4. Select text, dismiss and immediately select different text. Open and close
+   Notebook/appearance overlays. Selection must block accidental page-turn
+   routing while its current toolbar is active, and navigation must work when
+   the current toolbar closes. Test touch and TalkBack separately.
+5. With an existing saved Paper preference and Paper unavailable, opening a
+   publication must explain actual simple paging. Dismissing the notice must
+   not change the saved preference or cause persistent notices. A fixed-layout
+   EPUB requested as Paper/Slide/Scroll must explain its static mode.
+
+Storage rejection is covered by SQLite-trigger instrumentation; do not fill or
+damage the user's phone storage to reproduce it. Real device actions above verify
+integration and lifecycle behavior but do not replace deterministic fault tests.
+
+## Physical acceptance after the above
+
+- Display: Standard then Adaptive motion smoothness; record observed refresh rate.
+- Reader: portrait/landscape, ordinary and accessibility-large font, Paper/Night.
+- Language: actual Persian/Arabic EPUB plus mixed Persian-English content.
+- TalkBack: Bookmark, saved/failure message, Notebook return/remove, selection;
+  logical focus must survive opening/dismissing each overlay.
+- Paper debug review: first turn, slow drag, cancel, reverse, 100 uninterrupted
+  alternating turns, rotation, background/foreground. Record optical behavior
+  separately from frame traces. Release GPU gate remains disabled.
+- System TTS: audible first utterance, pause/resume, next/previous, language voice
+  routing, headphone/Bluetooth interruption and position restoration. Background
+  and neural review do not earn release promotion without their full acceptance.
+- PDF: representative large and RTL documents, zoom/pan/links/search, rotation,
+  resume; authored markup remains unavailable.
+
+## Results template
+
+| Test | Build/APK hash | Phone/OS | Settings | Observed result | Evidence | Status |
+|---|---|---|---|---|---|---|
+| Bookmark create → process stop → resume | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| Rapid duplicate bookmarks | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| Reader + Archive delete → process stop | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| Selection replacement + input ownership | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| Unavailable transition explanation | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| TalkBack / RTL / large font | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| Paper physical / memory / battery | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+| Audible system/background/neural TTS | Pending | S24 Ultra / unknown | Pending | Not executed | None | UNVERIFIED |
+
+## Next P0 build —3539c9c9 (not the historical APK above)
+
+Behavior batch3539 passed980 units,165 Android tests and36 abrupt-process
+samples. Its normal debug APK cannot update the historical06a installation
+because the signing certificate differs. Use the separate Forge QA delivery
+below for manual testing; do not uninstall the existing Veil app. User feedback on that previous
+build was “nothing changed”; the cover screenshot does not validate text/turning.
+
+- Open an actual text chapter. In Appearance, test Auto/Two columns in portrait,
+  landscape, split screen, maximum Veil font size and Android large text. Narrow
+  or large-text layouts should use one column and preserve the saved preference;
+  returning to eligible width should restore it. PDF/fixed-layout should be unchanged.
+- Open Listening Mode with default foreground/system TTS. Its active semantic text
+  should be visible. Select10 minutes: the timer should show active immediately,
+  continue without restarting the current utterance and pause at expiry. Replace
+  with15, or choose Off, to test cancellation without restarting playback.
+- Open a search result/highlight later in the same chapter/position chunk; the
+  navigator should receive the precise target. Identical positions remain no-ops.
+- Paper review: background during idle/visual preparation, return, cancel/commit
+  first turn; repeat. It must preserve ownership and prepare current pixels on
+  resume. A manual visual check is not memory/frame/battery proof.
+- Storage failure feedback and blocked successful close require a safe injected
+  test environment; do not deliberately fill the personal phone's storage.
+
+Physical status for every new item remains UNVERIFIED.
+
+## Delivery correction — use Forge QA, not the3539 normal debug APK
+
+Both normal debug APK signatures verify, but the06a and3539 signing certificates
+differ. Android cannot update the former installation with the latter. Preserve
+the existing Veil app and its data. A separately installed **Veil Reader Forge QA**
+(com.veilreader.app.forgeqa) is building; it has its own library/permissions and a
+source-suffixed version. Import one test publication into that app.
+
+- [Download verified Forge QA artifact](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693/artifacts/11547406062). GitHub login is required;
+  unzip and install `VeilReader-ForgeQA-efa3fb20.apk`. Retention14 days.
+- Version `0.10.0-forge-efa3fb20`, source `efa3fb207954ec9468f5e6c37b6c69cc9ecdf741`.
+- APK SHA-256 `e45956c76cd3720a12e7a1035ccf3ae91c92d6a3d0563c1543f808e1b2632449`; included SHA256SUMS independently checked.
+- [QA CI](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37768309693):980 units/170 suites,165 Android tests, zero failures/errors/skips;
+  lint0 errors/174 warnings. Actual SAF import/open/rotation passed.
+- Android v2 signature verified by runner apksigner and independently by Google
+  apksig8.7.3. Public certificate SHA-256 is pinned in
+  `quality/forge-qa-signing-cert.sha256`; key cache saved successfully. Restore
+  from cache and future update installation remain unverified.
+
+No uninstall or production-data migration is required for this test installation.
+
+## Verified delivery — a67586cf, 2026-10-10
+
+This supersedes the older efa3fb20 test artifact above.
+
+- [Download Forge QA ZIP](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/37878688504/artifacts/11594068417), sign into GitHub, extract and install `VeilReader-ForgeQA-a67586cf.apk`.
+- App label: **Veil Reader Forge QA**. Version: `0.10.0-forge-a67586cf`.
+- Source: `a67586cfa54122b60f04c1acc47265a68c07b2ff`.
+- APK SHA-256: `4d4c3b6fb024dbd5524c28efbff51ab9da5022cf5894522d16b54d8236b48b98`.
+- Independent Google apksig verification: valid v2 signature; same pinned QA certificate `94ad4e5da523b1af8383c3e5d49e4713b22a3fd867b0bb3111f906422ad53e8c`.
+- QA CI: 1009 unit tests / 174 suites and 174 Android tests; zero failures/errors/skips. Physical S24 Ultra verification remains pending.
+
+Install as an update to the existing **Forge QA** app. Keep the separate original Veil installation and its data. This APK contains annotation acknowledgement, durable note editing/deletion, selection ownership fencing, foreground TTS checkpoint restoration and navigation/input corrections. It does not contain the later atomic-checkpoint acknowledgement fix (38a6bf10), pending CI, or the separate visual-foundation/Paper-release PRs.
+
+Test these concrete differences in a text chapter:
+
+1. Create a highlight and attached note. Once saved, immediately force-stop through App info, reopen and confirm both at the original quote. Delete the highlight, force-stop and confirm it stays deleted. Repeat note editing/deletion through Archive.
+2. Start system TTS in this QA app. Pause after a recognizable sentence, force-stop and reopen the same publication. Listening position should restore paused; it must not autoplay. The current implementation retains the last listened publication, not independent checkpoints for every book.
+3. Select text, immediately dismiss/reselect elsewhere, then use selection tools. The newer selection must remain the owner; closing an old toolbar must not clear it.
+4. Explore via search/TOC, return to reading and check that temporary exploration did not replace the reading anchor. Also report immediate closing after scroll; the extra same-location final-snapshot correction in PR 446 is still under verification.
+
+Record version and observed outcomes. Cover-page appearance alone cannot verify these behavioral changes. Release feature gates remain disabled and no physical performance improvement is claimed.

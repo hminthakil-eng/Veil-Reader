@@ -66,6 +66,19 @@ grep -q 'paper.gpu.texture_upload' "$gpu" ||
 grep -q 'PageTurnStyle.PAPER' "$benchmark_activity" ||
   fail "benchmark Reader is not exercising canonical Paper"
 
+# A selected Paper gesture must never be re-routed to StaticPaged/native when
+# its renderer is unavailable. That substitution was the root of reports that
+# Paper was actually a slide despite the user's PAPER selection.
+reader="app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt"
+[ -f "$reader" ] || fail "Reader screen input owner is missing"
+if grep -n 'paperNeedsStaticFallback' "$reader"; then
+  fail "Paper availability must never enable StaticPaged or directional fallback"
+fi
+grep -Fq 'paperListener?.performDiscreteTurn(direction) == true' "$reader" ||
+  fail "Paper semantic actions no longer dispatch to the exclusive Paper owner"
+grep -Fq 'paperRendererCanReserveDrag' "$reader" ||
+  fail "Paper drag reservation is missing from the Reader input owner"
+
 grep -q 'awaitSheetPresented' "$input" || fail "Paper navigation lost the acquired-buffer barrier"
 grep -q 'eglPresentationTimeANDROID' "$gpu" || fail "Paper acquired-buffer timestamp correlation is missing"
 grep -q 'gpuMaterialSheetPresentationMatches' "$gpu" || fail "Paper presentation context/viewport fencing is missing"

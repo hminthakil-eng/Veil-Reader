@@ -5,6 +5,146 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderLocatorPolicyTest {
+    @Test
+    fun failedSameLocationDurabilityUpgradePreservesPriorLocationAndCanRetry() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("opening"))
+        assertTrue(gate.acceptCommit("opening", requireDurability = true))
+        gate.rejectCommit("opening")
+        assertFalse(gate.countsPageTurnFor("opening", ReaderLocatorEvent.NAVIGATOR_PAGE_TURN))
+        assertFalse(gate.acceptCommit("opening"))
+        assertTrue(gate.acceptCommit("opening", requireDurability = true))
+        assertFalse(gate.acceptCommit("opening", requireDurability = true))
+    }
+
+
+    @Test
+    fun durabilityUpgradeDoesNotAwardAnotherPageTurn() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("opening"))
+        assertFalse(gate.countsPageTurnFor("opening", ReaderLocatorEvent.NAVIGATOR_PAGE_TURN))
+        assertTrue(gate.acceptCommit("opening", requireDurability = true))
+        assertFalse(gate.countsPageTurnFor("opening", ReaderLocatorEvent.PAPER_COMMIT))
+        assertTrue(gate.countsPageTurnFor("next", ReaderLocatorEvent.NAVIGATOR_PAGE_TURN))
+        assertTrue(gate.countsPageTurnFor("previous", ReaderLocatorEvent.PAPER_COMMIT))
+        assertFalse(gate.countsPageTurnFor("jump", ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT))
+    }
+
+    @Test
+    fun rejectedDestinationRestoresDurabilityStrengthOfPreviousPosition() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved", requireDurability = true))
+        assertTrue(gate.acceptCommit("failed"))
+        gate.rejectCommit("failed")
+        assertFalse(gate.acceptCommit("saved", requireDurability = true))
+        assertTrue(gate.acceptCommit("failed", requireDurability = true))
+    }
+
+    @Test
+    fun coalescedDuplicateDoesNotDowngradeDurablePosition() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved", requireDurability = true))
+        assertFalse(gate.acceptCommit("saved"))
+        assertFalse(gate.acceptCommit("saved", requireDurability = true))
+    }
+
+    @Test
+    fun finalSnapshotPromotesCoalescedPositionToCrashDurableCommit() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("scroll"))
+        assertFalse(gate.acceptCommit("scroll"))
+        assertTrue(gate.acceptCommit("scroll", requireDurability = true))
+        assertFalse(gate.acceptCommit("scroll", requireDurability = true))
+    }
+
+    @Test
+    fun failedDurabilityPromotionRemainsRetryable() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("scroll"))
+        assertTrue(gate.acceptCommit("scroll", requireDurability = true))
+        gate.rejectCommit("scroll")
+        assertTrue(gate.acceptCommit("scroll", requireDurability = true))
+        assertFalse(gate.acceptCommit("scroll", requireDurability = true))
+    }
+
+    @Test
+    fun movingAfterDurableCommitRequiresNewCheckpointAndResetClearsStrength() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("a", requireDurability = true))
+        assertTrue(gate.acceptCommit("b"))
+        assertTrue(gate.acceptCommit("b", requireDurability = true))
+        gate.reset()
+        assertTrue(gate.acceptCommit("b", requireDurability = true))
+    }
+
+    @Test
+    fun durabilityRetryCanRecommitAnObservedDuplicateWithoutLosingSavedOrigin() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("observed"))
+        assertFalse(gate.acceptCommit("observed"))
+        assertTrue(gate.acceptCommit("observed", retryDurability = true))
+        gate.rejectCommit("observed")
+        assertFalse(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("observed"))
+    }
+
+    @Test
+    fun failedSamePositionRetryRestoresLastDurableOrigin() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved", requireDurability = true))
+        assertTrue(gate.acceptCommit("observed"))
+        assertTrue(gate.acceptCommit(
+            "observed", retryDurability = true, requireDurability = true
+        ))
+
+        // The failed retry must restore the durable saved page, not the
+        // unstable observation it was trying to checkpoint.
+        gate.rejectCommit("observed")
+        assertFalse(gate.acceptCommit("saved", requireDurability = true))
+        assertFalse(gate.countsPageTurnFor("saved", ReaderLocatorEvent.NAVIGATOR_PAGE_TURN))
+        assertTrue(gate.acceptCommit("observed", requireDurability = true))
+    }
+
+    @Test
+    fun strengthUpgradeAndRetryHaveDifferentRollbackOwnership() {
+        val upgrade = ReaderLocatorDeduplicator()
+        assertTrue(upgrade.acceptCommit("saved", requireDurability = true))
+        assertTrue(upgrade.acceptCommit("observed"))
+        assertTrue(upgrade.acceptCommit("observed", requireDurability = true))
+        upgrade.rejectCommit("observed")
+        // An upgrade has not changed the position, so it must be possible to
+        // promote the same observed location on a second attempt.
+        assertFalse(upgrade.acceptCommit("observed"))
+        assertTrue(upgrade.acceptCommit("observed", requireDurability = true))
+
+        val retry = ReaderLocatorDeduplicator()
+        assertTrue(retry.acceptCommit("saved", requireDurability = true))
+        assertTrue(retry.acceptCommit("observed"))
+        assertTrue(retry.acceptCommit("observed", retryDurability = true))
+        retry.rejectCommit("observed")
+        assertFalse(retry.acceptCommit("saved", requireDurability = true))
+        assertTrue(retry.acceptCommit("observed"))
+    }
+
+    @Test
+    fun rejectedSaveAllowsRetryAndPreservesPreviousCommittedDuplicate() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("failed"))
+        gate.rejectCommit("failed")
+        assertFalse(gate.acceptCommit("saved"))
+        assertTrue(gate.acceptCommit("failed"))
+    }
+
+    @Test
+    fun staleRejectionDoesNotReleaseNewerCommit() {
+        val gate = ReaderLocatorDeduplicator()
+        assertTrue(gate.acceptCommit("old"))
+        assertTrue(gate.acceptCommit("new"))
+        gate.rejectCommit("old")
+        assertFalse(gate.acceptCommit("new"))
+    }
 
     @Test
     fun consecutiveCommittedDuplicate_isRejected_butRevisitAfterMovementIsAccepted() {

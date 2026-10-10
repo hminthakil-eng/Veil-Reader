@@ -76,6 +76,7 @@ internal fun ReaderTtsControls(
                 state.problem == ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE ->
                     R.string.tts_preferred_voice_unavailable
                 state.problem == ReaderTtsProblem.NO_ENGINE -> R.string.tts_initialization_failed
+                state.problem == ReaderTtsProblem.STORAGE -> R.string.tts_checkpoint_failed
                 state.problem != null -> R.string.tts_playback_failed
                 else -> null
             }
@@ -223,7 +224,7 @@ internal fun ReaderTtsControls(
                             sleepMenu = false
                         }
                     )
-                    listOf(15, 30, 45, 60).forEach { minutes ->
+                    listOf(10, 15, 30, 45, 60).forEach { minutes ->
                         DropdownMenuItem(
                             text = {
                                 Text(

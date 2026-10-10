@@ -379,6 +379,24 @@ class ReaderInputArbiterTest {
     }
 
     @Test
+    fun `Sanctuary book search modal blocks native key and gesture routing`() {
+        // ReaderScreen passes showReaderSearch to overlayVisible; a visible
+        // dialog must take priority over selection, controls, and native keys.
+        for (selectionActive in listOf(false, true)) {
+            for (controlsVisible in listOf(false, true)) {
+                val mode = readerInteractionMode(
+                    selectionModeActive = selectionActive,
+                    overlayVisible = true,
+                    closeInFlight = false,
+                    controlsVisible = controlsVisible
+                )
+                assertEquals(ReaderInteractionMode.BLOCKED, mode)
+                assertEquals(ReaderKeyRoute.BLOCKED, readerKeyRoute(mode))
+            }
+        }
+    }
+
+    @Test
     fun `visible chrome owns taps before page navigation while hidden chrome permits navigation`() {
         assertEquals(
             ReaderInteractionMode.CHROME_PRIORITY,
