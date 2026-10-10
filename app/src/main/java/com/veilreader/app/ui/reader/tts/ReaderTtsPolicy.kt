@@ -6,9 +6,9 @@ import com.veilreader.app.domain.ReaderTtsEngineChoice
 internal data class ReaderTtsPreferences(
     val speed: Float = 1f,
     val pitch: Float = 1f,
-    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM,
     val languageTag: String? = null,
-    val preferredVoiceIds: Map<String, String> = emptyMap()
+    val preferredVoiceIds: Map<String, String> = emptyMap(),
+    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM
 ) {
     fun normalized(): ReaderTtsPreferences = copy(
         speed = if (speed.isFinite()) speed.coerceIn(0.5f, 3f) else 1f,
