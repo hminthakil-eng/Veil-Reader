@@ -442,9 +442,17 @@ internal class ReaderTtsSession(
     private fun handleFocusGained() {
         if (closed || !resumeAfterTransientFocusLoss) return
         resumeAfterTransientFocusLoss = false
+        val focusGeneration = serial
         scope.launch {
             playJob?.join()
-            if (!closed && content != null && canPlay()) {
+            // A user Pause after focus-gain callback but before this coroutine
+            // runs must win. Without the generation/phase fence it could
+            // restart the narrator after Pause (including while locked).
+            if (
+                !closed && serial == focusGeneration &&
+                mutableState.value.phase == ReaderTtsPhase.PREPARING &&
+                content != null && canPlay()
+            ) {
                 resume()
             }
         }
