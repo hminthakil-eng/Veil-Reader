@@ -1,8 +1,10 @@
 """Synthetic ADB tests; never connects to or modifies a physical device."""
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from paper_apk_identity import file_sha256, single_installed_base_apk, verify_installed_apk
 
 
