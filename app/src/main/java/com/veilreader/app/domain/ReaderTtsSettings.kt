@@ -2,9 +2,20 @@ package com.veilreader.app.domain
 
 import java.util.Locale
 
+/**
+ * Explicit local speech engine selection. No automatic switch from a chosen
+ * narrator or network fallback. SHERPA_ONNX refers to the separate official
+ * Android TTS engine app, not a bundled or already-installed model.
+ */
+enum class ReaderTtsEngineChoice {
+    SYSTEM,
+    SHERPA_ONNX
+}
+
 data class ReaderTtsSettings(
     val speed: Double = 1.0,
     val pitch: Double = 1.0,
+    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM,
     val preferredVoiceIds: Map<String, String> = emptyMap()
 ) {
     fun normalized(): ReaderTtsSettings =
