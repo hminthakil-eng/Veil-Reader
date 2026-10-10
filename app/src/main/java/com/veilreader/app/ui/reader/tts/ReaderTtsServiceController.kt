@@ -146,6 +146,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             preferences = ReaderTtsPreferences(
                 speed = safeSettings.speed.toFloat(),
                 pitch = safeSettings.pitch.toFloat(),
+                engine = safeSettings.engine,
                 preferredVoiceIds = safeSettings.preferredVoiceIds
             )
         ).normalized() ?: run {
@@ -224,6 +225,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 Bundle.EMPTY
             ),
             Bundle().apply {
+                putString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE, safe.engine.name)
                 putString(
                     ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON,
                     ReaderTtsPlaybackRequest.encodePreferredVoices(
