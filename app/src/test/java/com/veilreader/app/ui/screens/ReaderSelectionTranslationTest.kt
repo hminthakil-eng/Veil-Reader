@@ -48,6 +48,44 @@ class ReaderSelectionTranslationTest {
     }
 
     @Test
+    fun definitionUsesNativeDictionaryActionAndNoHiddenWebOrClipboardFallback() {
+        val built = ReaderSelectionDefinition.intentFor("   mise en scène  ", sdkInt = 35)!!
+        assertEquals(Intent.ACTION_DEFINE, built.action)
+        assertEquals("mise en scène", built.getStringExtra(Intent.EXTRA_TEXT))
+        assertNull(built.data)
+        assertNull(built.component)
+        assertNull(built.`package`)
+
+        val requests = mutableListOf<Intent>()
+        assertTrue(ReaderSelectionDefinition.dispatch("  falcon  ", sdkInt = 35) {
+            requests += it
+        })
+        assertEquals(1, requests.size)
+        assertEquals(Intent.ACTION_DEFINE, requests.single().action)
+        assertEquals("falcon", requests.single().getStringExtra(Intent.EXTRA_TEXT))
+    }
+
+    @Test
+    fun definitionRejectsUnsupportedBlankAndOversizedSelections() {
+        assertNull(ReaderSelectionDefinition.intentFor("owl", sdkInt = 28))
+        assertNull(ReaderSelectionDefinition.intentFor("  ", sdkInt = 35))
+        assertNull(ReaderSelectionDefinition.intentFor("a".repeat(257), sdkInt = 35))
+        assertEquals("a".repeat(256), ReaderSelectionDefinition.intentFor(
+            "a".repeat(256), sdkInt = 35
+        )?.getStringExtra(Intent.EXTRA_TEXT))
+    }
+
+    @Test
+    fun missingDictionaryAppReturnsFalseWithoutRunningFallback() {
+        var attempts = 0
+        assertFalse(ReaderSelectionDefinition.dispatch("owl", sdkInt = 35) {
+            attempts++
+            throw ActivityNotFoundException()
+        })
+        assertEquals(1, attempts)
+    }
+
+    @Test
     fun explicitTapUsesOneIntentAndDoesNotLaunchHiddenFallbacks() {
         val captured = mutableListOf<Intent>()
         val sent = ReaderSelectionTranslation.dispatch(" astronomy ", sdkInt = 35) {
