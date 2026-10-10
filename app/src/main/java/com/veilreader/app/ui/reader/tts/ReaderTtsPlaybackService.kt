@@ -76,6 +76,8 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     base.availableSessionCommands.buildUpon()
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED, Bundle.EMPTY))
+                        .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER, Bundle.EMPTY))
+                        .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_RESUME_OWNER, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE, Bundle.EMPTY))
                         .add(
@@ -137,6 +139,14 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     )
                 }
 
+                ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER -> {
+                    player.setOwnerPlayIntent(false)
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+                ReaderTtsPlaybackRequest.ACTION_RESUME_OWNER -> {
+                    player.setOwnerPlayIntent(true)
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
                 ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices()
                 ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE -> previewVoice(args)
                 ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES -> {
