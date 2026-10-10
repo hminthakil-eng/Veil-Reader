@@ -381,7 +381,7 @@ case "$MODE" in
     {
       echo "completed_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
       echo "result=PASS"
-      echo "samples=$((CYCLES * 6))"
+      echo "samples=$(grep -c '^PASS scenario=' "$REPORT")"
     } >>"$REPORT"
     ;;
 
