@@ -216,3 +216,43 @@ reduced-motion and avoid animation on repeated reading actions.
 
 P0 annotation/selection/listening continuity remains ahead of speculative motion
 and AI. Fixtures are structurally validated, not visual goldens. No GREEN claim.
+
+## 2026-10-09 durability continuation
+
+| Capability | Kindle | Moon+ | Veil | Best Reference | Veil Gap | Root Cause | Target | Priority | Files | Tests | Status |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Same-position final snapshot durability | Reading continuity benchmark | Resume benchmark | Stronger duplicate persistence integrated | Existing Veil atomic journal | Android/device evidence pending | Location-only dedup swallowed final checkpoint | Persist once before acknowledgment | P0 | ReaderLocatorPolicy.kt, ReaderViewModel.kt, debug probe, existing fault-injection lane | 19 policy tests PASS; two process-kill scenarios added, not executed | YELLOW |
+
+| Feature | Implemented | Integrated | Unit | Instrumented | Device | UX | Perf | Release | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| Duplicate final snapshot upgrade | Yes | ViewModel source | PASS focused JVM | Probe added, pending execution | Unverified | Unverified | Unverified | Unverified | YELLOW |
+
+Task, evidence, risks and continuation graph: [durability execution](GRAND_FORGE_DURABILITY_2026-10-09.md).
+
+## 2026-10-10 repository-truth correction
+
+Earlier RED statements about unconditional Notebook/programmatic progress commits
+are historical and superseded: ReaderNavigationSessionState plus explicit semantic
+commit policies are integrated on a67586cf. Search/TOC/reference exploration and
+final-snapshot suppression are implemented; acceptance remains YELLOW pending
+Android/device execution. Android SDK availability was also rechecked: the official
+package is platforms;android-37.0, which installed successfully without SDK downgrade.
+
+Durability escalation now explicitly avoids granting page-turn credit for an
+unchanged location. A sixth regression covers that accounting boundary.
+
+## Final source — 2026-10-10
+
+| Feature | Implemented | Integrated | Unit | Instrumented | Device | UX | Perf | Release | Status |
+|---|---|---|---|---|---|---|---|---|---|
+| Stronger same-location checkpoint | Yes | Real ViewModel | PASS, final Reader/input suite 145 | Compiles; kill scenarios pending | Unverified | Unverified | Unverified | Unverified | YELLOW |
+| Repeated-scroll exploration protection | Yes | Both Reader recording sites | New regression PASS; old behavior FAIL | Compiles; real stream pending | Unverified | Unverified | Unverified | Unverified | YELLOW |
+| Forge verification routing | Four existing lanes include target | YAML route checks PASS | Existing tooling PASS | Hosted execution pending | N/A | N/A | Hosted pending | No promotion | YELLOW |
+
+Earlier whole-suite result: 1,015 tests / 174 suites PASS before final pacing and
+exploration corrections; not claimed as exact-final-source evidence. Final source
+passes 145 affected Reader/input tests and app/instrumentation compilation.
+
+Final-source local lint, debug APK and instrumentation compilation PASS with no
+detectors disabled. Affected suite: 145 tests / 18 suites, zero failures or skips.
+Device/UX/performance/release gates remain unverified; no capability is GREEN.
