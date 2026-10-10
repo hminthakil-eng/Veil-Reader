@@ -2,9 +2,9 @@ name: Dependency Baseline
 
 on:
   pull_request:
-    branches: [ "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   push:
-    branches: [ "grand-forge/arena-app-hardening-v1", "main" ]
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/arena-app-hardening-v1", "main" ]
     paths:
       - "app/**"
       - "benchmark/**"
@@ -16,16 +16,45 @@ on:
       - ".github/workflows/dependency-baseline.yml"
   workflow_dispatch:
 
+# PR sources must never have a write-permission token solely for scanning.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: dependency-baseline-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  pr-source-sbom:
+    name: pr-source-sbom
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # A source-tree inventory is NOT an authoritative resolved Gradle graph.
+      - name: Generate PR source inventory in CycloneDX JSON
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: pr-source-inventory.cdx.json
+          artifact-name: veil-reader-pr-source-inventory-${{ github.sha }}
+          syft-version: v1.54.0
+          upload-artifact-retention: 14
+          upload-release-assets: false
+
   dependency-graph:
     name: dependency-graph
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/grand-forge/p0-kindle-reader-quality-20261008' || github.ref == 'refs/heads/grand-forge/arena-app-hardening-v1' || github.ref == 'refs/heads/main')
+    # Restrict manual dispatch to the same trusted branch allowlist as push.
+    # The upload requires contents:write; the PR job cannot inherit this.
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
