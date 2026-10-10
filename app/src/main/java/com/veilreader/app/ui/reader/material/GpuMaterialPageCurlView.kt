@@ -1538,6 +1538,11 @@ internal fun GpuMaterialPageOverlay(
         else -> GpuMaterialPageRendererStatus.READY
     }
     LaunchedEffect(status) {
+        if (ReaderTrace.isEnabled()) ReaderTrace.event(
+            name = "paper_gpu_compose_status",
+            details = "status=$status ready=${rendererReady.value} failed=${rendererFailed.value} " +
+                "reducedMotion=${state.reducedMotion} supported=$supported"
+        )
         onRendererStatus(status)
     }
     LaunchedEffect(
@@ -1591,6 +1596,10 @@ internal fun GpuMaterialPageOverlay(
             viewRef.value = null
             // A disposed GL host cannot remain authoritative READY state.
             // The next mount must earn readiness from a new onSurfaceCreated().
+            if (ReaderTrace.isEnabled()) ReaderTrace.event(
+                name = "paper_gpu_compose_disposed",
+                details = "wasReady=${rendererReady.value} hostPresent=${viewRef.value != null}"
+            )
             rendererReady.value = false
         }
     }
@@ -1656,6 +1665,11 @@ internal fun GpuMaterialPageOverlay(
             GpuMaterialPageCurlView(
                 context = viewContext,
                 onRendererReady = { ready ->
+                    if (ReaderTrace.isEnabled()) ReaderTrace.event(
+                        name = "paper_gpu_ready_callback",
+                        details = "ready=$ready before=${rendererReady.value} " +
+                            "hostAttached=${viewRef.value?.isAttachedToWindow ?: false}"
+                    )
                     rendererReady.value = ready
                     if (ready) {
                         rendererFailed.value = false
