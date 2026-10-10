@@ -321,6 +321,10 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        if (ReaderTrace.isEnabled()) ReaderTrace.event(
+            name = "paper_gpu_context_created",
+            details = "attached=$isAttachedToWindow available=$isAvailable"
+        )
         // A new GL context cannot retain a client-memory read from the previous one.
         // Invalidate only the previous generation: UI delivery can race with a
         // newly submitted frame for the fresh context.
@@ -380,6 +384,10 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        if (ReaderTrace.isEnabled()) ReaderTrace.event(
+            name = "paper_gpu_viewport_changed",
+            details = "size=${width}x${height} generation=$rendererGeneration failed=$rendererFailed program=$program"
+        )
         if (width <= 0 || height <= 0) {
             viewportWidth = 0
             viewportHeight = 0
@@ -424,6 +432,10 @@ internal class GpuMaterialPageCurlView(
             !surfaceReadyReported
         ) {
             surfaceReadyReported = true
+            if (ReaderTrace.isEnabled()) ReaderTrace.event(
+                name = "paper_gpu_ready_signalled",
+                details = "generation=$rendererGeneration viewport=$viewportGeneration"
+            )
             post { onRendererReady(true) }
         }
     }
