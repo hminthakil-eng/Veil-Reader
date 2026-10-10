@@ -1,10 +1,12 @@
 package com.veilreader.app.ui.reader.tts
 
 import java.util.Locale
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 
 internal data class ReaderTtsPreferences(
     val speed: Float = 1f,
     val pitch: Float = 1f,
+    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM,
     val languageTag: String? = null,
     val preferredVoiceIds: Map<String, String> = emptyMap()
 ) {
