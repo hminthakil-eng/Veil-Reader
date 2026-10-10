@@ -8,6 +8,7 @@ package com.veilreader.app.feature
  */
 internal enum class VeilRiskyFeature {
     GPU_MATERIAL_PAGE,
+    IN_BOOK_SEARCH,
     LIVE_MANGA_SOURCES,
     ANDROIDX_PDF_EDITOR,
     CLOUD_SYNC,
@@ -22,6 +23,7 @@ internal object VeilFeatureGates {
             (
                 debugReview &&
                     feature in setOf(
+                        VeilRiskyFeature.IN_BOOK_SEARCH,
                         VeilRiskyFeature.BACKGROUND_TTS,
                         VeilRiskyFeature.LOCAL_NEURAL_TTS
                     )
@@ -30,6 +32,7 @@ internal object VeilFeatureGates {
     fun releaseEnabled(feature: VeilRiskyFeature): Boolean =
         when (feature) {
             VeilRiskyFeature.GPU_MATERIAL_PAGE -> false
+            VeilRiskyFeature.IN_BOOK_SEARCH -> false
             VeilRiskyFeature.LIVE_MANGA_SOURCES -> false
             VeilRiskyFeature.ANDROIDX_PDF_EDITOR -> false
             VeilRiskyFeature.CLOUD_SYNC -> false
