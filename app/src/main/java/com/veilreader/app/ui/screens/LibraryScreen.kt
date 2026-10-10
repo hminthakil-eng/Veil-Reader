@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items as lazyRowItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -83,6 +84,8 @@ import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.books.BookPatina
 import com.veilreader.app.ui.books.BookReadingState
 import com.veilreader.app.ui.books.bookArtifactState
+import com.veilreader.app.ui.theme.ShellVisualGeometry
+import com.veilreader.app.ui.theme.ShellVisualOpacity
 import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.adaptiveClassFor
@@ -2147,14 +2150,21 @@ private fun LibraryHeader(
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
+            .clip(RoundedCornerShape(ShellVisualGeometry.ArchiveHeaderRadius))
     ) {
         val compact = maxWidth < 560.dp
+        val hasArchiveContent = bookCount > 0
         val condensed = retrievalActive || com.veilreader.app.ui.theme.condenseRealmApproach(
             LocalDensity.current.fontScale, with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
         })
-        val headerHeight = if (condensed) 0.dp else if (compact) 112.dp else 144.dp
+        val headerHeight = when {
+            condensed -> 0.dp
+            hasArchiveContent && compact -> ShellVisualGeometry.ArchiveReturningCompactMinHeight
+            hasArchiveContent -> ShellVisualGeometry.ArchiveReturningWideMinHeight
+            compact -> ShellVisualGeometry.ArchiveEmptyCompactMinHeight
+            else -> ShellVisualGeometry.ArchiveEmptyWideMinHeight
+        }
         val adjacent = com.veilreader.app.ui.theme.useArchitecturalPair(
             maxWidth.value - VeilSpacing.md.value * 2f, LocalDensity.current.fontScale)
         @Composable fun HeaderActions(modifier: Modifier = Modifier) {
@@ -2190,10 +2200,14 @@ private fun LibraryHeader(
                 Text(
                     stringResource(R.string.library_header_title),
                     modifier = Modifier.semantics { heading() },
-                    style = if (condensed) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
+                    style = if (condensed || hasArchiveContent) {
+                        MaterialTheme.typography.titleLarge
+                    } else {
+                        MaterialTheme.typography.headlineMedium
+                    },
                     color = VeilPalette.Moon
                 )
-                if (!condensed) {
+                if (!condensed && !hasArchiveContent) {
                     Text(
                         stringResource(R.string.library_header_tagline),
                         style = MaterialTheme.typography.labelMedium,
@@ -2228,6 +2242,11 @@ private fun LibraryHeader(
                 painter = painterResource(R.drawable.grayfog_threshold_v1),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                alpha = if (hasArchiveContent) {
+                    ShellVisualOpacity.ReturningArchiveImage
+                } else {
+                    1f
+                },
                 modifier = Modifier.matchParentSize()
             )
 

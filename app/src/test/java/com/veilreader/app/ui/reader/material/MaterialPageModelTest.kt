@@ -135,6 +135,53 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `production prepared snapshot survives normal reading dwell until source invalidates`() {
+        val bitmap = android.graphics.Bitmap.createBitmap(
+            24,
+            36,
+            android.graphics.Bitmap.Config.ARGB_8888
+        )
+        val prepared = MaterialPagePreparedSnapshot(
+            bitmap = bitmap,
+            sourceRevision = 5L,
+            width = 24,
+            height = 36,
+            capturedAtElapsedNanos = 10_000L,
+            provider = "test"
+        )
+
+        assertTrue(
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = 5L,
+                expectedWidth = 24,
+                expectedHeight = 36,
+                nowElapsedNanos = 10_000L + 60_000_000_000L
+            )
+        )
+        assertFalse(
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = 6L,
+                expectedWidth = 24,
+                expectedHeight = 36,
+                nowElapsedNanos = 10_000L + 60_000_000_000L
+            )
+        )
+        assertFalse(
+            materialPagePreparedSnapshotIsCurrent(
+                prepared = prepared,
+                expectedRevision = 5L,
+                expectedWidth = 24,
+                expectedHeight = 36,
+                nowElapsedNanos =
+                    10_000L + MATERIAL_PAGE_PREPARED_SNAPSHOT_MAX_AGE_NANOS + 1L
+            )
+        )
+        bitmap.recycle()
+    }
+
+    @Test
     fun `prepared snapshot expires instead of lifting old WebView pixels`() {
         val bitmap = android.graphics.Bitmap.createBitmap(
             24,
