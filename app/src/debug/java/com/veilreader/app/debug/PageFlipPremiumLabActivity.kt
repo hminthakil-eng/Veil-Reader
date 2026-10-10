@@ -115,6 +115,8 @@ class PageFlipPremiumLabActivity : Activity() {
         private var drawCommand = FULL
         private var surfaceReady = false
         private var touchStarted = false
+        // A backward texture preview does NOT commit a new page.
+        private var pendingBackward = false
         private var failed = false
 
         init {
@@ -130,6 +132,7 @@ class PageFlipPremiumLabActivity : Activity() {
             // Mirror upstream's single-page backward ownership: texture 1
             // becomes the second, then previous is uploaded as the first.
             flip.firstPage?.setSecondTextureWithFirst()
+            pendingBackward = true
             return true
         }
 
@@ -172,6 +175,10 @@ class PageFlipPremiumLabActivity : Activity() {
                     MotionEvent.ACTION_CANCEL -> {
                         touchStarted = false
                         flip.abortAnimating()
+                        if (pendingBackward) {
+                            flip.firstPage?.setFirstTextureWithSecond()
+                            pendingBackward = false
+                        }
                         drawCommand = FULL
                         requestRender()
                         return true
@@ -198,6 +205,7 @@ class PageFlipPremiumLabActivity : Activity() {
                     // A resized texture must come from exactly this viewport.
                     flip.firstPage?.deleteAllTextures()
                     surfaceReady = true
+                    pendingBackward = false
                     drawCommand = FULL
                     requestRender()
                 } catch (e: Exception) {
@@ -222,8 +230,8 @@ class PageFlipPremiumLabActivity : Activity() {
                         if (state == PageFlipState.FORWARD_FLIP && !page.isSecondTextureSet) {
                             uploadPaper(pageIndex + 1, page.width(), page.height(), page::setSecondTexture)
                         } else if (state == PageFlipState.BACKWARD_FLIP && !page.isFirstTextureSet) {
-                            pageIndex = (pageIndex - 1).coerceAtLeast(0)
-                            uploadPaper(pageIndex, page.width(), page.height(), page::setFirstTexture)
+                            // PREVIEW ONLY: only accepted END_WITH_BACKWARD may commit.
+                            uploadPaper((pageIndex - 1).coerceAtLeast(0), page.width(), page.height(), page::setFirstTexture)
                         }
                         flip.drawFlipFrame()
                     }
@@ -243,12 +251,24 @@ class PageFlipPremiumLabActivity : Activity() {
                     requestRender()
                     return
                 }
-                if (flip.flipState == PageFlipState.END_WITH_FORWARD) {
-                    flip.firstPage?.setFirstTextureWithSecond()
-                    pageIndex = (pageIndex + 1).coerceAtMost(PAGE_COUNT - 1)
+                when (flip.flipState) {
+                    PageFlipState.END_WITH_FORWARD -> {
+                        flip.firstPage?.setFirstTextureWithSecond()
+                        pageIndex = (pageIndex + 1).coerceAtMost(PAGE_COUNT - 1)
+                    }
+                    PageFlipState.END_WITH_BACKWARD -> {
+                        pageIndex = (pageIndex - 1).coerceAtLeast(0)
+                    }
+                    PageFlipState.END_WITH_RESTORE -> {
+                        if (pendingBackward) {
+                            // Reclaim the original page from the saved second
+                            // texture. A canceled curl must never navigate.
+                            flip.firstPage?.setFirstTextureWithSecond()
+                        }
+                    }
+                    else -> Unit
                 }
-                // During backwards, the first-page bitmap was already updated
-                // on the rendering thread; a cancelled turn must not advance.
+                pendingBackward = false
                 drawCommand = FULL
                 report(pageIndex, null)
                 requestRender()
