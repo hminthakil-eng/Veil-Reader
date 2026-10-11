@@ -40,6 +40,9 @@ phone recording are required to attribute an individual report.
 - `NativeMaterialPageCurlView`: licensed `CurlMesh` renders real publication
   pixels in a transparent GLTextureView; deformation/self/drop shadows come from
   mesh topology rather than translating an image. GPU work stays on GL thread.
+  Native draw and texture upload keep the existing `paper.gpu.draw` and
+  `paper.gpu.texture_upload` trace sections, so the physical benchmark's GPU
+  metrics observe this backend rather than missing its work.
 - Premultiplied bitmap/shadow blending preserves sheet opacity on the transparent
   host. Native diagnostics stay in metadata traces and leave the book text clear.
 - The host explicitly initializes upstream rectangle UVs with `setFlipTexture(false)`.

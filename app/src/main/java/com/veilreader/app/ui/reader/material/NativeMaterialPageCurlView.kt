@@ -9,6 +9,7 @@ import android.graphics.SurfaceTexture
 import android.opengl.EGL14
 import android.opengl.EGLExt
 import android.opengl.GLSurfaceView
+import android.os.Trace
 import android.view.TextureView
 import android.view.MotionEvent
 import android.view.View
@@ -191,6 +192,7 @@ internal class NativeMaterialPageCurlView(
         // Snapshot these before drawing. A UI submission arriving DURING this
         // draw still needs its lease until a later GL read completes.
         val retired = synchronized(lock) { leases.toList().also { leases.clear() } }
+        Trace.beginSection("paper.gpu.draw")
         try {
             gl.glClear(GL10.GL_COLOR_BUFFER_BIT)
             if (paused || failureReported) return
@@ -203,19 +205,24 @@ internal class NativeMaterialPageCurlView(
                     error("Native paper snapshot does not match the live viewport/texture limit")
                 }
                 if (uploadedEpoch != current.epoch) {
-                    // CurlPage recycles its inputs after upload. Transfer an owned copy,
-                    // NEVER Readium's borrowed pooled snapshot. Back uses the SAME leaf.
-                    val owned = source.copy(Bitmap.Config.ARGB_8888, false)
-                        ?: error("Native paper copy failed")
-                    mesh.texturePage.setColor(Color.WHITE, CurlPage.SIDE_FRONT)
-                    mesh.texturePage.setColor(when (current.tone) {
-                        MaterialPageTone.LIGHT -> Color.rgb(232, 230, 220)
-                        MaterialPageTone.SEPIA -> Color.rgb(232, 221, 196)
-                        MaterialPageTone.DARK -> Color.rgb(150, 155, 165)
-                    }, CurlPage.SIDE_BACK)
-                    mesh.texturePage.setTexture(owned, CurlPage.SIDE_BOTH)
-                    mesh.prepareTexture(gl)
-                    uploadedEpoch = current.epoch
+                    Trace.beginSection("paper.gpu.texture_upload")
+                    try {
+                        // CurlPage recycles its inputs after upload. Transfer an owned copy,
+                        // NEVER Readium's borrowed pooled snapshot. Back uses the SAME leaf.
+                        val owned = source.copy(Bitmap.Config.ARGB_8888, false)
+                            ?: error("Native paper copy failed")
+                        mesh.texturePage.setColor(Color.WHITE, CurlPage.SIDE_FRONT)
+                        mesh.texturePage.setColor(when (current.tone) {
+                            MaterialPageTone.LIGHT -> Color.rgb(232, 230, 220)
+                            MaterialPageTone.SEPIA -> Color.rgb(232, 221, 196)
+                            MaterialPageTone.DARK -> Color.rgb(150, 155, 165)
+                        }, CurlPage.SIDE_BACK)
+                        mesh.texturePage.setTexture(owned, CurlPage.SIDE_BOTH)
+                        mesh.prepareTexture(gl)
+                        uploadedEpoch = current.epoch
+                    } finally {
+                        Trace.endSection()
+                    }
                 }
                 val fold = nativePaperFold(current.travel, current.gripY,
                     current.vertical * aspect, aspect, current.fromRight)
@@ -245,6 +252,7 @@ internal class NativeMaterialPageCurlView(
                 postForCurrentSurface { onReady(false); onFailure() }
             }
         } finally {
+            Trace.endSection()
             // Copy/upload have finished. Retire skipped submissions too, bounded by input.
             if (retired.isNotEmpty()) post {
                 retired.forEach { state.acknowledgeSnapshotUploaded(it.bitmap, it.rendererGeneration, it.textureRevision) }
