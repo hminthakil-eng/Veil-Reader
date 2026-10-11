@@ -37,6 +37,7 @@ internal class ReaderTtsAndroidAudioTrackSink : ReaderTtsOwnedPcmSink, AutoClose
             return@withContext false
         }
 
+        var detachedPrevious: AudioTrack? = null
         val existingResult: Boolean? = synchronized(audioLock) {
             if (closed || !stillCurrent()) return@synchronized false
             val old = audioTrack
@@ -50,10 +51,13 @@ internal class ReaderTtsAndroidAudioTrackSink : ReaderTtsOwnedPcmSink, AutoClose
             } else {
                 // Release old format under lock, but NEVER create a new
                 // AudioTrack while holding the lock required by Pause.
-                releaseTrackLocked()
+                detachedPrevious = detachTrackLocked()
                 null
             }
         }
+        // AudioTrack.release() may call into slow platform/native cleanup.
+        // Keep it OUTSIDE the mutex used by user Pause and PCM writes.
+        detachedPrevious?.let { runCatching { it.release() } }
         if (existingResult != null) return@withContext existingResult
         if (!stillCurrent()) return@withContext false
 
@@ -215,11 +219,12 @@ internal class ReaderTtsAndroidAudioTrackSink : ReaderTtsOwnedPcmSink, AutoClose
     }
 
     override fun close() {
-        synchronized(audioLock) {
-            if (closed) return
+        val detached = synchronized(audioLock) {
+            if (closed) return@synchronized null
             closed = true
-            releaseTrackLocked()
+            detachTrackLocked()
         }
+        detached?.let { runCatching { it.release() } }
     }
 
     private fun playbackFramesLocked(): Long {
@@ -228,15 +233,20 @@ internal class ReaderTtsAndroidAudioTrackSink : ReaderTtsOwnedPcmSink, AutoClose
         return value.toLong() and 0xFFFF_FFFFL
     }
 
-    private fun releaseTrackLocked() {
-        audioTrack?.let { old ->
+    /**
+     * Stop audible output while holding the short transport lock, then return
+     * the detached native object for slower release() OUTSIDE that lock.
+     */
+    private fun detachTrackLocked(): AudioTrack? {
+        val detached = audioTrack
+        detached?.let { old ->
             runCatching { old.pause() }
             runCatching { old.flush() }
-            runCatching { old.release() }
         }
         audioTrack = null
         sampleRateHz = 0
         framesSubmitted = 0L
+        return detached
     }
 
     private companion object {
