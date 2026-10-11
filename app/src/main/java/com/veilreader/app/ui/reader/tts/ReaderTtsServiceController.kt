@@ -13,6 +13,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +47,8 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     private var controller: MediaController? = null
     private var pendingStart: PendingStart? = null
+    private var catalogEngine = ReaderTtsEngineChoice.SYSTEM
+    private var catalogGeneration = 0L
     // Pause pressed while MediaController reconnects must also stop an already
     // playing service owner, not only change the queued new-book autoplay.
     private var pendingPauseOnConnect = false
@@ -140,6 +143,11 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         }
 
         val safeSettings = settings.normalized()
+        if (catalogEngine != safeSettings.engine) {
+            catalogEngine = safeSettings.engine
+            mutableVoices.value = emptyList()
+            refreshVoiceCatalog()
+        }
         val request = ReaderTtsPlaybackRequest(
             bookId = bookId,
             locatorJson = locatorJson,
@@ -214,6 +222,12 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     fun updateSettings(settings: ReaderTtsSettings) {
         val safe = settings.normalized()
+        val changedEngine = catalogEngine != safe.engine
+        catalogEngine = safe.engine
+        if (changedEngine) {
+            mutableVoices.value = emptyList()
+            refreshVoiceCatalog()
+        }
         val target = controller ?: return
         target.playbackParameters = PlaybackParameters(
             safe.speed.toFloat(),
@@ -319,7 +333,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     fun refreshVoiceCatalog() {
         val target = controller ?: return
-        if (mutableVoiceCatalogLoading.value) return
+        val thisGeneration = ++catalogGeneration
         mutableVoiceCatalogLoading.value = true
         mutableVoiceCatalogProblem.value = null
         val resultFuture = target.sendCustomCommand(
@@ -327,11 +341,13 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES,
                 Bundle.EMPTY
             ),
-            Bundle.EMPTY
+            Bundle().apply {
+                putString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE, catalogEngine.name)
+            }
         )
         resultFuture.addListener(
             {
-                if (closed.get()) return@addListener
+                if (closed.get() || thisGeneration != catalogGeneration) return@addListener
                 val result = runCatching { resultFuture.get() }.getOrNull()
                 mutableVoiceCatalogLoading.value = false
                 if (result == null || result.resultCode != SessionResult.RESULT_SUCCESS) {
@@ -358,6 +374,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     ) {
         val target = controller ?: return
         val safe = settings.normalized()
+        catalogEngine = safe.engine
         mutablePreviewProblem.value = null
         val resultFuture = target.sendCustomCommand(
             SessionCommand(
@@ -367,6 +384,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             Bundle().apply {
                 putString(ReaderTtsPlaybackRequest.EXTRA_LANGUAGE_TAG, languageTag)
                 putString(ReaderTtsPlaybackRequest.EXTRA_VOICE_ID, voiceId)
+                putString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE, safe.engine.name)
                 putString(ReaderTtsPlaybackRequest.EXTRA_SAMPLE, sample)
                 putFloat("speed", safe.speed.toFloat())
                 putFloat("pitch", safe.pitch.toFloat())
