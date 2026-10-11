@@ -177,7 +177,7 @@ private class ReaderTtsForgeKokoroBackend(context: Context) : ReaderTtsBackend {
         coordinator = ReaderTtsInProcessCoordinator(loaded.runtime, sink)
         // The QA package has one pinned model; actual speaker count is
         // checked natively in open(). Do not show an OS-provided narrator.
-        voices = (0..10).map { id ->
+        voices = (0 until loaded.runtime.speakerCount).map { id ->
             ReaderTtsVoice("kokoro-en-v0_19-$id", "en-US", 400, false, true)
         }
         return null
