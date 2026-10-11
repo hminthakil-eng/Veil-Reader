@@ -43,7 +43,12 @@ class NativePaperRealReaderInstrumentedTest {
             }
             waitUntil("Native GL + real EPUB navigator ready") {
                 var ready = false
-                instrumentation.runOnMainSync { ready = native()?.renderingReady == true && navigator()?.currentLocator?.value != null }
+                instrumentation.runOnMainSync {
+                    ready = native()?.renderingReady == true && navigator()?.currentLocator?.value != null &&
+                        views(host.window.decorView).filterIsInstance<WebView>().any {
+                            it.isShown && it.isAttachedToWindow && it.width > 0 && it.height > 0
+                        }
+                }
                 ready
             }
             SystemClock.sleep(400)
