@@ -1,3 +1,23 @@
+## Mandatory Grand Forge stage evidence (new work after 2026-10-11)
+
+Grand Forge work issue: #
+Grand Forge stage: 
+
+- [ ] Current main SHA, roadmap, Live Status, archive policy and #495 checked BEFORE work
+- [ ] Company OS reuse/duplicate check and canonical owner recorded on work issue
+- [ ] PRE-WORK receipt posted on the linked issue before this PR was opened
+- [ ] Stage tests/acceptance/rollback defined before code changes
+- [ ] POST-STAGE receipt posted with exact source evidence before marking Ready for Review
+- [ ] Physical / product / release gates kept separate from source tests
+
+**Receipt links (preflight / completion):**
+
+**Plan deviation, rejected approaches and remaining blockers:**
+
+See [stage execution protocol](../docs/roadmap/GRAND_FORGE_EXECUTION_PROTOCOL.md). A receipt is a provenance gate, not proof that the app is ready.
+
+---
+
 ## User problem
 
 <!-- What user-visible problem does this solve? Do not describe only the code change. -->
