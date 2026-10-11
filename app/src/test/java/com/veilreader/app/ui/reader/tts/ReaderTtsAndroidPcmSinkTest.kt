@@ -1,8 +1,7 @@
 package com.veilreader.app.ui.reader.tts
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -115,6 +114,7 @@ class ReaderTtsAndroidPcmSinkTest {
         )
         var allowed = true
         val opening = async { sink.prepare(24_000) { allowed } }
+        runCurrent() // Start coroutine before awaiting real IO test-device latch.
         try {
             assertTrue(openEntered.await(3, TimeUnit.SECONDS))
             allowed = false
