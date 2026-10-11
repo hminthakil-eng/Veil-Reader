@@ -123,8 +123,13 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
                                 continuation.resume(ReaderTtsProblem.NO_ENGINE)
                             } else {
                                 if (selectedEngine == ReaderTtsEngineChoice.SHERPA_ONNX &&
-                                    target.currentEngine != SHERPA_ANDROID_TTS_PACKAGE
+                                    target.engines.none { it.name == SHERPA_ANDROID_TTS_PACKAGE }
                                 ) {
+                                    // currentEngine is hidden Android framework API; it is not
+                                    // callable by apps. Only PUBLIC installed-engine lookup is
+                                    // used here. This does not prove effective binding: the
+                                    // Android 3-arg constructor can still use system fallback.
+                                    // Keep release gated OFF pending physical engine identity QA.
                                     releaseEngine()
                                     continuation.resume(ReaderTtsProblem.NO_ENGINE)
                                     return@post
