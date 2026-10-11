@@ -36,63 +36,84 @@ internal class ReaderTtsAndroidAudioTrackSink : ReaderTtsOwnedPcmSink, AutoClose
         if (sampleRateHz !in 8_000..96_000 || !stillCurrent()) {
             return@withContext false
         }
-        synchronized(audioLock) {
+
+        val existingResult: Boolean? = synchronized(audioLock) {
             if (closed || !stillCurrent()) return@synchronized false
-
-            val existing = audioTrack
-            if (existing != null && this@ReaderTtsAndroidAudioTrackSink.sampleRateHz == sampleRateHz &&
-                existing.state == AudioTrack.STATE_INITIALIZED
+            val old = audioTrack
+            if (old != null &&
+                this@ReaderTtsAndroidAudioTrackSink.sampleRateHz == sampleRateHz &&
+                old.state == AudioTrack.STATE_INITIALIZED
             ) {
-                if (existing.playState != AudioTrack.PLAYSTATE_PLAYING) {
-                    val resumed = runCatching { existing.play() }.isSuccess
-                    return@synchronized resumed && stillCurrent()
-                }
-                return@synchronized stillCurrent()
-            }
-
-            // Format change cannot reuse queued frames from a different
-            // sample rate. Clear old hardware state before releasing it.
-            releaseTrackLocked()
-            val minBytes = AudioTrack.getMinBufferSize(
-                sampleRateHz,
-                AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_FLOAT
-            )
-            if (minBytes <= 0) return@synchronized false
-            val requestedBytes = maxOf(minBytes, (sampleRateHz / 5) * 4)
-            val newTrack = runCatching {
-                AudioTrack.Builder()
-                    .setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build()
-                    )
-                    .setAudioFormat(
-                        AudioFormat.Builder()
-                            .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                            .setSampleRate(sampleRateHz)
-                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                            .build()
-                    )
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .setBufferSizeInBytes(requestedBytes)
-                    .build()
-            }.getOrNull() ?: return@synchronized false
-
-            if (newTrack.state != AudioTrack.STATE_INITIALIZED) {
-                runCatching { newTrack.release() }
-                return@synchronized false
-            }
-            audioTrack = newTrack
-            this@ReaderTtsAndroidAudioTrackSink.sampleRateHz = sampleRateHz
-            framesSubmitted = 0L
-            if (!stillCurrent() || runCatching { newTrack.play() }.isFailure) {
+                val playable = old.playState == AudioTrack.PLAYSTATE_PLAYING ||
+                    runCatching { old.play() }.isSuccess
+                playable && stillCurrent()
+            } else {
+                // Release old format under lock, but NEVER create a new
+                // AudioTrack while holding the lock required by Pause.
                 releaseTrackLocked()
-                return@synchronized false
+                null
             }
-            true
         }
+        if (existingResult != null) return@withContext existingResult
+        if (!stillCurrent()) return@withContext false
+
+        val minBytes = AudioTrack.getMinBufferSize(
+            sampleRateHz,
+            AudioFormat.CHANNEL_OUT_MONO,
+            AudioFormat.ENCODING_PCM_FLOAT
+        )
+        if (minBytes <= 0) return@withContext false
+        val requestedBytes = maxOf(minBytes, (sampleRateHz / 5) * 4)
+        val newTrack = runCatching {
+            AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                        .setSampleRate(sampleRateHz)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build()
+                )
+                .setTransferMode(AudioTrack.MODE_STREAM)
+                .setBufferSizeInBytes(requestedBytes)
+                .build()
+        }.getOrNull() ?: return@withContext false
+
+        if (newTrack.state != AudioTrack.STATE_INITIALIZED) {
+            runCatching { newTrack.release() }
+            return@withContext false
+        }
+
+        // A Pause during slow framework allocation revokes stillCurrent().
+        // In that case the freshly built device is discarded without playing
+        // even a single frame from the canceled TTS owner.
+        val installed = synchronized(audioLock) {
+            if (closed || !stillCurrent()) {
+                false
+            } else {
+                audioTrack = newTrack
+                this@ReaderTtsAndroidAudioTrackSink.sampleRateHz = sampleRateHz
+                framesSubmitted = 0L
+                val playable = runCatching { newTrack.play() }.isSuccess &&
+                    stillCurrent()
+                if (!playable) {
+                    audioTrack = null
+                    this@ReaderTtsAndroidAudioTrackSink.sampleRateHz = 0
+                    framesSubmitted = 0L
+                }
+                playable
+            }
+        }
+        if (!installed) {
+            runCatching { newTrack.pause() }
+            runCatching { newTrack.release() }
+        }
+        installed
     }
 
     override suspend fun submit(
