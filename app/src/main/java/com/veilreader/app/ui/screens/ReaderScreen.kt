@@ -1331,7 +1331,11 @@ fun ReaderScreen(
         backgroundTtsEnabled
     ) {
         if (backgroundTtsEnabled && opened.format == BookFormat.EPUB) {
-            ReaderTtsServiceController(activity.applicationContext)
+            ReaderTtsServiceController(
+                activity.applicationContext,
+                initialEngineChoice = if (neuralTtsReviewEnabled)
+                    latestTtsSettings.value.engine else ReaderTtsEngineChoice.SYSTEM
+            )
         } else {
             null
         }
