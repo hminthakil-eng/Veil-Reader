@@ -9,6 +9,7 @@ plugins {
 // Manual device QA installs alongside Veil, with independent data and non-production signing.
 // Default app/benchmark builds retain their existing identity.
 val forgeQaBuild = providers.gradleProperty("veilForgeQa").orNull == "true"
+val nativeKokoroQaBuild = forgeQaBuild && providers.gradleProperty("veilNativeKokoroQa").orNull == "true"
 val forgeQaRevision = providers.gradleProperty("veilForgeRevision").orNull
     ?.takeIf { it.matches(Regex("[0-9a-f]{7,40}")) }?.take(8) ?: "local"
 
@@ -18,6 +19,7 @@ android {
 
     defaultConfig {
         buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
+        buildConfigField("boolean", "NATIVE_KOKORO_QA", nativeKokoroQaBuild.toString())
         applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
         minSdk = 26
         targetSdk = 37
