@@ -2,8 +2,12 @@ package com.veilreader.app
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -35,6 +39,7 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
         supportFragmentManager.fragmentFactory = ReaderFragmentRestoration.fragmentFactory
         super.onCreate(savedInstanceState)
         VeilStrictMode.installForDebug()
+        if (BuildConfig.PAPER_LAB_QA) installPaperLabShortcut()
         ReaderFragmentRestoration.discardRestoredDummies(supportFragmentManager)
 
         enableEdgeToEdge()
@@ -67,6 +72,30 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
                     onSetGameVisible = settingsViewModel::setGameVisible
                 )
             }
+        }
+    }
+
+    /** The QA-only Paper fixture is available from a long-press app-icon shortcut.
+     *  It must never advertise a second MAIN/LAUNCHER activity: instrumentation
+     *  and package-based launches must continue to reach the real Library.
+     */
+    private fun installPaperLabShortcut() {
+        runCatching {
+            val curlIntent = Intent(Intent.ACTION_VIEW).apply {
+                setClassName(packageName, "com.veilreader.app.debug.ExternalCurlArenaActivity")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val shortcut = ShortcutInfo.Builder(this, "veil-paper-curl-lab")
+                .setShortLabel("Paper Curl Lab")
+                .setLongLabel("3D Paper Curl Lab (synthetic pages)")
+                .setIcon(Icon.createWithResource(this, R.drawable.ic_veil_reader_icon))
+                .setIntent(curlIntent)
+                .build()
+            getSystemService(ShortcutManager::class.java)?.addDynamicShortcuts(listOf(shortcut))
+        }.onFailure { error ->
+            // A launcher may not support app shortcuts. Never break the actual
+            // reading app; the debug-only deep link remains an explicit fallback.
+            Log.w("VeilPaperLab", "Cannot publish Paper Curl QA shortcut", error)
         }
     }
 
