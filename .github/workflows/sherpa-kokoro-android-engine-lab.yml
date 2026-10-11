@@ -56,12 +56,14 @@ jobs:
           test "$actual" = "$expected" || {
             echo "::error::Upstream service content differs from audited source"; exit 1;
           }
-          for n in 0001-cancellable-synthesis-and-pause 0002-remove-plaintext-narration-logs; do
+          for n in 0001-cancellable-synthesis-and-pause 0002-remove-plaintext-narration-logs 0003-kokoro-multivoice-identity; do
             patch="$GITHUB_WORKSPACE/tools/sherpa-onnx-engine-patch/$n.patch"
             git -C sherpa-upstream apply --check "$patch"
             git -C sherpa-upstream apply "$patch"
           done
           git -C sherpa-upstream diff --check
+          grep -Fq 'sid = requestedSpeakerId' sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+          grep -Fq 'override fun onGetVoices()' sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
           grep -Fq 'cancellationGeneration.incrementAndGet()' "sherpa-upstream/$target"
           if grep -Eq 'Log\\.(i|d|v|w|e)\\(TAG, "text:' "sherpa-upstream/$target"; then
             echo "::error::TTS service logs private book content"; exit 1
@@ -162,7 +164,7 @@ jobs:
             echo 'Native release: k2-fsa/sherpa-onnx v1.13.8 Android'
             echo 'Model: kokoro-en-v0_19, full precision, English'
             echo 'Status: DEBUG REVIEW ONLY — NOT DEVICE-AUDIO VERIFIED'
-            echo 'Patch: 0001 stop cancellation + 0002 no book text logs'
+            echo 'Patch: 0001 stop cancellation + 0002 no book text logs + 0003 stable 11-speaker Kokoro'
             echo 'APK SHA-256:'
             sha256sum deliverables/*.apk
             echo 'Native SHA-256:'
