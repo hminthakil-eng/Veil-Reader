@@ -28,6 +28,9 @@ audible audio must continue, because Android's framework owns the output buffer.
 
 Source project: https://github.com/k2-fsa/sherpa-onnx
 
+Pinned upstream **commit:** `9db1af1871ed78cee9357c23898e5a7d8702d21a`.
+The [independent CI audit](../../.github/workflows/sherpa-tts-stop-patch-audit.yml) checks this commit's exact file blob, applies the patch and runs `git diff --check`. It does not compile a patched engine or run actual audio tests.
+
 Exact original upstream **Git blob SHA-1**:
 `05ef5d3d6d553646bec8cdcf4f9240d2ccda7f60`.
 This is a file hash, **not** a commit or a proof of a reviewed native binary.
