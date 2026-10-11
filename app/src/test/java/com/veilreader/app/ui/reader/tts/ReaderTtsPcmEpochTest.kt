@@ -89,6 +89,17 @@ class ReaderTtsPcmEpochTest {
     }
 
     @Test
+    fun pcmChunkDurationLimitUsesActualSampleRate() {
+        val epoch = ReaderTtsPcmEpoch()
+        val lease = epoch.begin("kokoro", "narrator-0")
+        assertTrue(readerTtsValidPcmChunk(epoch, lease, 24_000, FloatArray(48_000)))
+        assertFalse(readerTtsValidPcmChunk(epoch, lease, 24_000, FloatArray(48_001)))
+        assertTrue(readerTtsValidPcmChunk(epoch, lease, 8_000, FloatArray(16_000)))
+        assertFalse(readerTtsValidPcmChunk(epoch, lease, 8_000, FloatArray(16_001)))
+        epoch.revoke()
+    }
+
+    @Test
     fun blankModelOrNarratorIsNotAccepted() {
         val epoch = ReaderTtsPcmEpoch()
         assertTrue(runCatching { epoch.begin("", "voice") }.isFailure)
