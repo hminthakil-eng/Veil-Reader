@@ -389,25 +389,39 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun markOpened(id: String) {
+        if (id.isBlank()) return
         flushProgress(id)
-        val current = getBook(id) ?: return
-        val openedAtEpochMs = maxOf(System.currentTimeMillis(), current.lastOpenedAtEpochMs)
-        val firstOpen = current.lastOpenedAtEpochMs <= 0L
-        val updated = current.copy(lastOpenedAtEpochMs = openedAtEpochMs)
-        replaceBookCached(updated)
+
+        // Keep the responsive UI cache update where possible, but NEVER use
+        // its presence to authorize a durable open. A late Room Flow emission
+        // can briefly overwrite this cache while the imported DB row exists.
+        val cached = getBook(id)
+        val requestedAtEpochMs = maxOf(
+            System.currentTimeMillis(),
+            cached?.lastOpenedAtEpochMs ?: 0L
+        )
+        cached?.let { replaceBookCached(it.copy(lastOpenedAtEpochMs = requestedAtEpochMs)) }
         enqueue {
             database.withTransaction {
+                // Room is the source of truth; repeated opens are serialized
+                // behind imports, progress writes and previous open events.
+                val persisted = database.books().findEntity(id)
+                    ?: return@withTransaction // Book was actually removed.
+                val openedAtEpochMs =
+                    maxOf(requestedAtEpochMs, persisted.lastOpenedAtEpochMs)
                 check(database.books().updateLastOpened(id, openedAtEpochMs) == 1) {
                     "Book disappeared before its opened timestamp could be persisted: $id"
                 }
-                if (firstOpen) {
-                    firstOpenedMilestone(
-                        bookId = id,
-                        openedAtEpochMs = openedAtEpochMs,
-                        locatorJson = current.locatorJson
-                    )?.let { milestone ->
-                        database.readingMilestones().insertIfAbsent(milestone.toEntity())
-                    }
+                // Stable milestone ID + INSERT IGNORE guarantee exactly one
+                // event even across duplicate opens or an unhydrated cache.
+                // Preserve a previously durable first-open time if present.
+                firstOpenedMilestone(
+                    bookId = id,
+                    openedAtEpochMs = persisted.lastOpenedAtEpochMs
+                        .takeIf { it > 0L } ?: openedAtEpochMs,
+                    locatorJson = persisted.locatorJson
+                )?.let { milestone ->
+                    database.readingMilestones().insertIfAbsent(milestone.toEntity())
                 }
             }
         }
