@@ -91,6 +91,10 @@ class LocalLibraryRepository internal constructor(
     private val storageFailure = AtomicReference<Throwable?>(null)
     private val coalescingLock = Any()
     private val pendingProgress = mutableMapOf<String, PendingProgressWrite>()
+    // A Room observer can deliver an older snapshot after a new import was committed.
+    // Retain the committed book until that observer actually includes its row.
+    private val awaitingImportedBookObservation = mutableMapOf<String, Book>()
+    private var lastObservedBookIds: Set<String> = emptySet()
     private val progressFlushJobs = mutableMapOf<String, Job>()
     private var nextReaderProgressWriterEpoch = 0L
     private val activeReaderProgressWriters = mutableMapOf<String, ReaderProgressWriterLease>()
@@ -148,7 +152,15 @@ class LocalLibraryRepository internal constructor(
             initialized.complete(Unit)
         }
         scope.launch {
-            database.books().observeAll().collect { rows -> _books.value = rows.map { it.toDomain() } }
+            database.books().observeAll().collect { rows ->
+                val observed = rows.map { it.toDomain() }
+                synchronized(coalescingLock) {
+                    val observedIds = observed.mapTo(mutableSetOf()) { it.id }
+                    lastObservedBookIds = observedIds
+                    awaitingImportedBookObservation.keys.removeAll(observedIds)
+                    _books.value = awaitingImportedBookObservation.values.toList() + observed
+                }
+            }
         }
         scope.launch {
             database.highlights().observeAll().collect { rows -> _highlights.value = rows.map { it.toDomain() } }
@@ -270,7 +282,12 @@ class LocalLibraryRepository internal constructor(
 
         if (result.duplicate) discardImportedArtifacts(book)
         val committed = result.book
-        _books.value = listOf(committed) + _books.value.filterNot { it.id == committed.id }
+        synchronized(coalescingLock) {
+            if (committed.id !in lastObservedBookIds) {
+                awaitingImportedBookObservation[committed.id] = committed
+            }
+            _books.value = listOf(committed) + _books.value.filterNot { it.id == committed.id }
+        }
         return result
     }
 
@@ -1250,6 +1267,7 @@ class LocalLibraryRepository internal constructor(
 
     private fun invalidateReaderProgressOwnership(bookId: String) {
         synchronized(coalescingLock) {
+            awaitingImportedBookObservation.remove(bookId)
             progressFlushJobs.remove(bookId)?.cancel()
             pendingProgress.remove(bookId)
             activeReaderProgressWriters.remove(bookId)
@@ -1416,7 +1434,12 @@ class LocalLibraryRepository internal constructor(
     }
 
     private fun replaceBookCached(book: Book) {
-        _books.value = _books.value.map { if (it.id == book.id) book else it }
+        synchronized(coalescingLock) {
+            if (awaitingImportedBookObservation.containsKey(book.id)) {
+                awaitingImportedBookObservation[book.id] = book
+            }
+            _books.value = _books.value.map { if (it.id == book.id) book else it }
+        }
     }
 
     private suspend fun setCollectionsInternal(bookId: String, names: Set<String>) {

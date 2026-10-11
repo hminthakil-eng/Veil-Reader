@@ -583,6 +583,38 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun newlyImportedBooks_keepImmediateProgressWhileRoomObserverCatchesUp() = runBlocking<Unit> {
+        val repository = repository()
+        repeat(20) { index ->
+            val bookId = "fresh-observer-race-$index"
+            repository.addImportedBook(
+                Book(
+                    id = bookId,
+                    title = "Fresh import $index",
+                    author = "Storage QA",
+                    totalPages = 100,
+                    sourceUri = "file:///fresh-$index.epub"
+                )
+            )
+            assertNotNull(repository.getBook(bookId))
+            repository.saveProgress(
+                bookId,
+                0.4,
+                "{\"href\":\"chapter-$index.xhtml\"}"
+            )
+            repository.flushProgress(bookId)
+        }
+        repository.flushWrites()
+
+        repeat(20) { index ->
+            val stored = requireNotNull(db.books().findEntity("fresh-observer-race-$index"))
+            assertEquals(0.4f, stored.progress, 0.000001f)
+            assertEquals(40, stored.pagesRead)
+            assertEquals("{\"href\":\"chapter-$index.xhtml\"}", stored.locatorJson)
+        }
+    }
+
+    @Test
     fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
