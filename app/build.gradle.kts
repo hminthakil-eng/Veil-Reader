@@ -21,7 +21,6 @@ android {
         buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
         buildConfigField("boolean", "NATIVE_KOKORO_QA", nativeKokoroQaBuild.toString())
         manifestPlaceholders["veilNativeKokoroLabEnabled"] = nativeKokoroQaBuild.toString()
-        manifestPlaceholders["veilNeuralLabEnabled"] = nativeKokoroQaBuild.toString()
         applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
         minSdk = 26
         targetSdk = 37
