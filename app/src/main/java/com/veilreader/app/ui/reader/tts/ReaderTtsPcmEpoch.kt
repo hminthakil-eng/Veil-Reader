@@ -65,5 +65,8 @@ internal fun readerTtsValidPcmChunk(
     epoch.accepts(lease) &&
         sampleRateHz in 8_000..96_000 &&
         samples.isNotEmpty() &&
-        samples.size <= 96_000 * 2 &&
+        // Bound by *audio duration*, not a fixed 192k samples: at 8 kHz
+        // 192k samples would mean 24 seconds of PCM and exceed the sink's
+        // progress timeout / introduce huge CPU stalls at the UI boundary.
+        samples.size <= sampleRateHz * 2 &&
         samples.all { it.isFinite() && it in -1.0f..1.0f }
