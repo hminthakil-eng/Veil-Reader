@@ -194,4 +194,53 @@ class ReaderTtsInProcessCoordinatorTest {
         )
         assertTrue(sink.writes.isEmpty())
     }
+    @Test
+    fun queuedSecondPlayCannotResurrectNarrationAfterPause() = runTest {
+        val nativeGate = CompletableDeferred<Unit>()
+        val runtime = FakeRuntime(model, nativeGate, CompletableDeferred())
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+
+        val first = async { worker.speak("First.", "kokoro-en-v0_19-2", 1f) }
+        runCurrent() // First call owns native inference and waits.
+        val second = async { worker.speak("Queued.", "kokoro-en-v0_19-2", 1f) }
+        runCurrent() // Second call is queued on nativeOwner mutex.
+
+        worker.pause()
+        nativeGate.complete(Unit)
+        runCurrent()
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, first.await())
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, second.await())
+        assertTrue(sink.writes.isEmpty())
+        assertEquals(1, sink.silenced)
+    }
+
+    @Test
+    fun pausingWhileSinkPreparesNeverCallsNativeInference() = runTest {
+        val waiting = CompletableDeferred<Unit>()
+        val preparationEntered = CompletableDeferred<Unit>()
+        val sink = object : ReaderTtsOwnedPcmSink {
+            var silenced = false
+            override suspend fun prepare(rate: Int, stillCurrent: () -> Boolean): Boolean {
+                preparationEntered.complete(Unit)
+                waiting.await()
+                return stillCurrent()
+            }
+            override suspend fun submit(pcm: FloatArray, stillCurrent: () -> Boolean) = false
+            override suspend fun drain(stillCurrent: () -> Boolean) = false
+            override fun silenceImmediately() { silenced = true }
+        }
+        val runtime = FakeRuntime(model)
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+        val play = async { worker.speak("Text.", "kokoro-en-v0_19-4", 1f) }
+        runCurrent()
+        preparationEntered.await()
+        worker.pause()
+        waiting.complete(Unit)
+        runCurrent()
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, play.await())
+        assertTrue(sink.silenced)
+        assertFalse(worker.isSpeaking())
+    }
+
 }
