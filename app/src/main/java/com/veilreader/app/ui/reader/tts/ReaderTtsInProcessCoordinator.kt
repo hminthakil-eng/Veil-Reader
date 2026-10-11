@@ -11,16 +11,16 @@ import kotlinx.coroutines.sync.withLock
  */
 internal interface ReaderTtsOwnedPcmSink {
     /** Called on worker coroutine, before the first audio chunk. */
-    suspend fun prepare(sampleRateHz: Int): Boolean
+    suspend fun prepare(sampleRateHz: Int, stillCurrent: () -> Boolean): Boolean
 
     /** PCM buffers are caller-owned copies: no JNI callback buffer may escape. */
-    suspend fun submit(pcm: FloatArray): Boolean
+    suspend fun submit(pcm: FloatArray, stillCurrent: () -> Boolean): Boolean
 
     /**
      * Wait until buffered audio has actually played. Native inference finishing
      * is NOT equivalent to the user hearing the final sample.
      */
-    suspend fun drain(): Boolean
+    suspend fun drain(stillCurrent: () -> Boolean): Boolean
 
     /** MUST interrupt and flush buffered audio without waiting for JNI inference. */
     fun silenceImmediately()
@@ -61,7 +61,16 @@ internal class ReaderTtsInProcessCoordinator(
         try {
             val rate = runtime.sampleRateHz
             if (rate !in 8_000..96_000) return@withLock ReaderTtsProblem.SYNTHESIS
-            if (!pcmSink.prepare(rate)) return@withLock ReaderTtsProblem.NO_ENGINE
+            if (!pcmSink.prepare(rate) { epoch.accepts(lease) }) {
+                return@withLock if (epoch.accepts(lease)) {
+                    ReaderTtsProblem.NO_ENGINE
+                } else {
+                    ReaderTtsProblem.SYNTHESIS
+                }
+            }
+            // Native inference may take seconds to initialize. If Pause was
+            // pressed during that setup, do not invoke JNI synthesis at all.
+            if (!epoch.accepts(lease)) return@withLock ReaderTtsProblem.SYNTHESIS
             val result = runtime.synthesize(
                 text = text,
                 voiceId = lease.voiceId,
@@ -75,7 +84,8 @@ internal class ReaderTtsInProcessCoordinator(
                     // JNI callbacks may reuse FloatArrays. The sink must never
                     // retain or modify a pointer to engine-owned memory.
                     val detached = nativePcm.copyOf()
-                    epoch.accepts(lease) && pcmSink.submit(detached) &&
+                    epoch.accepts(lease) &&
+                        pcmSink.submit(detached) { epoch.accepts(lease) } &&
                         epoch.accepts(lease)
                 }
             }
@@ -83,12 +93,16 @@ internal class ReaderTtsInProcessCoordinator(
                 // Sentence transitions append PCM to the same track. Draining
                 // on every sentence introduces audible gaps and falsely
                 // advertises playback completion before future segments.
-                if (endOfStream && !pcmSink.drain()) {
+                if (endOfStream && !pcmSink.drain { epoch.accepts(lease) }) {
                     ReaderTtsProblem.SYNTHESIS
-                } else {
+                } else if (epoch.accepts(lease)) {
                     normalCompletion = true
                     null
+                } else {
+                    ReaderTtsProblem.SYNTHESIS
                 }
+            } else if (!epoch.accepts(lease)) {
+                ReaderTtsProblem.SYNTHESIS
             } else {
                 result
             }
