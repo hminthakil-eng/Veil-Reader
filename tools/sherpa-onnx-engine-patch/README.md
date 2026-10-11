@@ -13,7 +13,12 @@ audible audio must continue, because Android's framework owns the output buffer.
 
 ## What this patch changes
 
-`0001-cancellable-synthesis-and-pause.patch`:
+Apply both patches in order:
+
+1. `0001-cancellable-synthesis-and-pause.patch` (stop propagation)
+2. `0002-remove-plaintext-narration-logs.patch` (privacy: no raw book text in Logcat)
+
+The first patch:
 - Increments a thread-visible `AtomicLong` cancellation generation in `onStop()`.
 - Captures the generation per synthesis request and checks cancellation before each PCM
   conversion and before each piece of `audioAvailable`; returns `0` to the sherpa
@@ -47,6 +52,10 @@ git -C "$SHERPA_ROOT" apply --check \
   /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0001-cancellable-synthesis-and-pause.patch
 git -C "$SHERPA_ROOT" apply \
   /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0001-cancellable-synthesis-and-pause.patch
+git -C "$SHERPA_ROOT" apply --check \
+  /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0002-remove-plaintext-narration-logs.patch
+git -C "$SHERPA_ROOT" apply \
+  /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0002-remove-plaintext-narration-logs.patch
 ```
 
 **Do not silently drop patch failures.** If upstream changes, re-review the service
