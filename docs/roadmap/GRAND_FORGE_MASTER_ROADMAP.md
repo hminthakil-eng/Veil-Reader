@@ -1,8 +1,8 @@
 # VEIL READER — GRAND FORGE MASTER ROADMAP
 **Version:** 2026-10-11 / 1.0
 **Canonical development trunk:** [main](https://github.com/hminthakil-eng/Veil-Reader/tree/main)
-**Baseline SHA (before this documentation):** \`9c65997d891b2b19ccba19e5729ce82bbdff9cce\`
-**Branch rule:** newest **integrated and evidence-qualified** development work must live on main. A new draft branch does not become main by having a newer date. Previous main snapshots are immutable numbered \`archive/NNNN\` branches.
+**Baseline SHA (before this documentation):** `9c65997d891b2b19ccba19e5729ce82bbdff9cce`
+**Branch rule:** newest **integrated and evidence-qualified** development work must live on main. A new draft branch does not become main by having a newer date. Previous main snapshots are immutable numbered `archive/NNNN` branches.
 **Product acceptance:** NOT GREEN. Developer-integrated is not the same as physically tested or release ready.
 **Status register:** [LIVE_STATUS.md](LIVE_STATUS.md) · **Branch/archive policy:** [BRANCH_AND_ARCHIVE_POLICY.md](BRANCH_AND_ARCHIVE_POLICY.md)
 **UI research:** [2026-10-11 UX evidence](../design/GRAND_FORGE_WORLDCLASS_UI_UX_RESEARCH_2026-10-11.md) lives currently in draft PR #489; link becomes canonical only after review/merge.
@@ -43,7 +43,7 @@ At 2026-10-11, GitHub main was old Sept 20 SHA cbf27c8. It was fast-forwarded (0
 
 | ID | Outcome / exact work | Dependencies / execution | Evidence required | State |
 |---|---|---|---|---|
-| GOV-01 | Maintain ONE canonical \`main\`; never make latest PR head canonical merely because newest | Original main preserved at archive/0001; compare refs before moves | exact ancestry and SHA, CI, rollback snapshot | INTEGRATED policy baseline |
+| GOV-01 | Maintain ONE canonical `main`; never make latest PR head canonical merely because newest | Original main preserved at archive/0001; compare refs before moves | exact ancestry and SHA, CI, rollback snapshot | INTEGRATED policy baseline |
 | GOV-02 | Archive stable prior trunk versions using increasing 4-digit archives; write manifest | no open PR, no active workflow dependency, no external checkout needing old branch name | full SHA + time + reason + predecessor; non-destructive branches | IN_PROGRESS |
 | GOV-03 | Publish permanent roadmap, evidence ledger and single command issue | This document, LIVE_STATUS and GitHub epic issue | daily dated updates, no invented pass/reject | IN_PROGRESS |
 | GOV-04 | Correct PR base filters + protection for main, required checks, reviewer policy, Code Owners | workflow audit / admin settings | branch protection read currently returned 403; no claim protection applied | BLOCKED: admin settings evidence |
@@ -173,7 +173,7 @@ At least once per day and at every critical merge/promotion:
 3. Update LIVE_STATUS.md with timestamp, HEAD and delta: DONE in main, IN_PROGRESS, BLOCKED, REJECTED/SUPERSEDED, NEXT. Update command-center issue with the same evidence.
 4. New confirmed P0 defects get named issue + owner role, reproduction, severity, rollback and test.
 5. Never auto-merge experimental/shadow PRs or delete branches. Human product/device gate holds.
-6. Before major promotion, create next unused \`archive/NNNN\` snapshot from prior main, validate fast-forward ancestry and exact expected SHA; migrate reviewed code to main. Old noncanonical active work branches remain until dependencies and open PRs are resolved. Document why a branch was archived.
+6. Before major promotion, create next unused `archive/NNNN` snapshot from prior main, validate fast-forward ancestry and exact expected SHA; migrate reviewed code to main. Old noncanonical active work branches remain until dependencies and open PRs are resolved. Document why a branch was archived.
 7. Report failures to update honestly; absence of CI or a screenshot is UNKNOWN, not PASS.
 
 **References:** #408 #409 #415 #417 #428 #429 #466 #467 #468 #474 #475 #479 #480 #482 #485 #487 #488 #489.
