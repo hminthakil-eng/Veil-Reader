@@ -366,14 +366,14 @@ internal fun ReaderListeningMode(
                                 },
                                 label = {
                                     Text(
-                                        if (BuildConfig.DEBUG && BuildConfig.FORGE_QA)
+                                        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA)
                                             "Neural · Kokoro (in-app)"
                                         else "Neural · Sherpa"
                                     )
                                 }
                             )
                         }
-                        if (BuildConfig.DEBUG && BuildConfig.FORGE_QA &&
+                        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA &&
                             settings.engine == ReaderTtsEngineChoice.SHERPA_ONNX
                         ) {
                             Text(
@@ -405,7 +405,7 @@ internal fun ReaderListeningMode(
                             }
                         }
                         Text(
-                            if (BuildConfig.DEBUG && BuildConfig.FORGE_QA)
+                            if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA)
                                 "Kokoro runs inside this Forge QA build, without a second TTS app. English-only preview; a narrator change pauses playback. Press Play to resume."
                             else if (sherpaEngineInstalled)
                                 "Select Kokoro in the installed Sherpa engine for English. Switching pauses playback; your voice choices are saved separately for each engine. Tap Play to resume."
