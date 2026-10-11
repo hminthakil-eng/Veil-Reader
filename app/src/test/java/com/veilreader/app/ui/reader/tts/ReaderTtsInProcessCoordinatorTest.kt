@@ -6,7 +6,6 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -84,7 +83,7 @@ class ReaderTtsInProcessCoordinatorTest {
         finishing.complete(Unit)
         runCurrent()
         assertTrue(play.isCompleted)
-        assertNull(play.await())
+        assertEquals(ReaderTtsInProcessOutcome.Completed, play.await())
         assertFalse(worker.isSpeaking())
         assertEquals(0, sink.silenced)
     }
@@ -93,9 +92,10 @@ class ReaderTtsInProcessCoordinatorTest {
     fun ordinarySentenceDoesNotDrainOrFlushAlreadyBufferedPcm() = runTest {
         val sink = FakeSink()
         val worker = ReaderTtsInProcessCoordinator(FakeRuntime(model), sink)
-        assertNull(worker.speak(
-            "First sentence.", "kokoro-en-v0_19-4", 1f, endOfStream = false
-        ))
+        assertEquals(
+            ReaderTtsInProcessOutcome.Completed,
+            worker.speak("First sentence.", "kokoro-en-v0_19-4", 1f, endOfStream = false)
+        )
         assertEquals(0, sink.drains)
         assertEquals(0, sink.silenced)
         assertEquals(1, sink.writes.size)
@@ -118,7 +118,7 @@ class ReaderTtsInProcessCoordinatorTest {
         runCurrent()
         assertFalse(runtime.nativeCallbackResult)
         assertTrue(sink.writes.isEmpty())
-        assertEquals(ReaderTtsProblem.SYNTHESIS, play.await())
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, play.await())
     }
 
     @Test
@@ -126,10 +126,61 @@ class ReaderTtsInProcessCoordinatorTest {
         val runtime = FakeRuntime(model)
         val sink = FakeSink()
         val worker = ReaderTtsInProcessCoordinator(runtime, sink)
-        assertNull(worker.speak("Text.", "kokoro-en-v0_19-10", 1f))
+        assertEquals(
+            ReaderTtsInProcessOutcome.Completed,
+            worker.speak("Text.", "kokoro-en-v0_19-10", 1f)
+        )
         assertEquals(0.25f, sink.writes.single()[0], 0.001f)
         assertEquals(-0.25f, sink.writes.single()[1], 0.001f)
         assertFalse(worker.isSpeaking())
+    }
+
+    @Test
+    fun nativeEngineProducingZeroPcmIsNotReportedAsSuccess() = runTest {
+        val empty = object : ReaderTtsNeuralRuntime {
+            override val model = this@ReaderTtsInProcessCoordinatorTest.model
+            override val sampleRateHz = 24_000
+            override suspend fun synthesize(
+                text: String,
+                voiceId: String?,
+                speed: Float,
+                onPcmChunk: suspend (FloatArray) -> Boolean
+            ): ReaderTtsProblem? = null
+            override fun close() = Unit
+        }
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(empty, sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS),
+            worker.speak("Not silent.", "kokoro-en-v0_19-3", 1f)
+        )
+        assertEquals(0, sink.drains)
+        assertEquals(1, sink.silenced)
+    }
+
+    @Test
+    fun aNativeEngineThatIgnoresRejectedPcmCannotClaimSuccess() = runTest {
+        val buggy = object : ReaderTtsNeuralRuntime {
+            override val model = this@ReaderTtsInProcessCoordinatorTest.model
+            override val sampleRateHz = 24_000
+            override suspend fun synthesize(
+                text: String,
+                voiceId: String?,
+                speed: Float,
+                onPcmChunk: suspend (FloatArray) -> Boolean
+            ): ReaderTtsProblem? {
+                onPcmChunk(floatArrayOf(Float.NaN))
+                return null // Native implementation wrongly ignores callback=false.
+            }
+            override fun close() = Unit
+        }
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(buggy, sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS),
+            worker.speak("Bad native output", "kokoro-en-v0_19-2", 1f)
+        )
+        assertTrue(sink.writes.isEmpty())
     }
 
     @Test
@@ -138,7 +189,7 @@ class ReaderTtsInProcessCoordinatorTest {
         val sink = FakeSink()
         val worker = ReaderTtsInProcessCoordinator(runtime, sink)
         assertEquals(
-            ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE,
+            ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE),
             worker.speak("Text.", " ", 1f)
         )
         assertTrue(sink.writes.isEmpty())
