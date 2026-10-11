@@ -224,11 +224,22 @@ internal class ReaderTtsServiceController(
     }
 
     fun updateSettings(settings: ReaderTtsSettings) {
+        if (closed.get()) return
         val safe = settings.normalized()
         val changedEngine = catalogEngine != safe.engine
         catalogEngine = safe.engine
+        // User can change engine before MediaController connects. An already
+        // queued autoplay must never start the old narrator after that choice.
+        pendingStart = pendingStart?.let { queued ->
+            queued.copy(
+                settings = safe,
+                autoplay = if (changedEngine) false else queued.autoplay
+            )
+        }
         if (changedEngine) {
+            pendingPauseOnConnect = true
             mutableVoices.value = emptyList()
+            mutableState.value = mutableState.value.copy(phase = ReaderTtsPhase.PAUSED)
             refreshVoiceCatalog()
         }
         val target = controller ?: return
@@ -377,7 +388,11 @@ internal class ReaderTtsServiceController(
     ) {
         val target = controller ?: return
         val safe = settings.normalized()
-        catalogEngine = safe.engine
+        if (catalogEngine != safe.engine) {
+            catalogEngine = safe.engine
+            mutableVoices.value = emptyList()
+            refreshVoiceCatalog()
+        }
         mutablePreviewProblem.value = null
         val resultFuture = target.sendCustomCommand(
             SessionCommand(
