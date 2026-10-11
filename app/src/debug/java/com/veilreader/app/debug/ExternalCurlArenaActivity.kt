@@ -109,6 +109,21 @@ class ExternalCurlArenaActivity : Activity() {
         setContentView(frame)
     }
 
+    override fun onResume() {
+        super.onResume()
+        // GLTextureView owns a GL render thread. Upstream requires the
+        // hosting Activity to explicitly recreate/resume that thread.
+        // Without this, background/foreground can leave Paper frozen.
+        curl?.onResume()
+    }
+
+    override fun onPause() {
+        // Upstream GLTextureView requires pause BEFORE Activity stops,
+        // so EGL frames are not rendered against a backgrounded surface.
+        curl?.onPause()
+        super.onPause()
+    }
+
     override fun onDestroy() {
         status = null
         curl = null

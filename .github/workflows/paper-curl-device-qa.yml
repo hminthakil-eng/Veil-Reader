@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "qa/paper-curl-physical-apk-lane-20261011"
+      - "fix/paper-lab-native-gl-lifecycle-20261011"
       - "grand-forge/open-source-paper-curl-arena-20261010"
     paths:
       - "app/**"
