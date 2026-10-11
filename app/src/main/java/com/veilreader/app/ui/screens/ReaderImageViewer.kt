@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -153,6 +154,15 @@ internal fun ReaderImageViewer(
                             .fillMaxSize()
                             .padding(horizontal = 10.dp)
                             .onSizeChanged { viewport = it }
+                            .pointerInput(content.bitmap) {
+                                detectTapGestures(onDoubleTap = { position ->
+                                    transform = toggleReaderImageDoubleTap(
+                                        transform, viewport.width, viewport.height,
+                                        content.bitmap.width, content.bitmap.height,
+                                        position.x, position.y
+                                    )
+                                })
+                            }
                             .pointerInput(content.bitmap) {
                                 detectTransformGestures { centroid, gesturePan, zoom, _ ->
                                     transform = transformReaderImage(
