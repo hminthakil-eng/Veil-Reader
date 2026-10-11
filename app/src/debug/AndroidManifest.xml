@@ -6,7 +6,6 @@
         <activity
             android:name=".ui.reader.tts.VeilNeuralVoiceLabActivity"
             android:enabled="${veilNativeKokoroLabEnabled}"
-            android:enabled="${veilNeuralLabEnabled}"
             android:exported="true"
             android:label="Veil Neural Lab"
             android:theme="@style/Theme.VeilReader">
