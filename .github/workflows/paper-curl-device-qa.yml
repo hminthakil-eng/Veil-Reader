@@ -8,6 +8,8 @@ on:
     paths:
       - "app/**"
       - "tools/run_android_ci_emulator.sh"
+      - "tools/collect_paper_device_evidence.py"
+      - "tools/tests/test_collect_paper_device_evidence.py"
       - ".github/workflows/paper-curl-device-qa.yml"
   workflow_dispatch:
 
@@ -41,6 +43,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: '9.6.0'
+
+      - name: Verify exact-APK local evidence capture safety guards
+        run: python3 -m unittest discover -s tools/tests -p "test_collect_paper_device_evidence.py" -v
 
       - name: Compile unit instrumentation and lint separate Paper Lab
         run: >-
