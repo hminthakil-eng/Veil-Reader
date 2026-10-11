@@ -102,5 +102,38 @@ class GateTests(unittest.TestCase):
                 gate.record(r)
 
 
+    def test_preflight_posts_to_work_and_command_center(self):
+        r = fields(stage="UX-01-W9")
+        r["issue"] = "496"
+        sha = "a" * 40
+        calls = []
+
+        def fake_api(method, path, payload=None):
+            calls.append((method, path, payload))
+            if path == "/branches/main":
+                return {"commit": {"sha": sha}}
+            if path == "/issues/496":
+                return {"state": "open"}
+            if path.startswith("/issues/496/comments?"):
+                return []
+            if path.startswith("/contents/"):
+                return {"sha": "b" * 40}
+            if path.endswith("/comments") and method == "POST":
+                return {"html_url": "https://github.com/hminthakil-eng/Veil-Reader/issues/496#issuecomment-1"}
+            raise AssertionError(path)
+
+        with patch.dict(os.environ, {"GITHUB_REF": "refs/heads/main", "GITHUB_SHA": sha}):
+            with patch.object(gate, "api", side_effect=fake_api):
+                self.assertIn("Posted:", gate.record(r))
+        written = [path for method, path, _ in calls if method == "POST"]
+        self.assertEqual(written, ["/issues/496/comments", "/issues/495/comments"])
+
+    def test_outdated_main_aborts_before_posting(self):
+        r = fields(stage="DATA-01-W3")
+        with patch.dict(os.environ, {"GITHUB_REF": "refs/heads/main", "GITHUB_SHA": "b" * 40}):
+            with patch.object(gate, "api", return_value={"commit": {"sha": "a" * 40}}):
+                with self.assertRaises(gate.GateError):
+                    gate.record(r)
+
 if __name__ == "__main__":
     unittest.main()
