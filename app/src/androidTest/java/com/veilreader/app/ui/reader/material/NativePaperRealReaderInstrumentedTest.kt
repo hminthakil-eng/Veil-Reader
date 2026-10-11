@@ -8,12 +8,14 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
 import android.webkit.WebView
 import androidx.fragment.app.Fragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.veilreader.app.debug.NativePaperReaderActivity
+import com.veilreader.app.R
 import java.io.File
 import org.junit.Assert.*
 import org.junit.Test
@@ -80,7 +82,9 @@ class NativePaperRealReaderInstrumentedTest {
                     }
                     ready = native()?.renderingReady == true && locationReady && web != null && painted === web
                 }
-                ready
+                // The real DOM is ready behind the initial book-entry curtain.
+                // That modal legitimately owns touch until its exit completes.
+                ready && !entryCurtainPresent()
             }
             instrumentation.runOnMainSync {
                 assertEquals("The publication must drive physical turn direction",
@@ -228,6 +232,26 @@ class NativePaperRealReaderInstrumentedTest {
     private fun views(root: View): List<View> = buildList {
         add(root)
         if (root is ViewGroup) for (i in 0 until root.childCount) addAll(views(root.getChildAt(i)))
+    }
+
+    @Suppress("DEPRECATION")
+    private fun entryCurtainPresent(): Boolean {
+        val root = automation.rootInActiveWindow ?: return true
+        val labels = setOf(
+            instrumentation.targetContext.getString(R.string.entry_entering_sanctuary),
+            instrumentation.targetContext.getString(R.string.entry_old_seal_opens)
+        )
+        val pending = ArrayDeque<AccessibilityNodeInfo>()
+        pending.add(root)
+        var present = false
+        while (pending.isNotEmpty()) {
+            val node = pending.removeFirst()
+            val text = node.text?.toString()
+            if (text != null && text in labels) present = true
+            for (i in 0 until node.childCount) node.getChild(i)?.let(pending::add)
+            node.recycle()
+        }
+        return present
     }
     private fun fragments(roots: List<Fragment>): List<Fragment> = roots.flatMap { listOf(it) + fragments(it.childFragmentManager.fragments) }
     private fun waitUntil(message: String, condition: () -> Boolean) {
