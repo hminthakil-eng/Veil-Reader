@@ -105,7 +105,11 @@ New meaningful checks:
   and actual locator tests pass. Captures the source bitmap, six PNGs per book and any timeout image;
   exports fixture captures before UTP uninstalls the debug app.
 - Benchmark build now exercises native backend with the existing full Reader
-  performance fixture and system animators enabled. The real-book tests scope
+  performance fixture and system animators enabled only for the Reader frame
+  run. Cold startup and profile generation retain the established disabled-animation
+  baseline. Enabling animators globally also changed the unrelated launch
+  benchmark, invalidating its comparison with the persisted main baseline.
+  The real-book tests scope
   this setting to their own fixtures and restore it afterwards. Earlier emulator
   frame-smoke receipts with animator scale zero only measured static paging and
   are not native-fold performance evidence.

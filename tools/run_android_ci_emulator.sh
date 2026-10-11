@@ -145,13 +145,9 @@ done
 
 "$ADB" -s "$SERIAL" shell settings put global window_animation_scale 0
 "$ADB" -s "$SERIAL" shell settings put global transition_animation_scale 0
-# Veil maps disabled animators to Reduced Motion. The frame lane must exercise
-# actual paper folds rather than silently measuring accessibility/static paging.
-if [[ "$MODE" == "performance" ]]; then
-  "$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 1
-else
-  "$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 0
-fi
+# Preserve the established animation-disabled cold-start baseline. The Reader
+# frame benchmark enables normal motion separately, immediately before its run.
+"$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 0
 export ANDROID_SERIAL="$SERIAL"
 
 run_gradle() {
@@ -202,6 +198,9 @@ case "$MODE" in
     # when a comma-separated class list was supplied. Independent runs also preserve auditable JSON
     # for both Startup and Reader frame-smoke budget groups.
     run_benchmark_class com.veilreader.benchmark.StartupBenchmark startup
+    # Veil maps disabled animators to Reduced Motion. Only this Reader lane
+    # requires normal motion to measure real folds instead of static paging.
+    "$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 1
     run_benchmark_class com.veilreader.benchmark.ReaderFrameSmokeBenchmark reader-frame-smoke
     ;;
 
