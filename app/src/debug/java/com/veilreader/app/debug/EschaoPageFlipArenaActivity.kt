@@ -63,7 +63,7 @@ class EschaoPageFlipArenaActivity : Activity() {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(18.dp(), 6.dp(), 14.dp(), 6.dp())
             text = "VEIL PAPER ARENA  ·  ESCHAO OPENGL\n" +
-                "Drag right edge towards left; reverse or release. Independent sample sheets."
+                "Sheet 1 / 8  •  Drag the corner; reverse or release."
             isClickable = false
             isFocusable = false
         }
@@ -124,6 +124,13 @@ private class EschaoPageFlipSurface(
     private var mode = FRAME_FULL
     private var closed = false
     private var surfaceReady = false
+    // A canceled or restored fold must never change the logical page.
+    // Texture reset is requested on the UI thread, but actually executed
+    // ONLY in the GL renderer while the GL context is current.
+    private var gestureStartPage = 1
+    private var gestureStartX = 0f
+    private var cancelPending = false
+    private var invalidatePaperTextures = false
 
     init {
         setEGLContextClientVersion(2)
@@ -167,6 +174,10 @@ private class EschaoPageFlipSurface(
             try {
                 flip.deleteUnusedTextures()
                 val page = flip.getFirstPage() ?: return
+                if (invalidatePaperTextures) {
+                    page.deleteAllTextures()
+                    invalidatePaperTextures = false
+                }
                 when (mode) {
                     FRAME_FULL -> {
                         if (!page.isFirstTextureSet) {
@@ -218,7 +229,14 @@ private class EschaoPageFlipSurface(
                 requestRender()
             } else {
                 val state = flip.flipState
-                if (state == PageFlipState.END_WITH_FORWARD) {
+                if (cancelPending || state == PageFlipState.END_WITH_RESTORE) {
+                    // A backward preview may have decremented pageNumber
+                    // before the turn is committed. Restore its original page
+                    // and rebuild the correct front/back GLSL textures.
+                    pageNumber = gestureStartPage
+                    invalidatePaperTextures = true
+                    cancelPending = false
+                } else if (state == PageFlipState.END_WITH_FORWARD) {
                     flip.getFirstPage()?.let { page ->
                         page.setFirstTextureWithSecond()
                         page.setBackTexture(null)
@@ -226,6 +244,7 @@ private class EschaoPageFlipSurface(
                     pageNumber = min(PAGE_COUNT, pageNumber + 1)
                     nextPage = pageNumber - 1
                 } else if (state == PageFlipState.END_WITH_BACKWARD) {
+                    pageNumber = max(1, gestureStartPage - 1)
                     nextPage = pageNumber - 1
                 }
                 mode = FRAME_FULL
@@ -241,7 +260,12 @@ private class EschaoPageFlipSurface(
             if (!surfaceReady || flip.getFirstPage() == null) return true
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    if (!flip.isAnimating) flip.onFingerDown(event.x, event.y)
+                    if (!flip.isAnimating) {
+                        gestureStartPage = pageNumber
+                        gestureStartX = event.x
+                        cancelPending = false
+                        flip.onFingerDown(event.x, event.y)
+                    }
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (!flip.isAnimating) {
@@ -253,7 +277,28 @@ private class EschaoPageFlipSurface(
                         }
                     }
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> release(event.x, event.y)
+                MotionEvent.ACTION_UP -> release(event.x, event.y)
+                MotionEvent.ACTION_CANCEL -> {
+                    cancelPending = true
+                    // Ask upstream to return towards original edge rather
+                    // than interpreting CANCEL as a normal release. Force
+                    // restore by transaction guard even if its fold threshold
+                    // would otherwise finish in the forward direction.
+                    if (flip.isAnimating) {
+                        // Existing animation will finish, but MUST NOT commit.
+                        mode = FRAME_ANIMATING
+                        requestRender()
+                    } else {
+                        release(gestureStartX, event.y)
+                        if (mode != FRAME_ANIMATING) {
+                            pageNumber = gestureStartPage
+                            invalidatePaperTextures = true
+                            cancelPending = false
+                            mode = FRAME_FULL
+                            requestRender()
+                        }
+                    }
+                }
             }
         }
         return true
