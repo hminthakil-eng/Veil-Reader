@@ -12,7 +12,6 @@ import android.widget.Spinner
 import android.widget.TextView
 import com.veilreader.app.BuildConfig
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -153,7 +152,11 @@ internal class VeilNeuralVoiceLabActivity : Activity() {
         nativeRuntime?.close()
         val output = sink
         sink = null
-        scope.launch(Dispatchers.IO) { output?.close() }
+        // The UI scope is canceled below, so do not schedule native device
+        // release on that soon-to-be-canceled scope.
+        if (output != null) {
+            Thread({ output.close() }, "VeilTtsAudioRelease").start()
+        }
         scope.cancel()
         super.onDestroy()
     }
