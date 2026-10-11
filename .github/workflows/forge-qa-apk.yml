@@ -35,7 +35,7 @@ jobs:
 
       # Dedicated debug QA key, never production signing. Cache scope is this QA branch.
       - name: Retain QA update signing identity
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .forge-qa/debug.keystore
           key: veil-forge-qa-debug-signing-v1
