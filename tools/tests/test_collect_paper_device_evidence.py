@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from collect_paper_device_evidence import PACKAGE_RE, SHA_RE, online_devices, safe_name
+from collect_paper_device_evidence import (PACKAGE_RE, SHA_RE, installed_base_apk,
+                                           online_devices, parse_device_sha256sum, safe_name)
 
 
 class DeviceCaptureGuards(unittest.TestCase):
@@ -25,6 +26,30 @@ class DeviceCaptureGuards(unittest.TestCase):
 
     def test_safe_path_suffix(self):
         self.assertEqual(safe_name("serial/../evil:name"), "serial_.._evil_name")
+
+
+    def test_installed_base_apk_requires_explicit_path(self):
+        self.assertEqual(
+            installed_base_apk("package:/data/app/~~abc/com.veilreader.app.paperlab/base.apk\n"),
+            "/data/app/~~abc/com.veilreader.app.paperlab/base.apk",
+        )
+        self.assertEqual(
+            installed_base_apk(
+                "package:/data/app/~~abc/com.veilreader.app.paperlab/base.apk\n"
+                "package:/data/app/~~abc/com.veilreader.app.paperlab/split_config.arm64_v8a.apk\n"
+            ),
+            "/data/app/~~abc/com.veilreader.app.paperlab/base.apk",
+        )
+        for invalid in ("", "not installed", "package:foo\npackage:bar\n"):
+            with self.assertRaises(ValueError):
+                installed_base_apk(invalid)
+
+    def test_device_sha256_parser_rejects_missing_or_bad_digest(self):
+        digest = "a" * 64
+        self.assertEqual(parse_device_sha256sum(digest + "  /data/app/base.apk"), digest)
+        for bad in ("", "sha256 not available", "123  /data/app/base.apk"):
+            with self.assertRaises(ValueError):
+                parse_device_sha256sum(bad)
 
 
 if __name__ == "__main__":
