@@ -1,0 +1,52 @@
+name: Sherpa TTS Stop Patch Audit
+
+on:
+  pull_request:
+    paths:
+      - 'tools/sherpa-onnx-engine-patch/**'
+      - '.github/workflows/sherpa-tts-stop-patch-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apply-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout Veil's patch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Checkout exact upstream source (not moving master)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: k2-fsa/sherpa-onnx
+          ref: 9db1af1871ed78cee9357c23898e5a7d8702d21a
+          path: sherpa-upstream
+          persist-credentials: false
+          submodules: false
+      - name: Verify upstream blob and cleanly apply stop patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          target='android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt'
+          patch="$GITHUB_WORKSPACE/tools/sherpa-onnx-engine-patch/0001-cancellable-synthesis-and-pause.patch"
+          expected='05ef5d3d6d553646bec8cdcf4f9240d2ccda7f60'
+          actual="$(git -C sherpa-upstream hash-object "$target")"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "::error::Upstream TtsService has changed; re-review before applying" >&2
+            exit 1
+          fi
+          git -C sherpa-upstream apply --check "$patch"
+          git -C sherpa-upstream apply "$patch"
+          git -C sherpa-upstream diff --check
+          grep -Fq 'cancellationGeneration.incrementAndGet()' "sherpa-upstream/$target"
+          grep -Fq 'if (isCancelled()) return 0' "sherpa-upstream/$target"
+          grep -Fq 'callback.audioAvailable(samples, offset, bytesToWrite) !=' "sherpa-upstream/$target"
+          echo 'Patch applies and cancellation guards are present.'
+      - name: Display explicit acceptance limitation
+        run: |
+          echo 'NOTE: This gate verifies patch integrity only.'
+          echo 'It does not build a patched Sherpa APK or prove audible Pause on an Android device.'
