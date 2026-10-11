@@ -15,6 +15,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.veilreader.app.debug.NativePaperReaderActivity
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,8 +55,10 @@ class NativePaperRealReaderInstrumentedTest {
                 .filterIsInstance<EpubNavigatorFragment>().firstOrNull()
             fun sourceWeb(): WebView? = views(navigator()?.publicationView ?: host.window.decorView)
                 .filterIsInstance<WebView>().firstOrNull {
+                    val visible = Rect()
                     it.isShown && it.isAttachedToWindow && it.width > 0 && it.height > 0 &&
-                        it.getGlobalVisibleRect(Rect())
+                        it.getGlobalVisibleRect(visible) &&
+                        visible.width() > it.width * 0.75f && visible.height() > it.height * 0.75f
                 }
             fun locator(): String? {
                 var value: String? = null
@@ -105,6 +109,14 @@ class NativePaperRealReaderInstrumentedTest {
                 val web = requireNotNull(sourceWeb())
                 assertTrue(web.getGlobalVisibleRect(bounds))
             }
+            val inputWeb = requireNotNull(sourceWeb())
+            evaluate(inputWeb, """(() => {
+                window.__veilFixtureTouches = {touchstart:0,touchmove:0,touchend:0,touchcancel:0};
+                for (const type of Object.keys(window.__veilFixtureTouches)) {
+                    document.addEventListener(type, () => window.__veilFixtureTouches[type]++, {capture:true, passive:true});
+                }
+                return true;
+            })()""")
             val baseline = screenshot("$prefix-01-origin.png")
             val direction = if (rtl) 1f else -1f
             val x = bounds.left + bounds.width() * (if (rtl) 0.05f else 0.95f)
@@ -115,6 +127,8 @@ class NativePaperRealReaderInstrumentedTest {
                 inject(MotionEvent.ACTION_MOVE, x + direction * bounds.width() * 0.57f * step / 14, y - step * 1.5f, down)
                 SystemClock.sleep(22)
             }
+            android.util.Log.i("VeilNativePaperProbe", "bounds=$bounds down=${host.receivedTouchDowns} dom=" +
+                evaluate(inputWeb, "JSON.stringify({touches:window.__veilFixtureTouches, bridge:typeof Android, drag:typeof Android === 'undefined' ? 'missing' : typeof Android.onDragStart, selection:window.getSelection().isCollapsed})"))
             waitUntil("Actual source buffer acquired") {
                 var acquired = false
                 instrumentation.runOnMainSync { acquired = (native()?.lastAcquiredSheetEpoch ?: 0L) > 0L }
@@ -184,11 +198,31 @@ class NativePaperRealReaderInstrumentedTest {
     }
 
     private fun inject(action: Int, x: Float, y: Float, down: Long) {
-        val event = MotionEvent.obtain(down, SystemClock.uptimeMillis(), action, x, y, 0)
+        val pointer = MotionEvent.PointerProperties().apply {
+            id = 0
+            toolType = MotionEvent.TOOL_TYPE_FINGER
+        }
+        val coordinates = MotionEvent.PointerCoords().apply {
+            this.x = x; this.y = y
+            pressure = if (action == MotionEvent.ACTION_UP) 0f else 1f
+            size = 1f
+        }
+        val event = MotionEvent.obtain(down, SystemClock.uptimeMillis(), action, 1,
+            arrayOf(pointer), arrayOf(coordinates), 0, 0, 1f, 1f, 0, 0,
+            InputDevice.SOURCE_TOUCHSCREEN, 0)
         try {
-            event.source = InputDevice.SOURCE_TOUCHSCREEN
             assertTrue("Input injection failed", automation.injectInputEvent(event, true))
         } finally { event.recycle() }
+    }
+
+    private fun evaluate(web: WebView, script: String): String {
+        val completed = CountDownLatch(1)
+        var result = "callback-timeout"
+        instrumentation.runOnMainSync {
+            web.evaluateJavascript(script) { value -> result = value; completed.countDown() }
+        }
+        completed.await(2, TimeUnit.SECONDS)
+        return result
     }
 
     private fun screenshot(name: String): Bitmap {

@@ -10,6 +10,7 @@ import android.opengl.EGL14
 import android.opengl.EGLExt
 import android.opengl.GLSurfaceView
 import android.view.TextureView
+import android.view.MotionEvent
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -110,6 +111,15 @@ internal class NativeMaterialPageCurlView(
                 scheduleProbe()
             }
         }
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val accepted = super.dispatchTouchEvent(event)
+        if (event.actionMasked != MotionEvent.ACTION_MOVE) {
+            ReaderTrace.event("paper_native_input",
+                details = "action=${event.actionMasked} accepted=$accepted")
+        }
+        return accepted
     }
 
     /** Called on UI thread; a lease prevents the snapshot pool reusing pixels during copy. */

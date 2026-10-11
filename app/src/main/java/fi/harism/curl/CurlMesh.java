@@ -657,7 +657,9 @@ public class CurlMesh {
 		if (DRAW_SHADOW) {
 			gl.glDisable(GL10.GL_TEXTURE_2D);
 			gl.glEnable(GL10.GL_BLEND);
-			gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+			// Veil's transparent TextureView expects premultiplied RGBA.
+			// Black shadow RGB is already zero; do not square its alpha.
+			gl.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glColorPointer(4, GL10.GL_FLOAT, 0, mBufShadowColors);
 			gl.glVertexPointer(3, GL10.GL_FLOAT, 0, mBufShadowVertices);
@@ -690,7 +692,8 @@ public class CurlMesh {
 				gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[1]);
 			}
 
-			gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+			// Android Bitmap uploads contain premultiplied texture colors.
+			gl.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, mVerticesCountFront);
 
 			gl.glDisable(GL10.GL_BLEND);
@@ -714,7 +717,7 @@ public class CurlMesh {
 				gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[1]);
 			}
 
-			gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, backStartIdx, backCount);
 
 			gl.glDisable(GL10.GL_BLEND);
@@ -747,7 +750,7 @@ public class CurlMesh {
 
 		if (DRAW_SHADOW) {
 			gl.glEnable(GL10.GL_BLEND);
-			gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glBlendFunc(GL10.GL_ONE, GL10.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glEnableClientState(GL10.GL_COLOR_ARRAY);
 			gl.glColorPointer(4, GL10.GL_FLOAT, 0, mBufShadowColors);
 			gl.glVertexPointer(3, GL10.GL_FLOAT, 0, mBufShadowVertices);

@@ -266,7 +266,9 @@ internal fun PaperCurlOverlay(
             )
         }
 
-        if (BuildConfig.DEBUG) {
+        // The rebuilt reader keeps diagnostics in traces, leaving book ink clear.
+        // Preserve the original HUD only for the explicit legacy backend.
+        if (BuildConfig.DEBUG && !BuildConfig.NATIVE_PAPER_REBUILD) {
             val label = when {
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU CANONICAL · DISABLED"
@@ -292,7 +294,7 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · READY · A${state.debugBeginAttempts}"
             }
             Text(
-                text = label.replace("GPU CANONICAL", "NATIVE HARISM"),
+                text = label,
                 color = Color(0xFFFFC857),
                 modifier = Modifier
                     .align(Alignment.TopStart)

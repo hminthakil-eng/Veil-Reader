@@ -4,6 +4,7 @@ Source commit: 7a2c8f152bb4f1b0de3b1aa72b3cb79e1fe8e3bd
 Apache License 2.0. Full license accompanies this notice.
 
 Veil Reader reuses CurlMesh and CurlPage. CurlMesh was adapted to prepare
-textures before applying finger geometry and to use linear texture filtering.
+textures before applying finger geometry, use linear texture filtering, and
+compose premultiplied textures/black shadows into a transparent TextureView.
 CurlPage is unmodified. The Readium integration, lifecycle/bitmap leases and
 finger endpoint solver are separate Veil Reader implementations.

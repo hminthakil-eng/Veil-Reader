@@ -39,6 +39,8 @@ phone recording are required to attribute an individual report.
 - `NativeMaterialPageCurlView`: licensed `CurlMesh` renders real publication
   pixels in a transparent GLTextureView; deformation/self/drop shadows come from
   mesh topology rather than translating an image. GPU work stays on GL thread.
+- Premultiplied bitmap/shadow blending preserves sheet opacity on the transparent
+  host. Native diagnostics stay in metadata traces and leave the book text clear.
 - Same leaf is used on both surfaces, with underside tint. A destination page is
   never mislabeled as the back of the leaf. No proprietary Kindle/Moon+ code used.
 - Source bitmap is borrowed under a generation/revision lease, copied once into
@@ -74,7 +76,7 @@ New meaningful checks:
 - `PaperDiscreteTurnLifecycleTest`: quick release before acquisition waits then
   commits exactly once; existing timeout, cancel and chapter-ownership regressions.
 - `NativePaperRealReaderInstrumentedTest`: launch production import/Readium/
-  ReaderScreen with English LTR and Persian RTL EPUBs; inject actual Android touch events;
+  ReaderScreen with English LTR and Persian RTL EPUBs; inject actual Android finger touch events;
   require visible page-pixel deformation while actual locator stays put; reverse
   and release must restore; full release must change the real Readium locator;
   opposite-edge release must reduce actual book progression.
@@ -104,5 +106,6 @@ Copied files: `CurlMesh.java`, `CurlPage.java` only; no source app, demo artwork
 launcher or synthetic counters. `CurlPage` is unmodified. `CurlMesh` adaptations:
 extract texture preparation so first upload cannot flatten current drag geometry;
 use linear texture filtering for readable ink. Veil integration and endpoint
-solver are separate Kotlin files. No license/authentication/content-protection
+solver are separate Kotlin files. Transparent host uses premultiplied texture
+and black-shadow blending, avoiding squared shadow alpha. No license/authentication/content-protection
 bypass and no copying of closed-source competitor methods.

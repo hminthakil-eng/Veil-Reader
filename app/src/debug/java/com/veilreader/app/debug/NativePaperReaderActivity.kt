@@ -2,6 +2,7 @@ package com.veilreader.app.debug
 
 import android.net.Uri
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,18 @@ import kotlinx.coroutines.withContext
 /** Isolated test entry using the production importer, Readium and ReaderScreen. */
 class NativePaperReaderActivity : FragmentActivity() {
     companion object { const val EXTRA_RTL_BOOK = "native-paper-rtl-book" }
+    internal var receivedTouchDowns = 0
+        private set
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) receivedTouchDowns++
+        val accepted = super.dispatchTouchEvent(event)
+        if (event.actionMasked != MotionEvent.ACTION_MOVE) {
+            com.veilreader.app.diagnostics.ReaderTrace.event("paper_fixture_input",
+                details = "action=${event.actionMasked} accepted=$accepted")
+        }
+        return accepted
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
