@@ -108,6 +108,7 @@ jobs:
           ./gradlew --no-daemon --stacktrace \
             :app:assembleDebug \
             -PveilForgeQa=true \
+            -PveilNativeKokoroQa=true \
             "-PveilForgeRevision=${GITHUB_SHA}"
           apk='app/build/outputs/apk/debug/app-debug.apk'
           test -s "$apk"
