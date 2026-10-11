@@ -90,6 +90,8 @@ Upstream: https://github.com/harism/android-pagecurl
 Pinned commit: `7a2c8f152bb4f1b0de3b1aa72b3cb79e1fe8e3bd`.
 License: Apache-2.0; original copyright headers retained, full license in
 `licenses/harism-android-pagecurl-Apache-2.0.txt`.
+Binary builds also carry the license and modification notice in
+`app/src/main/assets/open-source-licenses/`.
 
 Copied files: `CurlMesh.java`, `CurlPage.java` only; no source app, demo artwork,
 launcher or synthetic counters. `CurlPage` is unmodified. `CurlMesh` adaptations:

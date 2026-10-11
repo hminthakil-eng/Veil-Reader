@@ -46,17 +46,31 @@ class GpuPageShaderContractTest {
     @Test
     fun `vertex and fragment varyings match exactly`() {
         val varyingRegex =
-            Regex("""\bvarying\s+(\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
+            Regex("""\bvarying\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(v[A-Za-z0-9_]+)\s*;""")
         fun varyings(shader: String): Map<String, String> =
             varyingRegex.findAll(shader)
                 .associate { match ->
-                    match.groupValues[2] to match.groupValues[1]
+                    match.groupValues[3] to "${match.groupValues[1]} ${match.groupValues[2]}"
                 }
 
         assertEquals(
             varyings(GpuMaterialPageCurlView.VERTEX_SHADER),
             varyings(GpuMaterialPageCurlView.FRAGMENT_SHADER)
         )
+        assertTrue("Contract must not pass with empty varying sets", varyings(GpuMaterialPageCurlView.VERTEX_SHADER).isNotEmpty())
+    }
+
+    @Test
+    fun `shared uniform precision matches across shader stages`() {
+        val declaration = Regex("""\buniform\s+(?:(lowp|mediump|highp)\s+)?(\w+)\s+(u[A-Za-z0-9_]+)\s*;""")
+        fun uniforms(shader: String) = declaration.findAll(shader).associate {
+            it.groupValues[3] to "${it.groupValues[1]} ${it.groupValues[2]}"
+        }
+        val vertex = uniforms(GpuMaterialPageCurlView.VERTEX_SHADER)
+        val fragment = uniforms(GpuMaterialPageCurlView.FRAGMENT_SHADER)
+        val shared = vertex.keys intersect fragment.keys
+        assertTrue(shared.containsAll(listOf("uSideSign", "uShadowPass")))
+        shared.forEach { assertEquals("GL linker precision/type mismatch: $it", vertex[it], fragment[it]) }
     }
 
     @Test
@@ -274,7 +288,7 @@ class GpuPageShaderContractTest {
 
     private fun assertShaderUniformContract(shader: String) {
         val declarationRegex =
-            Regex("""\buniform\s+\w+\s+(u[A-Za-z0-9_]+)\s*;""")
+            Regex("""\buniform\s+(?:(?:lowp|mediump|highp)\s+)?\w+\s+(u[A-Za-z0-9_]+)\s*;""")
         val tokenRegex =
             Regex("""\b(u[A-Z][A-Za-z0-9_]*)\b""")
 

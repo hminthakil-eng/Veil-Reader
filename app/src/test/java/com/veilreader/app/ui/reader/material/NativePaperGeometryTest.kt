@@ -36,6 +36,8 @@ class NativePaperGeometryTest {
         assertEquals(NATIVE_PAPER_COMPLETE_TRAVEL, nativePaperSettleTravel(1f, 0.4f, 0.35f, true), 0.00001f)
         assertEquals(0f, nativePaperSettleTravel(0f, 0.4f, 0.35f, false), 0f)
         assertEquals(0.35f, nativePaperSettleTravel(0.4f, 0.4f, 0.35f, true), 0.00001f)
+        assertEquals(NATIVE_PAPER_COMPLETE_TRAVEL, nativePaperSettleTravel(1f, 1f, 1f, true), 0f)
+        assertEquals(0f, nativePaperSettleTravel(0f, 1f, 1f, false), 0f)
     }
 
     @Test fun `invalid samples never yield nonfinite GL geometry`() {

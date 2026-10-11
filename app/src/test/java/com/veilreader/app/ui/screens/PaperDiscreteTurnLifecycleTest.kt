@@ -712,6 +712,41 @@ class PaperDiscreteTurnLifecycleTest {
         }
     }
 
+    @Test
+    fun `cancel after quick release prevents a late acquired buffer from navigating`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val failures = mutableListOf<PaperTurnVisualFailure>()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() },
+            onVisualFailure = { failures += it })
+        try {
+            listener.onDrag(drag(DragEvent.Type.Start, 0f))
+            listener.onDrag(drag(DragEvent.Type.Move, -900f))
+            listener.onDrag(drag(DragEvent.Type.End, -900f))
+            runCurrent()
+            val obsoleteEpoch = state.materialEngine.sheetEpoch
+            assertTrue(listener.cancelPendingTurn())
+            state.materialEngine.acknowledgeSheetPresented(obsoleteEpoch)
+            advanceUntilIdle()
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertEquals(fixture.origin, fixture.current.value)
+            assertTrue(failures.isEmpty())
+            assertFalse(state.active)
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
     private fun drag(type: DragEvent.Type, offsetX: Float) =
         DragEvent(type = type, start = PointF(950f, 400f), offset = PointF(offsetX, 0f))
 

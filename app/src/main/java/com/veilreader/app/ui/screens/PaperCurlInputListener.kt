@@ -454,8 +454,8 @@ internal class PaperCurlInputListener(
                 if (!presented || !shouldAllowPaperNavigation(false, state.rendererStatus, state.active)) {
                     state.clearImmediately()
                     activeOperationGeneration = 0L
-                    resetDrag()
                     reportVisualFailureOnce(PaperTurnVisualFailure.PRESENTATION)
+                    resetDrag()
                     return@launchCompletion
                 }
             }

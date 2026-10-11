@@ -74,6 +74,9 @@ internal fun nativePaperSettleTravel(
     val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     val origin = releaseProgress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     val start = releaseTravel.takeIf { it.isFinite() }?.coerceIn(0f, NATIVE_PAPER_COMPLETE_TRAVEL) ?: 0f
+    // A fully dragged gesture can start its release at progress=1. Animatable
+    // then has no remaining progress interval; the leaf must still exit.
+    if (completing && p >= 1f) return NATIVE_PAPER_COMPLETE_TRAVEL
     return if (p <= origin) {
         if (origin <= 0f) 0f else start * p / origin
     } else {
