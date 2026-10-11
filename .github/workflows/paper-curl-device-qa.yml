@@ -8,6 +8,7 @@ on:
       - "fix/first-open-milestone-room-race-20261011"
       - "arena/eschao-native-pageflip-20261011"
       - "qa/eschao-real-finger-page-turn-20261011"
+      - "fix/eschao-cancel-does-not-turn-20261011"
       - "grand-forge/open-source-paper-curl-arena-20261010"
     paths:
       - "app/**"
