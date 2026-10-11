@@ -31,7 +31,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * [ReaderTtsPlaybackService], which is the reason screen lock/activity recreation can be safe.
  */
 @androidx.annotation.OptIn(UnstableApi::class)
-internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
+internal class ReaderTtsServiceController(
+    context: Context,
+    initialEngineChoice: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM
+) : AutoCloseable {
     private val application = context.applicationContext
     private val mainExecutor = ContextCompat.getMainExecutor(application)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -47,7 +50,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     private var controller: MediaController? = null
     private var pendingStart: PendingStart? = null
-    private var catalogEngine = ReaderTtsEngineChoice.SYSTEM
+    private var catalogEngine = initialEngineChoice
     private var catalogGeneration = 0L
     // Pause pressed while MediaController reconnects must also stop an already
     // playing service owner, not only change the queued new-book autoplay.
