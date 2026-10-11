@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.db.toDomain
+import com.veilreader.app.data.db.toEntity
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
@@ -299,6 +300,33 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.flushWrites()
 
         val milestones = db.readingMilestones().listForBook("first-open-book")
+        assertEquals(1, milestones.size)
+        assertEquals("FIRST_OPENED", milestones.single().kind)
+        assertTrue(milestones.single().reachedAtEpochMs > 0L)
+    }
+
+    @Test
+    fun markOpened_persistsMilestoneWhenRoomBookExistsBeforeCacheHydration() = runBlocking<Unit> {
+        // This durable book was inserted directly into Room, not into the
+        // repository's _books cache. A concurrent Flow may have delivered it
+        // by the time markOpened executes, or may still be pending. Either
+        // way Room must own the first-open decision and the event must persist.
+        val book = Book(
+            id = "direct-room-first-open",
+            title = "Durable Before Cache",
+            author = "Archivist",
+            sourceUri = "file:///durable-before-cache.epub"
+        )
+        db.books().upsert(book.toEntity())
+        val repository = repository()
+        repository.markOpened(book.id)
+        repository.markOpened(book.id)
+        repository.flushWrites()
+
+        val persisted = db.books().findEntity(book.id)
+            ?: error("Book disappeared during markOpened")
+        assertTrue(persisted.lastOpenedAtEpochMs > 0L)
+        val milestones = db.readingMilestones().listForBook(book.id)
         assertEquals(1, milestones.size)
         assertEquals("FIRST_OPENED", milestones.single().kind)
         assertTrue(milestones.single().reachedAtEpochMs > 0L)
