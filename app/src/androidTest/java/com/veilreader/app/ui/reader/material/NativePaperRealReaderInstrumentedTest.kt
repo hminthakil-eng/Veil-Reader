@@ -153,9 +153,22 @@ class NativePaperRealReaderInstrumentedTest {
                 acquired
             }
             assertEquals("A held fold must never navigate", original, locator())
+            var sourceCopy: Bitmap? = null
+            instrumentation.runOnMainSync {
+                sourceCopy = requireNotNull(native()?.currentSourceSnapshot).copy(Bitmap.Config.ARGB_8888, false)
+            }
+            requireNotNull(sourceCopy).let { source ->
+                saveCapture("$prefix-00-source-ink.png", source)
+                try {
+                    assertTrue("The uploaded Readium sheet must contain this fixture's actual ink",
+                        sourceInkFraction(source) > 0.01)
+                } finally { source.recycle() }
+            }
             val held = screenshot("$prefix-02-held-real-epub.png")
             assertTrue("Real page pixels must visibly deform before release",
                 changedFraction(baseline, held, bounds) > 0.04)
+            assertTrue("The flat front must preserve book ink, not sample a blank texture corner",
+                retainedFrontInk(baseline, held, bounds, rtl) > 0.75)
             baseline.recycle(); held.recycle()
             // Deliberately reverse the pull before releasing: same locator, no commit.
             for (step in 13 downTo 0) {
@@ -249,11 +262,15 @@ class NativePaperRealReaderInstrumentedTest {
 
     private fun screenshot(name: String): Bitmap {
         val bitmap = requireNotNull(automation.takeScreenshot())
+        saveCapture(name, bitmap)
+        return bitmap
+    }
+
+    private fun saveCapture(name: String, bitmap: Bitmap) {
         val directory = File(instrumentation.targetContext.filesDir, "native-paper-evidence").apply { mkdirs() }
         val file = File(directory, name)
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         exportCapture(file)
-        return bitmap
     }
 
     /** UTP uninstalls the app; export owned fixture captures while it is still alive. */
@@ -292,6 +309,42 @@ class NativePaperRealReaderInstrumentedTest {
         }
         return changed.toDouble() / total.coerceAtLeast(1)
     }
+
+    private fun sourceInkFraction(bitmap: Bitmap): Double {
+        var ink = 0
+        var total = 0
+        for (y in bitmap.height / 4 until bitmap.height * 3 / 4 step 8) {
+            for (x in bitmap.width / 10 until bitmap.width * 9 / 10 step 8) {
+                val pixel = bitmap.getPixel(x, y)
+                if (android.graphics.Color.alpha(pixel) > 200 && luminance(pixel) < 80) ink++
+                total++
+            }
+        }
+        return ink.toDouble() / total.coerceAtLeast(1)
+    }
+
+    private fun retainedFrontInk(before: Bitmap, after: Bitmap, bounds: Rect, rtl: Boolean): Double {
+        val left = (bounds.left + bounds.width() * (if (rtl) 0.7 else 0.1)).toInt().coerceAtLeast(1)
+        val right = (bounds.left + bounds.width() * (if (rtl) 0.9 else 0.3)).toInt().coerceAtMost(before.width - 1)
+        val top = (bounds.top + bounds.height() * 0.25).toInt().coerceAtLeast(1)
+        val bottom = (bounds.top + bounds.height() * 0.65).toInt().coerceAtMost(before.height - 1)
+        var ink = 0
+        var retained = 0
+        for (y in top until bottom step 4) for (x in left until right step 4) {
+            if (luminance(before.getPixel(x, y)) < 80) {
+                ink++
+                // Permit one pixel of hardware/software text rasterization difference.
+                if ((y - 1..y + 1).any { yy -> (x - 1..x + 1).any { xx ->
+                        luminance(after.getPixel(xx, yy)) < 150
+                    } }) retained++
+            }
+        }
+        assertTrue("The fixture must provide positive ink evidence", ink > 50)
+        return retained.toDouble() / ink
+    }
+
+    private fun luminance(pixel: Int): Int = (android.graphics.Color.red(pixel) +
+        android.graphics.Color.green(pixel) + android.graphics.Color.blue(pixel)) / 3
 
     private fun views(root: View): List<View> = buildList {
         add(root)

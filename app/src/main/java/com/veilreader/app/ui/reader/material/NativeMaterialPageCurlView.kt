@@ -65,7 +65,8 @@ internal class NativeMaterialPageCurlView(
     @Volatile private var paused = false
     @Volatile private var failureReported = false
     @Volatile private var ready = false
-    internal val renderingReady: Boolean get() = ready && !failureReported && !paused
+    internal val renderingReady: Boolean
+        get() = ready && !failureReported && !paused && isAttachedToWindow && isAvailable
     private var mesh = CurlMesh(32)
     private var uploadedEpoch = 0L
     private var maxTextureSize = 0
@@ -73,6 +74,7 @@ internal class NativeMaterialPageCurlView(
     private var probeScheduled = false
     internal var lastAcquiredSheetEpoch = 0L
         private set
+    internal val currentSourceSnapshot: Bitmap? get() = state.snapshot
     private val probe = Runnable {
         probeScheduled = false
         if (!paused && isAttachedToWindow && isAvailable) {
@@ -169,12 +171,15 @@ internal class NativeMaterialPageCurlView(
         gl.glMatrixMode(GL10.GL_MODELVIEW)
         gl.glLoadIdentity()
         mesh.setRect(RectF(0f, aspect, 1f, 0f))
+        // Upstream's constructor leaves UVs at zero. CurlView normally calls
+        // this setter; without it every vertex samples the same white corner.
+        mesh.setFlipTexture(false)
         mesh.reset()
         uploadedEpoch = 0L
         synchronized(lock) { draws.clear() }
         // Do not use compile/attach as readiness; the first clear draw must succeed.
         ready = false
-        post { onReady(false); submit() }
+        postForCurrentSurface { onReady(false); submit() }
         requestRender()
     }
 
@@ -221,19 +226,19 @@ internal class NativeMaterialPageCurlView(
                     if (draws.size == 8) draws.removeFirst()
                     draws.addLast(Acquired(timestamp, current.epoch, generation, viewport))
                 }
-                post { onSuccessfulFrame(); scheduleProbe() }
+                postForCurrentSurface { onSuccessfulFrame(); scheduleProbe() }
             }
-            if (!ready) {
+            if (!ready && !paused) {
                 check(gl.glGetError() == GL10.GL_NO_ERROR) { "Native paper initial draw failed" }
                 ready = true
-                post { if (!paused) onReady(true) }
+                postForCurrentSurface { if (ready) onReady(true) }
             }
         } catch (error: Exception) {
             if (!failureReported) {
                 failureReported = true
                 ReaderTrace.event("paper_native_render_failed",
                     details = "type=${error::class.java.simpleName} reason=${error.message?.take(160)}")
-                post { onReady(false); onFailure() }
+                postForCurrentSurface { onReady(false); onFailure() }
             }
         } finally {
             // Copy/upload have finished. Retire skipped submissions too, bounded by input.
@@ -243,7 +248,17 @@ internal class NativeMaterialPageCurlView(
         }
     }
 
+    private fun postForCurrentSurface(action: () -> Unit) {
+        val expectedGeneration = generation
+        val expectedViewport = viewport
+        post {
+            if (!paused && isAttachedToWindow && isAvailable &&
+                generation == expectedGeneration && viewport == expectedViewport) action()
+        }
+    }
+
     private fun acknowledgeAcquisition(surface: SurfaceTexture) {
+        if (paused || !isAttachedToWindow || !isAvailable) return
         val timestamp = surface.timestamp
         val match = synchronized(lock) {
             draws.firstOrNull { it.timestamp == timestamp }.also {
@@ -270,6 +285,7 @@ internal class NativeMaterialPageCurlView(
     fun pauseRenderer() {
         if (paused) return
         paused = true
+        ready = false
         cancelProbe()
         state.invalidateSheetPresentation()
         onReady(false)
@@ -285,7 +301,9 @@ internal class NativeMaterialPageCurlView(
     }
 
     override fun onDetachedFromWindow() {
+        ready = false
         cancelProbe()
+        state.invalidateSheetPresentation()
         super.onDetachedFromWindow()
         val oldGeneration = generation
         synchronized(lock) { draws.clear(); leases.clear() }

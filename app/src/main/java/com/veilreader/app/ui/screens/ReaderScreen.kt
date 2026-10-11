@@ -6124,7 +6124,9 @@ internal fun localizedReaderMotionSummary(appearance: ReaderAppearance): String 
 internal fun localizedPageTurnStyleDescription(style: PageTurnStyle): String =
     stringResource(
         when (style) {
-            PageTurnStyle.PAPER -> R.string.settings_mode_curl_description
+            PageTurnStyle.PAPER -> if (LocalVeilReducedMotion.current) {
+                R.string.settings_mode_curl_reduced_motion_description
+            } else R.string.settings_mode_curl_description
             PageTurnStyle.SLIDE -> R.string.settings_mode_slide_description
             PageTurnStyle.NONE -> R.string.settings_mode_paged_description
         }

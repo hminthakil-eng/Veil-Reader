@@ -41,6 +41,10 @@ phone recording are required to attribute an individual report.
   mesh topology rather than translating an image. GPU work stays on GL thread.
 - Premultiplied bitmap/shadow blending preserves sheet opacity on the transparent
   host. Native diagnostics stay in metadata traces and leave the book text clear.
+- The host explicitly initializes upstream rectangle UVs with `setFlipTexture(false)`.
+  The mesh constructor leaves every UV at zero; copying the mesh without this
+  CurlView initialization produces a white leaf despite working geometry/navigation.
+  Evidence must prove captured ink and retained front ink, not just changed pixels.
 - Same leaf is used on both surfaces, with underside tint. A destination page is
   never mislabeled as the back of the leaf. No proprietary Kindle/Moon+ code used.
 - Source bitmap is borrowed under a generation/revision lease, copied once into
@@ -49,6 +53,9 @@ phone recording are required to attribute an individual report.
 - Source presentation is acknowledged only when TextureView acquires the exact
   EGL buffer timestamp, epoch, GL context and viewport. RenderThread probes check
   acquisition after callbacks; fixed delay is never proof of presentation.
+- Detach/pause invalidate presentation. Readiness/failure notifications require
+  the same attached surface generation and viewport; retired hosts cannot report
+  a new host ready or acknowledge its source leaf.
 - `PaperCurlInputListener` remains the one navigation authority. No held-drag
   navigation; same-epoch first frame required; release commits at most once;
   cancellation retains the source locator; reduced motion remains static.
@@ -58,6 +65,7 @@ phone recording are required to attribute an individual report.
 - The overlay tracks the actual Reduced Motion policy before declaring readiness.
   Disabled system animators intentionally remove the fold and preserve static
   accessibility paging; this is reported as REDUCED_MOTION instead of false READY.
+  The English/Persian appearance description explains this active system policy.
 
 The live source page stays underneath a held fold. After release, Readium paints
 the destination under the retained source leaf. **Adjacent-destination preview
@@ -86,7 +94,9 @@ New meaningful checks:
   Requires the real DOM, settled publication location and WebView visual-state
   callback and acquired on-screen paper/ink stable across frames before touch.
   DOM and accessibility alone are insufficient while the entry curtain fades.
-  Captures six PNGs per book and any timeout image;
+  Requires positive captured source ink and preservation of the flat front's
+  original glyph positions. This rejects a blank/zero-UV leaf even when geometry
+  and actual locator tests pass. Captures the source bitmap, six PNGs per book and any timeout image;
   exports fixture captures before UTP uninstalls the debug app.
 - Benchmark build now exercises native backend with the existing full Reader
   performance fixture and system animators enabled. The real-book tests scope
