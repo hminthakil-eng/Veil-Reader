@@ -1,0 +1,34 @@
+{
+  "alerts": [],
+  "device": "github-actions-api35-x86_64-lavapipe",
+  "historyPoints": 1,
+  "latestCommit": "9c65997d891b2b19ccba19e5729ce82bbdff9cce",
+  "metrics": [
+    {
+      "current": 734.977067,
+      "delta": "1/3 points",
+      "id": "startup_ttid_median",
+      "points": 1,
+      "sparkline": "\u2581",
+      "status": "learning"
+    },
+    {
+      "current": 200.0,
+      "delta": "1/3 points",
+      "id": "reader_gfx_frame_p95",
+      "points": 1,
+      "sparkline": "\u2581",
+      "status": "learning"
+    },
+    {
+      "current": 200.0,
+      "delta": "1/3 points",
+      "id": "reader_gfx_frame_p99",
+      "points": 1,
+      "sparkline": "\u2581",
+      "status": "learning"
+    }
+  ],
+  "mode": "smoke",
+  "schemaVersion": 1
+}

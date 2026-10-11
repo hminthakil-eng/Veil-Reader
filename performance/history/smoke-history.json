@@ -1,0 +1,54 @@
+{
+  "device": "github-actions-api35-x86_64-lavapipe",
+  "mode": "smoke",
+  "schemaVersion": 1,
+  "snapshots": [
+    {
+      "capturedAtUtc": "2026-10-11T08:56:47.246063+00:00",
+      "commit": "9c65997d891b2b19ccba19e5729ce82bbdff9cce",
+      "device": "github-actions-api35-x86_64-lavapipe",
+      "metrics": {
+        "reader_gfx_frame_count": {
+          "benchmarkName": "pageTurns",
+          "className": "com.veilreader.benchmark.ReaderFrameSmokeBenchmark",
+          "metric": "gfxFrameTotalCount",
+          "metricGroup": "metrics",
+          "sourceFile": "/home/runner/work/Veil-Reader/Veil-Reader/benchmark/build/perf-results/reader-frame-smoke-benchmarkData.json",
+          "stat": "median",
+          "value": 78.0
+        },
+        "reader_gfx_frame_p95": {
+          "benchmarkName": "pageTurns",
+          "className": "com.veilreader.benchmark.ReaderFrameSmokeBenchmark",
+          "metric": "gfxFrameTime95thPercentileMs",
+          "metricGroup": "metrics",
+          "sourceFile": "/home/runner/work/Veil-Reader/Veil-Reader/benchmark/build/perf-results/reader-frame-smoke-benchmarkData.json",
+          "stat": "median",
+          "value": 200.0
+        },
+        "reader_gfx_frame_p99": {
+          "benchmarkName": "pageTurns",
+          "className": "com.veilreader.benchmark.ReaderFrameSmokeBenchmark",
+          "metric": "gfxFrameTime99thPercentileMs",
+          "metricGroup": "metrics",
+          "sourceFile": "/home/runner/work/Veil-Reader/Veil-Reader/benchmark/build/perf-results/reader-frame-smoke-benchmarkData.json",
+          "stat": "median",
+          "value": 200.0
+        },
+        "startup_ttid_median": {
+          "benchmarkName": "coldStartupBaselineProfile",
+          "className": "com.veilreader.benchmark.StartupBenchmark",
+          "metric": "timeToInitialDisplayMs",
+          "metricGroup": "metrics",
+          "sourceFile": "/home/runner/work/Veil-Reader/Veil-Reader/benchmark/build/perf-results/startup-benchmarkData.json",
+          "stat": "median",
+          "value": 734.977067
+        }
+      },
+      "mode": "smoke",
+      "ref": "main",
+      "runId": "38125191277",
+      "schemaVersion": 1
+    }
+  ]
+}
