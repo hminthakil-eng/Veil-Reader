@@ -59,3 +59,31 @@ internal fun transformReaderImage(
         viewportWidth, viewportHeight, imageWidth, imageHeight
     )
 }
+
+/**
+ * Familiar image-viewer shortcut: a double-tap zooms towards the touched detail,
+ * and the next double-tap restores the full illustration. The transform uses the
+ * same aspect-ratio bounds as pinch gestures, so letterbox space is not pannable.
+ * This does not affect Readium's publication tap/page-turn handling.
+ */
+internal fun toggleReaderImageDoubleTap(
+    current: ReaderImageTransform,
+    viewportWidth: Int,
+    viewportHeight: Int,
+    imageWidth: Int,
+    imageHeight: Int,
+    touchX: Float,
+    touchY: Float
+): ReaderImageTransform {
+    val clamped = clampReaderImageTransform(
+        current, viewportWidth, viewportHeight, imageWidth, imageHeight
+    )
+    if (viewportWidth <= 0 || viewportHeight <= 0 || imageWidth <= 0 || imageHeight <= 0) {
+        return clamped
+    }
+    if (clamped.scale > 1.01f) return ReaderImageTransform()
+    return transformReaderImage(
+        clamped, viewportWidth, viewportHeight, imageWidth, imageHeight,
+        touchX, touchY, 2.5f
+    )
+}
