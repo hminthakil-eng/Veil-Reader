@@ -75,3 +75,15 @@ Files: `ReaderImageTransform.kt`, `ReaderImageViewer.kt`, `ReaderImageTransformT
 - Keep draft until owner review and evidence signoff. Revert by reverting scoped commits.
 
 This document is an execution ledger; it does not imply work across all waves is completed.
+
+## Empirical reading and accessibility research (do not overgeneralize)
+- Delgado et al. (2018), *Don't throw away your printed books*: https://doi.org/10.1016/j.edurev.2018.09.003 — reports a paper comprehension advantage under studied conditions.
+- 2024 meta-analysis of 37 experimental studies: https://doi.org/10.1016/j.teler.2024.100142 — finds **no significant overall** paper/digital comprehension difference, with important task/context moderators. Do not claim every digital reader inherently harms comprehension.
+- Network meta-analysis of 56 studies: https://doi.org/10.1007/s10639-025-13843-8 — compares paper, tablets, e-readers, computers and phones; scrolling and device differences matter. Needs careful population/task interpretation, not a single universal UI law.
+- W3C EPUB 3.3 Reading Systems standard: https://www.w3.org/TR/epub-rs-33/ — use for renderer and accessibility conformance matrices.
+- W3C WCAG 2.2 text spacing: https://www.w3.org/WAI/WCAG22/Understanding/text-spacing — user adjustments must not clip/hide content. Script-appropriate Persian typography is essential; do not enforce Latin character tracking on joined scripts.
+- Official Android pointer input guidance: https://developer.android.com/develop/ui/compose/touch-input/pointer-input/understand-gestures — multiple blocking gesture detectors belong in **separate** `pointerInput` modifiers. Verified with current Context7 Android documentation for the isolated image double-tap slice.
+- Readest Reader docs https://www.readest.com/docs/reading and customisation https://www.readest.com/docs/customization explicitly distinguish local/global appearance preferences, reference page progress and nonintrusive toolbar reveal. We should test these flows rather than simply add more toggles.
+
+### Research-to-acceptance translation
+Research motivates hypotheses, not a cosmetic imitation mandate. Use paired, realistic 30-minute reading tasks with LTR and RTL prose on physical phones/tablets to compare pagination versus scroll, progress retrieval and user-reported comfort. Measure task completion/error, comprehension checks (where ethically designed), eye/mental comfort reports and frame timing. Do not change reading modes based solely on a screenshot or one literature result.
