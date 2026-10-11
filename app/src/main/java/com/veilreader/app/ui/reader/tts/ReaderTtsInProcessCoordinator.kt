@@ -4,6 +4,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Veil owns the audible PCM sink, not Android's external TextToSpeechService.
@@ -52,13 +53,19 @@ internal class ReaderTtsInProcessCoordinator(
     private val epoch: ReaderTtsPcmEpoch = ReaderTtsPcmEpoch()
 ) {
     private val nativeOwner = Mutex()
+    private val transportGate = Any()
+    private val commandGeneration = AtomicLong()
 
     suspend fun speak(
         text: String,
         voiceId: String,
         speed: Float,
         endOfStream: Boolean = true
-    ): ReaderTtsInProcessOutcome = nativeOwner.withLock {
+    ): ReaderTtsInProcessOutcome {
+        // A queued Play may wait for a previous JNI invocation to unwind.
+        // If Pause occurred while waiting, it must not start after that Pause.
+        val requestedGeneration = commandGeneration.get()
+        return nativeOwner.withLock {
         if (text.isBlank() || !speed.isFinite() || speed !in 0.5f..3f) {
             return@withLock ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.CONTENT)
         }
@@ -66,13 +73,18 @@ internal class ReaderTtsInProcessCoordinator(
             ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
         )
 
-        val lease = epoch.begin(runtime.model.packageId, voiceId)
+        val lease = synchronized(transportGate) {
+            if (requestedGeneration != commandGeneration.get()) null
+            else epoch.begin(runtime.model.packageId, voiceId)
+        } ?: return@withLock ReaderTtsInProcessOutcome.Interrupted
         var normalCompletion = false
         val anyPcmAccepted = AtomicBoolean(false)
         val pcmRejected = AtomicBoolean(false)
         try {
             val rate = runtime.sampleRateHz
-            if (rate !in 8_000..96_000) return@withLock ReaderTtsInProcessOutcome.Failed(
+            if (rate !in 8_000..96_000 ||
+                runtime.model.expectedSampleRateHz?.let { it != rate } == true
+            ) return@withLock ReaderTtsInProcessOutcome.Failed(
                 ReaderTtsProblem.SYNTHESIS
             )
             if (!pcmSink.prepare(rate) { epoch.accepts(lease) }) {
@@ -144,12 +156,20 @@ internal class ReaderTtsInProcessCoordinator(
                 if (!normalCompletion) pcmSink.silenceImmediately()
             }
         }
+        }
     }
 
     /** UI/MediaSession command: no suspension and no JNI owner mutex. */
     fun pause() {
-        epoch.revoke()
-        pcmSink.silenceImmediately()
+        synchronized(transportGate) {
+            commandGeneration.incrementAndGet()
+            epoch.revoke()
+            // Keep stop-and-flush in this transport transaction, so a
+            // subsequent valid Play cannot be flushed by an older Pause.
+            // This lock is never held around JNI generation or waiting for
+            // a long audio drain.
+            pcmSink.silenceImmediately()
+        }
     }
 
     fun isSpeaking(): Boolean = epoch.hasOwner()
