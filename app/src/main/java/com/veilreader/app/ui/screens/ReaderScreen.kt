@@ -1278,7 +1278,7 @@ fun ReaderScreen(
         )
     }
     val sherpaEngineInstalled = remember(activity.applicationContext, readerSessionInstanceId) {
-        (BuildConfig.DEBUG && BuildConfig.FORGE_QA) ||
+        (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA) ||
             ReaderTtsSherpaEngineDiscovery.installed(activity.applicationContext)
     }
     val foregroundTtsCheckpoint = remember(opened.book.id, readerSessionInstanceId, backgroundTtsEnabled) {
