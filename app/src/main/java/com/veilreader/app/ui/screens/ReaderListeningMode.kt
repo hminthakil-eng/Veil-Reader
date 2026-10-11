@@ -29,6 +29,8 @@ import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReaderTtsEngineChoice
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
+import com.veilreader.app.ui.reader.tts.ReaderTtsPrimaryAction
+import com.veilreader.app.ui.reader.tts.readerTtsPrimaryAction
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
@@ -87,6 +89,7 @@ internal fun ReaderListeningMode(
     val currentVoice = remember(voices, preferredVoiceId, publicationLanguage) {
         publicationLanguage?.let { selectOfflineTtsVoice(voices, it, preferredVoiceId) }
     }
+    val primaryAction = readerTtsPrimaryAction(state.phase, startPending)
     val previousLabel = stringResourceCompat(R.string.tts_previous_segment)
     val nextLabel = stringResourceCompat(R.string.tts_next_segment)
     val playLabel = stringResourceCompat(R.string.tts_play)
@@ -261,34 +264,29 @@ internal fun ReaderListeningMode(
 
                 FilledTonalButton(
                     onClick = {
-                        when (state.phase) {
-                            ReaderTtsPhase.PLAYING,
-                            ReaderTtsPhase.PREPARING -> onPause()
-                            ReaderTtsPhase.PAUSED -> onResume()
-                            ReaderTtsPhase.STOPPED,
-                            ReaderTtsPhase.ENDED,
-                            ReaderTtsPhase.FAILED,
-                            ReaderTtsPhase.CLOSED -> onStart()
+                        when (primaryAction) {
+                            ReaderTtsPrimaryAction.PAUSE -> onPause()
+                            ReaderTtsPrimaryAction.RESUME -> onResume()
+                            ReaderTtsPrimaryAction.START -> onStart()
                         }
                     },
-                    enabled = supported && !startPending && state.phase != ReaderTtsPhase.CLOSED,
+                    // Disabled Pause during startPending caused a real P0 user
+                    // failure: the book-start locator coroutine could not be
+                    // canceled via the visible control.
+                    enabled = supported && state.phase != ReaderTtsPhase.CLOSED,
                     modifier = Modifier
                         .size(84.dp)
                         .semantics {
                             role = Role.Button
                             contentDescription =
-                                if (state.phase == ReaderTtsPhase.PLAYING ||
-                                    state.phase == ReaderTtsPhase.PREPARING
-                                ) pauseLabel else playLabel
+                                if (primaryAction == ReaderTtsPrimaryAction.PAUSE)
+                                    pauseLabel else playLabel
                         },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(
-                        if (
-                            state.phase == ReaderTtsPhase.PLAYING ||
-                            state.phase == ReaderTtsPhase.PREPARING
-                        ) "Ⅱ" else "▶",
+                        if (primaryAction == ReaderTtsPrimaryAction.PAUSE) "Ⅱ" else "▶",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
