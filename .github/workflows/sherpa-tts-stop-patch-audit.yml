@@ -44,10 +44,15 @@ jobs:
           privacy_patch="$GITHUB_WORKSPACE/tools/sherpa-onnx-engine-patch/0002-remove-plaintext-narration-logs.patch"
           git -C sherpa-upstream apply --check "$privacy_patch"
           git -C sherpa-upstream apply "$privacy_patch"
+          voice_patch="$GITHUB_WORKSPACE/tools/sherpa-onnx-engine-patch/0003-kokoro-multivoice-identity.patch"
+          git -C sherpa-upstream apply --check "$voice_patch"
+          git -C sherpa-upstream apply "$voice_patch"
           git -C sherpa-upstream diff --check
           grep -Fq 'cancellationGeneration.incrementAndGet()' "sherpa-upstream/$target"
           grep -Fq 'if (isCancelled()) return 0' "sherpa-upstream/$target"
           grep -Fq 'callback.audioAvailable(samples, offset, bytesToWrite) !=' "sherpa-upstream/$target"
+          grep -Fq 'override fun onGetVoices()' "sherpa-upstream/$target"
+          grep -Fq 'sid = requestedSpeakerId' "sherpa-upstream/$target"
           if grep -Eq 'Log\\.(i|d|v|w|e)\\(TAG, "text:' "sherpa-upstream/$target"; then
             echo "::error::The book text is still logged in the patched TTS service" >&2
             exit 1
