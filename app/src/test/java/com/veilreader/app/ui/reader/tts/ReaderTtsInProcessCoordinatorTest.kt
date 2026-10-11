@@ -83,7 +83,19 @@ class ReaderTtsInProcessCoordinatorTest {
         assertTrue(play.isCompleted)
         assertNull(play.await())
         assertFalse(worker.isSpeaking())
-        assertEquals(1, sink.silenced)
+        assertEquals(0, sink.silenced)
+    }
+
+    @Test
+    fun ordinarySentenceDoesNotDrainOrFlushAlreadyBufferedPcm() = runTest {
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(FakeRuntime(model), sink)
+        assertNull(worker.speak(
+            "First sentence.", "kokoro-en-v0_19-4", 1f, endOfStream = false
+        ))
+        assertEquals(0, sink.drains)
+        assertEquals(0, sink.silenced)
+        assertEquals(1, sink.writes.size)
     }
 
     @Test
