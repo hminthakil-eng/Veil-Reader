@@ -273,7 +273,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             // Only the isolated Forge QA APK has this embedded Kokoro model.
             // Listing known speakers does not require loading 345MB of weights.
             if (com.veilreader.app.BuildConfig.DEBUG &&
-                com.veilreader.app.BuildConfig.FORGE_QA &&
+                com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
                 requestedEngine == com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
             ) {
                 val catalog = (0..10).map { speaker ->
@@ -300,7 +300,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     val problem = try {
                         withTimeout(
                             if (com.veilreader.app.BuildConfig.DEBUG &&
-                                com.veilreader.app.BuildConfig.FORGE_QA &&
+                                com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
                                 requestedEngine ==
                                     com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
                             ) 60_000L else 5_000L
@@ -394,7 +394,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     val initProblem = try {
                         withTimeout(
                             if (com.veilreader.app.BuildConfig.DEBUG &&
-                                com.veilreader.app.BuildConfig.FORGE_QA &&
+                                com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
                                 requestedEngine ==
                                     com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
                             ) 60_000L else 5_000L
