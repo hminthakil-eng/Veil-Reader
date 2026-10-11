@@ -9,7 +9,16 @@
             android:name=".debug.ExternalCurlArenaActivity"
             android:label="Veil · Curl Engine Lab"
             android:exported="true"
-            android:taskAffinity="com.veilreader.app.externalcurl.lab" />
+            android:taskAffinity="com.veilreader.app.externalcurl.lab">
+            <!-- Intent is BROWSABLE but NOT MAIN/LAUNCHER. Only the test lab
+                 handles this unique scheme; no production release route. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="veilpaperlab" android:host="curl" />
+            </intent-filter>
+        </activity>
         <!-- Only the debug APK exposes fictional, inert review fixtures. -->
         <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
         <!-- Debug-only adb probe. Never merged into the release manifest. -->
