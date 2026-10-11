@@ -14,7 +14,10 @@ internal fun createReadiumReaderTtsSession(
     if (opened.format != BookFormat.EPUB || !ReadiumTtsContent.isAvailable(opened.publication)) return null
     return ReaderTtsSession(
         contentFactory = { locator -> ReadiumTtsContent.create(opened.publication, locator) },
-        backendFactory = { AndroidReaderTtsBackend(context.applicationContext) },
+        backendFactory = { ReaderTtsForgeBackendFactory(context.applicationContext).create() },
+        initializationTimeoutMs = if (
+            com.veilreader.app.BuildConfig.DEBUG && com.veilreader.app.BuildConfig.FORGE_QA
+        ) 60_000L else 5_000L,
         publicationLanguage = opened.publication.metadata.languages.firstOrNull(),
         canPlay = canPlay,
         commitCheckpoint = commitCheckpoint
