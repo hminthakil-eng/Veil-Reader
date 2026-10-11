@@ -130,6 +130,24 @@ internal enum class ReaderTtsProblem {
 }
 internal enum class ReaderTtsPhase { STOPPED, PREPARING, PLAYING, PAUSED, ENDED, FAILED, CLOSED }
 
+/**
+ * Keep Pause interactive while the Reader is still resolving its initial
+ * Readium locator. A pending start has not reached the speech service yet,
+ * so its Play/Pause affordance must cancel that start rather than disable.
+ */
+internal enum class ReaderTtsPrimaryAction { START, PAUSE, RESUME }
+
+internal fun readerTtsPrimaryAction(
+    phase: ReaderTtsPhase,
+    startPending: Boolean
+): ReaderTtsPrimaryAction = when {
+    startPending || phase == ReaderTtsPhase.PREPARING ||
+        phase == ReaderTtsPhase.PLAYING -> ReaderTtsPrimaryAction.PAUSE
+    phase == ReaderTtsPhase.PAUSED -> ReaderTtsPrimaryAction.RESUME
+    else -> ReaderTtsPrimaryAction.START
+}
+
+
 internal fun readerCanPlayForegroundTts(
     readerReady: Boolean,
     resumed: Boolean,
