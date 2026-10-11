@@ -15,6 +15,10 @@
  */
 package com.eschao.android.widget.pageflip;
 
+// Embedded from the upstream Apache-2 library: these GLSL resources are
+// packaged in Veil's debug namespace rather than the old library module.
+import com.veilreader.app.R;
+
 import android.content.Context;
 import android.opengl.Matrix;
 
