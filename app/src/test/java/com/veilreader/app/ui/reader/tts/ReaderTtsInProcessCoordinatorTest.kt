@@ -50,18 +50,21 @@ class ReaderTtsInProcessCoordinatorTest {
         var preparedAt = 0
         var silenced = 0
         var drains = 0
-        override suspend fun prepare(sampleRateHz: Int): Boolean {
+        override suspend fun prepare(sampleRateHz: Int, stillCurrent: () -> Boolean): Boolean {
+            if (!stillCurrent()) return false
             preparedAt = sampleRateHz
             return true
         }
-        override suspend fun submit(pcm: FloatArray): Boolean {
+        override suspend fun submit(pcm: FloatArray, stillCurrent: () -> Boolean): Boolean {
+            if (!stillCurrent()) return false
             writes += pcm
             return true
         }
-        override suspend fun drain(): Boolean {
+        override suspend fun drain(stillCurrent: () -> Boolean): Boolean {
+            if (!stillCurrent()) return false
             drains++
             draining?.await()
-            return true
+            return stillCurrent()
         }
         override fun silenceImmediately() { silenced++ }
     }
@@ -115,7 +118,7 @@ class ReaderTtsInProcessCoordinatorTest {
         runCurrent()
         assertFalse(runtime.nativeCallbackResult)
         assertTrue(sink.writes.isEmpty())
-        assertNull(play.await())
+        assertEquals(ReaderTtsProblem.SYNTHESIS, play.await())
     }
 
     @Test
