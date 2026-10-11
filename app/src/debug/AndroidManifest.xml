@@ -5,6 +5,7 @@
         <!-- Optional local Kokoro lab: same Veil package, debug builds ONLY. -->
         <activity
             android:name=".ui.reader.tts.VeilNeuralVoiceLabActivity"
+            android:enabled="${veilNativeKokoroLabEnabled}"
             android:enabled="${veilNeuralLabEnabled}"
             android:exported="true"
             android:label="Veil Neural Lab"
