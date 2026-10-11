@@ -58,6 +58,8 @@ internal class ReaderTtsInProcessCoordinator(
 
         val lease = epoch.begin(runtime.model.packageId, voiceId)
         var normalCompletion = false
+        var anyPcmAccepted = false
+        var pcmRejected = false
         try {
             val rate = runtime.sampleRateHz
             if (rate !in 8_000..96_000) return@withLock ReaderTtsProblem.SYNTHESIS
@@ -79,17 +81,26 @@ internal class ReaderTtsInProcessCoordinator(
                 // Never call JNI-generated callbacks while holding an epoch
                 // lock: Pause must interrupt immediately from the UI thread.
                 if (!readerTtsValidPcmChunk(epoch, lease, rate, nativePcm)) {
+                    pcmRejected = true
                     false
                 } else {
                     // JNI callbacks may reuse FloatArrays. The sink must never
                     // retain or modify a pointer to engine-owned memory.
                     val detached = nativePcm.copyOf()
-                    epoch.accepts(lease) &&
+                    val ok = epoch.accepts(lease) &&
                         pcmSink.submit(detached) { epoch.accepts(lease) } &&
                         epoch.accepts(lease)
+                    if (ok) anyPcmAccepted = true else pcmRejected = true
+                    ok
                 }
             }
-            if (result == null && epoch.accepts(lease)) {
+            if (result == null && epoch.accepts(lease) &&
+                (pcmRejected || !anyPcmAccepted)
+            ) {
+                // A JNI provider may incorrectly swallow callback=false or
+                // return a false success with zero PCM: fail closed.
+                ReaderTtsProblem.SYNTHESIS
+            } else if (result == null && epoch.accepts(lease)) {
                 // Sentence transitions append PCM to the same track. Draining
                 // on every sentence introduces audible gaps and falsely
                 // advertises playback completion before future segments.
