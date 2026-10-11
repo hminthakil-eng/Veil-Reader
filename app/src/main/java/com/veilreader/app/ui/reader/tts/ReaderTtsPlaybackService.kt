@@ -270,14 +270,41 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
                 args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
             )
+            // Only the isolated Forge QA APK has this embedded Kokoro model.
+            // Listing known speakers does not require loading 345MB of weights.
+            if (com.veilreader.app.BuildConfig.DEBUG &&
+                com.veilreader.app.BuildConfig.FORGE_QA &&
+                requestedEngine == com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+            ) {
+                val catalog = (0..10).map { speaker ->
+                    ReaderTtsVoice("kokoro-en-v0_19-$speaker", "en-US", 400, false, true)
+                }
+                return Futures.immediateFuture(
+                    SessionResult(
+                        SessionResult.RESULT_SUCCESS,
+                        Bundle().apply {
+                            putString(
+                                ReaderTtsPlaybackRequest.EXTRA_VOICES_JSON,
+                                ReaderTtsPlaybackRequest.encodeVoiceCatalog(catalog)
+                            )
+                        }
+                    )
+                )
+            }
             val future = SettableFuture.create<SessionResult>()
             serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                val backend = ReaderTtsForgeBackendFactory(applicationContext).create().apply {
                     selectEngine(requestedEngine)
                 }
                 try {
                     val problem = try {
-                        withTimeout(5_000L) { backend.initialize() }
+                        withTimeout(
+                            if (com.veilreader.app.BuildConfig.DEBUG &&
+                                com.veilreader.app.BuildConfig.FORGE_QA &&
+                                requestedEngine ==
+                                    com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+                            ) 60_000L else 5_000L
+                        ) { backend.initialize() }
                     } catch (_: TimeoutCancellationException) {
                         ReaderTtsProblem.TIMEOUT
                     }
@@ -360,12 +387,18 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             val previewOwner = ++previewGeneration
             val future = SettableFuture.create<SessionResult>()
             previewJob = serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                val backend = ReaderTtsForgeBackendFactory(applicationContext).create().apply {
                     selectEngine(requestedEngine)
                 }
                 try {
                     val initProblem = try {
-                        withTimeout(5_000L) { backend.initialize() }
+                        withTimeout(
+                            if (com.veilreader.app.BuildConfig.DEBUG &&
+                                com.veilreader.app.BuildConfig.FORGE_QA &&
+                                requestedEngine ==
+                                    com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+                            ) 60_000L else 5_000L
+                        ) { backend.initialize() }
                     } catch (_: TimeoutCancellationException) {
                         ReaderTtsProblem.TIMEOUT
                     }
