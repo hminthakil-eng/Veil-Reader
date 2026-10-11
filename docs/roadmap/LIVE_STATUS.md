@@ -48,7 +48,7 @@ The code and the user experience have different status columns. All entries belo
 | TTS Pause/voice | owner reported Pause ignored and narrator change; #480 draft | audible 10× lifecycle repetitions and proper controller ownership |
 | True per-book appearance | #488 docs verify AppSettings.readerAppearance global-only | domain schema/inheritance, backup, migration and UX before switch |
 | True product GREEN / public release | no verified real-device source-matched whole-app QA | P0 gates, signed release, performance/a11y/privacy review |
-| main branch protection | API returned 403 reading protection; branch details show \`protected=false\` at promotion | enable reviewer/status checks via authorized GitHub settings/admin |
+| main branch protection | API returned 403 reading protection; branch details show `protected=false` at promotion | enable reviewer/status checks via authorized GitHub settings/admin |
 
 ## ⛔ REJECTED BEHAVIOURS / SUPERSEDED APPROACHES
 
