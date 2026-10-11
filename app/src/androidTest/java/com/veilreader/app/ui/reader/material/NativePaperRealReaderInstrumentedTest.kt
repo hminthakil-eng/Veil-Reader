@@ -28,6 +28,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 class NativePaperRealReaderInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val automation = instrumentation.uiAutomation
+    private var capturePrefix = "reader"
 
     @Test fun realEpub_bendsDuringDrag_cancelRestores_releaseChangesReadiumLocator() {
         verifyRealBook(rtl = false)
@@ -39,6 +40,7 @@ class NativePaperRealReaderInstrumentedTest {
 
     private fun verifyRealBook(rtl: Boolean) {
         val prefix = if (rtl) "rtl" else "ltr"
+        capturePrefix = prefix
         val launch = Intent(instrumentation.targetContext, NativePaperReaderActivity::class.java)
             .putExtra(NativePaperReaderActivity.EXTRA_RTL_BOOK, rtl)
         ActivityScenario.launch<NativePaperReaderActivity>(launch).use { scenario ->
@@ -49,22 +51,37 @@ class NativePaperRealReaderInstrumentedTest {
                 .filterIsInstance<NativeMaterialPageCurlView>().firstOrNull()
             fun navigator(): EpubNavigatorFragment? = fragments(host.supportFragmentManager.fragments)
                 .filterIsInstance<EpubNavigatorFragment>().firstOrNull()
+            fun sourceWeb(): WebView? = views(navigator()?.publicationView ?: host.window.decorView)
+                .filterIsInstance<WebView>().firstOrNull {
+                    it.isShown && it.isAttachedToWindow && it.width > 0 && it.height > 0 &&
+                        it.getGlobalVisibleRect(Rect())
+                }
             fun locator(): String? {
                 var value: String? = null
                 instrumentation.runOnMainSync { value = navigator()?.currentLocator?.value?.toJSON()?.toString() }
                 return value
             }
-            waitUntil("Native GL + real EPUB navigator ready") {
+            var paintRequested: WebView? = null
+            var painted: WebView? = null
+            waitUntil("Native GL and actual publication pixels ready") {
                 var ready = false
                 instrumentation.runOnMainSync {
-                    ready = native()?.renderingReady == true && navigator()?.currentLocator?.value != null &&
-                        views(host.window.decorView).filterIsInstance<WebView>().any {
-                            it.isShown && it.isAttachedToWindow && it.width > 0 && it.height > 0
+                    val web = sourceWeb()
+                    val locationReady = navigator()?.currentLocator?.value?.locations?.progression != null
+                    if (web != null && locationReady && paintRequested !== web) {
+                        web.evaluateJavascript("document.readyState === 'complete' && document.body.innerText.length > 100") { result ->
+                            if (result == "true" && paintRequested !== web) {
+                                paintRequested = web
+                                web.postVisualStateCallback(1L, object : WebView.VisualStateCallback() {
+                                    override fun onComplete(requestId: Long) { painted = web }
+                                })
+                            }
                         }
+                    }
+                    ready = native()?.renderingReady == true && locationReady && web != null && painted === web
                 }
                 ready
             }
-            SystemClock.sleep(400)
             instrumentation.runOnMainSync {
                 assertEquals("The publication must drive physical turn direction",
                     if (rtl) ReadingProgression.RTL else ReadingProgression.LTR,
@@ -73,8 +90,7 @@ class NativePaperRealReaderInstrumentedTest {
             val original = requireNotNull(locator())
             val bounds = Rect()
             instrumentation.runOnMainSync {
-                val web = views(host.window.decorView).filterIsInstance<WebView>()
-                    .first { it.isShown && it.width > 0 && it.height > 0 }
+                val web = requireNotNull(sourceWeb())
                 assertTrue(web.getGlobalVisibleRect(bounds))
             }
             val baseline = screenshot("$prefix-01-origin.png")
@@ -166,8 +182,29 @@ class NativePaperRealReaderInstrumentedTest {
     private fun screenshot(name: String): Bitmap {
         val bitmap = requireNotNull(automation.takeScreenshot())
         val directory = File(instrumentation.targetContext.filesDir, "native-paper-evidence").apply { mkdirs() }
-        File(directory, name).outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val file = File(directory, name)
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        exportCapture(file)
         return bitmap
+    }
+
+    /** UTP uninstalls the app; export owned fixture captures while it is still alive. */
+    private fun exportCapture(file: File) {
+        require(file.name.matches(Regex("[A-Za-z0-9_-]+\\.png")))
+        val packageName = instrumentation.targetContext.packageName
+        require(packageName.matches(Regex("[A-Za-z0-9_.]+")))
+        val command = "mkdir -p /data/local/tmp/veil-native-paper-evidence && " +
+            "run-as $packageName cat files/native-paper-evidence/${file.name} " +
+            "> /data/local/tmp/veil-native-paper-evidence/${file.name} && echo VEIL_CAPTURE_EXPORTED"
+        val script = File(requireNotNull(instrumentation.targetContext.externalCacheDir), "native-paper-export.sh")
+        require(script.absolutePath.matches(Regex("[A-Za-z0-9_./-]+")))
+        script.writeText("#!/system/bin/sh\n$command\n")
+        try {
+            val result = android.os.ParcelFileDescriptor.AutoCloseInputStream(
+                automation.executeShellCommand("sh ${script.absolutePath}")
+            ).bufferedReader().use { it.readText() }
+            check(result.trim() == "VEIL_CAPTURE_EXPORTED") { "Fixture capture export failed: $result" }
+        } finally { script.delete() }
     }
 
     private fun changedFraction(before: Bitmap, after: Bitmap, bounds: Rect): Double {
@@ -199,6 +236,7 @@ class NativePaperRealReaderInstrumentedTest {
             if (condition()) return
             SystemClock.sleep(40)
         }
+        screenshot("$capturePrefix-99-timeout.png").recycle()
         fail(message)
     }
 }

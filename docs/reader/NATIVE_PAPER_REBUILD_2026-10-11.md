@@ -78,7 +78,9 @@ New meaningful checks:
   require visible page-pixel deformation while actual locator stays put; reverse
   and release must restore; full release must change the real Readium locator;
   opposite-edge release must reduce actual book progression.
-  Captures six PNGs per book under `native-paper-evidence`.
+  Requires the real DOM, settled publication location and WebView visual-state
+  callback before touch. Captures six PNGs per book and any timeout image;
+  exports fixture captures before UTP uninstalls the debug app.
 - Benchmark build now exercises native backend with the existing full Reader
   performance fixture. A successful emulator test is not physical acceptance.
 

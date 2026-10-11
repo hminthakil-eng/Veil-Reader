@@ -221,7 +221,8 @@ internal class NativeMaterialPageCurlView(
         } catch (error: Exception) {
             if (!failureReported) {
                 failureReported = true
-                ReaderTrace.event("paper_native_render_failed", details = "type=${error::class.java.simpleName}")
+                ReaderTrace.event("paper_native_render_failed",
+                    details = "type=${error::class.java.simpleName} reason=${error.message?.take(160)}")
                 post { onReady(false); onFailure() }
             }
         } finally {

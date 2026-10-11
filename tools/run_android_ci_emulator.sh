@@ -42,6 +42,7 @@ cleanup() {
   set +e
   if [[ "$MODE" == "storage" ]]; then
     "$ADB" -s "$SERIAL" pull /data/local/tmp/veil-grayfog-review build/reports/ >/dev/null 2>&1
+    "$ADB" -s "$SERIAL" pull /data/local/tmp/veil-native-paper-evidence build/reports/ >/dev/null 2>&1
   fi
   # Only the inert Compose review directory; never export publication/history files.
   # Preserve the original test exit code even when optional capture collection fails.
@@ -53,13 +54,6 @@ cleanup() {
     else
       rm -f build/reports/grayfog-review.tar
       echo "Optional Grayfog capture collection failed; test status remains $status." >&2
-    fi
-  fi
-  if [[ "$MODE" == "storage" ]] &&
-     "$ADB" -s "$SERIAL" shell run-as "$VEIL_TEST_APPLICATION_ID" test -d files/native-paper-evidence >/dev/null 2>&1; then
-    if ! "$ADB" -s "$SERIAL" exec-out run-as "$VEIL_TEST_APPLICATION_ID" \
-        tar -C files -cf - native-paper-evidence >build/reports/native-paper-evidence.tar; then
-      rm -f build/reports/native-paper-evidence.tar
     fi
   fi
   if (( status != 0 )); then
@@ -161,6 +155,7 @@ run_gradle() {
 case "$MODE" in
   storage)
     "$ADB" -s "$SERIAL" shell rm -rf /data/local/tmp/veil-grayfog-review
+    "$ADB" -s "$SERIAL" shell rm -rf /data/local/tmp/veil-native-paper-evidence
     run_gradle :app:connectedDebugAndroidTest --stacktrace
     ;;
   performance)

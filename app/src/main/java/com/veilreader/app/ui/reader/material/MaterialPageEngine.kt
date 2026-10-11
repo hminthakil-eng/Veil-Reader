@@ -673,6 +673,7 @@ internal class MaterialPageEngineState(
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
         val releaseNativeTravel = nativeLeafTravel
+        val releaseVerticalBias = verticalBias
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -705,6 +706,9 @@ internal class MaterialPageEngineState(
                     releaseProgress, releaseEdgeTravel, releaseNativeTravel,
                     nativeReleaseFraction = fraction
                 )
+                // Relax the diagonal at the binding so no far corner can
+                // remain in the viewport when the completed sheet is cleared.
+                verticalBias = releaseVerticalBias * (1f - fraction)
             }
         } else {
             val anim = Animatable(progress)
