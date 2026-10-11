@@ -177,3 +177,13 @@ At least once per day and at every critical merge/promotion:
 7. Report failures to update honestly; absence of CI or a screenshot is UNKNOWN, not PASS.
 
 **References:** #408 #409 #415 #417 #428 #429 #466 #467 #468 #474 #475 #479 #480 #482 #485 #487 #488 #489.
+
+## M. GOV-08 — Always-check and always-record execution contract (2026-10-11)
+
+Before every new or resumed stage the owner checks fresh main HEAD, Master Roadmap, LIVE_STATUS, branch/archive policy, #495, issue/PR/CI/evidence and Work Reuse Gate, **then** records a PRE-WORK issue receipt with exact SHA, acceptance gates, rollout/rollback and next work. No implementation begins first.
+
+After EVERY stage, including failure/hold/rejection, the owner records a POST-STAGE issue receipt with actual changed files, exact source SHA, test links, device evidence where applicable, decision and next task. The command center receives a concise completion link and LIVE_STATUS is reconciled at meaningful transitions and daily. Use a new stage ID for every rework cycle; do not quietly change previously failed results.
+
+[Full protocol](GRAND_FORGE_EXECUTION_PROTOCOL.md) · [Agents instructions](../../AGENTS.md) · [Work item template](../../.github/ISSUE_TEMPLATE/company-work-item.md) · [PR template](../../.github/PULL_REQUEST_TEMPLATE.md).
+
+Gate scope: future new PRs; existing old PRs remain legacy/manual-review. GitHub Actions checks provenance and record structure only. Branch protection remains a known missing admin action. Receipt statuses intentionally stop at DONE_SOURCE; real device/product/release approvals remain independent gates. Governance itself requires a planned preflight and an evidence-linked stage-end before promotion to main.
