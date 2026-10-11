@@ -4159,60 +4159,53 @@ fun ReaderScreen(
     }
 
     if (showAppearance) {
-        Dialog(
+        // Keep the actual book visible while adjusting it, like a reading console.
+        // The panel is height-bounded rather than a full-screen replacement; all
+        // edits still use the existing durable, session-owned Readium apply path.
+        val consoleHeight = with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp()
+        }
+        val maxConsoleHeight = minOf(consoleHeight * 0.72f, 620.dp)
+        ModalBottomSheet(
             onDismissRequest = { closeAppearanceAfterRendererSettles() },
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = false,
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = VeilPalette.Ink,
+            scrimColor = Color.Black.copy(alpha = 0.30f),
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = VeilPalette.Brass.copy(alpha = 0.45f)
+                )
+            }
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = VeilPalette.Ink,
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                Box(
+                EpubAppearancePanel(
+                    appearance = readerAppearance,
+                    readerChromeAutoHideEnabled = readerChromeAutoHideEnabled,
+                    onReaderChromeAutoHideChange = onReaderChromeAutoHideChange,
+                    fixedLayout = fixedLayoutPublication,
+                    fixedLayoutSpread = activeFixedLayoutSpread,
+                    publicationLanguage = publicationLanguage,
+                    onSpreadChange = { mode ->
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                        activeFixedLayoutSpread = mode
+                        onFixedLayoutSpreadChange(mode)
+                    },
+                    onChange = {
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                        onReaderAppearanceChange(it)
+                    },
+                    onDone = { finalAppearance ->
+                        closeAppearanceAfterRendererSettles(finalAppearance)
+                    },
+                    compactSheet = true,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color(0xFF141821),
-                                    VeilPalette.Ink,
-                                    Color(0xFF080A0E)
-                                )
-                            )
-                        )
-                        .windowInsetsPadding(WindowInsets.safeDrawing),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    EpubAppearancePanel(
-                        appearance = readerAppearance,
-                        readerChromeAutoHideEnabled = readerChromeAutoHideEnabled,
-                        onReaderChromeAutoHideChange = onReaderChromeAutoHideChange,
-                        fixedLayout = fixedLayoutPublication,
-                        fixedLayoutSpread = activeFixedLayoutSpread,
-                        publicationLanguage = publicationLanguage,
-                        onSpreadChange = { mode ->
-                            readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            activeFixedLayoutSpread = mode
-                            onFixedLayoutSpreadChange(mode)
-                        },
-                        onChange = {
-                            readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            onReaderAppearanceChange(it)
-                        },
-                        onDone = { finalAppearance ->
-                            closeAppearanceAfterRendererSettles(finalAppearance)
-                        },
-                        modifier = Modifier
-                            .widthIn(max = 720.dp)
-                            .fillMaxSize()
-                    )
-                }
+                        .widthIn(max = 720.dp)
+                        .heightIn(max = maxConsoleHeight)
+                        .fillMaxWidth()
+                )
             }
         }
     }
@@ -4864,6 +4857,7 @@ internal fun EpubAppearancePanel(
     onDone: (ReaderAppearance) -> Unit,
     modifier: Modifier = Modifier,
     initiallyAdvanced: Boolean = false,
+    compactSheet: Boolean = false,
     readerChromeAutoHideEnabled: Boolean = true,
     onReaderChromeAutoHideChange: (Boolean) -> Unit = {}
 ) {
@@ -4878,7 +4872,9 @@ internal fun EpubAppearancePanel(
         LocalDensity.current.fontScale, with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
         })
-    var showPreview by remember(condensedApproach) { mutableStateOf(!condensedApproach) }
+    var showPreview by remember(condensedApproach, compactSheet) {
+        mutableStateOf(!condensedApproach && !compactSheet)
+    }
     val capabilities = readerAppearanceCapabilities(
         fixedLayout = fixedLayout,
         languageTag = publicationLanguage,
@@ -4938,32 +4934,38 @@ internal fun EpubAppearancePanel(
         modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = VeilSpacing.lg, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = if (compactSheet) 20.dp else 18.dp)
+            .padding(top = if (compactSheet) 4.dp else VeilSpacing.lg, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compactSheet) 12.dp else 16.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            if (!condensedApproach) {
-                VeilMicroLabel(
-                    text = stringResource(R.string.reader_instruments),
-                    strong = true
-                )
-                BrassRule(Modifier.width(76.dp))
-            }
+        if (compactSheet) {
             Text(
                 stringResource(R.string.settings_appearance_title),
                 modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Text(
-                stringResource(R.string.reader_changes_live),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (!condensedApproach) {
+                    VeilMicroLabel(text = stringResource(R.string.reader_instruments), strong = true)
+                    BrassRule(Modifier.width(76.dp))
+                }
+                Text(
+                    stringResource(R.string.settings_appearance_title),
+                    modifier = Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    stringResource(R.string.reader_changes_live),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
 
-        if (!capabilities.fixedLayout) {
+        if (!capabilities.fixedLayout && !compactSheet) {
             if (condensedApproach) {
                 TextButton(
                     onClick = { showPreview = !showPreview },
@@ -5106,125 +5108,185 @@ internal fun EpubAppearancePanel(
 
         if (!showAdvanced) {
             if (!capabilities.fixedLayout) {
-            VeilMicroLabel(
-                text = stringResource(R.string.settings_publication_theme),
-                strong = true
-            )
-
-            listOf(
-                listOf(
-                    ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper),
-                    ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)
-                ),
-                listOf(
-                    ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk),
-                    ReaderTheme.OLED to stringResource(R.string.settings_reader_oled)
+                VeilMicroLabel(
+                    text = stringResource(R.string.settings_publication_theme),
+                    strong = true
                 )
-            ).forEach { presets ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    presets.forEach { (theme, label) ->
-                        AppearancePreset(
-                            label = label,
-                            theme = theme,
-                            selected = draft.theme == theme,
-                            modifier = Modifier.weight(1f)
+                if (compactSheet) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        listOf(
+                            ReaderTheme.PAPER to R.string.settings_reader_paper,
+                            ReaderTheme.SEPIA to R.string.settings_reader_sepia,
+                            ReaderTheme.DUSK to R.string.settings_reader_dusk,
+                            ReaderTheme.OLED to R.string.settings_reader_oled
+                        ).forEach { (theme, labelId) ->
+                            ReaderCompactThemeChoice(
+                                label = stringResource(labelId),
+                                theme = theme,
+                                selected = draft.theme == theme,
+                                modifier = Modifier.weight(1f),
+                                onClick = { updateDraft(draft.withTheme(theme)) }
+                            )
+                        }
+                    }
+                } else {
+                    listOf(
+                        listOf(
+                            ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper),
+                            ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)
+                        ),
+                        listOf(
+                            ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk),
+                            ReaderTheme.OLED to stringResource(R.string.settings_reader_oled)
+                        )
+                    ).forEach { presets ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            updateDraft(draft.withTheme(theme))
+                            presets.forEach { (theme, label) ->
+                                AppearancePreset(
+                                    label = label,
+                                    theme = theme,
+                                    selected = draft.theme == theme,
+                                    modifier = Modifier.weight(1f)
+                                ) { updateDraft(draft.withTheme(theme)) }
+                            }
                         }
                     }
                 }
-            }
 
-            BrassRule(Modifier.fillMaxWidth())
-
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                VeilMicroLabel(
-                    text = stringResource(R.string.settings_text_size),
-                    modifier = Modifier.weight(1f),
-                    strong = true
-                )
-                Text(
-                    formatPercent(draft.fontScale.toFloat()),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Slider(
-                value = draft.fontScale.toFloat(),
-                onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                valueRange = .75f..1.8f,
-                enabled = capabilities.typographyEditable,
-                modifier = Modifier.semantics {
-                    contentDescription = textSizeLabel
-                    stateDescription = formatPercent(draft.fontScale.toFloat())
+                if (!compactSheet) BrassRule(Modifier.fillMaxWidth())
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    VeilMicroLabel(
+                        text = stringResource(R.string.settings_text_size),
+                        modifier = Modifier.weight(1f),
+                        strong = true
+                    )
+                    Text(
+                        formatPercent(draft.fontScale.toFloat()),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            )
-
-            BrassRule(Modifier.fillMaxWidth())
+                Slider(
+                    value = draft.fontScale.toFloat(),
+                    onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    valueRange = .75f..1.8f,
+                    enabled = capabilities.typographyEditable,
+                    modifier = Modifier.semantics {
+                        contentDescription = textSizeLabel
+                        stateDescription = formatPercent(draft.fontScale.toFloat())
+                    }
+                )
             }
 
+            if (!compactSheet) BrassRule(Modifier.fillMaxWidth())
             VeilMicroLabel(
                 text = stringResource(R.string.settings_reading_mode_title),
                 strong = true
             )
-            ReaderReadingModeSelector(
-                selected = quickReadingMode,
-                scrollEnabled = capabilities.continuousScrollEditable,
-                onSelect = { mode ->
-                    updateDraft(draft.withReadingMode(mode))
-                }
-            )
-            Text(
-                stringResource(
-                    if (quickReadingMode == ReaderReadingMode.SCROLL) {
-                        R.string.settings_mode_scroll_description
-                    } else {
-                        R.string.settings_reading_mode_paged_description
-                    }
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            BrassRule(Modifier.fillMaxWidth())
-
-            VeilMicroLabel(
-                text = stringResource(R.string.settings_page_turn_title),
-                strong = true
-            )
-            if (quickReadingMode == ReaderReadingMode.SCROLL) {
-                ReaderCapabilityNotice(
-                    text = stringResource(R.string.settings_page_turn_scroll_hint)
+            if (compactSheet) {
+                // One visible decision for the four actual navigation engines,
+                // instead of a paging switch followed by a second turn-style menu.
+                val paperAvailable = MaterialPageEngineRollout.isEnabled() &&
+                    !capabilities.fixedLayout
+                val activeMode = if (
+                    !paperAvailable && draft.navigationMode == ReaderNavigationMode.PAPER_CURL
+                ) ReaderNavigationMode.PAGED else draft.navigationMode
+                val modeChoices = listOf(
+                    ReaderNavigationMode.PAGED to R.string.settings_mode_paged,
+                    ReaderNavigationMode.SLIDE to R.string.settings_mode_slide,
+                    ReaderNavigationMode.PAPER_CURL to R.string.settings_mode_curl,
+                    ReaderNavigationMode.SCROLL to R.string.settings_mode_scroll
                 )
+                Column(
+                    modifier = Modifier.fillMaxWidth().selectableGroup(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    modeChoices.chunked(2).forEach { choiceRow ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
+                            choiceRow.forEach { (mode, labelId) ->
+                                ReaderAppearanceChoice(
+                                    label = stringResource(labelId),
+                                    selected = activeMode == mode,
+                                    enabled = when (mode) {
+                                        ReaderNavigationMode.PAPER_CURL -> paperAvailable
+                                        ReaderNavigationMode.SCROLL ->
+                                            capabilities.continuousScrollEditable
+                                        else -> true
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    onClick = {
+                                        updateDraft(draft.withNavigationMode(mode))
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             } else {
-                val paperTurnAvailable = MaterialPageEngineRollout.isEnabled()
-                ReaderPageTurnSelector(
-                    selected = draft.pageTurnStyle,
-                    paperEnabled = paperTurnAvailable,
-                    onSelect = { style ->
-                        updateDraft(draft.withPageTurnStyle(style))
-                    }
-                )
-                if (!paperTurnAvailable) {
-                    ReaderCapabilityNotice(
-                        text = stringResource(R.string.settings_mode_curl_unavailable)
-                    )
+                val quickReadingMode = if (capabilities.continuousScrollEditable) {
+                    draft.readingMode
+                } else {
+                    ReaderReadingMode.PAGED
                 }
+                ReaderReadingModeSelector(
+                    selected = quickReadingMode,
+                    scrollEnabled = capabilities.continuousScrollEditable,
+                    onSelect = { mode -> updateDraft(draft.withReadingMode(mode)) }
+                )
                 Text(
-                    localizedPageTurnStyleDescription(draft.pageTurnStyle),
+                    stringResource(
+                        if (quickReadingMode == ReaderReadingMode.SCROLL) {
+                            R.string.settings_mode_scroll_description
+                        } else R.string.settings_reading_mode_paged_description
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                BrassRule(Modifier.fillMaxWidth())
+                VeilMicroLabel(
+                    text = stringResource(R.string.settings_page_turn_title),
+                    strong = true
+                )
+                if (quickReadingMode == ReaderReadingMode.SCROLL) {
+                    ReaderCapabilityNotice(
+                        text = stringResource(R.string.settings_page_turn_scroll_hint)
+                    )
+                } else {
+                    val paperTurnAvailable = MaterialPageEngineRollout.isEnabled()
+                    ReaderPageTurnSelector(
+                        selected = draft.pageTurnStyle,
+                        paperEnabled = paperTurnAvailable,
+                        onSelect = { style ->
+                            updateDraft(draft.withPageTurnStyle(style))
+                        }
+                    )
+                    if (!paperTurnAvailable) {
+                        ReaderCapabilityNotice(
+                            text = stringResource(R.string.settings_mode_curl_unavailable)
+                        )
+                    }
+                    Text(
+                        localizedPageTurnStyleDescription(draft.pageTurnStyle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                BrassRule(Modifier.fillMaxWidth())
+                ReaderMenuAutoHideControl(
+                    readerChromeAutoHideEnabled,
+                    onReaderChromeAutoHideChange
+                )
             }
-            BrassRule(Modifier.fillMaxWidth())
-            ReaderMenuAutoHideControl(readerChromeAutoHideEnabled, onReaderChromeAutoHideChange)
         } else {
             VeilMicroLabel(
                 text = stringResource(R.string.reader_typography_layout),
@@ -5550,6 +5612,13 @@ internal fun EpubAppearancePanel(
                     modifier = Modifier.semantics {
                         contentDescription = publisherStyleLabel
                     }
+                )
+            }
+
+            if (compactSheet) {
+                ReaderMenuAutoHideControl(
+                    readerChromeAutoHideEnabled,
+                    onReaderChromeAutoHideChange
                 )
             }
 
@@ -6489,6 +6558,57 @@ internal fun ReaderMotionPreview(
                     cap = StrokeCap.Round
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ReaderCompactThemeChoice(
+    label: String,
+    theme: ReaderTheme,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val (paperArgb, inkArgb) = readiumThemeColors(theme)
+    val ink = Color(inkArgb)
+    Surface(
+        modifier = modifier
+            .heightIn(min = 84.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
+        shape = MaterialTheme.shapes.small,
+        color = if (selected) VeilMaterials.ElevatedSurface
+            else VeilPalette.Archive.copy(alpha = 0.52f),
+        border = BorderStroke(
+            if (selected) 1.5.dp else 1.dp,
+            if (selected) VeilPalette.Brass
+            else VeilPalette.Brass.copy(alpha = 0.15f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(Color(paperArgb), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Aa", color = ink, fontSize = 13.sp)
+            }
+            Text(
+                text = label,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
