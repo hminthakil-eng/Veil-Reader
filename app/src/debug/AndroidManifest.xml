@@ -1,17 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <!-- A separate DEBUG-only launcher for testing a real upstream paper-curl engine.
-             Its pages are inert synthetic fixtures; the production Readium Reader is unchanged. -->
+        <!-- DEBUG-only Paper Curl experiment using fictional fixture pages.
+             This is deliberately NOT a second MAIN/LAUNCHER activity: instrumentation,
+             user home icons and PackageManager.getLaunchIntentForPackage() must always
+             resolve to the real MainActivity, never to a synthetic test lab.
+             QA can launch this exported activity explicitly via adb shell am start. -->
         <activity
             android:name=".debug.ExternalCurlArenaActivity"
             android:label="Veil · Curl Engine Lab"
             android:exported="true"
-            android:taskAffinity="com.veilreader.app.externalcurl.lab">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:taskAffinity="com.veilreader.app.externalcurl.lab" />
         <!-- Only the debug APK exposes fictional, inert review fixtures. -->
         <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
         <!-- Debug-only adb probe. Never merged into the release manifest. -->
