@@ -19,6 +19,20 @@
                 <data android:scheme="veilpaperlab" android:host="curl" />
             </intent-filter>
         </activity>
+        <!-- Independent Apache-2.0 OpenGL ES2 PageFlip benchmark.
+             Exported only in debug; never add MAIN/LAUNCHER here. -->
+        <activity
+            android:name=".debug.EschaoPageFlipArenaActivity"
+            android:exported="true"
+            android:label="Veil · Material Paper Arena"
+            android:taskAffinity="com.veilreader.app.eschao.lab">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="veilpaperlab" android:host="eschao" />
+            </intent-filter>
+        </activity>
         <!-- Only the debug APK exposes fictional, inert review fixtures. -->
         <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
         <!-- Debug-only adb probe. Never merged into the release manifest. -->

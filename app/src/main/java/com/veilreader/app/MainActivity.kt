@@ -91,7 +91,22 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
                 .setIcon(Icon.createWithResource(this, R.drawable.ic_veil_reader_icon))
                 .setIntent(curlIntent)
                 .build()
-            getSystemService(ShortcutManager::class.java)?.addDynamicShortcuts(listOf(shortcut))
+            // A second explicit shortcut, NOT an Android MAIN/LAUNCHER activity.
+            // This is compiled away unless the separate Paper Lab QA package is
+            // selected, so the real Veil reader is never redirected to a lab.
+            val eschaoIntent = Intent(Intent.ACTION_VIEW).apply {
+                setClassName(packageName, "com.veilreader.app.debug.EschaoPageFlipArenaActivity")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val eschaoShortcut = ShortcutInfo.Builder(this, "veil-eschao-paper-arena")
+                .setShortLabel("Material Paper")
+                .setLongLabel("3D eschao PageFlip · independent OpenGL benchmark")
+                .setIcon(Icon.createWithResource(this, R.drawable.ic_veil_reader_icon))
+                .setIntent(eschaoIntent)
+                .build()
+            getSystemService(ShortcutManager::class.java)?.addDynamicShortcuts(
+                listOf(eschaoShortcut, shortcut)
+            )
         }.onFailure { error ->
             // A launcher may not support app shortcuts. Never break the actual
             // reading app; the debug-only deep link remains an explicit fallback.
