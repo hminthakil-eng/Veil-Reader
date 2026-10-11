@@ -150,6 +150,82 @@ internal class ReaderTtsSherpaKokoroRuntime private constructor(
     }
 
     companion object {
+        /**
+         * Debug lab only. Packaged assets are never installed by a release
+         * build; production always requires verified model store data.
+         */
+        suspend fun openBundledDebugAssets(
+            assets: android.content.res.AssetManager,
+            nativeThreads: Int = 2
+        ): ReaderTtsKokoroOpenResult = withContext(Dispatchers.IO) {
+            if (!com.veilreader.app.BuildConfig.DEBUG || nativeThreads !in 1..4) {
+                return@withContext ReaderTtsKokoroOpenResult.Unavailable(
+                    ReaderTtsKokoroOpenResult.Reason.INVALID_NATIVE_METADATA
+                )
+            }
+            val folder = KOKORO_MODEL_ID
+            val config = OfflineTtsConfig(
+                model = OfflineTtsModelConfig(
+                    kokoro = OfflineTtsKokoroModelConfig(
+                        model = "$folder/model.onnx",
+                        voices = "$folder/voices.bin",
+                        tokens = "$folder/tokens.txt",
+                        dataDir = "$folder/espeak-ng-data",
+                        lang = "eng"
+                    ),
+                    numThreads = nativeThreads,
+                    debug = false,
+                    provider = "cpu"
+                )
+            )
+            val engine = try {
+                OfflineTts(assetManager = assets, config = config)
+            } catch (_: LinkageError) {
+                return@withContext ReaderTtsKokoroOpenResult.Unavailable(
+                    ReaderTtsKokoroOpenResult.Reason.INCOMPATIBLE_NATIVE_LIBRARY
+                )
+            } catch (_: Exception) {
+                return@withContext ReaderTtsKokoroOpenResult.Unavailable(
+                    ReaderTtsKokoroOpenResult.Reason.NATIVE_MODEL_INITIALIZATION_FAILED
+                )
+            }
+            try {
+                val speakers = engine.numSpeakers()
+                val rate = engine.sampleRate()
+                if (speakers !in 1..256 || rate !in 8_000..96_000) {
+                    engine.free()
+                    return@withContext ReaderTtsKokoroOpenResult.Unavailable(
+                        ReaderTtsKokoroOpenResult.Reason.INVALID_NATIVE_METADATA
+                    )
+                }
+                ReaderTtsKokoroOpenResult.Ready(
+                    ReaderTtsSherpaKokoroRuntime(
+                        engine,
+                        ReaderTtsNeuralModelSpec(
+                            packageId = KOKORO_MODEL_ID,
+                            family = ReaderTtsNeuralModelFamily.KOKORO,
+                            languageTags = setOf("en-US"),
+                            defaultVoiceId = "$KOKORO_MODEL_ID-0",
+                            supportsMultipleVoices = speakers > 1,
+                            expectedSampleRateHz = rate
+                        ),
+                        rate,
+                        speakers
+                    )
+                )
+            } catch (_: LinkageError) {
+                runCatching { engine.free() }
+                ReaderTtsKokoroOpenResult.Unavailable(
+                    ReaderTtsKokoroOpenResult.Reason.INCOMPATIBLE_NATIVE_LIBRARY
+                )
+            } catch (_: Exception) {
+                runCatching { engine.free() }
+                ReaderTtsKokoroOpenResult.Unavailable(
+                    ReaderTtsKokoroOpenResult.Reason.NATIVE_MODEL_INITIALIZATION_FAILED
+                )
+            }
+        }
+
         suspend fun open(
             prepared: ReaderTtsPreparedModel,
             nativeThreads: Int = 2
