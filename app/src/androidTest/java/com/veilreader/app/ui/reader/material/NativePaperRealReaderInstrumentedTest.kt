@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.reader.material
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.SystemClock
@@ -18,6 +19,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
+import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 /** Uses the production importer + Readium + ReaderScreen, never a fake page counter. */
@@ -28,7 +30,18 @@ class NativePaperRealReaderInstrumentedTest {
     private val automation = instrumentation.uiAutomation
 
     @Test fun realEpub_bendsDuringDrag_cancelRestores_releaseChangesReadiumLocator() {
-        ActivityScenario.launch(NativePaperReaderActivity::class.java).use { scenario ->
+        verifyRealBook(rtl = false)
+    }
+
+    @Test fun persianRtlEpub_bendsFromLeft_cancelRestores_releaseChangesReadiumLocator() {
+        verifyRealBook(rtl = true)
+    }
+
+    private fun verifyRealBook(rtl: Boolean) {
+        val prefix = if (rtl) "rtl" else "ltr"
+        val launch = Intent(instrumentation.targetContext, NativePaperReaderActivity::class.java)
+            .putExtra(NativePaperReaderActivity.EXTRA_RTL_BOOK, rtl)
+        ActivityScenario.launch<NativePaperReaderActivity>(launch).use { scenario ->
             var activity: NativePaperReaderActivity? = null
             scenario.onActivity { activity = it }
             val host = requireNotNull(activity)
@@ -52,6 +65,11 @@ class NativePaperRealReaderInstrumentedTest {
                 ready
             }
             SystemClock.sleep(400)
+            instrumentation.runOnMainSync {
+                assertEquals("The publication must drive physical turn direction",
+                    if (rtl) ReadingProgression.RTL else ReadingProgression.LTR,
+                    navigator()?.overflow?.value?.readingProgression)
+            }
             val original = requireNotNull(locator())
             val bounds = Rect()
             instrumentation.runOnMainSync {
@@ -59,13 +77,14 @@ class NativePaperRealReaderInstrumentedTest {
                     .first { it.isShown && it.width > 0 && it.height > 0 }
                 assertTrue(web.getGlobalVisibleRect(bounds))
             }
-            val baseline = screenshot("01-origin.png")
-            val x = bounds.left + bounds.width() * 0.95f
+            val baseline = screenshot("$prefix-01-origin.png")
+            val direction = if (rtl) 1f else -1f
+            val x = bounds.left + bounds.width() * (if (rtl) 0.05f else 0.95f)
             val y = bounds.top + bounds.height() * 0.72f
             var down = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, x, y, down)
             for (step in 1..14) {
-                inject(MotionEvent.ACTION_MOVE, x - bounds.width() * 0.57f * step / 14, y - step * 1.5f, down)
+                inject(MotionEvent.ACTION_MOVE, x + direction * bounds.width() * 0.57f * step / 14, y - step * 1.5f, down)
                 SystemClock.sleep(22)
             }
             waitUntil("Actual source buffer acquired") {
@@ -74,34 +93,65 @@ class NativePaperRealReaderInstrumentedTest {
                 acquired
             }
             assertEquals("A held fold must never navigate", original, locator())
-            val held = screenshot("02-held-real-epub.png")
+            val held = screenshot("$prefix-02-held-real-epub.png")
             assertTrue("Real page pixels must visibly deform before release",
                 changedFraction(baseline, held, bounds) > 0.04)
             baseline.recycle(); held.recycle()
             // Deliberately reverse the pull before releasing: same locator, no commit.
             for (step in 13 downTo 0) {
-                inject(MotionEvent.ACTION_MOVE, x - bounds.width() * 0.57f * step / 14, y - step * 1.5f, down)
+                inject(MotionEvent.ACTION_MOVE, x + direction * bounds.width() * 0.57f * step / 14, y - step * 1.5f, down)
                 SystemClock.sleep(22)
             }
             inject(MotionEvent.ACTION_UP, x, y, down)
             SystemClock.sleep(900)
             assertEquals("Reversal must restore the exact location", original, locator())
-            screenshot("03-cancelled.png").recycle()
+            screenshot("$prefix-03-cancelled.png").recycle()
 
             down = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, x, y, down)
             for (step in 1..16) {
-                inject(MotionEvent.ACTION_MOVE, x - bounds.width() * 0.83f * step / 16, y, down)
+                inject(MotionEvent.ACTION_MOVE, x + direction * bounds.width() * 0.83f * step / 16, y, down)
                 SystemClock.sleep(20)
             }
-            inject(MotionEvent.ACTION_UP, x - bounds.width() * 0.83f, y, down)
+            inject(MotionEvent.ACTION_UP, x + direction * bounds.width() * 0.83f, y, down)
             waitUntil("Released fold changes the actual Readium location") { locator() != null && locator() != original }
             SystemClock.sleep(900)
             val committed = locator()
             assertNotEquals(original, committed)
             SystemClock.sleep(300)
             assertEquals("A single release must settle once", committed, locator())
-            screenshot("04-committed.png").recycle()
+            screenshot("$prefix-04-committed.png").recycle()
+
+            // Exercise the opposite physical edge in the same real publication.
+            var previousEpoch = 0L
+            instrumentation.runOnMainSync { previousEpoch = native()?.lastAcquiredSheetEpoch ?: 0L }
+            val backX = bounds.left + bounds.width() * (if (rtl) 0.95f else 0.05f)
+            val backY = bounds.top + bounds.height() * 0.32f
+            down = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, backX, backY, down)
+            for (step in 1..14) {
+                inject(MotionEvent.ACTION_MOVE, backX - direction * bounds.width() * 0.57f * step / 14, backY, down)
+                SystemClock.sleep(22)
+            }
+            waitUntil("Opposite-edge source buffer acquired") {
+                var acquired = false
+                instrumentation.runOnMainSync {
+                    acquired = (native()?.lastAcquiredSheetEpoch ?: 0L) > previousEpoch
+                }
+                acquired
+            }
+            assertEquals("A held backward fold must never navigate", committed, locator())
+            screenshot("$prefix-05-backward-held.png").recycle()
+            inject(MotionEvent.ACTION_UP, backX - direction * bounds.width() * 0.57f, backY, down)
+            waitUntil("Backward release changes the actual location") { locator() != null && locator() != committed }
+            SystemClock.sleep(900)
+            val beforeBack = org.json.JSONObject(requireNotNull(committed))
+            val afterBack = org.json.JSONObject(requireNotNull(locator()))
+            assertEquals(beforeBack.getString("href"), afterBack.getString("href"))
+            assertTrue("Backward must reduce the actual book progression",
+                afterBack.getJSONObject("locations").getDouble("progression") <
+                    beforeBack.getJSONObject("locations").getDouble("progression"))
+            screenshot("$prefix-06-backward-committed.png").recycle()
         }
     }
 

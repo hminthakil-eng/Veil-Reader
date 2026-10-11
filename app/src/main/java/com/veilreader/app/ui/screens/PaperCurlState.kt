@@ -42,12 +42,10 @@ internal enum class PaperPerformancePhase {
 }
 
 /**
- * Single Paper runtime for the GPU Material Page Engine.
- *
- * Legacy Canvas curl and Material Canvas v1 were intentionally removed from the
- * v2 build. Git history/PR #372 remains the rollback source; this runtime has only
- * one visual Paper implementation so a device test can never silently fall back to
- * an older curl and disguise renderer/gesture defects.
+ * One Paper transaction with an explicitly selected renderer backend.
+ * Debug/benchmark use the licensed native cylinder; release keeps GPU v2 behind
+ * its existing rollout gate. Renderer failure never silently selects another
+ * backend or disguises a failed fold as a successful slide.
  */
 @Stable
 internal class PaperCurlState {

@@ -584,11 +584,16 @@ internal class MaterialPageEngineState(
         value: Float,
         releaseProgress: Float = progress,
         releaseEdgeTravel: Float = edgeTravel,
-        releaseNativeTravel: Float = nativeLeafTravel
+        releaseNativeTravel: Float = nativeLeafTravel,
+        nativeReleaseFraction: Float? = null
     ) {
         progress = value.coerceIn(0f, 1f)
         edgeTravel = materialPageSettledEdgeTravel(value, releaseProgress, releaseEdgeTravel)
-        nativeLeafTravel = nativePaperSettleTravel(value, releaseProgress, releaseNativeTravel, nativeReleaseCompleting)
+        nativeLeafTravel = if (nativeReleaseFraction != null) {
+            nativePaperReleaseTravel(nativeReleaseFraction, releaseNativeTravel)
+        } else {
+            nativePaperSettleTravel(value, releaseProgress, releaseNativeTravel, nativeReleaseCompleting)
+        }
         pointerTravel = edgeTravel
     }
 
@@ -680,6 +685,27 @@ internal class MaterialPageEngineState(
         if (reducedMotion) {
             visualAlpha = 0.08f
             progress = 1f
+        } else if (BuildConfig.NATIVE_PAPER_REBUILD) {
+            // Gesture progress can reach 1 while half the reflected leaf is
+            // still visible. Animate release time, not that saturated value,
+            // so a full-width pull still rolls smoothly out of the viewport.
+            val release = Animatable(0f)
+            release.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = materialPageSpringDamping(profile, cancelling = false),
+                    stiffness = materialPageSpringStiffness(profile),
+                    visibilityThreshold = 0.001f
+                ),
+                initialVelocity = normalizedReleaseVelocity(releaseVelocityDpPerSec).coerceIn(0f, 5f)
+            ) {
+                val fraction = value.coerceIn(0f, 1f)
+                acceptAnimatedProgress(
+                    releaseProgress + (1f - releaseProgress) * fraction,
+                    releaseProgress, releaseEdgeTravel, releaseNativeTravel,
+                    nativeReleaseFraction = fraction
+                )
+            }
         } else {
             val anim = Animatable(progress)
             anim.animateTo(

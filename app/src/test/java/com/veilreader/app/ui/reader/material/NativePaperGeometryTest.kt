@@ -46,4 +46,15 @@ class NativePaperGeometryTest {
             assertTrue(fold.x.isFinite() && fold.y.isFinite() && fold.directionX.isFinite() && fold.directionY.isFinite() && fold.radius.isFinite())
         }
     }
+
+    @Test fun `saturated gesture still has a continuous release interval`() {
+        // A drag can already have progress=1 before the whole leaf has exited.
+        // Independent release time must retain its starting geometry at t=0.
+        for (start in listOf(0.83f, 1f, 1.3f)) {
+            assertEquals(start, nativePaperReleaseTravel(0f, start), 0f)
+            val halfway = nativePaperReleaseTravel(0.5f, start)
+            assertTrue(halfway > start && halfway < NATIVE_PAPER_COMPLETE_TRAVEL)
+            assertEquals(NATIVE_PAPER_COMPLETE_TRAVEL, nativePaperReleaseTravel(1f, start), 0f)
+        }
+    }
 }

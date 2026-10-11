@@ -16,6 +16,15 @@ internal data class NativePaperFold(
 
 internal const val NATIVE_PAPER_COMPLETE_TRAVEL = 2.08f
 
+/** Release time is independent of the gesture's already-saturated progress. */
+internal fun nativePaperReleaseTravel(fraction: Float, releaseTravel: Float): Float {
+    val f = fraction.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+    val start = releaseTravel.takeIf { it.isFinite() }
+        ?.coerceIn(0f, NATIVE_PAPER_COMPLETE_TRAVEL) ?: 0f
+    if (f >= 1f) return NATIVE_PAPER_COMPLETE_TRAVEL
+    return start + (NATIVE_PAPER_COMPLETE_TRAVEL - start) * f
+}
+
 /**
  * Solve the cylindrical free edge against the actual pull instead of translating
  * a rectangle. For a partial roll d = r(theta - sin(theta)); for a complete roll

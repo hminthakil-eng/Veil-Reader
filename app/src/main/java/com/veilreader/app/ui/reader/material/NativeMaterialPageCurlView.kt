@@ -38,7 +38,7 @@ import javax.microedition.khronos.opengles.GL10
  * The licensed Harism cylinder mesh attached to REAL Readium page snapshots.
  * The host is visual-only: Readium owns input, locators and release decisions.
  * No demo Activity, second navigator, synthetic book or native slide fallback.
- * Original engine retained for explicit rollback; this backend is debug-only.
+ * Original engine retained for explicit rollback; debug/benchmark select this backend.
  */
 internal class NativeMaterialPageCurlView(
     context: Context,

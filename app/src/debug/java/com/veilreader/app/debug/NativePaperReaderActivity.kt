@@ -26,6 +26,8 @@ import kotlinx.coroutines.withContext
 
 /** Isolated test entry using the production importer, Readium and ReaderScreen. */
 class NativePaperReaderActivity : FragmentActivity() {
+    companion object { const val EXTRA_RTL_BOOK = "native-paper-rtl-book" }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -52,7 +54,10 @@ class NativePaperReaderActivity : FragmentActivity() {
     }
 
     private fun fixture(): File {
-        val target = File(cacheDir, "native-paper-real-reader.epub")
+        val rtl = intent.getBooleanExtra(EXTRA_RTL_BOOK, false)
+        val language = if (rtl) "fa" else "en"
+        val progression = if (rtl) "rtl" else "ltr"
+        val target = File(cacheDir, "native-paper-real-reader-$language.epub")
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
             fun entry(path: String, text: String, stored: Boolean = false) {
                 val bytes = text.toByteArray(Charsets.UTF_8)
@@ -67,13 +72,15 @@ class NativePaperReaderActivity : FragmentActivity() {
             }
             entry("mimetype", "application/epub+zip", true)
             entry("META-INF/container.xml", """<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>""")
-            entry("OEBPS/content.opf", """<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">veil-native-paper-qa</dc:identifier><dc:title>Native Paper Real Book</dc:title><dc:language>en</dc:language><meta property="dcterms:modified">2026-10-11T00:00:00Z</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/><item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="c1"/><itemref idref="c2"/></spine></package>""")
+            entry("OEBPS/content.opf", """<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">veil-native-paper-qa-$language</dc:identifier><dc:title>Native Paper Real Book $language</dc:title><dc:language>$language</dc:language><meta property="dcterms:modified">2026-10-11T00:00:00Z</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/><item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/></manifest><spine page-progression-direction="$progression"><itemref idref="c1"/><itemref idref="c2"/></spine></package>""")
             entry("OEBPS/nav.xhtml", """<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title></head><body><nav epub:type="toc"><ol><li><a href="c1.xhtml">Chapter One</a></li><li><a href="c2.xhtml">Chapter Two</a></li></ol></nav></body></html>""")
             for (chapter in 1..2) {
                 val paragraphs = (1..90).joinToString("") { index ->
-                    "<p>Chapter $chapter, paragraph $index. The archive opens quietly. Ink belongs to this real EPUB page; a finger raises the sheet and its shadow follows the fold. Release commits one reading location, and reversing the pull restores the original page.</p>"
+                    if (rtl) "<p>فصل $chapter، بند $index. کتابخانه آرام باز می‌شود. این نوشته بخشی از صفحهٔ واقعی کتاب است؛ انگشت کاغذ را بلند می‌کند و سایه همراه خمیدگی حرکت می‌کند. رها کردن انگشت یک صفحه را ورق می‌زند و بازگرداندن حرکت، همان صفحهٔ نخست را نگه می‌دارد.</p>"
+                    else "<p>Chapter $chapter, paragraph $index. The archive opens quietly. Ink belongs to this real EPUB page; a finger raises the sheet and its shadow follows the fold. Release commits one reading location, and reversing the pull restores the original page.</p>"
                 }
-                entry("OEBPS/c$chapter.xhtml", """<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Chapter $chapter</title></head><body><h1>Chapter $chapter</h1>$paragraphs</body></html>""")
+                val title = if (rtl) "فصل $chapter" else "Chapter $chapter"
+                entry("OEBPS/c$chapter.xhtml", """<html xmlns="http://www.w3.org/1999/xhtml" lang="$language" xml:lang="$language" dir="$progression"><head><title>$title</title></head><body><h1>$title</h1>$paragraphs</body></html>""")
             }
         }
         return target

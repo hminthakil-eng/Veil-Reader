@@ -16,6 +16,7 @@ Source-confirmed failure paths, distinct from unperformed phone reproduction:
 | A valid short drag release arrives before acquired-source acknowledgement | Main `onDragEnd` required epoch equality immediately; tap path waited | Wait up to the existing 500 ms same-epoch acquisition barrier, preserve release intent, cancel safely on lifecycle/token change |
 | Native material demos did not change real book pages | #479/#506 explicitly used fictional bitmaps | Wire the licensed mesh directly into `PaperCurlOverlay` and actual Readium source snapshots |
 | Leaf travel stopped inside the screen | Prior GPU target free edge clamps at -0.25 page widths | Finger tracks 1:1 during drag; accepted release extends to 2.08 widths so the entire reflected leaf exits |
+| Full pull skipped its release animation | Saturated gesture progress=1 leaves no remaining animation interval | Native release uses its own time fraction so the remaining leaf exits continuously |
 
 No single explanation is asserted for every prior APK. An installed build hash and
 phone recording are required to attribute an individual report.
@@ -68,14 +69,16 @@ record its exact source head and test merge SHA separately.
 
 New meaningful checks:
 - `NativePaperGeometryTest`: free edge tracks finger, partial/full cylinder join,
-  mirrored direction, complete exit, cancellation, invalid samples.
+  mirrored direction, complete exit, continuous release after saturated drag,
+  cancellation, invalid samples.
 - `PaperDiscreteTurnLifecycleTest`: quick release before acquisition waits then
   commits exactly once; existing timeout, cancel and chapter-ownership regressions.
 - `NativePaperRealReaderInstrumentedTest`: launch production import/Readium/
-  ReaderScreen with deterministic EPUB; inject actual Android touch events;
+  ReaderScreen with English LTR and Persian RTL EPUBs; inject actual Android touch events;
   require visible page-pixel deformation while actual locator stays put; reverse
-  and release must restore; next full release must change the real Readium locator.
-  Captures origin/held/cancel/committed PNGs under `native-paper-evidence`.
+  and release must restore; full release must change the real Readium locator;
+  opposite-edge release must reduce actual book progression.
+  Captures six PNGs per book under `native-paper-evidence`.
 - Benchmark build now exercises native backend with the existing full Reader
   performance fixture. A successful emulator test is not physical acceptance.
 

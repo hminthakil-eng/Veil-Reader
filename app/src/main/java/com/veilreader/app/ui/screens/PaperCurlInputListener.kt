@@ -34,8 +34,8 @@ import org.readium.r2.shared.publication.Locator
  * Interactive paper turn driven through Readium's own input pipeline.
  *
  * No Android overlay owns touch input. Readium remains authoritative for gestures.
- * During a drag, the destination may be previewed underneath the captured source page;
- * persistence/counting is deferred until commit and an exact start locator is restored on cancel.
+ * The held drag retains its real source locator. Only release navigates beneath
+ * the captured leaf; persistence/counting happens after confirmed departure.
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal fun shouldCapturePaperTurnSnapshot(
