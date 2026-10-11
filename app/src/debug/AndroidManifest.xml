@@ -2,6 +2,17 @@
     <application>
         <!-- Only the debug APK exposes fictional, inert review fixtures. -->
         <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
+        <!-- Optional local Kokoro lab: same Veil package, debug builds ONLY. -->
+        <activity
+            android:name=".ui.reader.tts.VeilNeuralVoiceLabActivity"
+            android:exported="true"
+            android:label="Veil Neural Lab"
+            android:theme="@style/Theme.VeilReader">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <!-- Debug-only adb probe. Never merged into the release manifest. -->
         <activity
             android:name=".debug.ReaderDurabilityProbeActivity"

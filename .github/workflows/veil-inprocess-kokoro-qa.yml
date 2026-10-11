@@ -1,0 +1,146 @@
+name: Veil In-Process Kokoro QA APK
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+    paths:
+      - 'app/src/main/java/com/k2fsa/sherpa/onnx/**'
+      - 'app/src/main/java/com/veilreader/app/ui/reader/tts/**'
+      - 'app/src/debug/**'
+      - '.github/workflows/veil-inprocess-kokoro-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: veil-inprocess-kokoro-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-native-veil:
+    name: Build one Veil QA APK with in-app JNI + 11-voice model
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout Veil Reader
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Set up Java 21
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare debug-only signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .forge-qa
+          keytool -genkeypair -v -keystore .forge-qa/debug.keystore \
+            -alias AndroidDebugKey -keyalg RSA -keysize 2048 -validity 3650 \
+            -storepass android -keypass android \
+            -dname 'CN=Veil Forge Neural QA, O=Eyad Studio, C=US'
+      - name: Fetch and pin official Sherpa 1.13.8 ARM64 JNI binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-android.tar.bz2'
+          curl --fail --location --silent --show-error --retry 3 \
+            --output /tmp/sherpa-native.tar.bz2 "$url"
+          mkdir -p /tmp/sherpa-native
+          tar -xjf /tmp/sherpa-native.tar.bz2 -C /tmp/sherpa-native
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,shutil
+          src=Path('/tmp/sherpa-native')
+          out=Path('app/src/debug/jniLibs/arm64-v8a')
+          out.mkdir(parents=True,exist_ok=True)
+          expected={
+              'libsherpa-onnx-jni.so':'3c6492ea91ea68fd3b72b9495efdde6dd913f6b58c387e3b07389cf335f4d26f',
+              'libonnxruntime.so':'33847ad43bffe204699fd4a27f7f3603452a8cdaf2f9a44983a0bc31ffcf2da1'
+          }
+          for name,digest in expected.items():
+              found=[p for p in src.rglob(name) if 'arm64-v8a' in str(p)]
+              if len(found)!=1: raise SystemExit(f'Expected unique ARM64 native lib {name}; found {len(found)}')
+              actual=hashlib.sha256(found[0].read_bytes()).hexdigest()
+              if actual!=digest: raise SystemExit(f'Native library SHA mismatch: {name}')
+              shutil.copy2(found[0],out/name)
+              print(f'{name}: {digest}')
+          PY
+      - name: Stage exact full-precision Kokoro model inside DEBUG APK only
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-en-v0_19.tar.bz2'
+          curl --fail --location --silent --show-error --retry 3 \
+            --output /tmp/kokoro-en-v0_19.tar.bz2 "$url"
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,tarfile
+          archive=Path('/tmp/kokoro-en-v0_19.tar.bz2')
+          with tarfile.open(archive,'r:bz2') as tf:
+              for m in tf.getmembers():
+                  parts=Path(m.name).parts
+                  if (m.name.startswith('/') or '..' in parts or not parts or
+                      parts[0]!='kokoro-en-v0_19' or
+                      not (m.isfile() or m.isdir())):
+                      raise SystemExit(f'Unsafe model entry: {m.name}')
+              tf.extractall('app/src/debug/assets',filter='data')
+          root=Path('app/src/debug/assets/kokoro-en-v0_19')
+          required=['model.onnx','voices.bin','tokens.txt','LICENSE']
+          for name in required:
+              if not (root/name).is_file() or (root/name).stat().st_size==0:
+                  raise SystemExit(f'Missing model component: {name}')
+          if not (root/'espeak-ng-data').is_dir():
+              raise SystemExit('Missing Kokoro phonemizer')
+          actual=hashlib.sha256((root/'model.onnx').read_bytes()).hexdigest()
+          expected='10ff414106a038ce7e9e0126c6461e4dc8a86efaa89dc91d2009d69fe635e339'
+          if actual!=expected: raise SystemExit('Model ONNX SHA mismatch')
+          print('Verified full Kokoro model SHA:',actual)
+          PY
+      - name: Build Veil Forge QA APK (no separate Android TTS app)
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace \
+            :app:assembleDebug \
+            -PveilForgeQa=true \
+            "-PveilForgeRevision=${GITHUB_SHA}"
+          apk='app/build/outputs/apk/debug/app-debug.apk'
+          test -s "$apk"
+          unzip -l "$apk" | grep -F 'lib/arm64-v8a/libsherpa-onnx-jni.so'
+          unzip -l "$apk" | grep -F 'lib/arm64-v8a/libonnxruntime.so'
+          unzip -l "$apk" | grep -F 'assets/kokoro-en-v0_19/model.onnx'
+          echo 'PASS: native runtime and offline Kokoro model embedded into Veil QA package.'
+      - name: Record provenance and upload verified debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deliverables
+          cp app/build/outputs/apk/debug/app-debug.apk \
+            deliverables/Veil-Reader-Native-Kokoro-11Voices-ForgeQA-arm64.apk
+          {
+            echo "Veil source SHA: ${GITHUB_SHA}"
+            echo 'Official Sherpa JNI version: 1.13.8 (arm64-v8a)'
+            echo 'Model: kokoro-en-v0_19 English 11 voices, full precision'
+            echo 'Test lab: Veil Neural Lab launcher in SAME Veil application'
+            echo 'QA-only: no native model or .so packaged by normal builds'
+            echo 'Real device audible quality and pause timing UNVERIFIED'
+            echo 'APK sha256:'
+            sha256sum deliverables/*.apk
+            echo 'Native SHA256:'
+            sha256sum app/src/debug/jniLibs/arm64-v8a/*.so
+            echo 'ONNX SHA256:'
+            sha256sum app/src/debug/assets/kokoro-en-v0_19/model.onnx
+          } > deliverables/PROVENANCE.txt
+      - name: Upload in-process Veil APK and build provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: veil-native-kokoro-inprocess-qa-apk
+          path: deliverables/
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0

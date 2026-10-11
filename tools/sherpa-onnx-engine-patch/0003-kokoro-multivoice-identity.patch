@@ -1,0 +1,83 @@
+diff --git a/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt b/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+--- a/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
++++ b/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+@@ -6,6 +6,8 @@
+ import android.speech.tts.SynthesisRequest
+ import android.speech.tts.TextToSpeech
+ import android.speech.tts.TextToSpeechService
++import android.speech.tts.Voice
++import java.util.Locale
+ import android.util.Log
+ import java.util.concurrent.atomic.AtomicLong
+ 
+@@ -59,7 +61,43 @@
+     // TextToSpeechService.onStop can interrupt synthesis from another thread.
+     // A generation token is safer than a shared Boolean across successive requests.
+     private val cancellationGeneration = AtomicLong(0L)
++    private val voicePrefix = "kokoro-en-v0_19-"
+ 
++    private fun speakerForVoice(name: String?): Int? {
++        if (name == null || !name.startsWith(voicePrefix)) return null
++        val id = name.removePrefix(voicePrefix).toIntOrNull() ?: return null
++        val count = TtsEngine.tts?.numSpeakers() ?: return null
++        return id.takeIf { it in 0 until count }
++    }
++
++    // The upstream base implementation exposes at most one voice per locale.
++    // Kokoro has 11 speaker embeddings: expose each as a real Android Voice.
++    override fun onGetVoices(): MutableList<Voice> {
++        val count = TtsEngine.tts?.numSpeakers() ?: 0
++        return (0 until count).map { id ->
++            Voice(
++                "$voicePrefix$id",
++                Locale.US,
++                Voice.QUALITY_HIGH,
++                Voice.LATENCY_NORMAL,
++                false,
++                emptySet()
++            )
++        }.toMutableList()
++    }
++
++    override fun onIsValidVoiceName(voiceName: String?): Int =
++        if (speakerForVoice(voiceName) != null) TextToSpeech.SUCCESS else TextToSpeech.ERROR
++
++    override fun onLoadVoice(voiceName: String?): Int =
++        onIsValidVoiceName(voiceName)
++
++    override fun onGetDefaultVoiceNameFor(
++        lang: String?, country: String?, variant: String?
++    ): String? = if (
++        lang == TtsEngine.lang && (TtsEngine.tts?.numSpeakers() ?: 0) > 0
++    ) "$voicePrefix" + "0" else null
++
+     override fun onCreate() {
+         Log.i(TAG, "onCreate tts service")
+         super.onCreate()
+@@ -121,6 +159,17 @@
+         val country = request.country
+         val variant = request.variant
+         val text = request.charSequenceText.toString()
++        // Honor the exact voice requested by the Android TTS client; never
++        // mutate the service-global speakerId to pick a different narrator.
++        val requestedName = request.voiceName
++        val requestedSpeakerId = if (requestedName?.startsWith(voicePrefix) == true) {
++            speakerForVoice(requestedName) ?: run {
++                callback.error()
++                return
++            }
++        } else {
++            TtsEngine.speakerId
++        }
+         // Map Android TTS speech rate (where 100 == normal) to engine speed (1.0 == normal)
+         // Allow per-request override from external apps; fallback to engine default if absent.
+         val rate = runCatching { request.speechRate }.getOrDefault(-1)
+@@ -175,7 +224,7 @@
+         try {
+             tts.generateWithConfigAndCallback(
+                 text = text,
++                config = GenerationConfig(sid = requestedSpeakerId, speed = engineSpeed),
+-                config = GenerationConfig(sid = TtsEngine.speakerId, speed = engineSpeed),
+                 callback = ttsCallback,
+             )
+             if (!isCancelled()) callback.done()
