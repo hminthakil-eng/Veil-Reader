@@ -46,6 +46,45 @@ class ReaderImageTransformTest {
     }
 
     @Test
+    fun `double tap zooms toward touched illustration detail`() {
+        val result = toggleReaderImageDoubleTap(
+            ReaderImageTransform(), 1000, 1000, 1000, 1000, 700f, 550f
+        )
+        assertEquals(ReaderImageTransform(2.5f, -300f, -75f), result)
+        assertEquals(700f, 500f + 200f * result.scale + result.panX, 0.001f)
+        assertEquals(550f, 500f + 50f * result.scale + result.panY, 0.001f)
+    }
+
+    @Test
+    fun `second double tap restores fit without stale pan`() {
+        val enlarged = toggleReaderImageDoubleTap(
+            ReaderImageTransform(), 1000, 1000, 1000, 1000, 700f, 550f
+        )
+        val restored = toggleReaderImageDoubleTap(
+            enlarged, 1000, 1000, 1000, 1000, 200f, 200f
+        )
+        assertEquals(ReaderImageTransform(), restored)
+    }
+
+    @Test
+    fun `double tap with unresolved viewport never invents a pan`() {
+        val result = toggleReaderImageDoubleTap(
+            ReaderImageTransform(2f, 80f, 70f), 0, 1000, 1000, 1000, 200f, 200f
+        )
+        assertEquals(ReaderImageTransform(2f), result)
+    }
+
+    @Test
+    fun `double tap wide illustration respects true letterboxed bounds`() {
+        val result = toggleReaderImageDoubleTap(
+            ReaderImageTransform(), 1000, 1000, 2000, 1000, 800f, 500f
+        )
+        assertEquals(2.5f, result.scale, 0.001f)
+        assertEquals(-450f, result.panX, 0.001f)
+        assertEquals(0f, result.panY, 0.001f)
+    }
+
+    @Test
     fun `invalid dimensions and non finite input cannot poison transform`() {
         assertEquals(ReaderImageTransform(), clampReaderImageTransform(ReaderImageTransform(Float.NaN, Float.NaN, Float.POSITIVE_INFINITY), 1000, 1000, 1000, 1000))
         assertEquals(ReaderImageTransform(2f), clampReaderImageTransform(ReaderImageTransform(2f, 20f, 30f), 0, 1000, 1000, 1000))
