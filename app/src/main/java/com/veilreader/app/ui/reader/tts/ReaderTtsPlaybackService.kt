@@ -162,13 +162,16 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     player.setOwnerPlayIntent(true)
                     Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                 }
-                ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices()
+                ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices(args)
                 ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE -> previewVoice(args)
                 ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES -> {
                     val preferred = ReaderTtsPlaybackRequest.decodePreferredVoices(
                         args.getString(ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON)
                     )
-                    player.updateVoicePreferences(preferred)
+                    val engineChoice = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                        args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+                    )
+                    player.updateVoicePreferences(preferred, engineChoice)
                     Futures.immediateFuture(
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     )
@@ -263,10 +266,15 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             return future
         }
 
-        private fun queryVoices(): ListenableFuture<SessionResult> {
+        private fun queryVoices(args: Bundle): ListenableFuture<SessionResult> {
+            val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+            )
             val future = SettableFuture.create<SessionResult>()
             serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext)
+                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                    selectEngine(requestedEngine)
+                }
                 try {
                     val problem = try {
                         withTimeout(5_000L) { backend.initialize() }
@@ -345,11 +353,16 @@ class ReaderTtsPlaybackService : MediaSessionService() {
 
             val speed = args.getFloat("speed", 1f)
             val pitch = args.getFloat("pitch", 1f)
+            val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+            )
             cancelActivePreview()
             val previewOwner = ++previewGeneration
             val future = SettableFuture.create<SessionResult>()
             previewJob = serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext)
+                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                    selectEngine(requestedEngine)
+                }
                 try {
                     val initProblem = try {
                         withTimeout(5_000L) { backend.initialize() }

@@ -629,6 +629,43 @@ class ReaderTtsSessionTest {
         } finally { session.close() }
     }
 
+    @Test
+    fun changingEnginePausesClosesOldBackendAndResumesWithNewOwner() = runTest {
+        val backends = mutableListOf<FakeBackend>()
+        val session = ReaderTtsSession(
+            { source {} },
+            { FakeBackend().also { backends += it } },
+            "en", { true }, StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            assertEquals(1, backends.size)
+            assertEquals(
+                com.veilreader.app.domain.ReaderTtsEngineChoice.SYSTEM,
+                backends[0].chosenEngine
+            )
+            session.updatePreferences(
+                ReaderTtsPreferences(
+                    engine = com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+                )
+            )
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(1, backends[0].closes)
+            assertEquals(1, backends.size)
+            session.resume()
+            runCurrent()
+            assertEquals(2, backends.size)
+            assertEquals(
+                com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX,
+                backends[1].chosenEngine
+            )
+            assertEquals("first", backends[1].requests.single().text)
+            assertEquals(1, backends[0].requests.size)
+        } finally { session.close() }
+    }
+
     private fun source(onRead: () -> Unit) = object : ReaderTtsContent {
         var index = 0
         override suspend fun next(): ReaderTtsUtterance? {
@@ -640,6 +677,10 @@ class ReaderTtsSessionTest {
         Locator(requireNotNull(Url(href)), MediaType.XHTML)
     private class FakeBackend : ReaderTtsBackend {
         data class Request(val text: String, val languageTag: String, val preferences: ReaderTtsPreferences, val completion: CompletableDeferred<ReaderTtsProblem?> = CompletableDeferred())
+        var chosenEngine = com.veilreader.app.domain.ReaderTtsEngineChoice.SYSTEM
+        override fun selectEngine(choice: com.veilreader.app.domain.ReaderTtsEngineChoice) {
+            chosenEngine = choice
+        }
         override val voices = emptyList<ReaderTtsVoice>()
         override var onInterruption: ((ReaderTtsInterruption) -> Unit)? = null
         override var onFocusGained: (() -> Unit)? = null

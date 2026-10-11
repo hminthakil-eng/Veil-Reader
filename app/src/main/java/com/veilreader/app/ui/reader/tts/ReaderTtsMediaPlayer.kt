@@ -304,18 +304,42 @@ internal class ReaderTtsMediaPlayer(
         return Futures.immediateVoidFuture()
     }
 
+    fun selectedEngineChoice(): com.veilreader.app.domain.ReaderTtsEngineChoice =
+        currentRequest?.preferences?.engine
+            ?: com.veilreader.app.domain.ReaderTtsEngineChoice.SYSTEM
+
     fun activeSegmentText(): String? =
         sessionState.activeText
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
             ?.take(4_096)
 
-    fun updateVoicePreferences(preferredVoiceIds: Map<String, String>) {
+    fun updateVoicePreferences(
+        preferredVoiceIds: Map<String, String>,
+        engineChoice: com.veilreader.app.domain.ReaderTtsEngineChoice
+    ) {
+        verifyApplicationThread()
         val request = currentRequest ?: return
+        val engineChanged = request.preferences.engine != engineChoice
         val updatedPreferences = request.preferences.copy(
-            preferredVoiceIds = preferredVoiceIds
+            preferredVoiceIds = preferredVoiceIds,
+            engine = engineChoice
         ).normalized()
-        currentRequest = request.copy(preferences = updatedPreferences)
+        val updatedRequest = request.copy(preferences = updatedPreferences)
+        if (engineChanged) {
+            // An engine change is always a Pause transaction. In particular,
+            // a publication can still be opening with session == null; its
+            // captured initial `safe` request would otherwise start the old
+            // narrator after the user selected the new one.
+            desiredPlayWhenReady = false
+            onTransportCommand()
+            session?.pause()
+            if (session == null && loadJob?.isActive == true) {
+                loadRequest(updatedRequest, autoplay = false)
+                return
+            }
+        }
+        currentRequest = updatedRequest
         session?.updatePreferences(updatedPreferences)
         invalidateState()
         scope.launch { persistCheckpoint(sessionState) }

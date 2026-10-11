@@ -1,12 +1,14 @@
 package com.veilreader.app.ui.reader.tts
 
 import java.util.Locale
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 
 internal data class ReaderTtsPreferences(
     val speed: Float = 1f,
     val pitch: Float = 1f,
     val languageTag: String? = null,
-    val preferredVoiceIds: Map<String, String> = emptyMap()
+    val preferredVoiceIds: Map<String, String> = emptyMap(),
+    val engine: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM
 ) {
     fun normalized(): ReaderTtsPreferences = copy(
         speed = if (speed.isFinite()) speed.coerceIn(0.5f, 3f) else 1f,
@@ -127,6 +129,24 @@ internal enum class ReaderTtsProblem {
     TIMEOUT
 }
 internal enum class ReaderTtsPhase { STOPPED, PREPARING, PLAYING, PAUSED, ENDED, FAILED, CLOSED }
+
+/**
+ * Keep Pause interactive while the Reader is still resolving its initial
+ * Readium locator. A pending start has not reached the speech service yet,
+ * so its Play/Pause affordance must cancel that start rather than disable.
+ */
+internal enum class ReaderTtsPrimaryAction { START, PAUSE, RESUME }
+
+internal fun readerTtsPrimaryAction(
+    phase: ReaderTtsPhase,
+    startPending: Boolean
+): ReaderTtsPrimaryAction = when {
+    startPending || phase == ReaderTtsPhase.PREPARING ||
+        phase == ReaderTtsPhase.PLAYING -> ReaderTtsPrimaryAction.PAUSE
+    phase == ReaderTtsPhase.PAUSED -> ReaderTtsPrimaryAction.RESUME
+    else -> ReaderTtsPrimaryAction.START
+}
+
 
 internal fun readerCanPlayForegroundTts(
     readerReady: Boolean,

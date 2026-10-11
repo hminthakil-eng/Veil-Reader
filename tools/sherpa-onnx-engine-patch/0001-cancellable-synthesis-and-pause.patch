@@ -1,0 +1,109 @@
+diff --git a/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt b/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+--- a/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
++++ b/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+@@ -7,6 +7,7 @@
+ import android.speech.tts.TextToSpeech
+ import android.speech.tts.TextToSpeechService
+ import android.util.Log
++import java.util.concurrent.atomic.AtomicLong
+ 
+ /*
+ https://developer.android.com/reference/java/util/Locale#getISO3Language()
+@@ -55,6 +56,10 @@
+ */
+ 
+ class TtsService : TextToSpeechService() {
++    // TextToSpeechService.onStop can interrupt synthesis from another thread.
++    // A generation token is safer than a shared Boolean across successive requests.
++    private val cancellationGeneration = AtomicLong(0L)
++
+     override fun onCreate() {
+         Log.i(TAG, "onCreate tts service")
+         super.onCreate()
+@@ -101,12 +106,17 @@
+         }
+     }
+ 
++    override fun onStop() {
++        // Signal the native inference callback to stop producing more chunks.
++        cancellationGeneration.incrementAndGet()
++    }
+-    override fun onStop() {}
+ 
+     override fun onSynthesizeText(request: SynthesisRequest?, callback: SynthesisCallback?) {
+         if (request == null || callback == null) {
+             return
+         }
++        val requestGeneration = cancellationGeneration.get()
++        val isCancelled = { cancellationGeneration.get() != requestGeneration }
+         val language = request.language
+         val country = request.country
+         val variant = request.variant
+@@ -134,37 +144,48 @@
+         // Note that AudioFormat.ENCODING_PCM_FLOAT requires API level >= 24
+         // callback.start(tts.sampleRate(), AudioFormat.ENCODING_PCM_FLOAT, 1)
+ 
++        if (isCancelled() ||
++            callback.start(tts.sampleRate(), AudioFormat.ENCODING_PCM_16BIT, 1) !=
++                TextToSpeech.SUCCESS
++        ) return
+-        callback.start(tts.sampleRate(), AudioFormat.ENCODING_PCM_16BIT, 1)
+ 
++        if (text.isBlank()) {
++            if (!isCancelled()) callback.done()
+-        if (text.isBlank() || text.isEmpty()) {
+-            callback.done()
+             return
+         }
+ 
+         val ttsCallback: (FloatArray) -> Int = fun(floatSamples): Int {
++            // JNI callback may be on a non-service thread. All cancellation
++            // visibility flows through AtomicLong; never call done() after stop.
++            if (isCancelled()) return 0
++            val maxBufferSize = callback.maxBufferSize
++            if (maxBufferSize <= 0) return 0
+-            // convert FloatArray to ByteArray
+             val samples = floatArrayToByteArray(floatSamples)
+-            val maxBufferSize: Int = callback.maxBufferSize
+             var offset = 0
+             while (offset < samples.size) {
++                if (isCancelled()) return 0
++                val bytesToWrite = minOf(maxBufferSize, samples.size - offset)
++                if (callback.audioAvailable(samples, offset, bytesToWrite) !=
++                    TextToSpeech.SUCCESS
++                ) return 0
+-                val bytesToWrite = Math.min(maxBufferSize, samples.size - offset)
+-                callback.audioAvailable(samples, offset, bytesToWrite)
+                 offset += bytesToWrite
+             }
++            return if (isCancelled()) 0 else 1
++        }
+ 
++        try {
++            tts.generateWithConfigAndCallback(
++                text = text,
++                config = GenerationConfig(sid = TtsEngine.speakerId, speed = engineSpeed),
++                callback = ttsCallback,
++            )
++            if (!isCancelled()) callback.done()
++        } catch (error: Exception) {
++            if (!isCancelled()) {
++                Log.e(TAG, "TTS synthesis failed", error)
++                callback.error()
++            }
+-            // 1 means to continue
+-            // 0 means to stop
+-            return 1
+         }
+-
+-        Log.i(TAG, "text: $text")
+-        tts.generateWithConfigAndCallback(
+-            text = text,
+-            config = GenerationConfig(sid = TtsEngine.speakerId, speed = engineSpeed),
+-            callback = ttsCallback,
+-        )
+-
+-        callback.done()
+     }
+ 
+     private fun floatArrayToByteArray(audio: FloatArray): ByteArray {
