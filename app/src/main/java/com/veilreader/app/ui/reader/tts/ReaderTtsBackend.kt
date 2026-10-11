@@ -9,6 +9,8 @@ internal enum class ReaderTtsInterruption {
 
 /** Backend owns synthesis only. It never owns publication parsing or durable Reader position. */
 internal interface ReaderTtsBackend {
+    /** Called before initialize; runtime engine changes require closing this backend. */
+    fun selectEngine(choice: com.veilreader.app.domain.ReaderTtsEngineChoice) = Unit
     val voices: List<ReaderTtsVoice>
     var onInterruption: ((ReaderTtsInterruption) -> Unit)?
     var onFocusGained: (() -> Unit)?

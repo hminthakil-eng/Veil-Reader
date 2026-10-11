@@ -1,0 +1,246 @@
+package com.veilreader.app.ui.reader.tts
+
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class ReaderTtsInProcessCoordinatorTest {
+    private val model = ReaderTtsNeuralModelSpec(
+        packageId = "kokoro-en-v0_19",
+        family = ReaderTtsNeuralModelFamily.KOKORO,
+        languageTags = setOf("en-US"),
+        supportsMultipleVoices = true,
+        expectedSampleRateHz = 24_000
+    )
+
+    private class FakeRuntime(
+        override val model: ReaderTtsNeuralModelSpec,
+        val nativeGate: CompletableDeferred<Unit>? = null,
+        val started: CompletableDeferred<Unit>? = null
+    ) : ReaderTtsNeuralRuntime {
+        override val sampleRateHz = 24_000
+        var nativeCallbackResult = true
+        var closed = false
+        override suspend fun synthesize(
+            text: String,
+            voiceId: String?,
+            speed: Float,
+            onPcmChunk: suspend (FloatArray) -> Boolean
+        ): ReaderTtsProblem? {
+            started?.complete(Unit)
+            nativeGate?.await()
+            val raw = floatArrayOf(0.25f, -0.25f)
+            nativeCallbackResult = onPcmChunk(raw)
+            raw.fill(0f) // Simulate a JNI engine reusing its native PCM buffer.
+            return null
+        }
+        override fun close() { closed = true }
+    }
+
+    private class FakeSink(
+        private val draining: CompletableDeferred<Unit>? = null
+    ) : ReaderTtsOwnedPcmSink {
+        val writes = mutableListOf<FloatArray>()
+        var preparedAt = 0
+        var silenced = 0
+        var drains = 0
+        override suspend fun prepare(sampleRateHz: Int, stillCurrent: () -> Boolean): Boolean {
+            if (!stillCurrent()) return false
+            preparedAt = sampleRateHz
+            return true
+        }
+        override suspend fun submit(pcm: FloatArray, stillCurrent: () -> Boolean): Boolean {
+            if (!stillCurrent()) return false
+            writes += pcm
+            return true
+        }
+        override suspend fun drain(stillCurrent: () -> Boolean): Boolean {
+            if (!stillCurrent()) return false
+            drains++
+            draining?.await()
+            return stillCurrent()
+        }
+        override fun silenceImmediately() { silenced++ }
+    }
+
+    @Test
+    fun actualAudibleDrainPrecedesSuccessfulCompletion() = runTest {
+        val finishing = CompletableDeferred<Unit>()
+        val sink = FakeSink(draining = finishing)
+        val worker = ReaderTtsInProcessCoordinator(FakeRuntime(model), sink)
+        val play = async { worker.speak("A chapter begins.", "kokoro-en-v0_19-4", 1f) }
+        runCurrent()
+        assertEquals(1, sink.drains)
+        assertTrue(worker.isSpeaking())
+        assertFalse(play.isCompleted)
+        assertEquals(24_000, sink.preparedAt)
+        assertEquals(0.25f, sink.writes.single()[0], 0.001f)
+        finishing.complete(Unit)
+        runCurrent()
+        assertTrue(play.isCompleted)
+        assertEquals(ReaderTtsInProcessOutcome.Completed, play.await())
+        assertFalse(worker.isSpeaking())
+        assertEquals(0, sink.silenced)
+    }
+
+    @Test
+    fun ordinarySentenceDoesNotDrainOrFlushAlreadyBufferedPcm() = runTest {
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(FakeRuntime(model), sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Completed,
+            worker.speak("First sentence.", "kokoro-en-v0_19-4", 1f, endOfStream = false)
+        )
+        assertEquals(0, sink.drains)
+        assertEquals(0, sink.silenced)
+        assertEquals(1, sink.writes.size)
+    }
+
+    @Test
+    fun pauseBeforeDelayedNativeCallbackProducesNoAudio() = runTest {
+        val nativeGate = CompletableDeferred<Unit>()
+        val started = CompletableDeferred<Unit>()
+        val runtime = FakeRuntime(model, nativeGate, started)
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+        val play = async { worker.speak("Do not speak after Pause.", "kokoro-en-v0_19-2", 1f) }
+        runCurrent()
+        started.await()
+        worker.pause() // Must not suspend waiting for JNI or other engine jobs.
+        assertEquals(1, sink.silenced)
+        assertFalse(worker.isSpeaking())
+        nativeGate.complete(Unit)
+        runCurrent()
+        assertFalse(runtime.nativeCallbackResult)
+        assertTrue(sink.writes.isEmpty())
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, play.await())
+    }
+
+    @Test
+    fun voiceIdentityIsExplicitAndStaleNativeBufferIsDetached() = runTest {
+        val runtime = FakeRuntime(model)
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Completed,
+            worker.speak("Text.", "kokoro-en-v0_19-10", 1f)
+        )
+        assertEquals(0.25f, sink.writes.single()[0], 0.001f)
+        assertEquals(-0.25f, sink.writes.single()[1], 0.001f)
+        assertFalse(worker.isSpeaking())
+    }
+
+    @Test
+    fun nativeEngineProducingZeroPcmIsNotReportedAsSuccess() = runTest {
+        val empty = object : ReaderTtsNeuralRuntime {
+            override val model = this@ReaderTtsInProcessCoordinatorTest.model
+            override val sampleRateHz = 24_000
+            override suspend fun synthesize(
+                text: String,
+                voiceId: String?,
+                speed: Float,
+                onPcmChunk: suspend (FloatArray) -> Boolean
+            ): ReaderTtsProblem? = null
+            override fun close() = Unit
+        }
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(empty, sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS),
+            worker.speak("Not silent.", "kokoro-en-v0_19-3", 1f)
+        )
+        assertEquals(0, sink.drains)
+        assertEquals(1, sink.silenced)
+    }
+
+    @Test
+    fun aNativeEngineThatIgnoresRejectedPcmCannotClaimSuccess() = runTest {
+        val buggy = object : ReaderTtsNeuralRuntime {
+            override val model = this@ReaderTtsInProcessCoordinatorTest.model
+            override val sampleRateHz = 24_000
+            override suspend fun synthesize(
+                text: String,
+                voiceId: String?,
+                speed: Float,
+                onPcmChunk: suspend (FloatArray) -> Boolean
+            ): ReaderTtsProblem? {
+                onPcmChunk(floatArrayOf(Float.NaN))
+                return null // Native implementation wrongly ignores callback=false.
+            }
+            override fun close() = Unit
+        }
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(buggy, sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS),
+            worker.speak("Bad native output", "kokoro-en-v0_19-2", 1f)
+        )
+        assertTrue(sink.writes.isEmpty())
+    }
+
+    @Test
+    fun emptyNarratorRejectedWithoutSilentFallback() = runTest {
+        val runtime = FakeRuntime(model)
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+        assertEquals(
+            ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE),
+            worker.speak("Text.", " ", 1f)
+        )
+        assertTrue(sink.writes.isEmpty())
+    }
+    @Test
+    fun queuedSecondPlayCannotResurrectNarrationAfterPause() = runTest {
+        val nativeGate = CompletableDeferred<Unit>()
+        val runtime = FakeRuntime(model, nativeGate, CompletableDeferred())
+        val sink = FakeSink()
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+
+        val first = async { worker.speak("First.", "kokoro-en-v0_19-2", 1f) }
+        runCurrent() // First call owns native inference and waits.
+        val second = async { worker.speak("Queued.", "kokoro-en-v0_19-2", 1f) }
+        runCurrent() // Second call is queued on nativeOwner mutex.
+
+        worker.pause()
+        nativeGate.complete(Unit)
+        runCurrent()
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, first.await())
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, second.await())
+        assertTrue(sink.writes.isEmpty())
+        assertEquals(1, sink.silenced)
+    }
+
+    @Test
+    fun pausingWhileSinkPreparesNeverCallsNativeInference() = runTest {
+        val waiting = CompletableDeferred<Unit>()
+        val preparationEntered = CompletableDeferred<Unit>()
+        val sink = object : ReaderTtsOwnedPcmSink {
+            var silenced = false
+            override suspend fun prepare(rate: Int, stillCurrent: () -> Boolean): Boolean {
+                preparationEntered.complete(Unit)
+                waiting.await()
+                return stillCurrent()
+            }
+            override suspend fun submit(pcm: FloatArray, stillCurrent: () -> Boolean) = false
+            override suspend fun drain(stillCurrent: () -> Boolean) = false
+            override fun silenceImmediately() { silenced = true }
+        }
+        val runtime = FakeRuntime(model)
+        val worker = ReaderTtsInProcessCoordinator(runtime, sink)
+        val play = async { worker.speak("Text.", "kokoro-en-v0_19-4", 1f) }
+        runCurrent()
+        preparationEntered.await()
+        worker.pause()
+        waiting.complete(Unit)
+        runCurrent()
+        assertEquals(ReaderTtsInProcessOutcome.Interrupted, play.await())
+        assertTrue(sink.silenced)
+        assertFalse(worker.isSpeaking())
+    }
+
+}

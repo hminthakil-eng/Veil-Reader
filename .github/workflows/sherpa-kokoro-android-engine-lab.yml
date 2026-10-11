@@ -1,0 +1,183 @@
+name: Sherpa Kokoro Android Engine Lab
+
+on:
+  pull_request:
+    branches:
+      - grand-forge/p0-kindle-reader-quality-20261008
+    paths:
+      - 'tools/sherpa-onnx-engine-patch/**'
+      - '.github/workflows/sherpa-kokoro-android-engine-lab.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sherpa-kokoro-lab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-patched-kokoro-engine:
+    name: Build patched Kokoro Android TTS engine (arm64 review APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Veil review branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Checkout exact Sherpa 1.13.8 source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: k2-fsa/sherpa-onnx
+          ref: 9db1af1871ed78cee9357c23898e5a7d8702d21a
+          path: sherpa-upstream
+          persist-credentials: false
+          submodules: false
+      - name: Install JDK 17
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare native runtime and model download targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p native-downloads model-downloads
+          echo 'Exact upstream sherpa-onnx v1.13.8; arm64-only Android review.'
+          df -h .
+      - name: Apply reviewed stop + no-book-text-logs patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          target='android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt'
+          expected='05ef5d3d6d553646bec8cdcf4f9240d2ccda7f60'
+          actual="$(git -C sherpa-upstream hash-object "$target")"
+          test "$actual" = "$expected" || {
+            echo "::error::Upstream service content differs from audited source"; exit 1;
+          }
+          for n in 0001-cancellable-synthesis-and-pause 0002-remove-plaintext-narration-logs 0003-kokoro-multivoice-identity; do
+            patch="$GITHUB_WORKSPACE/tools/sherpa-onnx-engine-patch/$n.patch"
+            git -C sherpa-upstream apply --check "$patch"
+            git -C sherpa-upstream apply "$patch"
+          done
+          git -C sherpa-upstream diff --check
+          grep -Fq 'sid = requestedSpeakerId' sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+          grep -Fq 'override fun onGetVoices()' sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+          grep -Fq 'cancellationGeneration.incrementAndGet()' "sherpa-upstream/$target"
+          if grep -Eq 'Log\\.(i|d|v|w|e)\\(TAG, "text:' "sherpa-upstream/$target"; then
+            echo "::error::TTS service logs private book content"; exit 1
+          fi
+      - name: Download official Sherpa 1.13.8 Android native archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          native_url='https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-android.tar.bz2'
+          curl --fail --show-error --silent --location --retry 3 \
+            --output native-downloads/sherpa-android.tar.bz2 "$native_url"
+          test -s native-downloads/sherpa-android.tar.bz2
+          mkdir -p native-downloads/extracted
+          tar -xjf native-downloads/sherpa-android.tar.bz2 -C native-downloads/extracted
+          find native-downloads/extracted -type f -name 'libsherpa-onnx-jni.so' -print
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          root=Path('native-downloads/extracted')
+          out=Path('sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/jniLibs/arm64-v8a')
+          out.mkdir(parents=True,exist_ok=True)
+          for name in ('libsherpa-onnx-jni.so','libonnxruntime.so'):
+              candidates=[p for p in root.rglob(name) if 'arm64-v8a' in str(p)]
+              if len(candidates)!=1:
+                  raise SystemExit(f'Expected one arm64-v8a {name}; found {candidates}')
+              shutil.copy2(candidates[0],out/name)
+              print(name,'bytes:',(out/name).stat().st_size)
+          PY
+          sha256sum sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/jniLibs/arm64-v8a/*.so
+      - name: Download Kokoro English full-precision model and verify contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          model_url='https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-en-v0_19.tar.bz2'
+          curl --fail --show-error --silent --location --retry 3 \
+            --output model-downloads/kokoro-en-v0_19.tar.bz2 "$model_url"
+          test -s model-downloads/kokoro-en-v0_19.tar.bz2
+          python3 - <<'PY'
+          import tarfile
+          archive='model-downloads/kokoro-en-v0_19.tar.bz2'
+          with tarfile.open(archive,'r:bz2') as tf:
+              for m in tf.getmembers():
+                  parts=m.name.split('/')
+                  if m.name.startswith('/') or '..' in parts or parts[0]!='kokoro-en-v0_19':
+                      raise SystemExit(f'Unsafe model archive entry: {m.name}')
+                  if not (m.isfile() or m.isdir()):
+                      raise SystemExit(f'Unexpected model archive entry: {m.name}')
+          PY
+          assets='sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/assets'
+          mkdir -p "$assets"
+          tar -xjf model-downloads/kokoro-en-v0_19.tar.bz2 -C "$assets"
+          for name in model.onnx voices.bin tokens.txt LICENSE; do
+            test -s "$assets/kokoro-en-v0_19/$name"
+          done
+          test -d "$assets/kokoro-en-v0_19/espeak-ng-data"
+          test "$(stat -c %s "$assets/kokoro-en-v0_19/model.onnx")" -gt 50000000
+          sha256sum "$assets"/kokoro-en-v0_19/model.onnx "$assets"/kokoro-en-v0_19/voices.bin
+      - name: Configure actual Kokoro native model (fail if upstream template drifts)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsEngine.kt')
+          s=path.read_text()
+          replacements={
+              '        modelDir = null':'        modelDir = "kokoro-en-v0_19"',
+              '        modelName = null':'        modelName = "model.onnx"',
+              '        voices = null':'        voices = "voices.bin"',
+              '        dataDir = null':'        dataDir = "kokoro-en-v0_19/espeak-ng-data"',
+              '        lang = null':'        lang = "eng"',
+          }
+          for old,new in replacements.items():
+              if s.count(old)!=1: raise SystemExit(f'TTS template drifted: {old!r} count {s.count(old)}')
+              s=s.replace(old,new,1)
+          path.write_text(s)
+          print('Configured full-precision Kokoro model; en (eng), 11 voices.')
+          PY
+      - name: Build signed-debug standalone Sherpa engine APK
+        shell: bash
+        working-directory: sherpa-upstream/android/SherpaOnnxTtsEngine
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace :app:assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -F 'lib/arm64-v8a/libsherpa-onnx-jni.so'
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep -F 'assets/kokoro-en-v0_19/model.onnx'
+      - name: Record exact build provenance and APK digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deliverables
+          cp sherpa-upstream/android/SherpaOnnxTtsEngine/app/build/outputs/apk/debug/app-debug.apk \
+            deliverables/Veil-Kokoro-Sherpa-Patched-Engine-arm64-debug.apk
+          {
+            echo 'Upstream commit: 9db1af1871ed78cee9357c23898e5a7d8702d21a'
+            echo 'Native release: k2-fsa/sherpa-onnx v1.13.8 Android'
+            echo 'Model: kokoro-en-v0_19, full precision, English'
+            echo 'Status: DEBUG REVIEW ONLY — NOT DEVICE-AUDIO VERIFIED'
+            echo 'Patch: 0001 stop cancellation + 0002 no book text logs + 0003 stable 11-speaker Kokoro'
+            echo 'APK SHA-256:'
+            sha256sum deliverables/*.apk
+            echo 'Native SHA-256:'
+            sha256sum sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/jniLibs/arm64-v8a/*.so
+            echo 'Model SHA-256:'
+            sha256sum sherpa-upstream/android/SherpaOnnxTtsEngine/app/src/main/assets/kokoro-en-v0_19/{model.onnx,voices.bin,tokens.txt,LICENSE}
+          } > deliverables/PROVENANCE.txt
+          cat deliverables/PROVENANCE.txt
+      - name: Upload build only after verification
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: veil-kokoro-sherpa-patched-arm64-review
+          path: deliverables/
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0

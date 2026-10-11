@@ -11,6 +11,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
+import com.veilreader.app.domain.ReaderTtsEngineChoice
+import com.veilreader.app.BuildConfig
+import com.veilreader.app.feature.VeilFeatureGates
+import com.veilreader.app.feature.VeilRiskyFeature
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.ContextCompat
 import kotlin.coroutines.resume
@@ -23,6 +27,15 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     private val handler = Handler(Looper.getMainLooper())
     private val audio = application.getSystemService(AudioManager::class.java)
     private var engine: TextToSpeech? = null
+    private var selectedEngine = ReaderTtsEngineChoice.SYSTEM
+    override fun selectEngine(choice: ReaderTtsEngineChoice) {
+        checkMainThread()
+        // Sessions close/recreate the native backend on a user engine switch.
+        check(engine == null || selectedEngine == choice) {
+            "TTS engine cannot change while initialized"
+        }
+        selectedEngine = choice
+    }
     private var closed = false
     private var initialized = false
     private var initializationGeneration = 0L
@@ -30,6 +43,10 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     private var focusHeld = false
     private var resumeOnFocusGain = false
     private var requestSequence = 0L
+    // Android TTS voice inventory/order can change while a book is playing.
+    // Lock the resolved offline voice until the user explicitly selects another.
+    private var narratorVoiceId: String? = null
+    private var narratorLanguageTag: String? = null
     private var activeRequestId: String? = null
     private var activeContinuation: CancellableContinuation<ReaderTtsProblem?>? = null
     override var onInterruption: ((ReaderTtsInterruption) -> Unit)? = null
@@ -84,11 +101,17 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     override suspend fun initialize(): ReaderTtsProblem? {
         checkMainThread()
         if (closed) return ReaderTtsProblem.NO_ENGINE
+        if (selectedEngine == ReaderTtsEngineChoice.SHERPA_ONNX &&
+            !VeilFeatureGates.enabled(
+                VeilRiskyFeature.LOCAL_NEURAL_TTS,
+                debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
+            )
+        ) return ReaderTtsProblem.NO_ENGINE
         if (engine != null) return if (initialized) null else ReaderTtsProblem.NO_ENGINE
         val generation = ++initializationGeneration
         return suspendCancellableCoroutine { continuation ->
             try {
-                val created = TextToSpeech(application) { status ->
+                val callback = TextToSpeech.OnInitListener { status ->
                     handler.post {
                         if (!continuation.isActive || closed || generation != initializationGeneration) return@post
                         if (status != TextToSpeech.SUCCESS) {
@@ -99,6 +122,18 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
                             if (target == null) {
                                 continuation.resume(ReaderTtsProblem.NO_ENGINE)
                             } else {
+                                if (selectedEngine == ReaderTtsEngineChoice.SHERPA_ONNX &&
+                                    target.engines.none { it.name == SHERPA_ANDROID_TTS_PACKAGE }
+                                ) {
+                                    // currentEngine is hidden Android framework API; it is not
+                                    // callable by apps. Only PUBLIC installed-engine lookup is
+                                    // used here. This does not prove effective binding: the
+                                    // Android 3-arg constructor can still use system fallback.
+                                    // Keep release gated OFF pending physical engine identity QA.
+                                    releaseEngine()
+                                    continuation.resume(ReaderTtsProblem.NO_ENGINE)
+                                    return@post
+                                }
                                 voices = runCatching { target.voices.orEmpty().map { voice ->
                                     ReaderTtsVoice(voice.name, voice.locale.toLanguageTag(), voice.quality,
                                         voice.isNetworkConnectionRequired,
@@ -111,7 +146,14 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
                         }
                     }
                 }
-                engine = created
+                // Explicit SHERPA_ONNX is intentionally fail-closed: if the
+                // external official offline engine is unavailable, do not use
+                // the phone's default Android narrator without telling user.
+                engine = if (selectedEngine == ReaderTtsEngineChoice.SHERPA_ONNX) {
+                    TextToSpeech(application, callback, SHERPA_ANDROID_TTS_PACKAGE)
+                } else {
+                    TextToSpeech(application, callback)
+                }
                 continuation.invokeOnCancellation {
                     val cleanup = {
                         if (generation == initializationGeneration) releaseEngine()
@@ -142,8 +184,15 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in voice.features.orEmpty()
         ) }
         val preferredVoiceId = safe.preferredVoiceId(languageTag)
-        val chosen = selectOfflineTtsVoice(metadata, languageTag, preferredVoiceId)
-            ?: return if (preferredVoiceId != null) {
+        val stableVoiceId = preferredVoiceId
+            ?: narratorVoiceId?.takeIf { narratorLanguageTag == languageTag }
+        val chosen = selectPinnedOfflineTtsVoice(
+            voices = metadata,
+            languageTag = languageTag,
+            explicitPreferredId = preferredVoiceId,
+            pinnedVoiceId = narratorVoiceId?.takeIf { narratorLanguageTag == languageTag }
+        )
+            ?: return if (stableVoiceId != null) {
                 ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
             } else {
                 ReaderTtsProblem.NO_OFFLINE_VOICE
@@ -154,6 +203,10 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
             target.voice?.name != chosen.id || target.voice?.isNetworkConnectionRequired != false) {
             return ReaderTtsProblem.NO_OFFLINE_VOICE
         }
+        // A missing previously resolved voice is a visible error; never let Android
+        // silently switch to a different installed voice between two sentences.
+        narratorVoiceId = chosen.id
+        narratorLanguageTag = languageTag
         if (target.setSpeechRate(safe.speed) != TextToSpeech.SUCCESS ||
             target.setPitch(safe.pitch) != TextToSpeech.SUCCESS) return ReaderTtsProblem.SYNTHESIS
         if (!focusHeld) {
@@ -247,6 +300,8 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     private fun releaseEngine() {
         initializationGeneration += 1
         initialized = false
+        narratorVoiceId = null
+        narratorLanguageTag = null
         val released = engine
         engine = null
         runCatching { released?.setOnUtteranceProgressListener(null) }
@@ -255,4 +310,9 @@ internal class AndroidReaderTtsBackend(context: Context) : ReaderTtsBackend {
     }
 
     private fun checkMainThread() = check(Looper.myLooper() == Looper.getMainLooper())
+
+    private companion object {
+        // Verified against k2-fsa official SherpaOnnxTtsEngine AndroidManifest.
+        const val SHERPA_ANDROID_TTS_PACKAGE = "com.k2fsa.sherpa.onnx.tts.engine"
+    }
 }

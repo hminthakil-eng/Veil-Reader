@@ -497,6 +497,29 @@ class ReaderTtsSessionTest {
     }
 
     @Test
+    fun userPauseAfterFocusGainButBeforeDeferredResumeWinsTheRace() = runTest {
+        val backend = FakeBackend()
+        val session = ReaderTtsSession(
+            { source {} },
+            { backend }, "en", { true }, StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            assertEquals(1, backend.requests.size)
+
+            backend.onInterruption?.invoke(ReaderTtsInterruption.TRANSIENT_FOCUS)
+            backend.onFocusGained?.invoke() // queues deferred resume
+            session.pause() // user acts before that continuation runs
+            runCurrent()
+
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(1, backend.requests.size)
+            assertTrue(backend.abandonFocusStops >= 1)
+        } finally { session.close() }
+    }
+
+    @Test
     fun userPauseDuringTransientFocusLossCancelsAutomaticResume() = runTest {
         val backend = FakeBackend()
         val session = ReaderTtsSession(
@@ -548,6 +571,101 @@ class ReaderTtsSessionTest {
         }
     }
 
+    @Test
+    fun mixedLanguageSpansDoNotSilentlyChangeTheNarratorMidBook() = runTest {
+        val backend = FakeBackend()
+        val samples = listOf(
+            ReaderTtsUtterance("english first", "en-US", locator()),
+            ReaderTtsUtterance("bonjour inserted", "fr-FR", locator()),
+            ReaderTtsUtterance("english continues", "en-GB", locator())
+        )
+        var index = 0
+        val session = ReaderTtsSession(
+            { object : ReaderTtsContent {
+                override suspend fun next(): ReaderTtsUtterance? = samples.getOrNull(index++)
+            } },
+            { backend }, "en", { true }, StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            assertEquals("en-US", backend.requests.single().languageTag)
+            backend.requests[0].completion.complete(null)
+            runCurrent()
+            assertEquals("en-US", backend.requests[1].languageTag)
+            backend.requests[1].completion.complete(null)
+            runCurrent()
+            assertEquals("en-US", backend.requests[2].languageTag)
+            session.pause()
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            session.resume()
+            runCurrent()
+            assertEquals("en-US", backend.requests[3].languageTag)
+            assertEquals("english continues", backend.requests[3].text)
+        } finally { session.close() }
+    }
+
+    @Test
+    fun explicitLanguagePreferenceOverridesSourceMetadataThroughoutBook() = runTest {
+        val backend = FakeBackend()
+        var index = 0
+        val session = ReaderTtsSession(
+            { object : ReaderTtsContent {
+                override suspend fun next(): ReaderTtsUtterance? =
+                    listOf("one", "two").getOrNull(index++)?.let {
+                        ReaderTtsUtterance(it, if (it == "one") "en-US" else "fr-FR", locator())
+                    }
+            } },
+            { backend }, "en-US", { true }, StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator(), ReaderTtsPreferences(languageTag = "fa-IR"))
+            runCurrent()
+            assertEquals("fa-IR", backend.requests[0].languageTag)
+            backend.requests[0].completion.complete(null)
+            runCurrent()
+            assertEquals("fa-IR", backend.requests[1].languageTag)
+        } finally { session.close() }
+    }
+
+    @Test
+    fun changingEnginePausesClosesOldBackendAndResumesWithNewOwner() = runTest {
+        val backends = mutableListOf<FakeBackend>()
+        val session = ReaderTtsSession(
+            { source {} },
+            { FakeBackend().also { backends += it } },
+            "en", { true }, StandardTestDispatcher(testScheduler)
+        )
+        try {
+            session.start(locator())
+            runCurrent()
+            assertEquals(1, backends.size)
+            assertEquals(
+                com.veilreader.app.domain.ReaderTtsEngineChoice.SYSTEM,
+                backends[0].chosenEngine
+            )
+            session.updatePreferences(
+                ReaderTtsPreferences(
+                    engine = com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+                )
+            )
+            runCurrent()
+            assertEquals(ReaderTtsPhase.PAUSED, session.state.value.phase)
+            assertEquals(1, backends[0].closes)
+            assertEquals(1, backends.size)
+            session.resume()
+            runCurrent()
+            assertEquals(2, backends.size)
+            assertEquals(
+                com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX,
+                backends[1].chosenEngine
+            )
+            assertEquals("first", backends[1].requests.single().text)
+            assertEquals(1, backends[0].requests.size)
+        } finally { session.close() }
+    }
+
     private fun source(onRead: () -> Unit) = object : ReaderTtsContent {
         var index = 0
         override suspend fun next(): ReaderTtsUtterance? {
@@ -558,7 +676,11 @@ class ReaderTtsSessionTest {
     private fun locator(href: String = "chapter.xhtml") =
         Locator(requireNotNull(Url(href)), MediaType.XHTML)
     private class FakeBackend : ReaderTtsBackend {
-        data class Request(val text: String, val preferences: ReaderTtsPreferences, val completion: CompletableDeferred<ReaderTtsProblem?> = CompletableDeferred())
+        data class Request(val text: String, val languageTag: String, val preferences: ReaderTtsPreferences, val completion: CompletableDeferred<ReaderTtsProblem?> = CompletableDeferred())
+        var chosenEngine = com.veilreader.app.domain.ReaderTtsEngineChoice.SYSTEM
+        override fun selectEngine(choice: com.veilreader.app.domain.ReaderTtsEngineChoice) {
+            chosenEngine = choice
+        }
         override val voices = emptyList<ReaderTtsVoice>()
         override var onInterruption: ((ReaderTtsInterruption) -> Unit)? = null
         override var onFocusGained: (() -> Unit)? = null
@@ -571,7 +693,7 @@ class ReaderTtsSessionTest {
         var closes = 0
         override suspend fun initialize(): ReaderTtsProblem? { initializations += 1; return initialization.await() }
         override suspend fun speak(text: String, languageTag: String, preferences: ReaderTtsPreferences): ReaderTtsProblem? {
-            val request = Request(text, preferences); requests += request; return request.completion.await()
+            val request = Request(text, languageTag, preferences); requests += request; return request.completion.await()
         }
         override fun stop(abandonAudioFocus: Boolean) {
             stops += 1

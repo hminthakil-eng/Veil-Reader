@@ -137,7 +137,10 @@ internal fun ReaderTtsControls(
                 Text(stringResource(R.string.tts_start))
             }
 
-            if (state.phase == ReaderTtsPhase.PLAYING || state.phase == ReaderTtsPhase.PREPARING) {
+            if (startPending ||
+                state.phase == ReaderTtsPhase.PLAYING ||
+                state.phase == ReaderTtsPhase.PREPARING
+            ) {
                 TextButton(
                     onClick = onPause,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)

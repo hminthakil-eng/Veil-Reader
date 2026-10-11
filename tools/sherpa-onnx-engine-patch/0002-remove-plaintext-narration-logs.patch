@@ -1,0 +1,11 @@
+diff --git a/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt b/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+--- a/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
++++ b/android/SherpaOnnxTtsEngine/app/src/main/java/com/k2fsa/sherpa/onnx/tts/engine/TtsService.kt
+@@ -138,7 +138,6 @@
+             callback.error()
+             return
+         }
+-        Log.i(TAG, "text: $text, engineSpeed: $engineSpeed")
+         val tts = TtsEngine.tts!!
+ 
+         // Note that AudioFormat.ENCODING_PCM_FLOAT requires API level >= 24

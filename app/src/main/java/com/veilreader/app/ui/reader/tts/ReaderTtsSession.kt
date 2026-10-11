@@ -64,6 +64,9 @@ internal class ReaderTtsSession(
     private val sourceMutex = Mutex()
     private var pendingRead: Deferred<ReaderTtsUtterance?>? = null
     private var preferences = ReaderTtsPreferences()
+    // Choose a narrator language once for this source. Per-segment HTML xml:lang
+    // metadata can vary within an EPUB and must not silently swap speakers.
+    private var narratorLanguageTag: String? = null
     private var playJob: Job? = null
     private var monitorJob: Job? = null
     private var serial = 0L
@@ -90,6 +93,7 @@ internal class ReaderTtsSession(
         if (closed) return
         resetSource()
         preferences = requestedPreferences.normalized()
+        narratorLanguageTag = null
         content = try {
             contentFactory(locator)
         } catch (_: Exception) {
@@ -141,6 +145,7 @@ internal class ReaderTtsSession(
                     it.onInterruption = ::handleInterruption
                     it.onFocusGained = ::handleFocusGained
                 }
+                engine.selectEngine(preferences.engine)
                 val problem = withTimeout(initializationTimeoutMs.coerceAtLeast(1L)) {
                     engine.initialize()
                 }
@@ -170,9 +175,12 @@ internal class ReaderTtsSession(
                         return@launch
                     }
                     val language = preferences.languageTag
-                        ?: utterance.languageTag
-                        ?: publicationLanguage
-                        ?: Locale.getDefault().toLanguageTag()
+                        ?: narratorLanguageTag
+                        ?: (utterance.languageTag
+                            ?: publicationLanguage
+                            ?: Locale.getDefault().toLanguageTag()).also {
+                            narratorLanguageTag = it
+                        }
                     try {
                         withTimeout(initializationTimeoutMs.coerceAtLeast(1L)) {
                             commitCheckpoint(utterance.locator, preferences)
@@ -321,7 +329,16 @@ internal class ReaderTtsSession(
 
     /** Main-thread preference update; applies on the next bounded synthesis request. */
     fun updatePreferences(value: ReaderTtsPreferences) {
-        if (!closed) preferences = value.normalized()
+        if (closed) return
+        val normalized = value.normalized()
+        if (normalized.engine != preferences.engine) {
+            // A different TTS engine is a new native owner. Stop and close the
+            // old narrator first. Do not restart without explicit Play.
+            pause()
+            backend?.close()
+            backend = null
+        }
+        preferences = normalized
     }
 
     /** Foreground timer: altering its deadline never restarts synthesis or the content iterator. */
@@ -403,6 +420,7 @@ internal class ReaderTtsSession(
         pendingRead = null
         content = null
         current = null
+        narratorLanguageTag = null
         completedHistory.clear()
     }
 
@@ -434,9 +452,17 @@ internal class ReaderTtsSession(
     private fun handleFocusGained() {
         if (closed || !resumeAfterTransientFocusLoss) return
         resumeAfterTransientFocusLoss = false
+        val focusGeneration = serial
         scope.launch {
             playJob?.join()
-            if (!closed && content != null && canPlay()) {
+            // A user Pause after focus-gain callback but before this coroutine
+            // runs must win. Without the generation/phase fence it could
+            // restart the narrator after Pause (including while locked).
+            if (
+                !closed && serial == focusGeneration &&
+                mutableState.value.phase == ReaderTtsPhase.PREPARING &&
+                content != null && canPlay()
+            ) {
                 resume()
             }
         }

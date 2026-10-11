@@ -13,6 +13,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * [ReaderTtsPlaybackService], which is the reason screen lock/activity recreation can be safe.
  */
 @androidx.annotation.OptIn(UnstableApi::class)
-internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
+internal class ReaderTtsServiceController(
+    context: Context,
+    initialEngineChoice: ReaderTtsEngineChoice = ReaderTtsEngineChoice.SYSTEM
+) : AutoCloseable {
     private val application = context.applicationContext
     private val mainExecutor = ContextCompat.getMainExecutor(application)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -46,6 +50,11 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     private var controller: MediaController? = null
     private var pendingStart: PendingStart? = null
+    private var catalogEngine = initialEngineChoice
+    private var catalogGeneration = 0L
+    // Pause pressed while MediaController reconnects must also stop an already
+    // playing service owner, not only change the queued new-book autoplay.
+    private var pendingPauseOnConnect = false
 
     private val mutableState = MutableStateFlow(ReaderTtsState())
     val state: StateFlow<ReaderTtsState> = mutableState.asStateFlow()
@@ -102,34 +111,53 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 refreshActiveSegment()
                 refreshVoiceCatalog()
                 refreshSleepTimer()
+                if (pendingPauseOnConnect) {
+                    pendingPauseOnConnect = false
+                    connectedController.sendCustomCommand(
+                        SessionCommand(ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER, Bundle.EMPTY),
+                        Bundle.EMPTY
+                    )
+                }
                 pendingStart?.also {
                     pendingStart = null
-                    start(it.bookId, it.locatorJson, it.settings)
+                    start(it.bookId, it.locatorJson, it.settings, autoplay = it.autoplay)
                 }
             },
             mainExecutor
         )
     }
 
-    fun start(bookId: String, locatorJson: String, settings: ReaderTtsSettings) {
+    fun start(
+        bookId: String,
+        locatorJson: String,
+        settings: ReaderTtsSettings,
+        autoplay: Boolean = true
+    ) {
         if (closed.get()) return
+        pendingPauseOnConnect = !autoplay
         val target = controller
         if (target == null) {
-            pendingStart = PendingStart(bookId, locatorJson, settings.normalized())
+            pendingStart = PendingStart(bookId, locatorJson, settings.normalized(), autoplay)
             mutableState.value = mutableState.value.copy(
-                phase = ReaderTtsPhase.PREPARING,
+                phase = if (autoplay) ReaderTtsPhase.PREPARING else ReaderTtsPhase.PAUSED,
                 problem = null
             )
             return
         }
 
         val safeSettings = settings.normalized()
+        if (catalogEngine != safeSettings.engine) {
+            catalogEngine = safeSettings.engine
+            mutableVoices.value = emptyList()
+            refreshVoiceCatalog()
+        }
         val request = ReaderTtsPlaybackRequest(
             bookId = bookId,
             locatorJson = locatorJson,
             preferences = ReaderTtsPreferences(
                 speed = safeSettings.speed.toFloat(),
                 pitch = safeSettings.pitch.toFloat(),
+                engine = safeSettings.engine,
                 preferredVoiceIds = safeSettings.preferredVoiceIds
             )
         ).normalized() ?: run {
@@ -141,12 +169,13 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
         }
 
         mutableState.value = mutableState.value.copy(
-            phase = ReaderTtsPhase.PREPARING,
+            phase = if (autoplay) ReaderTtsPhase.PREPARING else ReaderTtsPhase.PAUSED,
             problem = null
         )
         target.sendCustomCommand(
             SessionCommand(
-                ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY,
+                if (autoplay) ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY
+                else ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED,
                 Bundle.EMPTY
             ),
             request.toBundle()
@@ -154,15 +183,39 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     }
 
     fun resume() {
-        controller?.play()
+        pendingPauseOnConnect = false
+        pendingStart?.let { queued ->
+            pendingStart = queued.copy(autoplay = true)
+            mutableState.value = mutableState.value.copy(
+                phase = ReaderTtsPhase.PREPARING,
+                problem = null
+            )
+        }
+        controller?.sendCustomCommand(
+            SessionCommand(ReaderTtsPlaybackRequest.ACTION_RESUME_OWNER, Bundle.EMPTY),
+            Bundle.EMPTY
+        )
     }
 
     fun pause() {
-        controller?.pause()
+        pendingPauseOnConnect = controller == null
+        // An immediate Pause cancels pending autoplay even if the MediaController
+        // has not connected or has no media item yet. This is not a no-op.
+        pendingStart = pendingStart?.copy(autoplay = false)
+        mutableState.value = mutableState.value.copy(phase = ReaderTtsPhase.PAUSED)
+        controller?.sendCustomCommand(
+            SessionCommand(ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER, Bundle.EMPTY),
+            Bundle.EMPTY
+        )
     }
 
     fun stop() {
+        pendingPauseOnConnect = false
         pendingStart = null
+        // A canceled initial Reader locator lookup never created a media
+        // item. MediaController.stop() may be unavailable then, but the visible
+        // UI must not remain stuck in PREPARING/PAUSED with no loaded book.
+        mutableState.value = ReaderTtsState(phase = ReaderTtsPhase.STOPPED)
         controller?.stop()
     }
 
@@ -175,7 +228,24 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     }
 
     fun updateSettings(settings: ReaderTtsSettings) {
+        if (closed.get()) return
         val safe = settings.normalized()
+        val changedEngine = catalogEngine != safe.engine
+        catalogEngine = safe.engine
+        // User can change engine before MediaController connects. An already
+        // queued autoplay must never start the old narrator after that choice.
+        pendingStart = pendingStart?.let { queued ->
+            queued.copy(
+                settings = safe,
+                autoplay = if (changedEngine) false else queued.autoplay
+            )
+        }
+        if (changedEngine) {
+            pendingPauseOnConnect = true
+            mutableVoices.value = emptyList()
+            mutableState.value = mutableState.value.copy(phase = ReaderTtsPhase.PAUSED)
+            refreshVoiceCatalog()
+        }
         val target = controller ?: return
         target.playbackParameters = PlaybackParameters(
             safe.speed.toFloat(),
@@ -187,6 +257,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 Bundle.EMPTY
             ),
             Bundle().apply {
+                putString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE, safe.engine.name)
                 putString(
                     ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON,
                     ReaderTtsPlaybackRequest.encodePreferredVoices(
@@ -280,7 +351,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
 
     fun refreshVoiceCatalog() {
         val target = controller ?: return
-        if (mutableVoiceCatalogLoading.value) return
+        val thisGeneration = ++catalogGeneration
         mutableVoiceCatalogLoading.value = true
         mutableVoiceCatalogProblem.value = null
         val resultFuture = target.sendCustomCommand(
@@ -288,11 +359,13 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
                 ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES,
                 Bundle.EMPTY
             ),
-            Bundle.EMPTY
+            Bundle().apply {
+                putString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE, catalogEngine.name)
+            }
         )
         resultFuture.addListener(
             {
-                if (closed.get()) return@addListener
+                if (closed.get() || thisGeneration != catalogGeneration) return@addListener
                 val result = runCatching { resultFuture.get() }.getOrNull()
                 mutableVoiceCatalogLoading.value = false
                 if (result == null || result.resultCode != SessionResult.RESULT_SUCCESS) {
@@ -319,6 +392,11 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     ) {
         val target = controller ?: return
         val safe = settings.normalized()
+        if (catalogEngine != safe.engine) {
+            catalogEngine = safe.engine
+            mutableVoices.value = emptyList()
+            refreshVoiceCatalog()
+        }
         mutablePreviewProblem.value = null
         val resultFuture = target.sendCustomCommand(
             SessionCommand(
@@ -328,6 +406,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
             Bundle().apply {
                 putString(ReaderTtsPlaybackRequest.EXTRA_LANGUAGE_TAG, languageTag)
                 putString(ReaderTtsPlaybackRequest.EXTRA_VOICE_ID, voiceId)
+                putString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE, safe.engine.name)
                 putString(ReaderTtsPlaybackRequest.EXTRA_SAMPLE, sample)
                 putFloat("speed", safe.speed.toFloat())
                 putFloat("pitch", safe.pitch.toFloat())
@@ -350,6 +429,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         pendingStart = null
+        pendingPauseOnConnect = false
         mutableActiveSegmentText.value = null
         controller?.removeListener(playerListener)
         controller = null
@@ -405,6 +485,7 @@ internal class ReaderTtsServiceController(context: Context) : AutoCloseable {
     private data class PendingStart(
         val bookId: String,
         val locatorJson: String,
-        val settings: ReaderTtsSettings
+        val settings: ReaderTtsSettings,
+        val autoplay: Boolean
     )
 }

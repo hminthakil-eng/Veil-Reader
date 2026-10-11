@@ -24,10 +24,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTtsEngineChoice
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.reader.tts.ReaderTtsPhase
+import com.veilreader.app.ui.reader.tts.ReaderTtsPrimaryAction
+import com.veilreader.app.ui.reader.tts.readerTtsPrimaryAction
 import com.veilreader.app.ui.reader.tts.ReaderTtsProblem
 import com.veilreader.app.ui.reader.tts.ReaderTtsState
 import com.veilreader.app.ui.reader.tts.ReaderTtsVoice
@@ -55,6 +59,8 @@ internal fun ReaderListeningMode(
     startFailed: Boolean,
     publicationLanguage: String? = null,
     voiceCatalogSupported: Boolean = false,
+    neuralEngineReviewEnabled: Boolean = false,
+    sherpaEngineInstalled: Boolean = false,
     voices: List<ReaderTtsVoice> = emptyList(),
     voiceCatalogLoading: Boolean = false,
     voiceCatalogProblem: ReaderTtsProblem? = null,
@@ -84,6 +90,7 @@ internal fun ReaderListeningMode(
     val currentVoice = remember(voices, preferredVoiceId, publicationLanguage) {
         publicationLanguage?.let { selectOfflineTtsVoice(voices, it, preferredVoiceId) }
     }
+    val primaryAction = readerTtsPrimaryAction(state.phase, startPending)
     val previousLabel = stringResourceCompat(R.string.tts_previous_segment)
     val nextLabel = stringResourceCompat(R.string.tts_next_segment)
     val playLabel = stringResourceCompat(R.string.tts_play)
@@ -258,34 +265,29 @@ internal fun ReaderListeningMode(
 
                 FilledTonalButton(
                     onClick = {
-                        when (state.phase) {
-                            ReaderTtsPhase.PLAYING,
-                            ReaderTtsPhase.PREPARING -> onPause()
-                            ReaderTtsPhase.PAUSED -> onResume()
-                            ReaderTtsPhase.STOPPED,
-                            ReaderTtsPhase.ENDED,
-                            ReaderTtsPhase.FAILED,
-                            ReaderTtsPhase.CLOSED -> onStart()
+                        when (primaryAction) {
+                            ReaderTtsPrimaryAction.PAUSE -> onPause()
+                            ReaderTtsPrimaryAction.RESUME -> onResume()
+                            ReaderTtsPrimaryAction.START -> onStart()
                         }
                     },
-                    enabled = supported && !startPending && state.phase != ReaderTtsPhase.CLOSED,
+                    // Disabled Pause during startPending caused a real P0 user
+                    // failure: the book-start locator coroutine could not be
+                    // canceled via the visible control.
+                    enabled = supported && state.phase != ReaderTtsPhase.CLOSED,
                     modifier = Modifier
                         .size(84.dp)
                         .semantics {
                             role = Role.Button
                             contentDescription =
-                                if (state.phase == ReaderTtsPhase.PLAYING ||
-                                    state.phase == ReaderTtsPhase.PREPARING
-                                ) pauseLabel else playLabel
+                                if (primaryAction == ReaderTtsPrimaryAction.PAUSE)
+                                    pauseLabel else playLabel
                         },
                     shape = CircleShape,
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Text(
-                        if (
-                            state.phase == ReaderTtsPhase.PLAYING ||
-                            state.phase == ReaderTtsPhase.PREPARING
-                        ) "Ⅱ" else "▶",
+                        if (primaryAction == ReaderTtsPrimaryAction.PAUSE) "Ⅱ" else "▶",
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
@@ -328,6 +330,91 @@ internal fun ReaderListeningMode(
                         modifier = Modifier.heightIn(min = 48.dp),
                         label = { Text("${number(speed)}×") }
                     )
+                }
+            }
+
+            if (neuralEngineReviewEnabled) {
+                Surface(
+                    modifier = Modifier.widthIn(max = 620.dp).fillMaxWidth(),
+                    color = VeilPalette.Archive.copy(alpha = 0.72f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(Modifier.padding(VeilSpacing.md)) {
+                        Text(
+                            "Voice engine · experimental",
+                            color = VeilPalette.Brass,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            FilterChip(
+                                selected = settings.engine == ReaderTtsEngineChoice.SYSTEM,
+                                onClick = {
+                                    if (settings.engine != ReaderTtsEngineChoice.SYSTEM)
+                                        onSettingsChange(settings.withEngine(ReaderTtsEngineChoice.SYSTEM))
+                                },
+                                label = { Text("Android") }
+                            )
+                            FilterChip(
+                                selected = settings.engine == ReaderTtsEngineChoice.SHERPA_ONNX,
+                                enabled = sherpaEngineInstalled,
+                                onClick = {
+                                    if (settings.engine != ReaderTtsEngineChoice.SHERPA_ONNX)
+                                        onSettingsChange(settings.withEngine(ReaderTtsEngineChoice.SHERPA_ONNX))
+                                },
+                                label = {
+                                    Text(
+                                        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA)
+                                            "Neural · Kokoro (in-app)"
+                                        else "Neural · Sherpa"
+                                    )
+                                }
+                            )
+                        }
+                        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA &&
+                            settings.engine == ReaderTtsEngineChoice.SHERPA_ONNX
+                        ) {
+                            Text(
+                                "Kokoro narrator · English",
+                                color = VeilPalette.Brass,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                                modifier = Modifier.fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                            ) {
+                                val selected = settings.preferredVoiceId("en-US")
+                                    ?: "kokoro-en-v0_19-0"
+                                (0..10).forEach { id ->
+                                    val voiceId = "kokoro-en-v0_19-$id"
+                                    FilterChip(
+                                        selected = selected == voiceId,
+                                        onClick = {
+                                            if (selected != voiceId) {
+                                                onSettingsChange(
+                                                    settings.withPreferredVoice("en-US", voiceId)
+                                                )
+                                            }
+                                        },
+                                        label = { Text("Voice ${id + 1}") }
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA)
+                                "Kokoro runs inside this Forge QA build, without a second TTS app. English-only preview; a narrator change pauses playback. Press Play to resume."
+                            else if (sherpaEngineInstalled)
+                                "Select Kokoro in the installed Sherpa engine for English. Switching pauses playback; your voice choices are saved separately for each engine. Tap Play to resume."
+                            else
+                                "Sherpa-ONNX TTS Engine must be installed and configured with a downloaded voice model before neural playback is available.",
+                            color = VeilMaterials.TextSecondary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
 
