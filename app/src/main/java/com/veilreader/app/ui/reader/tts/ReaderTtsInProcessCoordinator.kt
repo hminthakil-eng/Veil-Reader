@@ -48,7 +48,8 @@ internal class ReaderTtsInProcessCoordinator(
     suspend fun speak(
         text: String,
         voiceId: String,
-        speed: Float
+        speed: Float,
+        endOfStream: Boolean = true
     ): ReaderTtsProblem? = nativeOwner.withLock {
         if (text.isBlank() || !speed.isFinite() || speed !in 0.5f..3f) {
             return@withLock ReaderTtsProblem.CONTENT
@@ -56,6 +57,7 @@ internal class ReaderTtsInProcessCoordinator(
         if (voiceId.isBlank()) return@withLock ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
 
         val lease = epoch.begin(runtime.model.packageId, voiceId)
+        var normalCompletion = false
         try {
             val rate = runtime.sampleRateHz
             if (rate !in 8_000..96_000) return@withLock ReaderTtsProblem.SYNTHESIS
@@ -77,8 +79,16 @@ internal class ReaderTtsInProcessCoordinator(
                         epoch.accepts(lease)
                 }
             }
-            if (result == null && epoch.accepts(lease) && !pcmSink.drain()) {
-                ReaderTtsProblem.SYNTHESIS
+            if (result == null && epoch.accepts(lease)) {
+                // Sentence transitions append PCM to the same track. Draining
+                // on every sentence introduces audible gaps and falsely
+                // advertises playback completion before future segments.
+                if (endOfStream && !pcmSink.drain()) {
+                    ReaderTtsProblem.SYNTHESIS
+                } else {
+                    normalCompletion = true
+                    null
+                }
             } else {
                 result
             }
@@ -89,9 +99,9 @@ internal class ReaderTtsInProcessCoordinator(
         } finally {
             if (epoch.accepts(lease)) {
                 epoch.revoke()
-                // In successful playback, drain() completed first. A Pause
-                // already revoked the owner and cleared hardware immediately.
-                pcmSink.silenceImmediately()
+                // Natural segment boundaries must not flush the hardware
+                // PCM buffer; subsequent segments append to the same output.
+                if (!normalCompletion) pcmSink.silenceImmediately()
             }
         }
     }
