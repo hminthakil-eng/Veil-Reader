@@ -199,7 +199,7 @@ internal class ReaderTtsMediaPlayer(
                     canPlay = { !released && ownerGeneration == generation },
                     initializationTimeoutMs = if (
                         com.veilreader.app.BuildConfig.DEBUG &&
-                            com.veilreader.app.BuildConfig.FORGE_QA &&
+                            com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
                             safe.preferences.engine ==
                                 com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
                     ) 60_000L else 5_000L
