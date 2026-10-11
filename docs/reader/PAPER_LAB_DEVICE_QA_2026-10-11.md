@@ -36,7 +36,7 @@ Never infer success from a workflow being merely triggered. If missing an artifa
 
    `adb shell am start -n com.veilreader.app.paperlab/com.veilreader.app.debug.ExternalCurlArenaActivity`
 
-6. Conduct the slow corner/edge drag, reverse/cancel, fast forward/backward, 100-turn stability, background/rotation and 60/120 Hz capture. Record actual fold geometry/shadow/back texture and jank. Compare with #468 on the **same device**.
+6. Reuse the existing local-only physical evidence collector from experimental QA [#454](https://github.com/hminthakil-eng/Veil-Reader/pull/454), now available in this branch and configured for Paper Lab by default. With one authorized physical ADB device and exact extracted APK, run: `python tools/collect_paper_device_evidence.py --source-sha <40-char-source-SHA> --apk path/to/VeilReader-PaperLab-<SHA8>.apk --video --duration 90 --output ./private-paper-evidence`. The source SHA you type is operator metadata; the script does **not** prove that it matches the installed executable. Retain the signed APK metadata, cert and its hash separately. Captured content/logs remain local and private, not uploaded by the tool. Conduct the slow corner/edge drag, reverse/cancel, fast forward/backward, 100-turn stability, background/rotation and 60/120 Hz capture. Record actual fold geometry/shadow/back texture and jank. Compare with #468 on the **same device**.
 7. **Do not** claim the lab displays real EPUB pages. Native CurlTextureView currently uses synthetic two-sided fixtures; a production Readium snapshot bridge remains to be implemented, with one locator commit after accepted release.
 
 ## Paper acceptance contract
