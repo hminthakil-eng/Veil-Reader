@@ -29,7 +29,7 @@ import java.util.Locale
  */
 internal class ReaderTtsForgeBackendFactory(private val context: Context) {
     fun create(): ReaderTtsBackend =
-        if (BuildConfig.DEBUG && BuildConfig.FORGE_QA) {
+        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA) {
             ReaderTtsForgeBackend(context.applicationContext)
         } else {
             AndroidReaderTtsBackend(context.applicationContext)
@@ -160,7 +160,7 @@ private class ReaderTtsForgeKokoroBackend(context: Context) : ReaderTtsBackend {
 
     override fun selectEngine(choice: ReaderTtsEngineChoice) {
         check(choice == ReaderTtsEngineChoice.SHERPA_ONNX && BuildConfig.DEBUG &&
-            BuildConfig.FORGE_QA) { "In-process Kokoro is only available in Forge QA" }
+            BuildConfig.NATIVE_KOKORO_QA) { "In-process Kokoro is only available in Forge QA" }
     }
 
     override suspend fun initialize(): ReaderTtsProblem? {
