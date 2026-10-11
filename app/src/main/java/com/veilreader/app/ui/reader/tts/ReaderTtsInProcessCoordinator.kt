@@ -3,6 +3,7 @@ package com.veilreader.app.ui.reader.tts
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Veil owns the audible PCM sink, not Android's external TextToSpeechService.
@@ -38,6 +39,13 @@ internal interface ReaderTtsOwnedPcmSink {
  * fall back to another synthesizer. The Reader session remains sole owner
  * of locator, audio focus and durable checkpoint.
  */
+/** A user-requested Pause is not an engine failure and must never advance the chapter. */
+internal sealed interface ReaderTtsInProcessOutcome {
+    data object Completed : ReaderTtsInProcessOutcome
+    data object Interrupted : ReaderTtsInProcessOutcome
+    data class Failed(val problem: ReaderTtsProblem) : ReaderTtsInProcessOutcome
+}
+
 internal class ReaderTtsInProcessCoordinator(
     private val runtime: ReaderTtsNeuralRuntime,
     private val pcmSink: ReaderTtsOwnedPcmSink,
@@ -50,29 +58,33 @@ internal class ReaderTtsInProcessCoordinator(
         voiceId: String,
         speed: Float,
         endOfStream: Boolean = true
-    ): ReaderTtsProblem? = nativeOwner.withLock {
+    ): ReaderTtsInProcessOutcome = nativeOwner.withLock {
         if (text.isBlank() || !speed.isFinite() || speed !in 0.5f..3f) {
-            return@withLock ReaderTtsProblem.CONTENT
+            return@withLock ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.CONTENT)
         }
-        if (voiceId.isBlank()) return@withLock ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
+        if (voiceId.isBlank()) return@withLock ReaderTtsInProcessOutcome.Failed(
+            ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
+        )
 
         val lease = epoch.begin(runtime.model.packageId, voiceId)
         var normalCompletion = false
-        var anyPcmAccepted = false
-        var pcmRejected = false
+        val anyPcmAccepted = AtomicBoolean(false)
+        val pcmRejected = AtomicBoolean(false)
         try {
             val rate = runtime.sampleRateHz
-            if (rate !in 8_000..96_000) return@withLock ReaderTtsProblem.SYNTHESIS
+            if (rate !in 8_000..96_000) return@withLock ReaderTtsInProcessOutcome.Failed(
+                ReaderTtsProblem.SYNTHESIS
+            )
             if (!pcmSink.prepare(rate) { epoch.accepts(lease) }) {
                 return@withLock if (epoch.accepts(lease)) {
-                    ReaderTtsProblem.NO_ENGINE
+                    ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.NO_ENGINE)
                 } else {
-                    ReaderTtsProblem.SYNTHESIS
+                    ReaderTtsInProcessOutcome.Interrupted
                 }
             }
             // Native inference may take seconds to initialize. If Pause was
             // pressed during that setup, do not invoke JNI synthesis at all.
-            if (!epoch.accepts(lease)) return@withLock ReaderTtsProblem.SYNTHESIS
+            if (!epoch.accepts(lease)) return@withLock ReaderTtsInProcessOutcome.Interrupted
             val result = runtime.synthesize(
                 text = text,
                 voiceId = lease.voiceId,
@@ -81,7 +93,7 @@ internal class ReaderTtsInProcessCoordinator(
                 // Never call JNI-generated callbacks while holding an epoch
                 // lock: Pause must interrupt immediately from the UI thread.
                 if (!readerTtsValidPcmChunk(epoch, lease, rate, nativePcm)) {
-                    pcmRejected = true
+                    pcmRejected.set(true)
                     false
                 } else {
                     // JNI callbacks may reuse FloatArrays. The sink must never
@@ -90,37 +102,40 @@ internal class ReaderTtsInProcessCoordinator(
                     val ok = epoch.accepts(lease) &&
                         pcmSink.submit(detached) { epoch.accepts(lease) } &&
                         epoch.accepts(lease)
-                    if (ok) anyPcmAccepted = true else pcmRejected = true
+                    if (ok) anyPcmAccepted.set(true) else pcmRejected.set(true)
                     ok
                 }
             }
-            if (result == null && epoch.accepts(lease) &&
-                (pcmRejected || !anyPcmAccepted)
-            ) {
-                // A JNI provider may incorrectly swallow callback=false or
-                // return a false success with zero PCM: fail closed.
-                ReaderTtsProblem.SYNTHESIS
-            } else if (result == null && epoch.accepts(lease)) {
-                // Sentence transitions append PCM to the same track. Draining
-                // on every sentence introduces audible gaps and falsely
-                // advertises playback completion before future segments.
-                if (endOfStream && !pcmSink.drain { epoch.accepts(lease) }) {
-                    ReaderTtsProblem.SYNTHESIS
-                } else if (epoch.accepts(lease)) {
+            when {
+                // A deliberate Pause revokes the native lease. Do not report
+                // success (which could advance the chapter) or display an
+                // engine-failure snackbar when the user merely paused.
+                !epoch.accepts(lease) -> ReaderTtsInProcessOutcome.Interrupted
+                // A native provider that ignores callback=false or produces
+                // no samples must not pretend it narrated a paragraph.
+                pcmRejected.get() || !anyPcmAccepted.get() ->
+                    ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS)
+                result != null -> ReaderTtsInProcessOutcome.Failed(result)
+                endOfStream && !pcmSink.drain { epoch.accepts(lease) } ->
+                    if (epoch.accepts(lease)) {
+                        ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS)
+                    } else {
+                        ReaderTtsInProcessOutcome.Interrupted
+                    }
+                !epoch.accepts(lease) -> ReaderTtsInProcessOutcome.Interrupted
+                else -> {
                     normalCompletion = true
-                    null
-                } else {
-                    ReaderTtsProblem.SYNTHESIS
+                    ReaderTtsInProcessOutcome.Completed
                 }
-            } else if (!epoch.accepts(lease)) {
-                ReaderTtsProblem.SYNTHESIS
-            } else {
-                result
             }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
-            ReaderTtsProblem.SYNTHESIS
+            if (epoch.accepts(lease)) {
+                ReaderTtsInProcessOutcome.Failed(ReaderTtsProblem.SYNTHESIS)
+            } else {
+                ReaderTtsInProcessOutcome.Interrupted
+            }
         } finally {
             if (epoch.accepts(lease)) {
                 epoch.revoke()
