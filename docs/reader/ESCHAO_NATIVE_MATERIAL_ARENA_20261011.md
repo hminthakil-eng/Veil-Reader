@@ -4,8 +4,9 @@ Status: **debug-only engine candidate — physical quality NOT accepted**. Produ
 
 ## Source, license, reproducibility
 
-- Vendored **unmodified** native Java ES2 folding/shadow core from [eschao/android-PageFlip](https://github.com/eschao/android-PageFlip), public upstream `master` Git root tree `6c361e0932c80c360fdf5f7de06963031e8c26d2`, 18 Java files.
+- Vendored native Java ES2 folding/shadow core from [eschao/android-PageFlip](https://github.com/eschao/android-PageFlip), public upstream `master` Git root tree `6c361e0932c80c360fdf5f7de06963031e8c26d2`, 18 Java files, with three shader-program classes minimally adapted to import the generated `com.veilreader.app.R` namespace.
 - Source location: `app/src/debug/java/com/eschao/android/widget/pageflip/*.java`; all upstream author + Apache-2.0 headers preserved; full [Apache 2.0 license](../../app/src/debug/assets/THIRD_PARTY_ESCHAO_PAGEFLIP_LICENSE.txt).
+- The upstream library also requires six GLSL shader assets from `PageFlip/src/main/res/raw/*.glsl`. They are copied unchanged to Veil's debug-only `app/src/debug/res/raw/` so the actual geometry, back-face and shadow shader programs compile and render. The first clean-CI run failed because these raw assets and namespace imports were absent; this is corrected in the child QA branch.
 - No Maven/JitPack artifact: this avoids the known unavailable `com.github.eschao:android-PageFlip:1.0.2` on clean CI. No dependency added to release and no LGPL/GPL third-party code or proprietary Moon+/Kindle source copied.
 - Adapter `EschaoPageFlipArenaActivity.kt` is Veil-authored, debug-only, using `PageFlip` GL API directly. Unlike the prior Slide-like Veil Paper mode, geometry and GL shaders are from a working open-source page flip implementation. **Only real-device review can establish feel.**
 
