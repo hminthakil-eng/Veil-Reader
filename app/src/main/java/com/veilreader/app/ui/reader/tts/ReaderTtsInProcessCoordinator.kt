@@ -16,6 +16,12 @@ internal interface ReaderTtsOwnedPcmSink {
     /** PCM buffers are caller-owned copies: no JNI callback buffer may escape. */
     suspend fun submit(pcm: FloatArray): Boolean
 
+    /**
+     * Wait until buffered audio has actually played. Native inference finishing
+     * is NOT equivalent to the user hearing the final sample.
+     */
+    suspend fun drain(): Boolean
+
     /** MUST interrupt and flush buffered audio without waiting for JNI inference. */
     fun silenceImmediately()
 }
@@ -47,17 +53,14 @@ internal class ReaderTtsInProcessCoordinator(
         if (text.isBlank() || !speed.isFinite() || speed !in 0.5f..3f) {
             return@withLock ReaderTtsProblem.CONTENT
         }
-        if (runtime.model.defaultVoiceId == null &&
-            !runtime.model.supportsMultipleVoices &&
-            voiceId != "0"
-        ) return@withLock ReaderTtsProblem.NO_VOICE
+        if (voiceId.isBlank()) return@withLock ReaderTtsProblem.PREFERRED_VOICE_UNAVAILABLE
 
         val lease = epoch.begin(runtime.model.packageId, voiceId)
         try {
             val rate = runtime.sampleRateHz
             if (rate !in 8_000..96_000) return@withLock ReaderTtsProblem.SYNTHESIS
             if (!pcmSink.prepare(rate)) return@withLock ReaderTtsProblem.NO_ENGINE
-            runtime.synthesize(
+            val result = runtime.synthesize(
                 text = text,
                 voiceId = lease.voiceId,
                 speed = speed
@@ -74,6 +77,11 @@ internal class ReaderTtsInProcessCoordinator(
                         epoch.accepts(lease)
                 }
             }
+            if (result == null && epoch.accepts(lease) && !pcmSink.drain()) {
+                ReaderTtsProblem.SYNTHESIS
+            } else {
+                result
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
@@ -81,6 +89,8 @@ internal class ReaderTtsInProcessCoordinator(
         } finally {
             if (epoch.accepts(lease)) {
                 epoch.revoke()
+                // In successful playback, drain() completed first. A Pause
+                // already revoked the owner and cleared hardware immediately.
                 pcmSink.silenceImmediately()
             }
         }
