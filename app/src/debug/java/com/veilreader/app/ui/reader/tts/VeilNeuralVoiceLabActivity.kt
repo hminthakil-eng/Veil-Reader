@@ -39,7 +39,7 @@ internal class VeilNeuralVoiceLabActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!BuildConfig.DEBUG) {
+        if (!BuildConfig.DEBUG || !BuildConfig.NATIVE_KOKORO_QA) {
             finish()
             return
         }
