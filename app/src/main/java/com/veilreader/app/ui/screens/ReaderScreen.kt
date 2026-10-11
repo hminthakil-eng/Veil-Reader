@@ -4882,11 +4882,6 @@ internal fun EpubAppearancePanel(
     )
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
     val textSizeLabel = stringResource(R.string.settings_text_size)
-    val quickReadingMode = if (capabilities.continuousScrollEditable) {
-        draft.readingMode
-    } else {
-        ReaderReadingMode.PAGED
-    }
 
     LaunchedEffect(appearance) {
         when {
@@ -5195,9 +5190,7 @@ internal fun EpubAppearancePanel(
                 // instead of a paging switch followed by a second turn-style menu.
                 val paperAvailable = MaterialPageEngineRollout.isEnabled() &&
                     !capabilities.fixedLayout
-                val activeMode = if (
-                    !paperAvailable && draft.navigationMode == ReaderNavigationMode.PAPER_CURL
-                ) ReaderNavigationMode.PAGED else draft.navigationMode
+                val activeMode = readerConsoleVisibleMode(draft, paperAvailable)
                 val modeChoices = listOf(
                     ReaderNavigationMode.PAGED to R.string.settings_mode_paged,
                     ReaderNavigationMode.SLIDE to R.string.settings_mode_slide,
