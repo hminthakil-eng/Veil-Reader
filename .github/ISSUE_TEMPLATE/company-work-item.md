@@ -89,3 +89,24 @@ Choose one:
 **Preflight:** PASS / HOLD / REJECT
 
 <!-- Work must not start unless Preflight = PASS. -->
+
+
+## Grand Forge stage contract (mandatory for each implementation/research stage)
+
+**Latest main SHA checked (UTC):**
+**Roadmap and LIVE_STATUS checked at:**
+**Related roadmap task ID:**
+**Stage ID (new ID for each retry):**
+**Existing related merged/open PRs reviewed:**
+**Previously rejected/superseded variants:**
+**Before-work PRE-WORK receipt URL:**
+**Scope and files/owners:**
+**Planned exact source tests and evidence:**
+**Required physical/device/UX tests (if relevant):**
+**Reversible rollback:**
+
+Do not begin code/agent work before the plan and PRE-WORK receipt are published. After each stage append a POST-STAGE receipt link, actual pass/fail evidence, rejected variants, source SHA, and next action here; the command center #495 and LIVE_STATUS.md are then reconciled.
+
+**POST-STAGE receipt URL:**
+**Stage conclusion (not global product GREEN):**
+**Next stage owner and preflight:**

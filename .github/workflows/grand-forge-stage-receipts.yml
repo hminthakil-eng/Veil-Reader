@@ -1,0 +1,80 @@
+name: Grand Forge Stage Receipts
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Record pre-work or completion (run ONLY against main)"
+        type: choice
+        required: true
+        options: [preflight, stage_end]
+      issue:
+        description: "Open GitHub work issue number, no #"
+        type: string
+        required: true
+      stage:
+        description: "Unique stable stage ID, e.g. UX-01-W2"
+        type: string
+        required: true
+      status:
+        description: "PLANNED before work; source-stage outcome after"
+        type: choice
+        required: true
+        options: [PLANNED, DONE_SOURCE, BLOCKED, TEST_FAILED, REJECTED, SUPERSEDED, NEEDS_REWORK]
+      objective:
+        description: "User outcome and affected subsystem"
+        type: string
+        required: true
+      plan:
+        description: "Before: proposed changes and reuse; after: actual changes"
+        type: string
+        required: true
+      checks:
+        description: "Before: verification plan; after: actual test results"
+        type: string
+        required: true
+      rollback:
+        description: "Risk, reversible changes and rollback route"
+        type: string
+        required: true
+      evidence:
+        description: "Exact commit or run URL; required for DONE_SOURCE"
+        type: string
+        required: false
+      next_step:
+        description: "Named next action / blocker / owner"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: grand-forge-stage-receipt-${{ inputs.issue }}-${{ inputs.stage }}
+  cancel-in-progress: false
+
+jobs:
+  receipt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Self-test the stage receipt contract
+        run: python3 -m unittest discover -s tools -p test_roadmap_stage_gate.py -v
+      - name: Validate current main and write an auditable issue receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GF_ACTION: ${{ inputs.action }}
+          GF_ISSUE: ${{ inputs.issue }}
+          GF_STAGE: ${{ inputs.stage }}
+          GF_STATUS: ${{ inputs.status }}
+          GF_OBJECTIVE: ${{ inputs.objective }}
+          GF_PLAN: ${{ inputs.plan }}
+          GF_CHECKS: ${{ inputs.checks }}
+          GF_ROLLBACK: ${{ inputs.rollback }}
+          GF_EVIDENCE: ${{ inputs.evidence }}
+          GF_NEXT_STEP: ${{ inputs.next_step }}
+        run: python3 tools/roadmap_stage_gate.py record
