@@ -36,10 +36,24 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         ReaderTtsSleepTimerStore(applicationContext)
     }
     private var sleepTimerJob: Job? = null
+    // A voice preview has its own Android TextToSpeech instance. It must be
+    // canceled before any media command; otherwise Pause may silence the book
+    // while a different preview narrator continues audibly.
+    private var previewJob: Job? = null
+    private var previewGeneration = 0L
+
+    private fun cancelActivePreview() {
+        previewGeneration += 1
+        previewJob?.cancel()
+        previewJob = null
+    }
 
     override fun onCreate() {
         super.onCreate()
-        player = ReaderTtsMediaPlayer(applicationContext)
+        player = ReaderTtsMediaPlayer(
+            applicationContext,
+            onTransportCommand = ::cancelActivePreview
+        )
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(SessionCallback())
             .build()
@@ -56,6 +70,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
     ): MediaSession = mediaSession
 
     override fun onDestroy() {
+        cancelActivePreview()
         sleepTimerJob?.cancel()
         sleepTimerJob = null
         mediaSession.release()
@@ -76,6 +91,8 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     base.availableSessionCommands.buildUpon()
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_PAUSED, Bundle.EMPTY))
+                        .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER, Bundle.EMPTY))
+                        .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_RESUME_OWNER, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES, Bundle.EMPTY))
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE, Bundle.EMPTY))
                         .add(
@@ -137,13 +154,24 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     )
                 }
 
-                ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices()
+                ReaderTtsPlaybackRequest.ACTION_PAUSE_OWNER -> {
+                    player.setOwnerPlayIntent(false)
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+                ReaderTtsPlaybackRequest.ACTION_RESUME_OWNER -> {
+                    player.setOwnerPlayIntent(true)
+                    Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                }
+                ReaderTtsPlaybackRequest.ACTION_QUERY_VOICES -> queryVoices(args)
                 ReaderTtsPlaybackRequest.ACTION_PREVIEW_VOICE -> previewVoice(args)
                 ReaderTtsPlaybackRequest.ACTION_UPDATE_VOICE_PREFERENCES -> {
                     val preferred = ReaderTtsPlaybackRequest.decodePreferredVoices(
                         args.getString(ReaderTtsPlaybackRequest.EXTRA_PREFERRED_VOICES_JSON)
                     )
-                    player.updateVoicePreferences(preferred)
+                    val engineChoice = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                        args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+                    )
+                    player.updateVoicePreferences(preferred, engineChoice)
                     Futures.immediateFuture(
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     )
@@ -238,10 +266,15 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             return future
         }
 
-        private fun queryVoices(): ListenableFuture<SessionResult> {
+        private fun queryVoices(args: Bundle): ListenableFuture<SessionResult> {
+            val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+            )
             val future = SettableFuture.create<SessionResult>()
             serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext)
+                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                    selectEngine(requestedEngine)
+                }
                 try {
                     val problem = try {
                         withTimeout(5_000L) { backend.initialize() }
@@ -287,7 +320,9 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         }
 
         private fun previewVoice(args: Bundle): ListenableFuture<SessionResult> {
-            if (player.isPlaying) {
+            if (player.isPlaying || player.playWhenReady) {
+                // PREPARING is not yet "isPlaying", but a queued speech request
+                // can begin at any instant. Never overlap preview and narration.
                 return Futures.immediateFuture(
                     SessionResult(SessionError.ERROR_INVALID_STATE)
                 )
@@ -318,9 +353,16 @@ class ReaderTtsPlaybackService : MediaSessionService() {
 
             val speed = args.getFloat("speed", 1f)
             val pitch = args.getFloat("pitch", 1f)
+            val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
+                args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
+            )
+            cancelActivePreview()
+            val previewOwner = ++previewGeneration
             val future = SettableFuture.create<SessionResult>()
-            serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext)
+            previewJob = serviceScope.launch {
+                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                    selectEngine(requestedEngine)
+                }
                 try {
                     val initProblem = try {
                         withTimeout(5_000L) { backend.initialize() }
@@ -366,6 +408,10 @@ class ReaderTtsPlaybackService : MediaSessionService() {
                     future.set(SessionResult(SessionError.ERROR_UNKNOWN))
                 } finally {
                     backend.close()
+                    if (previewGeneration == previewOwner) previewJob = null
+                    if (!future.isDone) {
+                        future.set(SessionResult(SessionError.ERROR_INVALID_STATE))
+                    }
                 }
             }
             return future
