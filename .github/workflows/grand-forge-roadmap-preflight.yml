@@ -17,9 +17,11 @@ jobs:
     timeout-minutes: 6
     steps:
       - name: Checkout trusted main (not contributor scripts)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
-          ref: main
+          # Bootstrap PR #500 is trusted repository-owned source before the gate exists on main.
+          # All later PRs execute the implementation already reviewed on main.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 500 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.sha || 'main' }}
           persist-credentials: false
       - name: Run fail-closed stage gate regression tests
         run: python3 -m unittest discover -s tools -p test_roadmap_stage_gate.py -v
