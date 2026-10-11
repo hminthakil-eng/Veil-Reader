@@ -13,7 +13,8 @@ Source-confirmed failure paths, distinct from unperformed phone reproduction:
 | Visual overlay intercepted publication input | Main integrated #474; negative control described in that PR | Keep `readerVisualOnlyInput` at the overlay boundary; native view never owns touch |
 | Navigation during Move replaced the source WebView before touchend | #467 and `PaperCurlInputListener` release-only transaction | Reuse the corrected transaction; never navigate during a held fold |
 | Vertex/fragment precision mismatch prevents shader link | Unmerged optical fix #468; identical uniforms/varyings had different default precision in main | Reuse its precision/acquired-buffer fix for explicit legacy rollback; new backend uses actual upstream triangle strips |
-| A valid short drag release arrives before acquired-source acknowledgement | Main `onDragEnd` required epoch equality immediately; tap path waited | Wait up to the existing 500 ms same-epoch acquisition barrier, preserve release intent, cancel safely on lifecycle/token change |
+| A valid short drag release arrives before acquired-source acknowledgement | Main `onDragEnd` required epoch equality immediately; tap path waited | Wait up to a bounded 1500 ms same-epoch acquisition barrier, preserve release intent, cancel safely on lifecycle/token change |
+| Cold first buffer exceeded the old 500 ms watchdog | Exact-head English fixture acquired its first source at 563 ms, after the watchdog had begun clearing it; RTL acquired at 253 ms | Use a bounded 1500 ms failure deadline; continue immediately on exact acquisition; held/released 700 ms regression checks |
 | Native material demos did not change real book pages | #479/#506 explicitly used fictional bitmaps | Wire the licensed mesh directly into `PaperCurlOverlay` and actual Readium source snapshots |
 | Leaf travel stopped inside the screen | Prior GPU target free edge clamps at -0.25 page widths | Finger tracks 1:1 during drag; accepted release extends to 2.08 widths so the entire reflected leaf exits |
 | Full pull skipped its release animation | Saturated gesture progress=1 leaves no remaining animation interval | Native release uses its own time fraction so the remaining leaf exits continuously |
@@ -84,13 +85,15 @@ New meaningful checks:
 - `NativePaperGeometryTest`: free edge tracks finger, partial/full cylinder join,
   mirrored direction, complete exit, continuous release after saturated drag,
   cancellation, invalid samples.
-- `PaperDiscreteTurnLifecycleTest`: quick release before acquisition waits then
-  commits exactly once; existing timeout, cancel and chapter-ownership regressions.
+- `PaperDiscreteTurnLifecycleTest`: quick release and held drag survive a cold first
+  buffer beyond 500 ms, then commit exactly once; existing timeout, cancel and chapter-ownership regressions.
 - `NativePaperRealReaderInstrumentedTest`: launch production import/Readium/
   ReaderScreen with English LTR and Persian RTL EPUBs; inject actual Android finger touch events;
   require visible page-pixel deformation while actual locator stays put; reverse
   and release must restore; full release must change the real Readium locator;
   opposite-edge release must reduce actual book progression.
+  Requires a currently active acquired epoch; historical acquisition cannot
+  make a cleared/failed sheet appear to pass.
   Requires the real DOM, settled publication location and WebView visual-state
   callback and acquired on-screen paper/ink stable across frames before touch.
   DOM and accessibility alone are insufficient while the entry curtain fades.

@@ -74,6 +74,10 @@ internal class NativeMaterialPageCurlView(
     private var probeScheduled = false
     internal var lastAcquiredSheetEpoch = 0L
         private set
+    internal val currentAcquiredSheetEpoch: Long
+        get() = state.presentedSheetEpoch.value.takeIf {
+            state.active && it > 0L && it == state.sheetEpoch
+        } ?: 0L
     internal val currentSourceSnapshot: Bitmap? get() = state.snapshot
     private val probe = Runnable {
         probeScheduled = false

@@ -173,7 +173,9 @@ internal class MaterialPageEngineState(
         }
     }
 
-    suspend fun awaitSheetPresented(timeoutMillis: Long = 500L): Boolean {
+    // Cold texture upload/composition can exceed 500 ms on a busy device. This
+    // is a failure deadline, never an animation delay or proof of presentation.
+    suspend fun awaitSheetPresented(timeoutMillis: Long = 1_500L): Boolean {
         val expected = sheetEpoch
         if (!active || expected <= 0L) return false
         val result = withTimeoutOrNull(timeoutMillis.coerceAtLeast(1L)) {

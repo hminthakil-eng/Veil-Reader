@@ -531,7 +531,7 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
-    fun `quick release waits for late source acquisition then commits once`() = runTest {
+    fun `quick release survives cold source acquisition beyond the old deadline then commits once`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         val fixture = NavigatorFixture().apply { settleImmediately = true }
         val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
@@ -556,7 +556,11 @@ class PaperDiscreteTurnLifecycleTest {
             assertEquals(0, fixture.requests)
             assertTrue(state.active)
             assertEquals(0L, state.materialEngine.presentedSheetEpoch.value)
-            delay(32L)
+            // A genuine cold source at 700 ms must survive the former 500 ms
+            // watchdog. Still no navigation until this exact epoch is acquired.
+            delay(700L)
+            assertTrue(state.active)
+            assertEquals(0, fixture.requests)
             state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
             advanceUntilIdle()
             assertEquals(1, fixture.requests)
@@ -595,6 +599,8 @@ class PaperDiscreteTurnLifecycleTest {
             assertTrue(state.active)
             runCurrent()
             assertEquals(0, fixture.requests)
+            delay(700L)
+            assertTrue("A held source must survive a cold first buffer", state.active)
             state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
             runCurrent()
             assertEquals(0, fixture.requests)

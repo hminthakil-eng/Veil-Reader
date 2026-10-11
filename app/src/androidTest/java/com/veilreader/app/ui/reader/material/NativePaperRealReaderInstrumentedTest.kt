@@ -149,7 +149,7 @@ class NativePaperRealReaderInstrumentedTest {
                 evaluate(inputWeb, "JSON.stringify({touches:window.__veilFixtureTouches, bridge:typeof Android, drag:typeof Android === 'undefined' ? 'missing' : typeof Android.onDragStart, selection:window.getSelection().isCollapsed})"))
             waitUntil("Actual source buffer acquired") {
                 var acquired = false
-                instrumentation.runOnMainSync { acquired = (native()?.lastAcquiredSheetEpoch ?: 0L) > 0L }
+                instrumentation.runOnMainSync { acquired = (native()?.currentAcquiredSheetEpoch ?: 0L) > 0L }
                 acquired
             }
             assertEquals("A held fold must never navigate", original, locator())
@@ -209,7 +209,7 @@ class NativePaperRealReaderInstrumentedTest {
             waitUntil("Opposite-edge source buffer acquired") {
                 var acquired = false
                 instrumentation.runOnMainSync {
-                    acquired = (native()?.lastAcquiredSheetEpoch ?: 0L) > previousEpoch
+                    acquired = (native()?.currentAcquiredSheetEpoch ?: 0L) > previousEpoch
                 }
                 acquired
             }
