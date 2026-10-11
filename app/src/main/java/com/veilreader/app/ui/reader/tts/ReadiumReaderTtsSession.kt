@@ -16,7 +16,7 @@ internal fun createReadiumReaderTtsSession(
         contentFactory = { locator -> ReadiumTtsContent.create(opened.publication, locator) },
         backendFactory = { ReaderTtsForgeBackendFactory(context.applicationContext).create() },
         initializationTimeoutMs = if (
-            com.veilreader.app.BuildConfig.DEBUG && com.veilreader.app.BuildConfig.FORGE_QA
+            com.veilreader.app.BuildConfig.DEBUG && com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA
         ) 60_000L else 5_000L,
         publicationLanguage = opened.publication.metadata.languages.firstOrNull(),
         canPlay = canPlay,
