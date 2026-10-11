@@ -270,27 +270,9 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
                 args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
             )
-            // Only the isolated Forge QA APK has this embedded Kokoro model.
-            // Listing known speakers does not require loading 345MB of weights.
-            if (com.veilreader.app.BuildConfig.DEBUG &&
-                com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
-                requestedEngine == com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
-            ) {
-                val catalog = (0..10).map { speaker ->
-                    ReaderTtsVoice("kokoro-en-v0_19-$speaker", "en-US", 400, false, true)
-                }
-                return Futures.immediateFuture(
-                    SessionResult(
-                        SessionResult.RESULT_SUCCESS,
-                        Bundle().apply {
-                            putString(
-                                ReaderTtsPlaybackRequest.EXTRA_VOICES_JSON,
-                                ReaderTtsPlaybackRequest.encodeVoiceCatalog(catalog)
-                            )
-                        }
-                    )
-                )
-            }
+            // Do not advertise 11 static speakers without loading a valid
+            // native model. The real speaker count is provided by initialize()
+            // via OfflineTts.numSpeakers(). This is an opt-in QA-only query.
             val future = SettableFuture.create<SessionResult>()
             serviceScope.launch {
                 val backend = ReaderTtsForgeBackendFactory(applicationContext).create().apply {
