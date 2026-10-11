@@ -4425,7 +4425,20 @@ fun ReaderScreen(
                     }
                 },
                 onResume = { ttsServiceController?.resume() ?: ttsSession?.resume() },
-                onPause = { ttsServiceController?.pause() ?: ttsSession?.pause() },
+                onPause = {
+                    // Reader start may still be awaiting firstVisibleElementLocator.
+                    // Cancel its job AND invalidate its serial before the late
+                    // locator callback can invoke Play after the user tapped Pause.
+                    if (ttsStartPending) {
+                        ttsStartSerial += 1
+                        ttsStartJob?.cancel()
+                        ttsStartJob = null
+                        ttsStartPending = false
+                        ttsServiceController?.stop() ?: ttsSession?.stop()
+                    } else {
+                        ttsServiceController?.pause() ?: ttsSession?.pause()
+                    }
+                },
                 onPrevious = {
                     ttsServiceController?.previous() ?: ttsSession?.previous()
                 },
