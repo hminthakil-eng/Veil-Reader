@@ -2,7 +2,7 @@ package com.veilreader.app
 
 import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -48,6 +48,23 @@ class PrimaryReaderLaunchIntentInstrumentedTest {
             "No debug-only Activity may advertise MAIN/LAUNCHER",
             setOf(MainActivity::class.java.name),
             launchTargets
+        )
+    }
+
+    @Test
+    fun debugCurlDeepLinkResolvesOnlyToSyntheticLab() {
+        val target = InstrumentationRegistry.getInstrumentation().targetContext
+        val debugView = Intent(Intent.ACTION_VIEW, Uri.parse("veilpaperlab://curl"))
+            .addCategory(Intent.CATEGORY_DEFAULT)
+            .setPackage(target.packageName)
+        @Suppress("DEPRECATION")
+        val targets = target.packageManager.queryIntentActivities(debugView, 0)
+            .map { it.activityInfo.name }
+            .toSet()
+        assertEquals(
+            "Curl deep link must resolve only to the synthetic debug lab, never MainActivity",
+            setOf("com.veilreader.app.debug.ExternalCurlArenaActivity"),
+            targets
         )
     }
 
