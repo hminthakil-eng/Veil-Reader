@@ -17,6 +17,7 @@ Apply both patches in order:
 
 1. `0001-cancellable-synthesis-and-pause.patch` (stop propagation)
 2. `0002-remove-plaintext-narration-logs.patch` (privacy: no raw book text in Logcat)
+3. `0003-kokoro-multivoice-identity.patch` (11 independently addressable voice IDs, exact per-request speaker selection; **Kokoro only**)
 
 The first patch:
 - Increments a thread-visible `AtomicLong` cancellation generation in `onStop()`.
@@ -56,7 +57,26 @@ git -C "$SHERPA_ROOT" apply --check \
   /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0002-remove-plaintext-narration-logs.patch
 git -C "$SHERPA_ROOT" apply \
   /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0002-remove-plaintext-narration-logs.patch
+git -C "$SHERPA_ROOT" apply --check \
+  /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0003-kokoro-multivoice-identity.patch
+git -C "$SHERPA_ROOT" apply \
+  /absolute/path/to/Veil-Reader/tools/sherpa-onnx-engine-patch/0003-kokoro-multivoice-identity.patch
 ```
+
+### True narrator selection (Kokoro only)
+
+Upstream `TtsService` used a global `TtsEngine.speakerId` for every synthesis
+request, even when the Android client selected a different voice. The third
+patch exposes one Android `Voice` per native speaker embedding:
+`kokoro-en-v0_19-0` through `kokoro-en-v0_19-10` (actual count from
+`numSpeakers()`). Android clients can then use `TextToSpeech.setVoice()`;
+`SynthesisRequest.voiceName` selects the exact speaker ID for that bounded
+synthesis request, without changing a process-global mutable narrator.
+
+Never apply this **Kokoro-only** patch to a Persian Piper/Matcha engine:
+those require their own language/voice catalogs. A verified native `numSpeakers()`
+return and audible 11-voice comparison are still required to assert real
+multispeaker runtime behavior. Do not confuse a modeled list with audio proof.
 
 **Do not silently drop patch failures.** If upstream changes, re-review the service
 and its JNI worker callback threading. Do not ship a modified binary using this patch
