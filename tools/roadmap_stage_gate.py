@@ -163,11 +163,14 @@ def record(fields):
         "This receipt is a record, not a product/device/release approval.",
     ])
     posted = api("POST", "/issues/%d/comments" % issue, {"body": text})
-    if action == "stage_end" and issue != 495:
+    if issue != 495:
+        # Keep the centralized roadmap command issue current BEFORE and AFTER work.
+        heading = "PRE-WORK" if action == "preflight" else "POST-STAGE"
         api("POST", "/issues/495/comments", {"body":
-            "### Stage " + fields["stage"] + " | " + fields["status"] +
+            "### " + heading + " | " + fields["stage"] + " | " + fields["status"] +
             "\nIssue: #" + str(issue) + "\nReceipt: " + posted["html_url"] +
-            "\nNext: " + fields["next_step"]})
+            "\nCurrent main: " + current + "\nNext: " + fields["next_step"] +
+            "\nSource, device and release verification remain separate."})
     return "Posted: " + posted.get("html_url", "")
 
 
