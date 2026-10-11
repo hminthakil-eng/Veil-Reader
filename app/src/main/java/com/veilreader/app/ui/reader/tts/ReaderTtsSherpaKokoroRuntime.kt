@@ -69,6 +69,9 @@ internal class ReaderTtsSherpaKokoroRuntime private constructor(
     override val sampleRateHz: Int,
     private val numSpeakers: Int
 ) : ReaderTtsNeuralRuntime {
+    /** Exact verified speaker count reported by the currently loaded native model. */
+    internal val speakerCount: Int get() = numSpeakers
+
     private val nativeMutex = Mutex()
     private val closeRequested = AtomicBoolean(false)
     private val closeStarted = AtomicBoolean(false)
