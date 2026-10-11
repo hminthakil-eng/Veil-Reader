@@ -270,14 +270,23 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             val requestedEngine = ReaderTtsPlaybackRequest.decodeEngineChoice(
                 args.getString(ReaderTtsPlaybackRequest.EXTRA_ENGINE_CHOICE)
             )
+            // Do not advertise 11 static speakers without loading a valid
+            // native model. The real speaker count is provided by initialize()
+            // via OfflineTts.numSpeakers(). This is an opt-in QA-only query.
             val future = SettableFuture.create<SessionResult>()
             serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                val backend = ReaderTtsForgeBackendFactory(applicationContext).create().apply {
                     selectEngine(requestedEngine)
                 }
                 try {
                     val problem = try {
-                        withTimeout(5_000L) { backend.initialize() }
+                        withTimeout(
+                            if (com.veilreader.app.BuildConfig.DEBUG &&
+                                com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
+                                requestedEngine ==
+                                    com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+                            ) 60_000L else 5_000L
+                        ) { backend.initialize() }
                     } catch (_: TimeoutCancellationException) {
                         ReaderTtsProblem.TIMEOUT
                     }
@@ -360,12 +369,18 @@ class ReaderTtsPlaybackService : MediaSessionService() {
             val previewOwner = ++previewGeneration
             val future = SettableFuture.create<SessionResult>()
             previewJob = serviceScope.launch {
-                val backend = AndroidReaderTtsBackend(applicationContext).apply {
+                val backend = ReaderTtsForgeBackendFactory(applicationContext).create().apply {
                     selectEngine(requestedEngine)
                 }
                 try {
                     val initProblem = try {
-                        withTimeout(5_000L) { backend.initialize() }
+                        withTimeout(
+                            if (com.veilreader.app.BuildConfig.DEBUG &&
+                                com.veilreader.app.BuildConfig.NATIVE_KOKORO_QA &&
+                                requestedEngine ==
+                                    com.veilreader.app.domain.ReaderTtsEngineChoice.SHERPA_ONNX
+                            ) 60_000L else 5_000L
+                        ) { backend.initialize() }
                     } catch (_: TimeoutCancellationException) {
                         ReaderTtsProblem.TIMEOUT
                     }

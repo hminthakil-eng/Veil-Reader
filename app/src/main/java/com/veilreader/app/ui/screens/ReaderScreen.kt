@@ -1274,11 +1274,12 @@ fun ReaderScreen(
     val neuralTtsReviewEnabled = remember {
         VeilFeatureGates.enabled(
             VeilRiskyFeature.LOCAL_NEURAL_TTS,
-            debugReview = BuildConfig.DEBUG && !BuildConfig.FORGE_QA
+            debugReview = BuildConfig.DEBUG
         )
     }
     val sherpaEngineInstalled = remember(activity.applicationContext, readerSessionInstanceId) {
-        ReaderTtsSherpaEngineDiscovery.installed(activity.applicationContext)
+        (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA) ||
+            ReaderTtsSherpaEngineDiscovery.installed(activity.applicationContext)
     }
     val foregroundTtsCheckpoint = remember(opened.book.id, readerSessionInstanceId, backgroundTtsEnabled) {
         if (backgroundTtsEnabled) null else {

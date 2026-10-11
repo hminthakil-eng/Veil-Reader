@@ -24,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReaderTtsEngineChoice
@@ -363,11 +364,50 @@ internal fun ReaderListeningMode(
                                     if (settings.engine != ReaderTtsEngineChoice.SHERPA_ONNX)
                                         onSettingsChange(settings.withEngine(ReaderTtsEngineChoice.SHERPA_ONNX))
                                 },
-                                label = { Text("Neural · Sherpa") }
+                                label = {
+                                    Text(
+                                        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA)
+                                            "Neural · Kokoro (in-app)"
+                                        else "Neural · Sherpa"
+                                    )
+                                }
                             )
                         }
+                        if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA &&
+                            settings.engine == ReaderTtsEngineChoice.SHERPA_ONNX
+                        ) {
+                            Text(
+                                "Kokoro narrator · English",
+                                color = VeilPalette.Brass,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                                modifier = Modifier.fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                            ) {
+                                val selected = settings.preferredVoiceId("en-US")
+                                    ?: "kokoro-en-v0_19-0"
+                                (0..10).forEach { id ->
+                                    val voiceId = "kokoro-en-v0_19-$id"
+                                    FilterChip(
+                                        selected = selected == voiceId,
+                                        onClick = {
+                                            if (selected != voiceId) {
+                                                onSettingsChange(
+                                                    settings.withPreferredVoice("en-US", voiceId)
+                                                )
+                                            }
+                                        },
+                                        label = { Text("Voice ${id + 1}") }
+                                    )
+                                }
+                            }
+                        }
                         Text(
-                            if (sherpaEngineInstalled)
+                            if (BuildConfig.DEBUG && BuildConfig.NATIVE_KOKORO_QA)
+                                "Kokoro runs inside this Forge QA build, without a second TTS app. English-only preview; a narrator change pauses playback. Press Play to resume."
+                            else if (sherpaEngineInstalled)
                                 "Select Kokoro in the installed Sherpa engine for English. Switching pauses playback; your voice choices are saved separately for each engine. Tap Play to resume."
                             else
                                 "Sherpa-ONNX TTS Engine must be installed and configured with a downloaded voice model before neural playback is available.",
