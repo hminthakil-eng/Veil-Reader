@@ -63,6 +63,7 @@ jobs:
         with:
           name: veil-reader-grayfog-shell-review
           path: |
+            build/reports/native-paper-evidence.tar
             build/reports/grayfog-review.tar
             build/reports/veil-grayfog-review/
             app/build/outputs/androidTest-results/connected/debug/TEST-*.xml

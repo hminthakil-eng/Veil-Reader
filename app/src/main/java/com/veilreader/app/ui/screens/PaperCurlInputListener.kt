@@ -445,6 +445,21 @@ internal class PaperCurlInputListener(
                 return@launchCompletion
             }
 
+            // A quick release may beat GPU buffer acquisition. Preserve its
+            // release intent and wait for the SAME epoch, just as tap/key turns
+            // do, rather than silently turning a valid flick into cancellation.
+            if (commit && !reducedMotion && !previewNavigationSucceeded) {
+                val presented = state.materialEngine.awaitSheetPresented()
+                if (!operationIsCurrent(operationToken)) return@launchCompletion
+                if (!presented || !shouldAllowPaperNavigation(false, state.rendererStatus, state.active)) {
+                    state.clearImmediately()
+                    activeOperationGeneration = 0L
+                    resetDrag()
+                    reportVisualFailureOnce(PaperTurnVisualFailure.PRESENTATION)
+                    return@launchCompletion
+                }
+            }
+
             when {
                 cancellationRequested -> {
                     if (previewNavigationSucceeded) restoreDragStart(spec)

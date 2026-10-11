@@ -531,6 +531,47 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
+    fun `quick release waits for late source acquisition then commits once`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val clock = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+                delay(16L)
+                return onFrame(testScheduler.currentTime * 1_000_000L)
+            }
+        }
+        val failures = mutableListOf<PaperTurnVisualFailure>()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true },
+            CoroutineScope(coroutineContext + clock), onInteraction = {},
+            onCommittedTurn = { fixture.commit() }, onVisualFailure = { failures += it })
+        try {
+            listener.onDrag(drag(DragEvent.Type.Start, 0f))
+            listener.onDrag(drag(DragEvent.Type.Move, -900f))
+            listener.onDrag(drag(DragEvent.Type.End, -900f))
+            runCurrent()
+            assertEquals(0, fixture.requests)
+            assertTrue(state.active)
+            assertEquals(0L, state.materialEngine.presentedSheetEpoch.value)
+            delay(32L)
+            state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
+            advanceUntilIdle()
+            assertEquals(1, fixture.requests)
+            assertEquals(1, fixture.commits)
+            assertTrue(failures.isEmpty())
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `presented drag holds the same Readium chapter until release and commits once`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         val fixture = NavigatorFixture().apply { settleImmediately = true }

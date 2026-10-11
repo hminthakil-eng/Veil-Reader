@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.BuildConfig
 import com.veilreader.app.ui.reader.material.GpuMaterialPageOverlay
+import com.veilreader.app.ui.reader.material.NativeMaterialPageOverlay
 import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
@@ -251,11 +252,21 @@ internal fun PaperCurlOverlay(
     // A nested GLTextureView must not occlude Readium's native touch recipient.
     // Share sibling hit-testing at the full visual overlay boundary.
     Box(modifier = modifier.readerVisualOnlyInput()) {
-        GpuMaterialPageOverlay(
-            state = state.materialEngine,
-            modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
-            onRendererStatus = state::updateRendererStatus
-        )
+        // Explicit build selection, never an automatic fallback after failure.
+        // The release gate and original renderer remain unchanged for rollback.
+        if (BuildConfig.NATIVE_PAPER_REBUILD) {
+            NativeMaterialPageOverlay(
+                state = state.materialEngine,
+                modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
+                onRendererStatus = state::updateRendererStatus
+            )
+        } else {
+            GpuMaterialPageOverlay(
+                state = state.materialEngine,
+                modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
+                onRendererStatus = state::updateRendererStatus
+            )
+        }
 
         if (BuildConfig.DEBUG) {
             val label = when {
@@ -283,7 +294,7 @@ internal fun PaperCurlOverlay(
                     "PAPER · GPU CANONICAL · READY · A${state.debugBeginAttempts}"
             }
             Text(
-                text = label,
+                text = label.replace("GPU CANONICAL", "NATIVE HARISM"),
                 color = Color(0xFFFFC857),
                 modifier = Modifier
                     .align(Alignment.TopStart)

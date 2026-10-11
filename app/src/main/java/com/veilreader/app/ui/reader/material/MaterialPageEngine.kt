@@ -121,6 +121,12 @@ internal class MaterialPageEngineState(
     var edgeTravel: Float by mutableFloatStateOf(0f)
         private set
 
+    // The native leaf tracks the finger while dragging and can travel beyond
+    // the binding on release. Normalized GPU-v2 edgeTravel remains unchanged.
+    var nativeLeafTravel: Float by mutableFloatStateOf(0f)
+        private set
+    private var nativeReleaseCompleting = false
+
     var visualAlpha: Float by mutableFloatStateOf(1f)
         private set
 
@@ -490,6 +496,8 @@ internal class MaterialPageEngineState(
         diagonalPull = 0f
         pointerTravel = 0f
         edgeTravel = 0f
+        nativeLeafTravel = 0f
+        nativeReleaseCompleting = false
         visualAlpha = 1f
         liftCueEmitted = false
         sheetEpoch = nextMaterialPageSnapshotRevision(sheetEpoch)
@@ -549,6 +557,7 @@ internal class MaterialPageEngineState(
                 ?.coerceIn(0f, 1.5f)
                 ?: sample.rawProgress
         edgeTravel = sample.rawProgress
+        nativeLeafTravel = (inward / width).coerceIn(0f, NATIVE_PAPER_COMPLETE_TRAVEL)
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -574,10 +583,12 @@ internal class MaterialPageEngineState(
     private fun acceptAnimatedProgress(
         value: Float,
         releaseProgress: Float = progress,
-        releaseEdgeTravel: Float = edgeTravel
+        releaseEdgeTravel: Float = edgeTravel,
+        releaseNativeTravel: Float = nativeLeafTravel
     ) {
         progress = value.coerceIn(0f, 1f)
         edgeTravel = materialPageSettledEdgeTravel(value, releaseProgress, releaseEdgeTravel)
+        nativeLeafTravel = nativePaperSettleTravel(value, releaseProgress, releaseNativeTravel, nativeReleaseCompleting)
         pointerTravel = edgeTravel
     }
 
@@ -593,8 +604,10 @@ internal class MaterialPageEngineState(
 
     suspend fun animateTapTurn() {
         if (!active) return
+        nativeReleaseCompleting = true
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -619,7 +632,7 @@ internal class MaterialPageEngineState(
                         easing = FastOutSlowInEasing
                     )
                 ) {
-                    acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                    acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
                 }
             }
 
@@ -641,7 +654,7 @@ internal class MaterialPageEngineState(
                 ),
                 initialVelocity = launchVelocity
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -651,8 +664,10 @@ internal class MaterialPageEngineState(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        nativeReleaseCompleting = true
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -681,7 +696,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-1f, 5f)
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -691,8 +706,10 @@ internal class MaterialPageEngineState(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        nativeReleaseCompleting = false
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -720,7 +737,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-5f, 3f)
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -728,8 +745,10 @@ internal class MaterialPageEngineState(
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
+        nativeReleaseCompleting = false
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -744,7 +763,7 @@ internal class MaterialPageEngineState(
         } else {
             val anim = Animatable(progress)
             anim.animateTo(0.045f, tween(72)) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
             anim.animateTo(
                 targetValue = 0f,
@@ -754,7 +773,7 @@ internal class MaterialPageEngineState(
                     visibilityThreshold = 0.001f
                 )
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 

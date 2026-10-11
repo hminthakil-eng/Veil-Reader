@@ -55,6 +55,13 @@ cleanup() {
       echo "Optional Grayfog capture collection failed; test status remains $status." >&2
     fi
   fi
+  if [[ "$MODE" == "storage" ]] &&
+     "$ADB" -s "$SERIAL" shell run-as "$VEIL_TEST_APPLICATION_ID" test -d files/native-paper-evidence >/dev/null 2>&1; then
+    if ! "$ADB" -s "$SERIAL" exec-out run-as "$VEIL_TEST_APPLICATION_ID" \
+        tar -C files -cf - native-paper-evidence >build/reports/native-paper-evidence.tar; then
+      rm -f build/reports/native-paper-evidence.tar
+    fi
+  fi
   if (( status != 0 )); then
     "$ADB" -s "$SERIAL" logcat -d >"$LOGCAT_LOG" 2>&1
   fi

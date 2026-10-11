@@ -40,13 +40,18 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
+        }
         getByName("release") {
+            buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "false")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
         create("benchmark") {
             initWith(getByName("release"))
+            buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
         }
