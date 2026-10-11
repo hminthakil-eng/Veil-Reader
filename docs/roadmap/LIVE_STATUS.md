@@ -81,3 +81,13 @@ Date UTC and timezone; main head SHA; changed PR/issue list; integrated (source)
 - ACTION: snapshot previous main to archive/0001, then fast-forward main to 9c65997d with non-force expected SHA lease.
 - CURRENT: newest **integrated** Reader baseline now main; active draft PRs retain experimental heads. No physical approval and no release.
 - FOLLOW-UP: main protection was observed false; permission to read protection settings was denied, requiring separate authorized admin review.
+
+
+### 2026-10-11 — GOV-08 pre-work and stage traceability (candidate PR #500)
+
+- **Baseline checked before work:** main `bfac95f4b82e23b9f277f985bf3282f3e9c584fb`; command center #495 and roadmap, branch policy, existing Company OS reuse preflight and PR template inspected.
+- **PRE-WORK receipt:** [GOV-08-W1](https://github.com/hminthakil-eng/Veil-Reader/issues/495#issuecomment-6107691747) was recorded before the PR opened. A draft implementation now lives at [PR #500](https://github.com/hminthakil-eng/Veil-Reader/pull/500).
+- **Scope:** root AGENTS.md; mandatory execution protocol; two GitHub Action workflows; additive PR/work-item template changes; stdlib receipt engine and unit tests; command center mirroring of BOTH plans and stage outcomes.
+- **Initial feedback:** first bootstrap preflight run failed because main had no tool tests yet. Workflow changed to use trusted exact head for bootstrap PR #500 only; later PRs use the reviewed main tool. Later [roadmap gate 38129419585](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38129419585) passed all 13 earlier tests and the live issue preflight check. Two more negative-control tests were added; **their exact newer SHA result requires a separate run**.
+- **Stage disposition now:** IN_PROGRESS / not yet merged or deployed; GitHub main protections were observed disabled, so PR check is not a required status until repository administration enables it. Android runtime and public release have not changed.
+- **Next:** confirm latest exact-head 15-test gate and relevant CI, publish POST-STAGE evidence on #495, review/merge the governance PR if safe, then validate workflow_dispatch on main and require status checks through GitHub settings.
