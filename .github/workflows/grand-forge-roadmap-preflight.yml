@@ -1,0 +1,35 @@
+name: Grand Forge Roadmap Preflight
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review, converted_to_draft]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  roadmap-stage-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout trusted main (not contributor scripts)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Run fail-closed stage gate regression tests
+        run: python3 -m unittest discover -s tools -p test_roadmap_stage_gate.py -v
+      - name: Validate receipt before new PR work
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/roadmap_stage_gate.py pr-check
+      - name: Explain limitations
+        if: always()
+        run: |
+          echo "Stage gate checks recorded preflight/completion evidence, not whether the physical product works." >> "$GITHUB_STEP_SUMMARY"
+          echo "Required-check enforcement needs GitHub branch protection; do not merge a failed/pending PR." >> "$GITHUB_STEP_SUMMARY"
