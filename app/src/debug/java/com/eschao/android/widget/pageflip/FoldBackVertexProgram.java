@@ -15,6 +15,8 @@
  */
 package com.eschao.android.widget.pageflip;
 
+import com.veilreader.app.R;
+
 import android.content.Context;
 
 import static android.opengl.GLES20.glGetUniformLocation;
