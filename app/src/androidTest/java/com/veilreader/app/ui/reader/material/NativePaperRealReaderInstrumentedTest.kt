@@ -8,14 +8,12 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.accessibility.AccessibilityNodeInfo
 import android.webkit.WebView
 import androidx.fragment.app.Fragment
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.veilreader.app.debug.NativePaperReaderActivity
-import com.veilreader.app.R
 import java.io.File
 import org.junit.Assert.*
 import org.junit.Test
@@ -65,8 +63,10 @@ class NativePaperRealReaderInstrumentedTest {
             }
             var paintRequested: WebView? = null
             var painted: WebView? = null
+            var visiblePaperSince = 0L
             waitUntil("Native GL and actual publication pixels ready") {
                 var ready = false
+                val visibleBounds = Rect()
                 instrumentation.runOnMainSync {
                     val web = sourceWeb()
                     val locationReady = navigator()?.currentLocator?.value?.locations?.progression != null
@@ -81,10 +81,18 @@ class NativePaperRealReaderInstrumentedTest {
                         }
                     }
                     ready = native()?.renderingReady == true && locationReady && web != null && painted === web
+                    if (ready) web?.getGlobalVisibleRect(visibleBounds)
                 }
-                // The real DOM is ready behind the initial book-entry curtain.
-                // That modal legitimately owns touch until its exit completes.
-                ready && !entryCurtainPresent()
+                // DOM/accessibility readiness can precede the modal's actual fade-out.
+                // Require this owned white-paper fixture's ink on the acquired screen,
+                // stable across frames, before injecting a real touch into Readium.
+                if (ready && fixtureInkVisible(visibleBounds)) {
+                    if (visiblePaperSince == 0L) visiblePaperSince = SystemClock.elapsedRealtime()
+                    SystemClock.elapsedRealtime() - visiblePaperSince >= 200L
+                } else {
+                    visiblePaperSince = 0L
+                    false
+                }
             }
             instrumentation.runOnMainSync {
                 assertEquals("The publication must drive physical turn direction",
@@ -234,24 +242,27 @@ class NativePaperRealReaderInstrumentedTest {
         if (root is ViewGroup) for (i in 0 until root.childCount) addAll(views(root.getChildAt(i)))
     }
 
-    @Suppress("DEPRECATION")
-    private fun entryCurtainPresent(): Boolean {
-        val root = automation.rootInActiveWindow ?: return true
-        val labels = setOf(
-            instrumentation.targetContext.getString(R.string.entry_entering_sanctuary),
-            instrumentation.targetContext.getString(R.string.entry_old_seal_opens)
-        )
-        val pending = ArrayDeque<AccessibilityNodeInfo>()
-        pending.add(root)
-        var present = false
-        while (pending.isNotEmpty()) {
-            val node = pending.removeFirst()
-            val text = node.text?.toString()
-            if (text != null && text in labels) present = true
-            for (i in 0 until node.childCount) node.getChild(i)?.let(pending::add)
-            node.recycle()
-        }
-        return present
+    private fun fixtureInkVisible(bounds: Rect): Boolean {
+        if (bounds.isEmpty) return false
+        val bitmap = automation.takeScreenshot() ?: return false
+        try {
+            var paper = 0
+            var ink = 0
+            var total = 0
+            val left = (bounds.left + bounds.width() * 0.1).toInt().coerceAtLeast(0)
+            val right = (bounds.right - bounds.width() * 0.1).toInt().coerceAtMost(bitmap.width)
+            val top = (bounds.top + bounds.height() * 0.25).toInt().coerceAtLeast(0)
+            val bottom = (bounds.top + bounds.height() * 0.7).toInt().coerceAtMost(bitmap.height)
+            for (y in top until bottom step 8) for (x in left until right step 8) {
+                val pixel = bitmap.getPixel(x, y)
+                val light = (android.graphics.Color.red(pixel) + android.graphics.Color.green(pixel) +
+                    android.graphics.Color.blue(pixel)) / 3
+                if (light > 245) paper++
+                if (light < 80) ink++
+                total++
+            }
+            return total > 0 && paper.toDouble() / total > 0.7 && ink.toDouble() / total > 0.01
+        } finally { bitmap.recycle() }
     }
     private fun fragments(roots: List<Fragment>): List<Fragment> = roots.flatMap { listOf(it) + fragments(it.childFragmentManager.fragments) }
     private fun waitUntil(message: String, condition: () -> Boolean) {

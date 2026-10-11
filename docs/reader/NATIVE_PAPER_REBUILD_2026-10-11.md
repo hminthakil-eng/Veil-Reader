@@ -79,7 +79,9 @@ New meaningful checks:
   and release must restore; full release must change the real Readium locator;
   opposite-edge release must reduce actual book progression.
   Requires the real DOM, settled publication location and WebView visual-state
-  callback and removal of the actual entry curtain before touch. Captures six PNGs per book and any timeout image;
+  callback and acquired on-screen paper/ink stable across frames before touch.
+  DOM and accessibility alone are insufficient while the entry curtain fades.
+  Captures six PNGs per book and any timeout image;
   exports fixture captures before UTP uninstalls the debug app.
 - Benchmark build now exercises native backend with the existing full Reader
   performance fixture. A successful emulator test is not physical acceptance.
