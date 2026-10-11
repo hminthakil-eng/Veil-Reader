@@ -162,3 +162,20 @@ internal fun readerTransitionUnavailableReason(
     }
     return null
 }
+
+
+/**
+ * Labels in the compact reading console must represent the effective visual mode,
+ * not a persisted Paper preference that the release-only engine has disabled.
+ *
+ * Returning PAGED changes only the highlighted control, never user preferences.
+ */
+internal fun readerConsoleVisibleMode(
+    appearance: ReaderAppearance,
+    paperAvailable: Boolean
+): ReaderNavigationMode =
+    if (!paperAvailable && appearance.navigationMode == ReaderNavigationMode.PAPER_CURL) {
+        ReaderNavigationMode.PAGED
+    } else {
+        appearance.navigationMode
+    }
