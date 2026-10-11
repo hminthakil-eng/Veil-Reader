@@ -3,7 +3,7 @@ name: Forge QA APK
 on:
   workflow_dispatch:
   push:
-    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/open-source-paper-curl-arena-20261010", "qa/paper-curl-physical-apk-lane-20261011" ]
+    branches: [ "grand-forge/p0-kindle-reader-quality-20261008" ]
     paths:
       - "app/**"
       - "tools/run_android_ci_emulator.sh"
