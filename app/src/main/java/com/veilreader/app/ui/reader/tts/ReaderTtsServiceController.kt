@@ -212,6 +212,10 @@ internal class ReaderTtsServiceController(
     fun stop() {
         pendingPauseOnConnect = false
         pendingStart = null
+        // A canceled initial Reader locator lookup never created a media
+        // item. MediaController.stop() may be unavailable then, but the visible
+        // UI must not remain stuck in PREPARING/PAUSED with no loaded book.
+        mutableState.value = ReaderTtsState(phase = ReaderTtsPhase.STOPPED)
         controller?.stop()
     }
 
