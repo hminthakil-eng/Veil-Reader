@@ -27,6 +27,7 @@ import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageSide
 import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
@@ -241,7 +242,9 @@ internal fun PaperCurlOverlay(
     tone: MaterialPageTone = MaterialPageTone.LIGHT,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(state, patina, tone) {
+    val reducedMotion = LocalVeilReducedMotion.current
+    LaunchedEffect(state, patina, tone, reducedMotion) {
+        state.configureReducedMotion(reducedMotion)
         state.materialEngine.configurePatina(patina)
         state.materialEngine.configureTone(tone)
     }

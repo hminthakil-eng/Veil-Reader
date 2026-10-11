@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.reader.material
 
 import android.content.Intent
+import android.animation.ValueAnimator
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.SystemClock
@@ -41,6 +42,23 @@ class NativePaperRealReaderInstrumentedTest {
     }
 
     private fun verifyRealBook(rtl: Boolean) {
+        // General storage tests disable Android animators. Veil correctly treats
+        // that as Reduced Motion; a real curl test must explicitly enable them.
+        val previousScale = shell("settings get global animator_duration_scale").trim()
+        require(previousScale == "null" || previousScale.matches(Regex("[0-9]+(?:\\.[0-9]+)?")))
+        try {
+            shell("settings put global animator_duration_scale 1")
+            waitUntil("System animation policy allows an actual paper fold") {
+                ValueAnimator.areAnimatorsEnabled()
+            }
+            verifyAnimatedBook(rtl)
+        } finally {
+            if (previousScale == "null") shell("settings delete global animator_duration_scale")
+            else shell("settings put global animator_duration_scale $previousScale")
+        }
+    }
+
+    private fun verifyAnimatedBook(rtl: Boolean) {
         val prefix = if (rtl) "rtl" else "ltr"
         capturePrefix = prefix
         val launch = Intent(instrumentation.targetContext, NativePaperReaderActivity::class.java)
@@ -224,6 +242,10 @@ class NativePaperRealReaderInstrumentedTest {
         completed.await(2, TimeUnit.SECONDS)
         return result
     }
+
+    private fun shell(command: String): String = android.os.ParcelFileDescriptor.AutoCloseInputStream(
+        automation.executeShellCommand(command)
+    ).bufferedReader().use { it.readText() }
 
     private fun screenshot(name: String): Bitmap {
         val bitmap = requireNotNull(automation.takeScreenshot())

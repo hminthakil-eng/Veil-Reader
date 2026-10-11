@@ -145,7 +145,13 @@ done
 
 "$ADB" -s "$SERIAL" shell settings put global window_animation_scale 0
 "$ADB" -s "$SERIAL" shell settings put global transition_animation_scale 0
-"$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 0
+# Veil maps disabled animators to Reduced Motion. The frame lane must exercise
+# actual paper folds rather than silently measuring accessibility/static paging.
+if [[ "$MODE" == "performance" ]]; then
+  "$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 1
+else
+  "$ADB" -s "$SERIAL" shell settings put global animator_duration_scale 0
+fi
 export ANDROID_SERIAL="$SERIAL"
 
 run_gradle() {

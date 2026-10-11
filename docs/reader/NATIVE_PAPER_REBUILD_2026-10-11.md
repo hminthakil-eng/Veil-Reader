@@ -55,6 +55,9 @@ phone recording are required to attribute an individual report.
 - Native backend is selected explicitly in debug and benchmark builds. Release
   retains the original renderer and its OFF rollout gate. No failure automatically
   switches to Slide or to the other renderer. Revert this branch to roll back.
+- The overlay tracks the actual Reduced Motion policy before declaring readiness.
+  Disabled system animators intentionally remove the fold and preserve static
+  accessibility paging; this is reported as REDUCED_MOTION instead of false READY.
 
 The live source page stays underneath a held fold. After release, Readium paints
 the destination under the retained source leaf. **Adjacent-destination preview
@@ -86,7 +89,11 @@ New meaningful checks:
   Captures six PNGs per book and any timeout image;
   exports fixture captures before UTP uninstalls the debug app.
 - Benchmark build now exercises native backend with the existing full Reader
-  performance fixture. A successful emulator test is not physical acceptance.
+  performance fixture and system animators enabled. The real-book tests scope
+  this setting to their own fixtures and restore it afterwards. Earlier emulator
+  frame-smoke receipts with animator scale zero only measured static paging and
+  are not native-fold performance evidence.
+  A successful emulator test is not physical acceptance.
 
 Required phone gates remain: exact APK/hash; Samsung/Pixel, 60/120 Hz; 100 turns;
 slow corners, reverse, first turn, first/last/chapter boundaries; RTL book and UI
