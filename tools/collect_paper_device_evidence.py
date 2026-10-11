@@ -17,6 +17,26 @@ from pathlib import Path
 
 SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 PACKAGE_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)+$")
+SHA256_LINE_RE = re.compile(r"^([0-9a-fA-F]{64})\s+\S+")
+
+
+def installed_base_apk(pm_path_output: str) -> str:
+    """Extract one installed base APK path; reject absent/ambiguous split layouts."""
+    paths = [line.strip()[len("package:"):] for line in pm_path_output.splitlines()
+             if line.strip().startswith("package:")]
+    base_paths = [path for path in paths if path.endswith("/base.apk")]
+    if len(base_paths) == 1:
+        return base_paths[0]
+    if len(paths) == 1 and paths[0].endswith(".apk"):
+        return paths[0]
+    raise ValueError("Unable to uniquely identify installed base.apk")
+
+
+def parse_device_sha256sum(stdout: str) -> str:
+    match = SHA256_LINE_RE.match(stdout.strip())
+    if not match:
+        raise ValueError("No valid SHA-256 digest from installed APK")
+    return match.group(1).lower()
 
 
 def sha256(path: Path) -> str:
@@ -50,6 +70,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--package", default="com.veilreader.app.paperlab")
     parser.add_argument("--apk", type=Path, help="Exact locally installed APK file; optional for a manually installed ZIP")
     parser.add_argument("--serial", help="ADB serial; mandatory when multiple devices are connected")
+    parser.add_argument(
+        "--verify-installed-apk", action="store_true",
+        help="Fail closed unless installed package base.apk bytes match --apk SHA256; requires adb shell sha256sum access",
+    )
     parser.add_argument("--output", type=Path, default=Path("paper-device-evidence"))
     parser.add_argument("--video", action="store_true", help="Explicitly opt into a local screen recording")
     parser.add_argument("--logcat", action="store_true", help="Explicitly opt into collecting recent logs (may contain personal data)")
@@ -64,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--duration must be between 10 and 180 seconds")
     if args.apk is not None and (not args.apk.is_file() or args.apk.suffix.lower() != ".apk"):
         parser.error("--apk must name an existing .apk file (extract any downloaded ZIP first)")
+    if args.verify_installed_apk and args.apk is None:
+        parser.error("--verify-installed-apk requires --apk path to the exact extracted APK")
 
     devices = online_devices(run(["adb", "devices"]))
     if args.serial:
@@ -97,9 +123,30 @@ def main(argv: list[str] | None = None) -> int:
         except (RuntimeError, subprocess.TimeoutExpired) as exc:
             observations[name] = f"UNAVAILABLE: {type(exc).__name__}"
 
+    # The operator-supplied source commit is still metadata, not cryptographic
+    # provenance. Verification below compares the actual installed APK bytes
+    # against the exact file presented for QA, without touching app data.
+    verified_installed_sha = None
+    if args.verify_installed_apk:
+        try:
+            installed_path = installed_base_apk(run(adb + ["shell", "pm", "path", args.package]))
+            verified_installed_sha = parse_device_sha256sum(
+                run(adb + ["shell", "sha256sum", installed_path], timeout=45)
+            )
+        except (ValueError, RuntimeError, subprocess.TimeoutExpired) as exc:
+            parser.error(f"Fail-closed: cannot verify installed APK bytes: {exc}")
+        local_hash = sha256(args.apk)
+        if verified_installed_sha != local_hash:
+            parser.error(
+                "Fail-closed: installed package APK SHA256 differs from --apk. "
+                "Do not record evidence for a mismatched build."
+            )
+
     manifest = {
         "source_sha_requested": args.source_sha.lower(),
         "source_identity_verified_against_installed_apk": False,
+        "installed_apk_bytes_match_local_apk": bool(args.verify_installed_apk),
+        "installed_base_apk_sha256": verified_installed_sha,
         "device_serial_local_only": serial,
         "package": args.package,
         "utc": datetime.now(timezone.utc).isoformat(),
