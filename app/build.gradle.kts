@@ -9,6 +9,11 @@ plugins {
 // Manual device QA installs alongside Veil, with independent data and non-production signing.
 // Default app/benchmark builds retain their existing identity.
 val forgeQaBuild = providers.gradleProperty("veilForgeQa").orNull == "true"
+// Ephemeral signed debug fixture. NEVER reuse the pinned Forge QA package identity.
+val paperLabQaBuild = providers.gradleProperty("veilPaperLabQa").orNull == "true"
+check(!(forgeQaBuild && paperLabQaBuild)) {
+    "veilForgeQa and veilPaperLabQa are mutually exclusive; choose one isolated test identity."
+}
 val forgeQaRevision = providers.gradleProperty("veilForgeRevision").orNull
     ?.takeIf { it.matches(Regex("[0-9a-f]{7,40}")) }?.take(8) ?: "local"
 
@@ -18,14 +23,27 @@ android {
 
     defaultConfig {
         buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
-        applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
+        buildConfigField("boolean", "PAPER_LAB_QA", paperLabQaBuild.toString())
+        applicationId = when {
+            forgeQaBuild -> "com.veilreader.app.forgeqa"
+            paperLabQaBuild -> "com.veilreader.app.paperlab"
+            else -> "com.veilreader.app"
+        }
         minSdk = 26
         targetSdk = 37
         versionCode = 10
-        versionName = if (forgeQaBuild) "0.10.0-forge-$forgeQaRevision" else "0.10.0"
-        manifestPlaceholders["veilAppLabel"] =
-            if (forgeQaBuild) "@string/forge_qa_app_name" else "@string/app_name"
+        versionName = when {
+            forgeQaBuild -> "0.10.0-forge-$forgeQaRevision"
+            paperLabQaBuild -> "0.10.0-paperlab-$forgeQaRevision"
+            else -> "0.10.0"
+        }
+        manifestPlaceholders["veilAppLabel"] = when {
+            forgeQaBuild -> "@string/forge_qa_app_name"
+            paperLabQaBuild -> "@string/paper_lab_qa_app_name"
+            else -> "@string/app_name"
+        }
         if (forgeQaBuild) resValue("string", "forge_qa_app_name", "Veil Reader Forge QA")
+        if (paperLabQaBuild) resValue("string", "paper_lab_qa_app_name", "Veil Paper Lab QA")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -55,7 +73,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-        resValues = forgeQaBuild
+        resValues = forgeQaBuild || paperLabQaBuild
     }
 
     testOptions {
