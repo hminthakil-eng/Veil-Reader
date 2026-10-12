@@ -91,13 +91,15 @@ public class CurlMesh {
 	private int mSelfShadowCount;
 
 	private boolean mTextureBack = false;
-	// Veil: an opaque native-size texture already contains the white backing.
+	// Veil: an opaque texture already contains the white backing.
 	private boolean mOpaqueTexture = false;
 	// Texture ids and other variables.
 	private int[] mTextureIds = null;
 	// Veil: reuse storage within this context; changed size/format allocates anew.
 	private final int[] mTextureWidths = new int[2];
 	private final int[] mTextureHeights = new int[2];
+	private final int[] mTextureSourceWidths = new int[2];
+	private final int[] mTextureSourceHeights = new int[2];
 	private final int[] mTextureFormats = new int[2];
 	private final int[] mTextureTypes = new int[2];
 	private final CurlPage mTexturePage = new CurlPage();
@@ -632,15 +634,17 @@ public class CurlMesh {
 		if (DRAW_TEXTURE && mTexturePage.getTexturesChanged()) {
 			mTextureBack = mTexturePage.hasBackTexture();
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[0]);
-			Bitmap texture = mTexturePage.getTexture(mTextureRectFront,
-					CurlPage.SIDE_FRONT);
-			uploadTexture(gl, texture, 0);
+			Bitmap texture = mOpaqueTexture
+					? mTexturePage.getUploadTexture(mTextureRectFront, CurlPage.SIDE_FRONT)
+					: mTexturePage.getTexture(mTextureRectFront, CurlPage.SIDE_FRONT);
+			uploadTexture(gl, texture, 0, mTextureRectFront);
 			texture.recycle();
 			if (mTextureBack) {
 				gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[1]);
-				texture = mTexturePage.getTexture(mTextureRectBack,
-						CurlPage.SIDE_BACK);
-				uploadTexture(gl, texture, 1);
+				texture = mOpaqueTexture
+						? mTexturePage.getUploadTexture(mTextureRectBack, CurlPage.SIDE_BACK)
+						: mTexturePage.getTexture(mTextureRectBack, CurlPage.SIDE_BACK);
+				uploadTexture(gl, texture, 1, mTextureRectBack);
 				texture.recycle();
 			} else {
 				mTextureRectBack.set(mTextureRectFront);
@@ -652,23 +656,43 @@ public class CurlMesh {
 
 	}
 
-	private void uploadTexture(GL10 gl, Bitmap texture, int slot) {
-		int width = texture.getWidth();
-		int height = texture.getHeight();
+	private void uploadTexture(GL10 gl, Bitmap texture, int slot, RectF coordinates) {
+		int width = mOpaqueTexture
+				? Math.round(texture.getWidth() / coordinates.right) : texture.getWidth();
+		int height = mOpaqueTexture
+				? Math.round(texture.getHeight() / coordinates.bottom) : texture.getHeight();
 		int format = GLUtils.getInternalFormat(texture);
 		int type = GLUtils.getType(texture);
 		if (mTextureWidths[slot] == width && mTextureHeights[slot] == height
+				&& mTextureSourceWidths[slot] == texture.getWidth()
+				&& mTextureSourceHeights[slot] == texture.getHeight()
 				&& mTextureFormats[slot] == format && mTextureTypes[slot] == type) {
+			GLUtils.texSubImage2D(GL10.GL_TEXTURE_2D, 0, 0, 0, texture);
+		} else if (width != texture.getWidth() || height != texture.getHeight()) {
+			// Allocate POT compatibility storage only once per size/context.
+			// Opaque white padding is the original blank backing composed into
+			// the texture, including the bilinear sample at a sheet edge.
+			Bitmap backing = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+			try {
+				backing.eraseColor(Color.WHITE);
+				backing.setHasAlpha(false);
+				GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, backing, 0);
+			} finally {
+				backing.recycle();
+			}
 			GLUtils.texSubImage2D(GL10.GL_TEXTURE_2D, 0, 0, 0, texture);
 		} else {
 			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
 		}
 		int error = gl.glGetError();
 		if (error != GL10.GL_NO_ERROR) {
+			mTextureWidths[slot] = mTextureHeights[slot] = 0;
 			throw new IllegalStateException("Paper texture upload failed: " + error);
 		}
 		mTextureWidths[slot] = width;
 		mTextureHeights[slot] = height;
+		mTextureSourceWidths[slot] = texture.getWidth();
+		mTextureSourceHeights[slot] = texture.getHeight();
 		mTextureFormats[slot] = format;
 		mTextureTypes[slot] = type;
 	}

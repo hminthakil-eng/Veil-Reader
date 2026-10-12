@@ -165,9 +165,9 @@ internal class NativeMaterialPageCurlView(
         maxTextureSize = limit[0]
         supportsNpot = nativePaperSupportsNpot(gl.glGetString(GL10.GL_EXTENSIONS))
         mesh.texturePage.setExactSizeTextures(supportsNpot)
-        // NPOT clamp keeps the opaque image's borders opaque too. Padded
-        // compatibility textures retain upstream's blank backing passes.
-        mesh.setOpaqueTexture(supportsNpot)
+        // Compatible POT contexts get persistent white GPU padding, so their
+        // sheet and filtering border use the same opaque single-pass path.
+        mesh.setOpaqueTexture(true)
         ReaderTrace.event("paper_native_texture_policy", details = "npot=$supportsNpot max=$maxTextureSize")
         synchronized(lock) { draws.clear() }
     }

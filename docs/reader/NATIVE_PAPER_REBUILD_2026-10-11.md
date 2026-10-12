@@ -176,3 +176,17 @@ premultiplied texture. Padded compatibility textures keep the original passes
 because bilinear sampling at their transparent padding edge needs the backing.
 A native-graphics pixel regression verifies transparent, opaque and half-alpha
 pixels plus borrowed-source ownership. No benchmark limits change.
+
+The head-14 benchmark log explicitly reports `npot=false` on the ES1 ANGLE
+emulator. Its per-turn uploads still took a median 149 ms, so native-size-only
+optimizations did not address this compatibility lane. The opaque path now
+allocates white power-of-two GPU backing once, then uploads only the original
+owned full-resolution bitmap into that storage. The original UV range still
+clips to the source; white padding preserves the former backing at filtered
+edges. Front/back single-pass drawing also applies to this lane. Storage
+reuse additionally requires matching source dimensions, preventing old ink
+from entering the filtered border after a viewport shrinks within the same
+power-of-two bucket. Context, format or type changes still allocate normally.
+The library's default transparent-padding API is unchanged. A native-graphics
+regression verifies raw owned ink, compatibility UVs and source ownership;
+real-GL LTR/RTL tests and unchanged performance limits must validate this head.

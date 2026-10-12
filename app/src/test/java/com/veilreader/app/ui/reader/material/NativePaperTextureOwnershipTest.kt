@@ -74,4 +74,28 @@ class NativePaperTextureOwnershipTest {
         texture.recycle()
         page.recycle()
     }
+
+    @Test fun opaqueCompatibilityUploadsUseOwnedInkWithoutPerTurnCpuPadding() {
+        val source = Bitmap.createBitmap(3, 5, Bitmap.Config.ARGB_8888)
+        source.eraseColor(Color.WHITE)
+        source.setPixel(1, 2, Color.BLACK)
+        val owned = nativePaperOwnedOpaqueTexture(source)
+        val page = CurlPage()
+        page.setTexture(owned, CurlPage.SIDE_BOTH)
+        val coordinates = RectF()
+        val upload = page.getUploadTexture(coordinates, CurlPage.SIDE_FRONT)
+        assertSame(owned, upload)
+        assertEquals(3, upload.width)
+        assertEquals(5, upload.height)
+        assertEquals(RectF(0f, 0f, 0.75f, 0.625f), coordinates)
+        assertEquals(4, (upload.width / coordinates.right).toInt())
+        assertEquals(8, (upload.height / coordinates.bottom).toInt())
+        assertEquals(Color.BLACK, upload.getPixel(1, 2))
+        assertFalse(upload.hasAlpha())
+        page.recycle()
+        assertTrue(owned.isRecycled)
+        assertFalse(source.isRecycled)
+        assertEquals(Color.BLACK, source.getPixel(1, 2))
+        source.recycle()
+    }
 }

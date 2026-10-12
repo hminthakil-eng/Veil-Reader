@@ -7,8 +7,10 @@ Veil Reader reuses CurlMesh and CurlPage. CurlMesh was adapted to prepare
 textures before applying finger geometry, use linear texture filtering, and
 compose premultiplied textures/black shadows into a transparent TextureView.
 CurlMesh also reuses compatible GPU texture storage and skips redundant blank
-backing passes for opaque native-size textures. CurlPage was adapted to
-upload exact-size owned textures when the GL context advertises NPOT support;
-older contexts retain the original power-of-two texture path. Readium pixels
+backing passes for opaque textures. CurlPage was adapted to return owned
+source pixels with exact-size or power-of-two UVs. NPOT-supporting contexts
+upload native-size textures; older contexts initialize white power-of-two
+storage once per source/storage size and update only source pixels each turn.
+The original transparent-padding path remains available by default. Readium pixels
 are never downsampled. The Readium integration, lifecycle/bitmap leases and
 finger endpoint solver are separate Veil Reader implementations.

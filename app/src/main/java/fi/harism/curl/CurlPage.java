@@ -129,6 +129,22 @@ public class CurlPage {
 	}
 
 	/**
+	 * Veil opaque-sheet path: return the owned source without allocating a
+	 * padded CPU bitmap. CurlMesh allocates compatible white GPU storage once.
+	 * UVs still restrict sampling to the original full-resolution image.
+	 */
+	public Bitmap getUploadTexture(RectF textureRect, int side) {
+		Bitmap bitmap = side == SIDE_FRONT ? mTextureFront : mTextureBack;
+		int width = bitmap.getWidth();
+		int height = bitmap.getHeight();
+		int storageWidth = mExactSizeTextures ? width : getNextHighestPO2(width);
+		int storageHeight = mExactSizeTextures ? height : getNextHighestPO2(height);
+		textureRect.set(0f, 0f, (float) width / storageWidth,
+				(float) height / storageHeight);
+		return bitmap;
+	}
+
+	/**
 	 * Returns true if textures have changed.
 	 */
 	public boolean getTexturesChanged() {
