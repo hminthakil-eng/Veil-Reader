@@ -5,6 +5,7 @@ import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
@@ -17,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.BuildConfig
@@ -81,6 +84,8 @@ internal class PaperCurlState {
         initialProfile = MaterialPageEngineRollout.selectedProfile()
     )
 
+    internal val destinationPreview = PaperDestinationPreviewState()
+
     val snapshotSourceRevision: Long
         get() = materialEngine.snapshotSourceRevision
 
@@ -122,6 +127,7 @@ internal class PaperCurlState {
 
     fun invalidateSnapshotSource() {
         materialEngine.invalidateSnapshotSource()
+        destinationPreview.invalidate()
     }
 
     fun begin(
@@ -156,6 +162,7 @@ internal class PaperCurlState {
             this.side = side
             this.direction = direction
             active = true
+            destinationPreview.begin(direction, snapshotSourceRevision, view.width, view.height)
             performancePhase = PaperPerformancePhase.DRAG
         } else {
             performancePhase = PaperPerformancePhase.IDLE
@@ -214,6 +221,7 @@ internal class PaperCurlState {
             materialEngine.clear()
         } finally {
             active = false
+            destinationPreview.end()
             performancePhase = PaperPerformancePhase.IDLE
         }
     }
@@ -221,15 +229,18 @@ internal class PaperCurlState {
     fun clearImmediately() {
         materialEngine.clearImmediately()
         active = false
+        destinationPreview.end()
         performancePhase = PaperPerformancePhase.IDLE
     }
 
     fun releaseBufferIfIdle() {
         materialEngine.releaseBufferIfIdle()
+        if (!active) destinationPreview.release()
     }
 
     fun dispose() {
         materialEngine.dispose()
+        destinationPreview.release()
         active = false
         performancePhase = PaperPerformancePhase.IDLE
     }
@@ -253,6 +264,19 @@ internal fun PaperCurlOverlay(
     // A nested GLTextureView must not occlude Readium's native touch recipient.
     // Share sibling hit-testing at the full visual overlay boundary.
     Box(modifier = modifier.readerVisualOnlyInput()) {
+        // The adjacent page lies UNDER the actual source leaf. Never upload it
+        // as the reverse of that leaf. Pin it for this gesture, including release.
+        val destination = state.destinationPreview.activeSnapshot
+        if (BuildConfig.NATIVE_PAPER_REBUILD && state.active &&
+            presentedEpoch == state.materialEngine.sheetEpoch && destination != null &&
+            !destination.bitmap.isRecycled) {
+            val ink = androidx.compose.runtime.remember(destination) { destination.bitmap.asImageBitmap() }
+            Canvas(Modifier.fillMaxSize().readerVisualOnlyAccessibility()) {
+                if (size.width.toInt() == ink.width && size.height.toInt() == ink.height) {
+                    drawImage(ink, dstSize = IntSize(ink.width, ink.height))
+                }
+            }
+        }
         // Explicit build selection, never an automatic fallback after failure.
         // The release gate and original renderer remain unchanged for rollback.
         if (BuildConfig.NATIVE_PAPER_REBUILD) {

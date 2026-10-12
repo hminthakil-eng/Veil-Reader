@@ -15,6 +15,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.veilreader.app.debug.NativePaperReaderActivity
+import com.veilreader.app.ui.screens.PaperPreviewContainer
+import com.veilreader.app.ui.screens.PaperTurnDirection
+import com.veilreader.app.ui.screens.paperPreviewSamePage
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -70,7 +73,9 @@ class NativePaperRealReaderInstrumentedTest {
             fun native(): NativeMaterialPageCurlView? = views(host.window.decorView)
                 .filterIsInstance<NativeMaterialPageCurlView>().firstOrNull()
             fun navigator(): EpubNavigatorFragment? = fragments(host.supportFragmentManager.fragments)
-                .filterIsInstance<EpubNavigatorFragment>().firstOrNull()
+                .filterIsInstance<EpubNavigatorFragment>().firstOrNull { it.tag?.startsWith("reader-") == true }
+            fun previews(): PaperPreviewContainer? = views(host.window.decorView)
+                .filterIsInstance<PaperPreviewContainer>().firstOrNull()
             fun sourceWeb(): WebView? = views(navigator()?.publicationView ?: host.window.decorView)
                 .filterIsInstance<WebView>().firstOrNull {
                     val visible = Rect()
@@ -121,6 +126,22 @@ class NativePaperRealReaderInstrumentedTest {
                     if (rtl) ReadingProgression.RTL else ReadingProgression.LTR,
                     navigator()?.overflow?.value?.readingProgression)
             }
+            waitUntil("Independent adjacent-page ink prepared without moving the real reader") {
+                var prepared = false
+                instrumentation.runOnMainSync {
+                    val current = navigator()?.currentLocator?.value
+                    val next = previews()?.previews?.prepared(PaperTurnDirection.FORWARD)
+                    prepared = current != null && next != null &&
+                        paperPreviewSamePage(next.origin, current) &&
+                        !paperPreviewSamePage(next.origin, next.destination) &&
+                        sourceInkFraction(next.bitmap) > 0.01
+                }
+                prepared
+            }
+            instrumentation.runOnMainSync {
+                assertEquals(0f, requireNotNull(previews()).alpha, 0f)
+                assertFalse(requireNotNull(previews()).isFocusable)
+            }
             val original = requireNotNull(locator())
             val bounds = Rect()
             instrumentation.runOnMainSync {
@@ -153,6 +174,13 @@ class NativePaperRealReaderInstrumentedTest {
                 acquired
             }
             assertEquals("A held fold must never navigate", original, locator())
+            var predictedDestination: org.readium.r2.shared.publication.Locator? = null
+            instrumentation.runOnMainSync {
+                val adjacent = requireNotNull(previews()?.previews?.activeSnapshot)
+                predictedDestination = adjacent.destination
+                assertTrue(paperPreviewSamePage(adjacent.origin, requireNotNull(navigator()).currentLocator.value))
+                saveCapture("$prefix-00-independent-next-page.png", adjacent.bitmap)
+            }
             var sourceCopy: Bitmap? = null
             instrumentation.runOnMainSync {
                 sourceCopy = requireNotNull(native()?.currentSourceSnapshot).copy(Bitmap.Config.ARGB_8888, false)
@@ -191,6 +219,10 @@ class NativePaperRealReaderInstrumentedTest {
             SystemClock.sleep(900)
             val committed = locator()
             assertNotEquals(original, committed)
+            instrumentation.runOnMainSync {
+                assertTrue("Independent preview must predict the actual released page",
+                    paperPreviewSamePage(requireNotNull(predictedDestination), requireNotNull(navigator()).currentLocator.value))
+            }
             SystemClock.sleep(300)
             assertEquals("A single release must settle once", committed, locator())
             screenshot("$prefix-04-committed.png").recycle()

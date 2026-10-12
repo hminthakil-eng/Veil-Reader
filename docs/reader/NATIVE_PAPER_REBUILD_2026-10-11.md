@@ -71,11 +71,25 @@ phone recording are required to attribute an individual report.
   accessibility paging; this is reported as REDUCED_MOTION instead of false READY.
   The English/Persian appearance description explains this active system policy.
 
-The live source page stays underneath a held fold. After release, Readium paints
-the destination under the retained source leaf. **Adjacent-destination preview
-during a held drag is not implemented**; doing it through the live navigator would
-reintroduce the chapter/touchend defect. Independent offscreen snapshot capture is
-a separate enhancement, not a claimed capability of this candidate.
+The continuation adds an independent Readium preview navigator in an invisible,
+attached, equally sized container. It prepares adjacent forward/backward ink while
+the live reader is idle, using the same publication/preferences. It owns no touch,
+accessibility focus, progress collector or publication close. Actual pagination,
+changed locator and WebView visual readiness precede capture. The destination is
+drawn **below** the native source leaf, never on its reverse. A source revision,
+viewport and direction fence rejects stale captures; a gesture pins its destination
+through cancellation/release. Invalidation drops prepared references, while the
+pinned image survives the live commit. Published bitmaps are not recycled under
+Compose/RenderThread. Missing/cold previews retain the existing live underlay;
+this is recorded as unprepared preview, not a fabricated adjacent page.
+
+The quick appearance panel presents four literal navigation choices together,
+with separate previews/descriptions: Paged, Paper, Slide and Scroll. Persistence,
+advanced controls, the release rollout gate and reduced-motion policy remain.
+Large text and narrow windows use one column instead of truncating the choices.
+
+This continuation requires new exact-source Android/device/performance evidence;
+the `da68cfba` results below apply to the preceding implementation only.
 
 ## Verification
 

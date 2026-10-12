@@ -456,6 +456,7 @@ fun ReaderScreen(
     val paperRendererUnavailableMessage = stringResource(R.string.reader_paper_renderer_unavailable)
     val paperUseSlideLabel = stringResource(R.string.reader_paper_use_slide)
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
+    val paperPreviewNavigator = remember(opened.book.id, readerSessionInstanceId) { PaperPreviewNavigator() }
     val performanceRootView = activity.window.decorView
     LaunchedEffect(
         performanceRootView,
@@ -726,6 +727,7 @@ fun ReaderScreen(
         reducedMotion,
         paperCurlState.active,
         paperCurlState.snapshotSourceRevision,
+        paperPreviewNavigator.navigator,
         readerLifecycleResumed,
         readerSessionInstanceId
     ) {
@@ -759,6 +761,18 @@ fun ReaderScreen(
                         currentSessionInstanceId = latestReaderSessionInstanceId.value,
                         expectedSessionInstanceId = readerSessionInstanceId
                     )
+            }
+            if (BuildConfig.NATIVE_PAPER_REBUILD && nav is EpubNavigatorFragment) {
+                paperPreviewNavigator.prepare(
+                    source = nav,
+                    preferences = presentedReaderAppearance.toEpubPreferences(activeFixedLayoutSpread),
+                    state = paperCurlState,
+                    isCurrent = {
+                        readerLifecycleResumed && readerSessionReady &&
+                            lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                            latestReaderSessionInstanceId.value == readerSessionInstanceId
+                    }
+                )
             }
         }
     }
@@ -2922,6 +2936,7 @@ fun ReaderScreen(
         navigator,
         opened.book.id,
         bookHighlights,
+        paperPreviewNavigator.navigator,
         presentedReaderAppearance.theme
     ) {
         val decorable = navigator as? DecorableNavigator ?: return@LaunchedEffect
@@ -2936,6 +2951,7 @@ fun ReaderScreen(
             )
         }
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
+        paperPreviewNavigator.navigator?.applyDecorations(decorations, HIGHLIGHT_GROUP)
         if (opened.format == BookFormat.EPUB) {
             paperCurlState.invalidateSnapshotSource()
         }
@@ -3064,6 +3080,21 @@ fun ReaderScreen(
                 }
             }
     ) {
+        if (BuildConfig.NATIVE_PAPER_REBUILD && readerSessionReady && readerLifecycleResumed &&
+            !fixedLayoutPublication && opened.format == BookFormat.EPUB &&
+            presentedReaderAppearance.navigationMode == ReaderNavigationMode.PAPER_CURL && !reducedMotion) {
+            ReaderPaperDestinationPreviewHost(
+                activity = activity,
+                publication = opened.publication,
+                initialLocator = (navigator as? EpubNavigatorFragment)?.currentLocator?.value
+                    ?: opened.initialLocator,
+                initialPreferences = presentedReaderAppearance.toEpubPreferences(activeFixedLayoutSpread),
+                owner = paperPreviewNavigator,
+                state = paperCurlState.destinationPreview,
+                tag = "paper-preview-$readerSessionInstanceId",
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         ReaderFragmentHost(
             activity = activity,
             fragmentFactory = fragmentFactory,
@@ -4886,11 +4917,6 @@ internal fun EpubAppearancePanel(
     )
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
     val textSizeLabel = stringResource(R.string.settings_text_size)
-    val quickReadingMode = if (capabilities.continuousScrollEditable) {
-        draft.readingMode
-    } else {
-        ReaderReadingMode.PAGED
-    }
 
     LaunchedEffect(appearance) {
         when {
@@ -5174,54 +5200,15 @@ internal fun EpubAppearancePanel(
                 text = stringResource(R.string.settings_reading_mode_title),
                 strong = true
             )
-            ReaderReadingModeSelector(
-                selected = quickReadingMode,
+            ReaderNavigationModeSelector(
+                selected = if (capabilities.fixedLayout) ReaderNavigationMode.PAGED else draft.navigationMode,
                 scrollEnabled = capabilities.continuousScrollEditable,
-                onSelect = { mode ->
-                    updateDraft(draft.withReadingMode(mode))
-                }
+                paperEnabled = !capabilities.fixedLayout && MaterialPageEngineRollout.isEnabled(),
+                slideEnabled = !capabilities.fixedLayout,
+                onSelect = { mode -> updateDraft(draft.withNavigationMode(mode)) }
             )
-            Text(
-                stringResource(
-                    if (quickReadingMode == ReaderReadingMode.SCROLL) {
-                        R.string.settings_mode_scroll_description
-                    } else {
-                        R.string.settings_reading_mode_paged_description
-                    }
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            BrassRule(Modifier.fillMaxWidth())
-
-            VeilMicroLabel(
-                text = stringResource(R.string.settings_page_turn_title),
-                strong = true
-            )
-            if (quickReadingMode == ReaderReadingMode.SCROLL) {
-                ReaderCapabilityNotice(
-                    text = stringResource(R.string.settings_page_turn_scroll_hint)
-                )
-            } else {
-                val paperTurnAvailable = MaterialPageEngineRollout.isEnabled()
-                ReaderPageTurnSelector(
-                    selected = draft.pageTurnStyle,
-                    paperEnabled = paperTurnAvailable,
-                    onSelect = { style ->
-                        updateDraft(draft.withPageTurnStyle(style))
-                    }
-                )
-                if (!paperTurnAvailable) {
-                    ReaderCapabilityNotice(
-                        text = stringResource(R.string.settings_mode_curl_unavailable)
-                    )
-                }
-                Text(
-                    localizedPageTurnStyleDescription(draft.pageTurnStyle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (!capabilities.fixedLayout && !MaterialPageEngineRollout.isEnabled()) {
+                ReaderCapabilityNotice(text = stringResource(R.string.settings_mode_curl_unavailable))
             }
             BrassRule(Modifier.fillMaxWidth())
             ReaderMenuAutoHideControl(readerChromeAutoHideEnabled, onReaderChromeAutoHideChange)
@@ -6132,6 +6119,54 @@ internal fun localizedPageTurnStyleDescription(style: PageTurnStyle): String =
         }
     )
 
+/** Quick settings expose the four actual dispatch modes in one discoverable group. */
+@Composable
+internal fun ReaderNavigationModeSelector(
+    selected: ReaderNavigationMode,
+    scrollEnabled: Boolean,
+    paperEnabled: Boolean,
+    slideEnabled: Boolean = true,
+    onSelect: (ReaderNavigationMode) -> Unit
+) {
+    val choices = listOf(ReaderNavigationMode.PAGED, ReaderNavigationMode.PAPER_CURL,
+        ReaderNavigationMode.SLIDE, ReaderNavigationMode.SCROLL)
+    @Composable fun choice(mode: ReaderNavigationMode, modifier: Modifier) {
+        val enabled = when (mode) {
+            ReaderNavigationMode.PAPER_CURL -> paperEnabled
+            ReaderNavigationMode.SCROLL -> scrollEnabled
+            ReaderNavigationMode.SLIDE -> slideEnabled
+            else -> true
+        }
+        ReaderModeChoice(
+            label = stringResource(when (mode) {
+                ReaderNavigationMode.PAGED -> R.string.settings_mode_paged
+                ReaderNavigationMode.PAPER_CURL -> R.string.settings_mode_curl
+                ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide
+                ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll
+            }),
+            description = stringResource(when (mode) {
+                ReaderNavigationMode.PAGED -> R.string.settings_mode_paged_description
+                ReaderNavigationMode.PAPER_CURL -> R.string.settings_mode_curl_description
+                ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide_description
+                ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll_description
+            }),
+            previewMode = mode, active = selected == mode, enabled = enabled,
+            modifier = modifier, onClick = { if (enabled) onSelect(mode) }
+        )
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(maxWidth.value.toInt(), LocalDensity.current.fontScale, 2)
+        Column(Modifier.fillMaxWidth().selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (stacked) choices.forEach { choice(it, Modifier.fillMaxWidth()) }
+            else choices.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pair.forEach { choice(it, Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 internal fun ReaderReadingModeSelector(
     selected: ReaderReadingMode,
@@ -6303,11 +6338,12 @@ private fun ReaderModeChoice(
     active: Boolean,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    description: String? = null,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = modifier
-            .heightIn(min = 58.dp)
+            .heightIn(min = if (description == null) 58.dp else 106.dp)
             .selectable(
                 selected = active,
                 enabled = enabled,
@@ -6354,6 +6390,14 @@ private fun ReaderModeChoice(
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
+            if (description != null) {
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 0.86f else 0.38f),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
@@ -6672,7 +6716,7 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
-private const val READER_HIGHLIGHT_ALPHA = 0.34
+internal const val READER_HIGHLIGHT_ALPHA = 0.34
 
 
 internal fun epubPreferencesMayRelayout(

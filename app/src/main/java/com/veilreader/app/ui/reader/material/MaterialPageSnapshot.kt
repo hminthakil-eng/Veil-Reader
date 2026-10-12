@@ -2,6 +2,7 @@ package com.veilreader.app.ui.reader.material
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.os.SystemClock
 import android.os.Trace
 import android.view.View
@@ -46,7 +47,8 @@ internal fun materialPageVisibleWebView(root: View): WebView? {
         root.isShown &&
         root.isAttachedToWindow &&
         root.width > 0 &&
-        root.height > 0
+        root.height > 0 &&
+        root.getGlobalVisibleRect(Rect())
     ) {
         return root
     }
