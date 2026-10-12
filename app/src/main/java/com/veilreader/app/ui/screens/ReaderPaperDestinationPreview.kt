@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
+import androidx.core.graphics.createBitmap
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.ui.reader.material.MaterialPageSnapshotCapture
 import com.veilreader.app.ui.reader.material.ViewDrawImmediateMaterialPageSnapshotProvider
@@ -170,7 +171,7 @@ internal class PaperPreviewNavigator {
                 val destination = preview.currentLocator.value
                 if (!awaitMaterialPageSourceVisualReady(preview.publicationView, revision, 1_000L)) continue
                 if (!valid() || !paperPreviewSamePage(destination, preview.currentLocator.value)) continue
-                val bitmap = try { Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888) }
+                val bitmap = try { createBitmap(width, height, Bitmap.Config.ARGB_8888) }
                 catch (_: OutOfMemoryError) {
                     releaseHistory()
                     state.destinationPreview.invalidate()
@@ -203,7 +204,10 @@ internal class PaperPreviewNavigator {
 }
 
 /** Remains laid out and attached for WebView paint, but is invisible and owns no input/focus. */
-internal class PaperPreviewContainer(context: Context, val previews: PaperDestinationPreviewState) :
+internal class PaperPreviewContainer @JvmOverloads constructor(
+    context: Context,
+    val previews: PaperDestinationPreviewState = PaperDestinationPreviewState()
+) :
     FrameLayout(context) {
     init {
         alpha = 0f

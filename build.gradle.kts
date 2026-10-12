@@ -26,7 +26,7 @@ plugins {
 // A normal minimum-version constraint also permits a newer upstream patch.
 allprojects {
     configurations.configureEach {
-        if (name.startsWith("lint", ignoreCase = true)) {
+        if (name == "androidLintTool") {
             val toolConfiguration = name
             listOf("bcprov-jdk18on", "bcutil-jdk18on", "bcpkix-jdk18on").forEach { artifact ->
                 project.dependencies.constraints.add(

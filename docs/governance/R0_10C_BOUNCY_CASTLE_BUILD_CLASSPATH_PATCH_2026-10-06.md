@@ -36,6 +36,27 @@ The root buildscript constrains this build-time family to 1.85:
 The three artifacts are intentionally kept aligned. This is the minimum patched family,
 which minimizes compatibility distance from AGP's current transitive version.
 
+### 2026-10-12 — independent Android Lint resolution
+
+The root constraint did not cover the full submitted graph. An exact-base snapshot of
+`bfac95f4b82e23b9f277f985bf3282f3e9c584fb` contained both 1.85 and 1.80.2. Gradle's
+configuration-attribution log on `502a92d4cf292817021f18efd12afc9d8b75d493` identified
+all three old artifacts in `:app:androidLintTool` and `:benchmark:androidLintTool`.
+The manifest filename was not the owner of that resolution.
+
+The root build now adds minimum 1.85 constraints to those `androidLintTool`
+configurations as well. The settings-classpath experiment was removed because it
+did not affect the independently resolved Lint graph. No configuration is excluded
+from submission. The workflow preserves configuration attribution and the generated
+snapshot, then checks the exact source SHA, a nonempty graph, minimum patched versions
+and alignment of the entire family. A patched duplicate cannot conceal an old node.
+
+Dependency Review also requires a snapshot of the exact PR base. A same-repository
+PR-only job checks out and submits that base with the head's detector correlator;
+it does not edit the base branch. Review's clean delta alone is insufficient when
+the base already contains the vulnerable tooling, so the independent full-head
+graph check remains mandatory. See PR #509 for the latest exact-head CI receipts.
+
 ## Non-change
 
 - no app `implementation` dependency is added;

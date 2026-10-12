@@ -88,8 +88,53 @@ with separate previews/descriptions: Paged, Paper, Slide and Scroll. Persistence
 advanced controls, the release rollout gate and reduced-motion policy remain.
 Large text and narrow windows use one column instead of truncating the choices.
 
-This continuation requires new exact-source Android/device/performance evidence;
-the `da68cfba` results below apply to the preceding implementation only.
+The old `da68cfba` receipts belong to the preceding implementation. The continuation
+has its own real-book and UI checkpoint below. PR #509 maintains the latest
+exact-source CI receipts; physical acceptance is still separate and unverified.
+
+## 2026-10-12 — independent destination and reading controls
+
+Runtime checkpoint: `43193650e5ff7314d125b410d348e7ac25fc3399`.
+
+| Check | Receipt |
+|---|---|
+| Unit suite | 1058 tests, zero failures/errors/skips; [Android CI](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296085) |
+| Actual-book, Room and UI instrumentation | 182 tests, zero failures/errors/skips; [Storage](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296084) |
+| Abrupt-process durability | 18 cycles per scenario, 144 successful scenario cycles; [Durability](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296121) |
+| Emulator performance | startup 736.713 ms, p95 250 ms / p99 300 ms, 202.5 median frame samples; unchanged absolute and main-relative limits pass; [Performance](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296079) |
+| Dependency review | Clean delta after exact-base submission, but full-head graph still found independently resolved old Lint crypto; this is not security acceptance |
+
+The frame percentiles are slower than `da68cfba` (150/200 ms). They remain an open
+quality cost of preparing a second navigator, even though the existing emulator
+budgets pass. No limits or pixel resolution were relaxed. Physical smoothness is
+not inferred from this receipt.
+
+The two real-book cases now require independently captured destination ink,
+greater than 95% matching exposed glyph pixels in the held native fold, and a
+predicted destination matching the committed live locator. They test holding,
+reversal/cancellation, forward/backward release and actual cross-chapter release
+in both LTR and RTL. Captures include the independent page, held chapter boundary
+and committed next chapter. The invisible navigator is also checked for alpha
+and blocked focus. Both held-book images and the RTL chapter-boundary image were
+visually inspected. ZIP sizes, SHA-256 and CRCs were verified before analysis.
+
+After exactly one forward revision, a frozen full-resolution source can supply
+the previous-page underlay. Source identity, settings, viewport and revision
+must still match; reflow/annotation invalidations reject it. Missing/cold captures
+and allocation pressure retain the live source-underlay path. No engine/mode
+switch or live navigation occurs inside the preview preparer.
+
+The four quick-mode choices retain Grayfog styling, show the active selection,
+explain the real Reduced Motion policy and stack at narrow widths/large text.
+Their Android tests select each real mode, require correct selected state and
+reject disabled modes. Two-column cards share row height. Reader access controls
+hide during an active Paper/Slide gesture so they do not obscure the book.
+
+The build-crypto follow-up targets the actual `androidLintTool` configuration in
+both modules. Exact-head graph verification is mandatory in addition to Review's
+delta; see the [tooling record](../governance/R0_10C_BOUNCY_CASTLE_BUILD_CLASSPATH_PATCH_2026-10-06.md).
+The final source must pass Android/lint/release packaging with that patched tooling.
+Production native rollout remains OFF, PR remains Draft, and #408 remains open.
 
 ## Verification
 
