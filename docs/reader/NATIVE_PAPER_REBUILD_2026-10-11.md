@@ -136,6 +136,21 @@ delta; see the [tooling record](../governance/R0_10C_BOUNCY_CASTLE_BUILD_CLASSPA
 The final source must pass Android/lint/release packaging with that patched tooling.
 Production native rollout remains OFF, PR remains Draft, and #408 remains open.
 
+The chapter-paint follow-up tightens the preview's readiness witness. Readium can
+announce a new resource locator before ViewPager lays out that resource's child.
+The preparer awaits the selected Readium document, then requires its exact URL in
+the actually visible WebView and that child's visual-state callback. An attached
+old chapter cannot acknowledge the new document. This is an observed URL/layout
+barrier; the polling interval is not treated as evidence of paint.
+
+Both native book tests additionally compare prepared next-chapter glyph pixels
+against the fully released live chapter, after the source leaf and pinned underlay
+clear and the actual chapter-two DOM crosses its visual-state callback. A fresh
+acquired epoch is mandatory at the boundary. Captures now export the independent
+chapter and actual settled chapter ink separately; immediate locator-change frames
+are not mislabeled as fully painted chapter evidence. See PR #509 for the new
+exact-head results of this stronger gate.
+
 ## Verification
 
 Local: reading-policy checks (39), canonical paper guard (6), shell syntax and

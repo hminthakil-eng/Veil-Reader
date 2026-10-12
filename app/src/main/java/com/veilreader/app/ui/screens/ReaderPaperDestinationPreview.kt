@@ -37,6 +37,7 @@ import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import com.veilreader.app.ui.reader.material.nextMaterialPageSnapshotRevision
 import kotlin.math.abs
+import org.json.JSONTokener
 
 internal data class PaperDestinationSnapshot(
     val bitmap: Bitmap,
@@ -92,6 +93,18 @@ internal class PaperPreviewNavigator {
         override fun onPageChanged(pageIndex: Int, totalPages: Int, locator: Locator) {
             pages.value += 1L
         }
+    }
+
+    private suspend fun awaitSelectedDocument(preview: EpubNavigatorFragment, revision: Long): Boolean {
+        // This API awaits the current Readium page's load. Match that document
+        // URL to the visible child before asking for its visual-state callback.
+        // A chapter locator alone can precede the ViewPager's actual layout.
+        val value = preview.evaluateJavascript(
+            "document.readyState === 'complete' && !!document.body ? document.location.href : null"
+        ) ?: return false
+        val url = JSONTokener(value).nextValue() as? String ?: return false
+        return awaitMaterialPageSourceVisualReady(preview.publicationView, revision, 1_000L,
+            expectedWebViewUrl = url)
     }
 
     suspend fun prepare(
@@ -152,7 +165,7 @@ internal class PaperPreviewNavigator {
                 }
                 // A locator notification is not evidence of paint. Wait before navigation
                 // so a newly loaded resource cannot use its provisional pagination.
-                if (!awaitMaterialPageSourceVisualReady(preview.publicationView, revision, 1_000L)) {
+                if (!awaitSelectedDocument(preview, revision)) {
                     return@withTimeoutOrNull
                 }
                 if (!valid()) return@withTimeoutOrNull
@@ -169,7 +182,7 @@ internal class PaperPreviewNavigator {
                 } != null
                 if (!reached || !valid()) continue
                 val destination = preview.currentLocator.value
-                if (!awaitMaterialPageSourceVisualReady(preview.publicationView, revision, 1_000L)) continue
+                if (!awaitSelectedDocument(preview, revision)) continue
                 if (!valid() || !paperPreviewSamePage(destination, preview.currentLocator.value)) continue
                 val bitmap = try { createBitmap(width, height, Bitmap.Config.ARGB_8888) }
                 catch (_: OutOfMemoryError) {

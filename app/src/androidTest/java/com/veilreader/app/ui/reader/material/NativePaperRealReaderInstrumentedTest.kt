@@ -288,6 +288,16 @@ class NativePaperRealReaderInstrumentedTest {
                 }
                 ready
             }
+            var chapterDestination: Bitmap? = null
+            var chapterDestinationLocator: org.readium.r2.shared.publication.Locator? = null
+            var chapterEpoch = 0L
+            instrumentation.runOnMainSync {
+                val adjacent = requireNotNull(previews()?.previews?.prepared(PaperTurnDirection.FORWARD))
+                chapterDestination = adjacent.bitmap
+                chapterDestinationLocator = adjacent.destination
+                chapterEpoch = native()?.lastAcquiredSheetEpoch ?: 0L
+                saveCapture("$prefix-07-independent-next-chapter.png", adjacent.bitmap)
+            }
             down = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, x, y, down)
             for (step in 1..16) {
@@ -296,7 +306,7 @@ class NativePaperRealReaderInstrumentedTest {
             }
             waitUntil("Chapter-boundary source sheet acquired") {
                 var ready = false
-                instrumentation.runOnMainSync { ready = (native()?.currentAcquiredSheetEpoch ?: 0L) > 0L }
+                instrumentation.runOnMainSync { ready = (native()?.currentAcquiredSheetEpoch ?: 0L) > chapterEpoch }
                 ready
             }
             instrumentation.runOnMainSync {
@@ -304,12 +314,57 @@ class NativePaperRealReaderInstrumentedTest {
                     chapterHref, navigator()?.currentLocator?.value?.href)
                 assertNotEquals(chapterHref, requireNotNull(previews()?.previews?.activeSnapshot).destination.href)
             }
-            screenshot("$prefix-07-chapter-boundary-held.png").recycle()
+            val boundaryHeld = screenshot("$prefix-07-chapter-boundary-held.png")
+            try {
+                instrumentation.runOnMainSync {
+                    val curlBounds = Rect()
+                    assertTrue(requireNotNull(native()).getGlobalVisibleRect(curlBounds))
+                    assertTrue("The revealed chapter must contain the prepared destination ink",
+                        revealedDestinationInk(boundaryHeld, requireNotNull(chapterDestination), curlBounds, rtl) > 0.95)
+                }
+            } finally { boundaryHeld.recycle() }
             inject(MotionEvent.ACTION_UP, x + direction * bounds.width() * 0.65f, y, down)
             waitUntil("Release commits the actual next chapter") {
                 var changed = false
                 instrumentation.runOnMainSync { changed = navigator()?.currentLocator?.value?.href?.let { it != chapterHref } ?: false }
                 changed
+            }
+            waitUntil("Chapter release clears the actual source leaf and pinned underlay") {
+                var cleared = false
+                instrumentation.runOnMainSync {
+                    cleared = (native()?.currentAcquiredSheetEpoch ?: 0L) == 0L &&
+                        previews()?.previews?.activeSnapshot == null
+                }
+                cleared
+            }
+            waitUntil("The actual visible document is chapter two") {
+                var web: WebView? = null
+                instrumentation.runOnMainSync { web = sourceWeb() }
+                val title = org.json.JSONTokener(evaluate(web ?: return@waitUntil false, "document.title")).nextValue()
+                title == if (rtl) "فصل 2" else "Chapter 2"
+            }
+            val paintedChapter = CountDownLatch(1)
+            instrumentation.runOnMainSync {
+                requireNotNull(sourceWeb()).postVisualStateCallback(2L, object : WebView.VisualStateCallback() {
+                    override fun onComplete(requestId: Long) { paintedChapter.countDown() }
+                })
+            }
+            assertTrue("The real chapter must cross its visual-state barrier", paintedChapter.await(3, TimeUnit.SECONDS))
+            var actualChapter: Bitmap? = null
+            instrumentation.runOnMainSync {
+                val nav = requireNotNull(navigator())
+                assertTrue(paperPreviewSamePage(requireNotNull(chapterDestinationLocator), nav.currentLocator.value))
+                val view = nav.publicationView
+                actualChapter = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+                assertTrue(ViewDrawImmediateMaterialPageSnapshotProvider.capture(view,
+                    requireNotNull(actualChapter), 1L) is MaterialPageSnapshotCapture.Ready)
+            }
+            requireNotNull(actualChapter).let { actual ->
+                try {
+                    saveCapture("$prefix-08-actual-next-chapter-ink.png", actual)
+                    assertTrue("The independent chapter pixels must match the settled real chapter",
+                        matchingPageInk(requireNotNull(chapterDestination), actual) > 0.95)
+                } finally { actual.recycle() }
             }
             screenshot("$prefix-08-next-chapter.png").recycle()
         }
@@ -419,6 +474,26 @@ class NativePaperRealReaderInstrumentedTest {
             }
         }
         assertTrue("The revealed fixture region must contain real destination glyphs", ink > 100)
+        return matched.toDouble() / ink
+    }
+
+    private fun matchingPageInk(expected: Bitmap, actual: Bitmap): Double {
+        assertEquals(expected.width, actual.width)
+        assertEquals(expected.height, actual.height)
+        var ink = 0
+        var matched = 0
+        for (y in expected.height / 20 until expected.height * 17 / 20 step 3) {
+            for (x in expected.width / 10 until expected.width * 9 / 10 step 3) {
+                val pixel = expected.getPixel(x, y)
+                if (luminance(pixel) >= 170) continue
+                ink++
+                val other = actual.getPixel(x, y)
+                if (kotlin.math.abs(android.graphics.Color.red(pixel) - android.graphics.Color.red(other)) < 36 &&
+                    kotlin.math.abs(android.graphics.Color.green(pixel) - android.graphics.Color.green(other)) < 36 &&
+                    kotlin.math.abs(android.graphics.Color.blue(pixel) - android.graphics.Color.blue(other)) < 36) matched++
+            }
+        }
+        assertTrue("The chapter comparison must contain real glyphs", ink > 100)
         return matched.toDouble() / ink
     }
 
