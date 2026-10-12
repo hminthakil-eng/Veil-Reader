@@ -461,7 +461,12 @@ class ReaderPdfReliabilityInstrumentedTest {
             "${MediaStore.MediaColumns.DISPLAY_NAME} = ?",
             arrayOf(displayName),
         )
-        uiAutomation.executeShellCommand("rm -f /sdcard/Download/$displayName").close()
+        // executeShellCommand returns before the shell has necessarily exited.
+        // Drain its pipe before publishing a new fixture so the old-file cleanup
+        // cannot race with the MediaStore insert below.
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(
+            uiAutomation.executeShellCommand("rm -f /sdcard/Download/$displayName")
+        ).use { it.readBytes() }
 
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
