@@ -116,7 +116,7 @@ dependencies {
     // Media3 owns background TTS system integration: MediaSession, notification and media buttons.
     implementation("androidx.media3:media3-session:1.11.1")
     implementation("com.irurueta:irurueta-android-glutils:1.1.11")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
     // Neural TTS model packages ship as tar.bz2 upstream. Extraction is fail-closed in
     // ReaderTtsModelArchiveExtractor: no links, no traversal, bounded entry count/expanded bytes.
@@ -153,7 +153,7 @@ dependencies {
     testImplementation("androidx.compose.ui:ui-test-junit4:1.12.1")
     testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
     testImplementation("org.robolectric:robolectric:4.17")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 
     // Real Room verification runs on an Android emulator for data-layer changes.
     androidTestImplementation("androidx.test:core:1.7.0")
