@@ -130,9 +130,36 @@ Binary builds also carry the license and modification notice in
 `app/src/main/assets/open-source-licenses/`.
 
 Copied files: `CurlMesh.java`, `CurlPage.java` only; no source app, demo artwork,
-launcher or synthetic counters. `CurlPage` is unmodified. `CurlMesh` adaptations:
+launcher or synthetic counters. `CurlMesh` adaptations:
 extract texture preparation so first upload cannot flatten current drag geometry;
 use linear texture filtering for readable ink. Veil integration and endpoint
 solver are separate Kotlin files. Transparent host uses premultiplied texture
 and black-shadow blending, avoiding squared shadow alpha. No license/authentication/content-protection
 bypass and no copying of closed-source competitor methods.
+
+## 2026-10-12 — final performance and cold-cache corrections
+
+Exact source `51404d0d`: both actual English/Persian book curl tests passed.
+The storage suite had one unrelated but real cold-import progress failure
+(expected one durable update, received zero). A delayed empty Room cache
+snapshot could overwrite the optimistically published book after import,
+causing immediate progress/metadata writes to see no book. Import now waits
+for its committed row in the observed cache before reporting ready. A new
+six-wave real-Room test saves immediate progress through fresh collectors.
+
+Cold-start comparison now retains the animation-disabled main baseline;
+Reader frame smoke alone enables normal motion. Startup returned to 769.614 ms
+(main baseline 734.977 ms). Reader p95 250 ms / p99 350 ms passed absolute
+emulator limits, but p99 exceeded the relative limit by 50 ms. It is not a
+passing complete benchmark receipt.
+
+The mesh's original power-of-two path inflated a 1080 x 2400 ARGB sheet from
+10,368,000 to 33,554,432 texture bytes and allocated a padded bitmap every turn.
+On contexts advertising `GL_OES_texture_npot` or the compatible clamped/linear
+`GL_APPLE_texture_2D_limited_npot`, CurlPage now uploads the already-owned
+full-resolution bitmap directly. Other contexts keep power-of-two support.
+CurlMesh uses texSubImage2D only when existing storage dimensions, format and
+type match; new contexts/sizes/formats allocate normally, and failed uploads
+cannot establish reusable storage. No sampling resolution or budget is reduced.
+Texture ownership/ink/UV compatibility tests accompany the real-GL and frame
+gates. Updated Apache modification notice includes both adapted files.

@@ -38,6 +38,8 @@ public class CurlPage {
 	private Bitmap mTextureBack;
 	private Bitmap mTextureFront;
 	private boolean mTexturesChanged;
+	// Veil: native-size textures only when this GL context advertises NPOT.
+	private boolean mExactSizeTextures;
 
 	/**
 	 * Default constructor.
@@ -81,6 +83,11 @@ public class CurlPage {
 		// Bitmap original size.
 		int w = bitmap.getWidth();
 		int h = bitmap.getHeight();
+		if (mExactSizeTextures) {
+			textureRect.set(0f, 0f, 1f, 1f);
+			// This is already the mesh-owned copy, never Readium's borrowed buffer.
+			return bitmap;
+		}
 		// Bitmap size expanded to next power of two. This is done due to
 		// the requirement on many devices, texture width and height should
 		// be power of two.
@@ -99,6 +106,11 @@ public class CurlPage {
 		textureRect.set(0f, 0f, texX, texY);
 
 		return bitmapTex;
+	}
+
+	/** Veil: keep upstream power-of-two compatibility on older GL contexts. */
+	public void setExactSizeTextures(boolean supported) {
+		mExactSizeTextures = supported;
 	}
 
 	/**

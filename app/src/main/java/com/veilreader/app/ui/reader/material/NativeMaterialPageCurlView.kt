@@ -71,6 +71,7 @@ internal class NativeMaterialPageCurlView(
     private var mesh = CurlMesh(32)
     private var uploadedEpoch = 0L
     private var maxTextureSize = 0
+    private var supportsNpot = false
     private var aspect = 1f
     private var probeScheduled = false
     internal var lastAcquiredSheetEpoch = 0L
@@ -162,6 +163,9 @@ internal class NativeMaterialPageCurlView(
         val limit = IntArray(1)
         gl.glGetIntegerv(GL10.GL_MAX_TEXTURE_SIZE, limit, 0)
         maxTextureSize = limit[0]
+        supportsNpot = nativePaperSupportsNpot(gl.glGetString(GL10.GL_EXTENSIONS))
+        mesh.texturePage.setExactSizeTextures(supportsNpot)
+        ReaderTrace.event("paper_native_texture_policy", details = "npot=$supportsNpot max=$maxTextureSize")
         synchronized(lock) { draws.clear() }
     }
 
@@ -200,8 +204,8 @@ internal class NativeMaterialPageCurlView(
             if (current?.active == true && current.generation == generation && current.viewport == viewport) {
                 val source = current.bitmap ?: return
                 if (source.isRecycled || source.width != width || source.height != height ||
-                    Integer.highestOneBit(source.width - 1) * 2 > maxTextureSize ||
-                    Integer.highestOneBit(source.height - 1) * 2 > maxTextureSize) {
+                    nativePaperTextureExtent(source.width, supportsNpot) > maxTextureSize ||
+                    nativePaperTextureExtent(source.height, supportsNpot) > maxTextureSize) {
                     error("Native paper snapshot does not match the live viewport/texture limit")
                 }
                 if (uploadedEpoch != current.epoch) {

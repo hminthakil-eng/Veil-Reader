@@ -93,6 +93,11 @@ public class CurlMesh {
 	private boolean mTextureBack = false;
 	// Texture ids and other variables.
 	private int[] mTextureIds = null;
+	// Veil: reuse storage within this context; changed size/format allocates anew.
+	private final int[] mTextureWidths = new int[2];
+	private final int[] mTextureHeights = new int[2];
+	private final int[] mTextureFormats = new int[2];
+	private final int[] mTextureTypes = new int[2];
 	private final CurlPage mTexturePage = new CurlPage();
 	private final RectF mTextureRectBack = new RectF();
 	private final RectF mTextureRectFront = new RectF();
@@ -623,18 +628,17 @@ public class CurlMesh {
 		}
 
 		if (DRAW_TEXTURE && mTexturePage.getTexturesChanged()) {
+			mTextureBack = mTexturePage.hasBackTexture();
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[0]);
 			Bitmap texture = mTexturePage.getTexture(mTextureRectFront,
 					CurlPage.SIDE_FRONT);
-			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
+			uploadTexture(gl, texture, 0);
 			texture.recycle();
-
-			mTextureBack = mTexturePage.hasBackTexture();
 			if (mTextureBack) {
 				gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[1]);
 				texture = mTexturePage.getTexture(mTextureRectBack,
 						CurlPage.SIDE_BACK);
-				GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
+				uploadTexture(gl, texture, 1);
 				texture.recycle();
 			} else {
 				mTextureRectBack.set(mTextureRectFront);
@@ -644,6 +648,27 @@ public class CurlMesh {
 			reset();
 		}
 
+	}
+
+	private void uploadTexture(GL10 gl, Bitmap texture, int slot) {
+		int width = texture.getWidth();
+		int height = texture.getHeight();
+		int format = GLUtils.getInternalFormat(texture);
+		int type = GLUtils.getType(texture);
+		if (mTextureWidths[slot] == width && mTextureHeights[slot] == height
+				&& mTextureFormats[slot] == format && mTextureTypes[slot] == type) {
+			GLUtils.texSubImage2D(GL10.GL_TEXTURE_2D, 0, 0, 0, texture);
+		} else {
+			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
+		}
+		int error = gl.glGetError();
+		if (error != GL10.GL_NO_ERROR) {
+			throw new IllegalStateException("Paper texture upload failed: " + error);
+		}
+		mTextureWidths[slot] = width;
+		mTextureHeights[slot] = height;
+		mTextureFormats[slot] = format;
+		mTextureTypes[slot] = type;
 	}
 
 	public synchronized void onDrawFrame(GL10 gl) {

@@ -270,6 +270,11 @@ class LocalLibraryRepository internal constructor(
 
         if (result.duplicate) discardImportedArtifacts(book)
         val committed = result.book
+        // The cold Room collector can still deliver its earlier empty snapshot
+        // after the transaction. Publishing optimistically before that emission
+        // makes an immediate progress/metadata write see a missing book and drop it.
+        // Wait for this committed row before exposing the import as ready.
+        _books.first { snapshot -> snapshot.any { it.id == committed.id } }
         _books.value = listOf(committed) + _books.value.filterNot { it.id == committed.id }
         return result
     }
