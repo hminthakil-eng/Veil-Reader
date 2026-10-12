@@ -36,12 +36,12 @@ class QuantityResourcesTest {
     fun `Persian reading counts keep translated nouns and localized numbers`() {
         val resources = resources("fa")
         for (count in listOf(0, 1, 2)) {
-            assertEquals(String.format(Locale("fa"), "%d نشست", count),
+            assertEquals(String.format(Locale.forLanguageTag("fa"), "%d نشست", count),
                 resources.getQuantityString(R.plurals.book_detail_session_count, count, count))
         }
-        assertEquals(String.format(Locale("fa"), "%d جلد به سکوت رفته است", 1),
+        assertEquals(String.format(Locale.forLanguageTag("fa"), "%d جلد به سکوت رفته است", 1),
             resources.getQuantityString(R.plurals.library_quiet_volume_count, 1, 1))
-        assertEquals(String.format(Locale("fa"), "%d جلد به سکوت رفته‌اند", 2),
+        assertEquals(String.format(Locale.forLanguageTag("fa"), "%d جلد به سکوت رفته‌اند", 2),
             resources.getQuantityString(R.plurals.library_quiet_volume_count, 2, 2))
     }
 
@@ -88,7 +88,7 @@ class QuantityResourcesTest {
     private fun resources(language: String): Resources {
         val context = RuntimeEnvironment.getApplication()
         val configuration = Configuration(context.resources.configuration)
-        configuration.setLocales(LocaleList(Locale(language)))
+        configuration.setLocales(LocaleList(Locale.forLanguageTag(language)))
         return context.createConfigurationContext(configuration).resources
     }
 }

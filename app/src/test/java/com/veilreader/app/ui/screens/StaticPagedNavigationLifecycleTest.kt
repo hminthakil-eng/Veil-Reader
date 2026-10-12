@@ -27,8 +27,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalReadiumApi::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class,
-    kotlinx.coroutines.InternalCoroutinesApi::class)
+@OptIn(ExperimentalReadiumApi::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [37])
 class StaticPagedNavigationLifecycleTest {
@@ -177,6 +176,7 @@ class StaticPagedNavigationLifecycleTest {
         var failRestore = false
         var failSettlement = false
         var settlementReadFails = false
+        @OptIn(kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi::class)
         private val exposedLocator = object : StateFlow<Locator> by current {
             override val value: Locator
                 get() {
