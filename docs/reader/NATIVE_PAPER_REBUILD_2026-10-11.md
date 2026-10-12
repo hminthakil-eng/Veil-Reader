@@ -163,3 +163,16 @@ type match; new contexts/sizes/formats allocate normally, and failed uploads
 cannot establish reusable storage. No sampling resolution or budget is reduced.
 Texture ownership/ink/UV compatibility tests accompany the real-GL and frame
 gates. Updated Apache modification notice includes both adapted files.
+
+The next exact-head emulator run at `1a077bc4` passed all 1052 unit tests,
+180 instrumentation tests, Android build/lint and abrupt-process durability.
+Its p95 275 ms / p99 325 ms still exceeded the unchanged relative frame gates.
+The original mesh draws blank front/back backing and then paints each texture
+again. Native-size sheets now compose that identical white backing once into
+an owned full-resolution bitmap, preserving opaque ink and partial alpha; mesh
+front/back each render in one opaque pass. The tint/shading still multiplies
+that bitmap, which is algebraically the same result as the prior backing plus
+premultiplied texture. Padded compatibility textures keep the original passes
+because bilinear sampling at their transparent padding edge needs the backing.
+A native-graphics pixel regression verifies transparent, opaque and half-alpha
+pixels plus borrowed-source ownership. No benchmark limits change.

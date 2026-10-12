@@ -91,6 +91,8 @@ public class CurlMesh {
 	private int mSelfShadowCount;
 
 	private boolean mTextureBack = false;
+	// Veil: an opaque native-size texture already contains the white backing.
+	private boolean mOpaqueTexture = false;
 	// Texture ids and other variables.
 	private int[] mTextureIds = null;
 	// Veil: reuse storage within this context; changed size/format allocates anew.
@@ -671,6 +673,10 @@ public class CurlMesh {
 		mTextureTypes[slot] = type;
 	}
 
+	public void setOpaqueTexture(boolean opaque) {
+		mOpaqueTexture = opaque;
+	}
+
 	public synchronized void onDrawFrame(GL10 gl) {
 		prepareTexture(gl);
 
@@ -704,11 +710,13 @@ public class CurlMesh {
 
 		// Draw front facing blank vertices.
 		gl.glDisable(GL10.GL_TEXTURE_2D);
-		gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, mVerticesCountFront);
+		if (!mOpaqueTexture || !DRAW_TEXTURE) {
+			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, 0, mVerticesCountFront);
+		}
 
 		// Draw front facing texture.
 		if (DRAW_TEXTURE) {
-			gl.glEnable(GL10.GL_BLEND);
+			if (!mOpaqueTexture) gl.glEnable(GL10.GL_BLEND);
 			gl.glEnable(GL10.GL_TEXTURE_2D);
 
 			if (!mFlipTexture || !mTextureBack) {
@@ -729,11 +737,13 @@ public class CurlMesh {
 		int backCount = mVerticesCountFront + mVerticesCountBack - backStartIdx;
 
 		// Draw back facing blank vertices.
-		gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, backStartIdx, backCount);
+		if (!mOpaqueTexture || !DRAW_TEXTURE) {
+			gl.glDrawArrays(GL10.GL_TRIANGLE_STRIP, backStartIdx, backCount);
+		}
 
 		// Draw back facing texture.
 		if (DRAW_TEXTURE) {
-			gl.glEnable(GL10.GL_BLEND);
+			if (!mOpaqueTexture) gl.glEnable(GL10.GL_BLEND);
 			gl.glEnable(GL10.GL_TEXTURE_2D);
 
 			if (mFlipTexture || !mTextureBack) {

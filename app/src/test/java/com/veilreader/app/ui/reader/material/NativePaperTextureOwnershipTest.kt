@@ -15,6 +15,26 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [34], manifest = Config.NONE)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class NativePaperTextureOwnershipTest {
+    @Test fun oneTimeBackingPreservesOpaqueInkAndTranslucentPixelsWithoutTouchingSource() {
+        val source = Bitmap.createBitmap(3, 1, Bitmap.Config.ARGB_8888)
+        source.setPixel(0, 0, Color.TRANSPARENT)
+        source.setPixel(1, 0, Color.BLACK)
+        source.setPixel(2, 0, Color.argb(128, 0, 0, 0))
+        val owned = nativePaperOwnedOpaqueTexture(source)
+        assertEquals(Color.WHITE, owned.getPixel(0, 0))
+        assertEquals(Color.BLACK, owned.getPixel(1, 0))
+        val half = owned.getPixel(2, 0)
+        assertEquals(255, Color.alpha(half))
+        assertTrue(Color.red(half) in 126..129)
+        assertEquals(Color.red(half), Color.green(half))
+        assertEquals(Color.green(half), Color.blue(half))
+        assertFalse(owned.hasAlpha())
+        assertEquals(Color.TRANSPARENT, source.getPixel(0, 0))
+        assertEquals(Color.argb(128, 0, 0, 0), source.getPixel(2, 0))
+        assertFalse(source.isRecycled)
+        owned.recycle(); source.recycle()
+    }
+
     @Test fun nativeSizeUploadsKeepInkAndNeverRecycleTheBorrowedReadiumSource() {
         val source = Bitmap.createBitmap(3, 5, Bitmap.Config.ARGB_8888)
         source.eraseColor(Color.WHITE)

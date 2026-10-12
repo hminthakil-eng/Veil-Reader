@@ -6,7 +6,8 @@ Apache License 2.0. Full license accompanies this notice.
 Veil Reader reuses CurlMesh and CurlPage. CurlMesh was adapted to prepare
 textures before applying finger geometry, use linear texture filtering, and
 compose premultiplied textures/black shadows into a transparent TextureView.
-CurlMesh also reuses compatible GPU texture storage. CurlPage was adapted to
+CurlMesh also reuses compatible GPU texture storage and skips redundant blank
+backing passes for opaque native-size textures. CurlPage was adapted to
 upload exact-size owned textures when the GL context advertises NPOT support;
 older contexts retain the original power-of-two texture path. Readium pixels
 are never downsampled. The Readium integration, lifecycle/bitmap leases and

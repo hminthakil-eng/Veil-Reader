@@ -165,6 +165,9 @@ internal class NativeMaterialPageCurlView(
         maxTextureSize = limit[0]
         supportsNpot = nativePaperSupportsNpot(gl.glGetString(GL10.GL_EXTENSIONS))
         mesh.texturePage.setExactSizeTextures(supportsNpot)
+        // NPOT clamp keeps the opaque image's borders opaque too. Padded
+        // compatibility textures retain upstream's blank backing passes.
+        mesh.setOpaqueTexture(supportsNpot)
         ReaderTrace.event("paper_native_texture_policy", details = "npot=$supportsNpot max=$maxTextureSize")
         synchronized(lock) { draws.clear() }
     }
@@ -213,8 +216,7 @@ internal class NativeMaterialPageCurlView(
                     try {
                         // CurlPage recycles its inputs after upload. Transfer an owned copy,
                         // NEVER Readium's borrowed pooled snapshot. Back uses the SAME leaf.
-                        val owned = source.copy(Bitmap.Config.ARGB_8888, false)
-                            ?: error("Native paper copy failed")
+                        val owned = nativePaperOwnedOpaqueTexture(source)
                         mesh.texturePage.setColor(Color.WHITE, CurlPage.SIDE_FRONT)
                         mesh.texturePage.setColor(when (current.tone) {
                             MaterialPageTone.LIGHT -> Color.rgb(232, 230, 220)
