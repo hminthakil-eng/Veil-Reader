@@ -44,6 +44,11 @@ Readium source revision, URL, viewport and acquisition fences.
 warning exclusion is added. Dependency Review, Bouncy Castle minimum-version
 checks, performance budgets and native Paper production activation are unchanged.
 
+The dependency workflow also supplies the repository name and actual checkout
+SHA to Syft. This removes the two directory-source metadata warnings while
+making both CycloneDX root components identify their scanned source. Logging
+and dependency scanning stay enabled. See the [Syft configuration reference](https://oss.anchore.com/docs/reference/syft/configuration/).
+
 ## Two precise analyzer exceptions
 
 ### Checked durable preferences (`UseKtx`)

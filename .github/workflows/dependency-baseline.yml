@@ -28,6 +28,10 @@ jobs:
     name: dependency-graph
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # Directory SBOMs must identify the actual checkout instead of a runner path.
+      SYFT_SOURCE_NAME: ${{ github.repository }}
+      SYFT_SOURCE_VERSION: ${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
