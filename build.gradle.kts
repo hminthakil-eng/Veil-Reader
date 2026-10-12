@@ -20,3 +20,20 @@ plugins {
     id("androidx.room") version "2.8.5" apply false
     id("androidx.baselineprofile") version "1.5.0" apply false
 }
+
+// Lint resolves its own Android tooling classpath, separately from buildscript.
+// Constrain only those tool configurations; this adds no app runtime dependency.
+// A normal minimum-version constraint also permits a newer upstream patch.
+allprojects {
+    configurations.configureEach {
+        if (name.startsWith("lint", ignoreCase = true)) {
+            val toolConfiguration = name
+            listOf("bcprov-jdk18on", "bcutil-jdk18on", "bcpkix-jdk18on").forEach { artifact ->
+                project.dependencies.constraints.add(
+                    toolConfiguration,
+                    "org.bouncycastle:$artifact:1.85",
+                )
+            }
+        }
+    }
+}

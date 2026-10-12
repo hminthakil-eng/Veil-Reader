@@ -6,17 +6,6 @@ pluginManagement {
     }
 }
 
-// Plugin resolution has its own settings classpath, before the root buildscript
-// constraints apply. Load the patched family here as well; keep it build-only.
-buildscript {
-    repositories { mavenCentral() }
-    dependencies {
-        classpath("org.bouncycastle:bcprov-jdk18on:1.85")
-        classpath("org.bouncycastle:bcutil-jdk18on:1.85")
-        classpath("org.bouncycastle:bcpkix-jdk18on:1.85")
-    }
-}
-
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {

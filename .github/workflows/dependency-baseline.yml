@@ -45,6 +45,8 @@ jobs:
           dependency-graph-continue-on-failure: false
           cache-provider: basic
           artifact-retention-days: 7
+          # Retain configuration attribution for every detected dependency.
+          additional-arguments: --info
 
       - name: Verify patched build crypto in the submitted head graph
         env:
