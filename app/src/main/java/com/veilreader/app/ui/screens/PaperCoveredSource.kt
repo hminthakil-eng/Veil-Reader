@@ -42,7 +42,7 @@ internal fun PaperCoveredSourceEffect(
         adjacent.bitmap.width == viewport.width && adjacent.bitmap.height == viewport.height
 
     DisposableEffect(source, covered) {
-        val lease = if (covered && source != null) PaperCoveredSource(source) else null
+        val lease = if (covered) PaperCoveredSource(source) else null
         onDispose { lease?.close() }
     }
 }
