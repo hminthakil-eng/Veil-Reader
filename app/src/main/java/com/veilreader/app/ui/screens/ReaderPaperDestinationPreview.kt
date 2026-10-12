@@ -28,8 +28,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
-import org.readium.r2.navigator.epub.HtmlDecorationTemplates
+import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import kotlin.math.abs
@@ -183,7 +184,7 @@ internal class PaperPreviewContainer(context: Context, val previews: PaperDestin
     override fun dispatchTouchEvent(event: MotionEvent): Boolean = false
 }
 
-@OptIn(ExperimentalReadiumApi::class)
+@OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
 @Composable
 internal fun ReaderPaperDestinationPreviewHost(
     activity: FragmentActivity,
