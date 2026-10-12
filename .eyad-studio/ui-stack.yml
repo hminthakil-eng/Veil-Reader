@@ -36,3 +36,18 @@ implementation_rules:
   - no_web_runtime_dependency
   - reuse_before_rebuild
   - validate_against_design-system/veil-reader/MASTER.md
+
+apple_principles_review:
+  status: source_pinned_project_adapter
+  project_skill: .claude/skills/veil-apple-design-audit/SKILL.md
+  references:
+    - source: dickwu/apple-design-skill
+      pinned_commit: 904b0eedc7cc778152f545506075d5bb5219ce77
+      mode: design_review_reference_only
+    - source: Elevatormusic/apple-hig
+      pinned_commit: e00f1af16c71f4122e7c964563d2f563fd490d7e
+      mode: design_review_reference_only
+  target_platform: native_android_jetpack_compose
+  rule: android_platform_and_veil_tokens_take_precedence
+  binary_assets: never_copy_apple_fonts_symbols_or_templates
+  regression_gate: python3 tools/check_veil_ui_contrast.py
