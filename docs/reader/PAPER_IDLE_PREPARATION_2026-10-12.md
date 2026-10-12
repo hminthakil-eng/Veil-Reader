@@ -27,6 +27,38 @@ No capture resolution, navigation mode, release gate or performance limit was
 changed. This removes unnecessary work; a measured frame improvement requires
 new exact-source benchmark evidence.
 
+First runtime checkpoint `5d646080` passed the Android build/JVM/lint and abrupt
+durability lanes, but failed 1/182 instrumentation cases: the Persian preview's
+predicted next locator differed from the released live locator. This is not an
+accepted checkpoint. Font readiness is now required in both actual documents
+before adjacent ink is cached; CSS/DOM completion alone does not settle late web
+font pagination. The real-book assertion is unchanged and now captures the
+released page before asserting, with numeric prediction/observed diagnostics.
+
+## Trace-driven rendering follow-up
+
+Downloaded the complete base performance artifact (105,261,938 bytes), verified
+SHA-256 `b75ef24d03894890a58143191174442e2bc2543cc115e52ff999684b4fee2bc1`
+and every ZIP CRC, then inspected all six measured page-turn traces with the
+official Perfetto Python trace processor. On the first trace, 198
+`WebViewFunctor::drawGl` slices averaged 83.425 ms, while six native texture
+uploads averaged 41.327 ms. These are nested trace durations, not additive
+CPU time or physical-device frame measurements.
+
+Once a native source leaf is actually acquired and a pinned independent
+destination matches the complete viewport, the live publication is visually
+covered. Its redundant hardware draw is now suspended with a scoped opacity
+lease. Layout, View.VISIBLE, focus, native input and navigation ownership stay
+with Readium. Cancel, completion, disposal, renderer failure, epoch/size mismatch,
+reduced motion or blocking UI restore normal drawing. Missing destination ink
+keeps the live underlay. The effect never overwrites an existing reader fade.
+
+Three framework regressions check parent hit-testing while the child opacity is
+zero, cancel/restoration and independent opacity owners. Both actual English and
+Persian book cases now require suspended live drawing behind the held real leaf
+and restored opacity after reversal, while retaining all their ink/locator tests.
+This change needs fresh complete Android and frame receipts of its own.
+
 ## Competitor-informed acceptance
 
 | Area | Reference and Veil requirement | Current work / next gate |
@@ -52,6 +84,8 @@ quality ranking. Superiority to Apple Books or Kindle remains unproven.
   six canonical guard regressions PASS; `git diff --check` PASS.
 - Four added JVM regressions cover canceled-source reuse, partial preparation,
   stale chapter/location/revision/viewport, invalidation and recycled ink.
+- Three additional JVM/framework regressions and the stronger two real-book
+  scenarios cover draw suspension without losing the gesture recipient.
 - Android JVM/build/lint, actual-book instrumentation and frame gates: pending
   exact implementation SHA. Record receipts below after completion.
 - Windows fallback compilation could not resolve the current AndroidX/zoom

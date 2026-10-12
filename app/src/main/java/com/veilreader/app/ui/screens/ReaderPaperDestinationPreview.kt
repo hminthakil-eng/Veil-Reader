@@ -109,7 +109,8 @@ internal class PaperPreviewNavigator {
         // URL to the visible child before asking for its visual-state callback.
         // A chapter locator alone can precede the ViewPager's actual layout.
         val value = preview.evaluateJavascript(
-            "document.readyState === 'complete' && !!document.body ? document.location.href : null"
+            "document.readyState === 'complete' && !!document.body && " +
+                "(!document.fonts || document.fonts.status === 'loaded') ? document.location.href : null"
         ) ?: return false
         val url = JSONTokener(value).nextValue() as? String ?: return false
         return awaitMaterialPageSourceVisualReady(preview.publicationView, revision, 1_000L,
@@ -137,6 +138,16 @@ internal class PaperPreviewNavigator {
 
         try { withTimeoutOrNull(5_000L) {
             if (!valid()) return@withTimeoutOrNull
+            // Stylesheets can finish loading before web fonts. A late font
+            // changes pagination without changing the logical source locator.
+            // Both navigators must have their actual font set before caching ink.
+            val documentReady = "document.readyState === 'complete' && !!document.body && " +
+                "(!document.fonts || document.fonts.status === 'loaded')"
+            while (preview.evaluateJavascript(documentReady) != "true" ||
+                source.evaluateJavascript(documentReady) != "true") {
+                if (!valid()) return@withTimeoutOrNull
+                delay(32L)
+            }
             // Reversing/canceling a fold does not change its source. The effect
             // restarts when active becomes false, but its immutable adjacent ink
             // is still valid. Avoid Readium jumps, WebView paint and full-size
@@ -145,12 +156,6 @@ internal class PaperPreviewNavigator {
             if (pending.isEmpty()) {
                 ReaderTrace.event("paper_destination_cache_hit", details = "revision=$revision")
                 return@withTimeoutOrNull
-            }
-            // Attaching a Fragment is earlier than loading its current WebView.
-            // A real DOM result plus a subsequent visual-state callback are required.
-            while (preview.evaluateJavascript("document.readyState === 'complete' && !!document.body") != "true") {
-                if (!valid()) return@withTimeoutOrNull
-                delay(32L)
             }
             // Readium signals settings before all visual work is complete. Also require a
             // pagination notification when settings change, then a WebView visual barrier.

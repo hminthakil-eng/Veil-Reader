@@ -174,6 +174,14 @@ class NativePaperRealReaderInstrumentedTest {
                 acquired
             }
             assertEquals("A held fold must never navigate", original, locator())
+            waitUntil("Acquired leaf and destination suspend redundant live-page drawing") {
+                var covered = false
+                instrumentation.runOnMainSync {
+                    covered = previews()?.previews?.activeSnapshot != null &&
+                        navigator()?.publicationView?.alpha == 0f
+                }
+                covered
+            }
             var predictedDestination: org.readium.r2.shared.publication.Locator? = null
             instrumentation.runOnMainSync {
                 val adjacent = requireNotNull(previews()?.previews?.activeSnapshot)
@@ -213,6 +221,10 @@ class NativePaperRealReaderInstrumentedTest {
             inject(MotionEvent.ACTION_UP, x, y, down)
             SystemClock.sleep(900)
             assertEquals("Reversal must restore the exact location", original, locator())
+            instrumentation.runOnMainSync {
+                assertEquals("Cancel must restore live-page drawing", 1f,
+                    requireNotNull(navigator()).publicationView.alpha, 0f)
+            }
             screenshot("$prefix-03-cancelled.png").recycle()
 
             down = SystemClock.uptimeMillis()
@@ -226,13 +238,16 @@ class NativePaperRealReaderInstrumentedTest {
             SystemClock.sleep(900)
             val committed = locator()
             assertNotEquals(original, committed)
+            screenshot("$prefix-04-committed.png").recycle()
             instrumentation.runOnMainSync {
-                assertTrue("Independent preview must predict the actual released page",
-                    paperPreviewSamePage(requireNotNull(predictedDestination), requireNotNull(navigator()).currentLocator.value))
+                val predicted = requireNotNull(predictedDestination)
+                val actual = requireNotNull(navigator()).currentLocator.value
+                assertTrue("Independent preview must predict the actual released page: " +
+                    "predicted=${predicted.locations.progression} actual=${actual.locations.progression} " +
+                    "sameResource=${predicted.href == actual.href}", paperPreviewSamePage(predicted, actual))
             }
             SystemClock.sleep(300)
             assertEquals("A single release must settle once", committed, locator())
-            screenshot("$prefix-04-committed.png").recycle()
 
             // Exercise the opposite physical edge in the same real publication.
             var previousEpoch = 0L

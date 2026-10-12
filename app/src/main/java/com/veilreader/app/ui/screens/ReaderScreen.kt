@@ -3163,6 +3163,14 @@ fun ReaderScreen(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+            PaperCoveredSourceEffect(
+                state = paperCurlState,
+                source = (navigator as? EpubNavigatorFragment)?.publicationView,
+                viewport = readerViewportSize,
+                enabled = BuildConfig.NATIVE_PAPER_REBUILD && readerLifecycleResumed &&
+                    !reducedMotion && !touchExplorationEnabled && !selectionModeActive &&
+                    !showAppearance && !rendererPreferencesSettling
+            )
         }
 
         if (
