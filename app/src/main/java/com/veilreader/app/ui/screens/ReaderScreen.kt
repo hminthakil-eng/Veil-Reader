@@ -731,6 +731,9 @@ fun ReaderScreen(
         paperCurlState.snapshotSourceRevision,
         paperPreviewNavigator.navigator,
         readerLifecycleResumed,
+        showAppearance,
+        selectionModeActive,
+        rendererPreferencesSettling,
         readerSessionInstanceId
     ) {
         if (
@@ -742,7 +745,11 @@ fun ReaderScreen(
             paperCurlState.releaseBufferIfIdle()
             return@LaunchedEffect
         }
-        if (paperCurlState.active) return@LaunchedEffect
+        // Do not compete with font/theme reflow or native text-selection input.
+        // Keep existing immutable captures until their source is invalidated;
+        // closing the panel or ending selection restarts idle preparation.
+        if (paperCurlState.active || showAppearance || selectionModeActive ||
+            rendererPreferencesSettling) return@LaunchedEffect
 
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
         // Prepare an exact Readium source snapshot while the reader is idle, after
@@ -771,6 +778,7 @@ fun ReaderScreen(
                     state = paperCurlState,
                     isCurrent = {
                         readerLifecycleResumed && readerSessionReady &&
+                            !showAppearance && !selectionModeActive && !rendererPreferencesSettling &&
                             lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
                             latestReaderSessionInstanceId.value == readerSessionInstanceId
                     }

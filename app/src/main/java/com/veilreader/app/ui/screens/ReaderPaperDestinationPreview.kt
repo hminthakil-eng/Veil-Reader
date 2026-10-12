@@ -59,6 +59,15 @@ internal class PaperDestinationPreviewState {
 
     fun prepared(direction: PaperTurnDirection): PaperDestinationSnapshot? = prepared[direction]
 
+    fun unpreparedDirections(origin: Locator, revision: Long, width: Int, height: Int): List<PaperTurnDirection> =
+        PaperTurnDirection.entries.filter { direction ->
+            val snapshot = prepared[direction]
+            snapshot == null || revision <= 0L || width <= 0 || height <= 0 ||
+                snapshot.sourceRevision != revision || snapshot.bitmap.isRecycled ||
+                snapshot.bitmap.width != width || snapshot.bitmap.height != height ||
+                !paperPreviewSamePage(snapshot.origin, origin)
+        }
+
     fun begin(direction: PaperTurnDirection, revision: Long, width: Int, height: Int) {
         activeSnapshot = prepared[direction]?.takeIf {
             it.sourceRevision == revision && !it.bitmap.isRecycled &&
@@ -128,6 +137,15 @@ internal class PaperPreviewNavigator {
 
         try { withTimeoutOrNull(5_000L) {
             if (!valid()) return@withTimeoutOrNull
+            // Reversing/canceling a fold does not change its source. The effect
+            // restarts when active becomes false, but its immutable adjacent ink
+            // is still valid. Avoid Readium jumps, WebView paint and full-size
+            // bitmap allocations for directions which are already prepared.
+            val pending = state.destinationPreview.unpreparedDirections(origin, revision, width, height)
+            if (pending.isEmpty()) {
+                ReaderTrace.event("paper_destination_cache_hit", details = "revision=$revision")
+                return@withTimeoutOrNull
+            }
             // Attaching a Fragment is earlier than loading its current WebView.
             // A real DOM result plus a subsequent visual-state callback are required.
             while (preview.evaluateJavascript("document.readyState === 'complete' && !!document.body") != "true") {
@@ -150,12 +168,12 @@ internal class PaperPreviewNavigator {
                     paperPreviewSamePage(it.forwardDestination, origin) && it.settings == settingsAtRequest &&
                     !it.bitmap.isRecycled && it.bitmap.width == width && it.bitmap.height == height
             }
-            if (previous != null && valid()) {
+            if (PaperTurnDirection.BACKWARD in pending && previous != null && valid()) {
                 state.destinationPreview.publish(PaperTurnDirection.BACKWARD,
                     PaperDestinationSnapshot(previous.bitmap, revision, origin, previous.locator))
                 ReaderTrace.event("paper_destination_reused_origin", details = "revision=$revision")
             }
-            for (direction in PaperTurnDirection.entries) {
+            for (direction in pending) {
                 if (direction == PaperTurnDirection.BACKWARD && previous != null) continue
                 if (!valid()) return@withTimeoutOrNull
                 if (!paperPreviewSamePage(preview.currentLocator.value, origin)) {
