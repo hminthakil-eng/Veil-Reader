@@ -3,6 +3,7 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import androidx.core.net.toUri
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaLocalChapterMetadata
 import com.veilreader.app.data.manga.MangaLocalImportCoordinator
@@ -89,7 +90,7 @@ class LibraryExport(
         val gamePrefs = preferencesToJson(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE))
         withContext(Dispatchers.IO) {
             val files = snapshot.books.filter { it.isImported }.mapIndexed { index, book ->
-                val uri = Uri.parse(requireNotNull(book.sourceUri))
+                val uri = requireNotNull(book.sourceUri).toUri()
                 require(uri.scheme == "file") { "Cannot back up ${book.title}: unsupported file location." }
                 val file = File(requireNotNull(uri.path)).canonicalFile
                 val allowed = File(context.filesDir, "publications").canonicalFile
@@ -678,11 +679,11 @@ class LibraryExport(
         }
     }
 
-    private fun replacePreferences(target: SharedPreferences, source: JSONObject): Boolean {
-        val editor = target.edit().clear()
-        source.keys().forEach { key -> putJsonPreference(editor, key, source.get(key)) }
-        return editor.commit()
-    }
+    private fun replacePreferences(target: SharedPreferences, source: JSONObject): Boolean =
+        target.commitDurably {
+            clear()
+            source.keys().forEach { key -> putJsonPreference(this, key, source.get(key)) }
+        }
 
     private fun putJsonPreference(editor: SharedPreferences.Editor, key: String, value: Any?) {
         when (value) {
@@ -703,18 +704,19 @@ class LibraryExport(
     }
 
     private fun restorePreferencesSnapshot(target: SharedPreferences, snapshot: Map<String, *>) {
-        val editor = target.edit().clear()
-        snapshot.forEach { (key, value) ->
-            when (value) {
-                is Boolean -> editor.putBoolean(key, value)
-                is Int -> editor.putInt(key, value)
-                is Long -> editor.putLong(key, value)
-                is Float -> editor.putFloat(key, value)
-                is String -> editor.putString(key, value)
-                is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+        target.commitDurably {
+            clear()
+            snapshot.forEach { (key, value) ->
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Float -> putFloat(key, value)
+                    is String -> putString(key, value)
+                    is Set<*> -> putStringSet(key, value.filterIsInstance<String>().toSet())
+                }
             }
         }
-        editor.commit()
     }
 
     companion object {

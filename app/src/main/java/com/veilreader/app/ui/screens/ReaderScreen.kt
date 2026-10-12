@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import android.content.Intent
 import android.net.Uri
 import androidx.core.net.toUri
@@ -2985,9 +2987,13 @@ fun ReaderScreen(
         stringResource(R.string.reader_eta_remaining, formatReaderEtaDuration(it.centerMillis))
     }
     val etaDescription = timeRemainingEstimate?.takeIf { it.remainingPages > 0 }?.let {
-        stringResource(R.string.reader_eta_range_description,
-            formatReaderEtaDuration(it.lowMillis), formatReaderEtaDuration(it.highMillis),
-            readingPace?.observedIntervals ?: 0)
+        pluralStringResource(
+            R.plurals.reader_eta_range_description,
+            resourceQuantity(readingPace?.observedIntervals ?: 0),
+            formatReaderEtaDuration(it.lowMillis),
+            formatReaderEtaDuration(it.highMillis),
+            readingPace?.observedIntervals ?: 0
+        )
     }
     val focusGuideVisible =
         activeFocusGuide.mode != ReaderFocusGuideMode.OFF &&
@@ -5969,8 +5975,8 @@ private fun ReaderAppearanceTriState(
 @Composable
 private fun ReaderAppearancePreview(
     appearance: ReaderAppearance,
-    typographyEnabled: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    typographyEnabled: Boolean = true
 ) {
     val (paperArgb, inkArgb) = readiumThemeColors(appearance.theme)
     val paper = Color(paperArgb)

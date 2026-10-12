@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.reader.material
 
+import androidx.core.view.isVisible
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
@@ -45,7 +46,7 @@ internal fun materialPageVisibleWebView(root: View, expectedUrl: String? = null)
     val visible = Rect()
     if (
         root is WebView &&
-        root.visibility == View.VISIBLE &&
+        root.isVisible &&
         root.isShown &&
         root.isAttachedToWindow &&
         root.width > 0 &&

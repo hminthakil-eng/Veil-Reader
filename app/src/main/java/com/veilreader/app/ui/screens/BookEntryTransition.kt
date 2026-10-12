@@ -78,9 +78,9 @@ fun BookThresholdTransitionOverlay(
     book: Book,
     stage: BookEntryStage,
     visible: Boolean,
+    modifier: Modifier = Modifier,
     continuity: ReadingContinuitySummary? = null,
-    returnRitual: BookReturnRitual? = null,
-    modifier: Modifier = Modifier
+    returnRitual: BookReturnRitual? = null
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
 

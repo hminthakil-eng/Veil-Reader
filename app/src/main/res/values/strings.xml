@@ -9,7 +9,6 @@
     <string name="nav_path">Path</string>
     <string name="nav_profile">Profile</string>
     <string name="common_back">Back</string>
-    <string name="common_read">Read</string>
     <string name="common_delete">Delete</string>
     <string name="common_save">Save</string>
     <string name="common_cancel">Cancel</string>
@@ -18,11 +17,6 @@
     <string name="common_untitled_book">Untitled book</string>
 
     <string name="notebook_eyebrow">HIDDEN ARCHIVE</string>
-    <string name="notebook_title">Notebook</string>
-    <string name="notebook_counts">%1$d highlights · %2$d bookmarks</string>
-    <string name="notebook_search_label">Search books, passages and notes</string>
-    <string name="notebook_highlights_count">Highlights %1$d</string>
-    <string name="notebook_bookmarks_count">Bookmarks %1$d</string>
     <string name="notebook_no_highlights_title">No highlights yet</string>
     <string name="notebook_no_matching_highlights_title">No matching highlights</string>
     <string name="notebook_no_highlights_body">Select text while reading to save a passage. Notes added to highlights will gather here too.</string>
@@ -31,21 +25,14 @@
     <string name="notebook_no_matching_bookmarks_title">No matching bookmarks</string>
     <string name="notebook_no_bookmarks_body">Use Bookmark in the Reader chrome to keep important locations one gesture away.</string>
     <string name="notebook_no_matching_bookmarks_body">Try searching by book title, author or bookmark label.</string>
-    <string name="notebook_note_label">NOTE</string>
-    <string name="notebook_add_note">Add note</string>
-    <string name="notebook_edit_note">Edit note</string>
     <string name="notebook_note_dialog_title">Note on this passage</string>
-    <string name="notebook_note_field_label">Your note</string>
     <string name="notebook_delete_highlight_title">Delete highlight?</string>
     <string name="notebook_delete_highlight_body">This removes the saved passage and its note from your local library.</string>
     <string name="notebook_delete_bookmark_title">Delete bookmark?</string>
     <string name="notebook_delete_bookmark_body">This removes the saved location from your local library.</string>
     <string name="notebook_saved_location">Saved location</string>
 
-    <string name="book_detail_local_publication_format">LOCAL PUBLICATION · %1$s</string>
-    <string name="book_detail_sample_entry">SAMPLE ENTRY</string>
     <string name="book_detail_finished">Finished</string>
-    <string name="book_detail_percent_read">%1$d%% read</string>
     <string name="book_detail_not_started">Not started</string>
     <string name="book_detail_read_again">Read again</string>
     <string name="book_detail_continue_reading">Continue reading</string>
@@ -57,7 +44,6 @@
     <string name="book_detail_edit_details">Edit details</string>
     <string name="book_detail_local_copy_controls">LOCAL COPY</string>
     <string name="book_detail_delete_local_body">Remove this imported book from Veil. You will be asked to confirm before anything is deleted.</string>
-    <string name="book_detail_publication_details">Publication details</string>
     <string name="book_detail_format">Format</string>
     <string name="book_format_epub">EPUB</string>
     <string name="book_format_pdf">PDF</string>
@@ -120,7 +106,6 @@
     <string name="settings_text_size">Text size</string>
     <string name="settings_line_height">Line height</string>
     <string name="settings_page_margins">Page margins</string>
-    <string name="settings_reading_motion">Reading motion</string>
     <string name="settings_reading_mode_title">Reading mode</string>
     <string name="settings_reading_mode_paged_description">Discrete pages. Choose the page-turn feel separately.</string>
     <string name="settings_page_turn_title">Page turn</string>
@@ -185,11 +170,6 @@
     <string name="reader_show_controls">Show reading controls</string>
     <string name="reader_hide_controls">Hide reading controls</string>
     <string name="reader_close">Close reader</string>
-    <string name="reader_percent_read">%1$d%% read</string>
-    <string name="reader_notes">Notes</string>
-    <string name="reader_mark">Mark</string>
-    <string name="reader_type">Type</string>
-    <string name="reader_zoom">Zoom</string>
     <string name="reader_chrome_search">Search</string>
     <string name="reader_search_title">Search this book</string>
     <string name="reader_search_query">Words or phrase</string>
@@ -298,8 +278,6 @@
     <string name="archive_echo">ECHO</string>
     <string name="archive_annotated">ANNOTATED</string>
     <string name="archive_passage">PASSAGE</string>
-    <string name="archive_annotation">ANNOTATION</string>
-    <string name="archive_note_only">Preserved note</string>
     <string name="archive_return_to_passage">Return to passage</string>
     <string name="archive_annotate">Annotate</string>
     <string name="archive_edit_annotation">Edit annotation</string>
@@ -367,24 +345,14 @@
     <string name="book_detail_archive_history">ARCHIVE HISTORY</string>
     <string name="book_detail_archived">Archived</string>
     <string name="book_detail_first_opened">First opened</string>
-    <string name="book_detail_journey_marks">Journey marks</string>
     <string name="book_detail_progress_reached">Reached %1$s</string>
-    <string name="book_detail_cycle_completed">Reading cycle %1$d completed</string>
-    <string name="book_detail_latest_cycle">Latest completion · Cycle %1$d</string>
-    <string name="book_detail_completed_at">Completed</string>
+    <string name="book_detail_cycle_completed">Completed reading cycle %1$d</string>
     <string name="book_detail_reading_cycles">Reading cycles</string>
     <string name="book_detail_archive_depth">Archive depth</string>
     <string name="book_detail_material_memory">Material memory</string>
-    <string name="book_detail_session_one">%1$d session</string>
-    <string name="book_detail_session_many">%1$d sessions</string>
-    <string name="book_detail_passage_one">%1$d passage</string>
-    <string name="book_detail_passage_many">%1$d passages</string>
-    <string name="book_detail_place_one">%1$d saved place</string>
-    <string name="book_detail_place_many">%1$d saved places</string>
     <string name="book_detail_preserved_memory">PRESERVED MEMORY</string>
     <string name="book_detail_preserved_fragments">Preserved fragments</string>
     <string name="book_detail_preserved_note_only">Preserved note</string>
-    <string name="book_detail_more_preserved">+%1$d more preserved in Hidden Archive</string>
     <string name="book_detail_favorite_badge">FAVORITE</string>
     <string name="book_detail_series_index">#%1$s</string>
     <string name="book_detail_collection_identity">Collections · %1$s</string>
@@ -395,9 +363,6 @@
     <string name="book_detail_archive_forgotten">Forgotten · %1$s silent</string>
     <string name="book_detail_silence_years_months">%1$d y %2$d mo</string>
     <string name="book_detail_silence_years">%1$d y</string>
-    <string name="book_detail_silence_months">%1$d months</string>
-    <string name="book_detail_silence_weeks">%1$d weeks</string>
-    <string name="book_detail_silence_days">%1$d days</string>
     <string name="book_detail_silence_today">today</string>
     <string name="book_detail_record_pristine">CATALOGUED</string>
     <string name="book_detail_record_opened">OPENED</string>
@@ -502,19 +467,11 @@
     <string name="library_hide_overview">Hide archive overview</string>
     <string name="library_view_semantics">%1$s view</string>
 
-    <string name="library_section_archive">Archive</string>
-    <string name="library_section_shelves">Shelves</string>
-    <string name="library_tap_to_filter">Tap to filter</string>
     <string name="library_shelf_favorites">Favorites</string>
-    <string name="library_shelf_favorites_subtitle">Volumes kept close</string>
     <string name="library_shelf_reading">Currently Reading</string>
-    <string name="library_shelf_reading_subtitle">Open journeys</string>
     <string name="library_shelf_completed">Completed</string>
-    <string name="library_shelf_completed_subtitle">Closed volumes</string>
     <string name="library_shelf_deep">Deep Shelf</string>
-    <string name="library_shelf_deep_subtitle">Long-unopened volumes</string>
     <string name="library_shelf_unread">Plan to Read</string>
-    <string name="library_shelf_unread_subtitle">Still unopened</string>
     <string name="library_group_filtered">Filtered archive</string>
     <string name="library_group_matching">Matching volumes</string>
     <string name="library_group_journey">Journey</string>
@@ -535,20 +492,14 @@
     <string name="library_remove_favorite_semantics">Remove %1$s from favorites</string>
     <string name="library_unopened">UNOPENED</string>
     <string name="library_completed">COMPLETED</string>
-    <string name="library_mark_count">%1$d marks</string>
-    <string name="library_saved_count">%1$d saved</string>
-    <string name="library_group_volume_count">%1$d volumes</string>
 
     <string name="library_memory_eyebrow">Recovered memory</string>
     <string name="library_memory_title">The archive remembers</string>
-    <string name="library_memory_traces">%1$d traces</string>
     <string name="library_recent_eyebrow">Recently opened</string>
     <string name="library_recent_title">Volumes in progress</string>
-    <string name="library_recent_active">%1$d active</string>
     <string name="library_continue_book_semantics">Continue %1$s</string>
     <string name="library_wings_eyebrow">Spatial index</string>
     <string name="library_wings_title">Archive Wings</string>
-    <string name="library_wings_mapped">%1$d mapped</string>
 
     <string name="path_name_oracle">The Oracle Path</string>
     <string name="path_name_dreamwalker">The Dreamwalker Path</string>
@@ -609,20 +560,13 @@
 
     <string name="castle_header_eyebrow">CASTLE · LIVING ARCHIVE</string>
     <string name="castle_header_title">The Keep Remembers</string>
-    <string name="castle_inner_keep_eyebrow">THE INNER KEEP</string>
     <string name="castle_awakened_chambers_title">Awakened Chambers</string>
     <string name="castle_inner_keep_body">Follow the central stair. Open rooms are usable now; sealed rooms reveal the rank that awakens them.</string>
     <string name="castle_growth_note">Nothing in the Castle is sold or time-gated. It grows from reading progress already stored on this device.</string>
     <string name="castle_keep_tier">KEEP TIER %1$d</string>
-    <string name="castle_path_summary_one">%1$s · %2$d finished volume</string>
-    <string name="castle_path_summary_many">%1$s · %2$d finished volumes</string>
     <string name="castle_awakened_chambers_eyebrow">AWAKENED CHAMBERS</string>
     <string name="castle_perform_advancement">Perform advancement</string>
     <string name="castle_foundation_memory">FOUNDATION MEMORY</string>
-    <string name="castle_memory_volumes">%1$d volumes</string>
-    <string name="castle_memory_passages">%1$d preserved passages</string>
-    <string name="castle_memory_records">%1$d sealed records</string>
-    <string name="castle_memory_links">%1$d atlas links</string>
 
     <string name="castle_world_label">WORLD · %1$s</string>
     <string name="castle_stage_dormant">DORMANT</string>
@@ -659,7 +603,6 @@
     <string name="castle_mutation_title_return">The Returning Lamps</string>
     <string name="castle_mutation_title_path">Path-Bound Architecture</string>
     <string name="castle_mutation_title_seal">Sealed Advancement</string>
-    <string name="castle_mutation_evidence">%1$d evidence marks · %2$s</string>
     <string name="castle_mutation_durable">durable</string>
     <string name="castle_mutation_transient">transient</string>
 
@@ -688,9 +631,7 @@
     <string name="path_ascent_title">Your ascent</string>
     <string name="path_other_paths_eyebrow">Other Paths</string>
     <string name="path_choose_fit_title">Choose what fits you</string>
-    <string name="path_choice_rooted_title">Your choice is rooted</string>
     <string name="path_change_before_first">You can change Path until your first advancement. It changes progression flavor, never access to your books.</string>
-    <string name="path_change_after_first">Other Paths stay visible as lore. Your current Path remains fixed for this journey.</string>
     <string name="path_level">LEVEL %1$d</string>
     <string name="path_xp">%1$d/%2$d XP</string>
     <string name="path_complete">PATH COMPLETE</string>
@@ -700,7 +641,6 @@
     <string name="path_mastery_rule">Advancement is earned by embodying the Path, understanding what you read, and keeping the practice stable. XP cannot substitute for any seal.</string>
     <string name="path_dissonance">DISSONANCE · %1$d%% · One seal is advancing faster than the others. Nothing is lost; broaden the way you read before the ritual.</string>
     <string name="path_perform_advancement">Perform advancement</string>
-    <string name="path_complete_three_seals">Complete the three seals</string>
     <string name="path_rank_number">RANK %1$s</string>
     <string name="path_rank_mastered">MASTERED</string>
     <string name="path_rank_current">CURRENT SEAL</string>
@@ -803,10 +743,8 @@
     <string name="profile_minutes_current">%1$d min · current</string>
     <string name="profile_known_marks">Known marks</string>
     <string name="profile_sigil_registry">Sigil registry</string>
-    <string name="profile_awakened_count">%1$d awakened</string>
     <string name="profile_restricted_folio">Restricted folio</string>
     <string name="profile_veiled_discoveries">Veiled discoveries</string>
-    <string name="profile_revealed_count">%1$d/%2$d revealed</string>
     <string name="profile_discovery_hint">Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.</string>
     <string name="profile_open_hidden_archive">Open Hidden Archive</string>
 
@@ -818,7 +756,6 @@
 
     <string name="profile_ledger_eyebrow">DURABLE LEDGER</string>
     <string name="profile_ledger_title">Recorded history</string>
-    <string name="profile_sessions_count">%1$d sessions</string>
     <string name="profile_archive_span">Archive span</string>
     <string name="profile_active_time">Recorded active time</string>
     <string name="profile_completion_records">Completion records</string>
@@ -898,7 +835,7 @@
     <string name="notice_backup_exported">Library backup exported.</string>
     <string name="notice_notebook_exported">Notebook exported.</string>
     <string name="notice_export_failed">Export could not finish. The chosen destination may contain an incomplete file. Choose another location and try again.</string>
-    <string name="notice_restore_success">Restored %1$d books and %2$d highlights. Reopen Veil Reader to load them.</string>
+    <string name="notice_restore_success">Restored %1$s and %2$s. Reopen Veil Reader to load them.</string>
     <string name="notice_restore_failed">Restore failed. Your existing local data was kept. Check the backup file and try again.</string>
     <string name="notice_sample_no_file">This sample has no book file. Import an EPUB or PDF from Android Files.</string>
     <string name="notice_import_failed">Could not import this publication. Check that the file is a valid EPUB or PDF and try again.</string>
@@ -937,15 +874,8 @@
     <string name="threshold_whisper_preserved">WHISPER · PRESERVED PASSAGE</string>
     <string name="threshold_whisper_optional">WHISPER · OPTIONAL</string>
     <string name="threshold_quiet_invitation">A quiet invitation</string>
-    <string name="threshold_quest_progress">%1$d/%2$d complete</string>
-    <string name="threshold_quest_read">Keep a quiet reading session for %1$d active minutes</string>
-    <string name="threshold_quest_pages">Turn %1$d paced pages without rushing</string>
-    <string name="threshold_quest_dreamwalker">Dwell in another world for %1$d active minutes</string>
-    <string name="threshold_quest_vanguard">Advance through %1$d paced pages</string>
-    <string name="threshold_quest_nocturne">Keep the night watch for %1$d reading minutes</string>
     <string name="threshold_quest_archivist">Write one substantial passage note</string>
     <string name="threshold_quest_artificer">Capture one substantial concept note</string>
-    <string name="threshold_quest_oracle">Preserve %1$d passages that reveal hidden structure</string>
     <string name="threshold_stat_reading">reading</string>
     <string name="threshold_first_eyebrow">THE FIRST THRESHOLD</string>
     <string name="threshold_first_title">Your first volume is waiting</string>
@@ -1009,7 +939,6 @@
     <string name="sanctum_header_body">The Sanctum records thresholds crossed, constellations completed, and titles the Castle considers permanent.</string>
     <string name="sanctum_permanent_identity">Permanent identity</string>
     <string name="sanctum_castle_title">Castle title</string>
-    <string name="sanctum_recognized_count">%1$d recognized</string>
     <string name="sanctum_active_title">ACTIVE TITLE</string>
     <string name="sanctum_recognized_title">RECOGNIZED TITLE</string>
     <string name="sanctum_seal_open">THE SEAL IS OPEN</string>
@@ -1036,17 +965,15 @@
     <string name="observatory_header_eyebrow">OBSERVATORY · MEMORY ATLAS</string>
     <string name="observatory_header_title">Constellations of what you read</string>
     <string name="observatory_header_body">A private offline map built only from book metadata, durable reading sessions, and passages you chose to preserve.</string>
-    <string name="observatory_summary">%1$d volumes · %2$d recorded links</string>
-    <string name="observatory_summary_with_solitary">%1$d volumes · %2$d recorded links · %3$d solitary</string>
+    <string name="observatory_summary">%1$s · %2$s</string>
+    <string name="observatory_summary_with_solitary">%1$s · %2$s · %3$s</string>
     <string name="observatory_index_eyebrow">Constellation index</string>
     <string name="observatory_index_title">Volumes in the atlas</string>
     <string name="observatory_links_disclaimer">Atlas links are recorded relations, not AI claims: shared author, series, collection, or repeated vocabulary inside passages you explicitly preserved.</string>
-    <string name="observatory_canvas_semantics">Memory Atlas with %1$d volumes and %2$d recorded links</string>
+    <string name="observatory_canvas_semantics">Memory Atlas with %1$s and %2$s</string>
     <string name="observatory_sky_empty">THE SKY IS EMPTY</string>
     <string name="observatory_sky_empty_body">Import volumes and preserve passages; the Observatory will map only relations your archive can support.</string>
     <string name="observatory_selected_constellation">SELECTED CONSTELLATION</string>
-    <string name="observatory_recorded_link_one">%1$d recorded link</string>
-    <string name="observatory_recorded_links_many">%1$d recorded links</string>
     <string name="observatory_standalone_body">This volume currently stands alone. Veil will not fabricate a relation merely to make the constellation denser.</string>
     <string name="observatory_enter_volume">Enter volume</string>
     <string name="observatory_source_unavailable">Source unavailable</string>
@@ -1070,15 +997,9 @@
     <string name="library_atmosphere_first_shelves">The first shelves are taking shape.</string>
     <string name="library_wing_collection">COLLECTION WING</string>
     <string name="library_wing_series">SERIES CORRIDOR</string>
-    <string name="library_wing_volume_one">%1$d volume</string>
-    <string name="library_wing_volumes_many">%1$d volumes</string>
-    <string name="library_wing_active">%1$d active</string>
-    <string name="library_wing_sealed">%1$d sealed</string>
     <string name="library_memory_event_return">RETURN EVENT</string>
     <string name="library_memory_event_margin_echo">MARGIN ECHO</string>
     <string name="library_memory_event_archive_return">ARCHIVE RETURN</string>
-    <string name="library_quiet_volume_one">%1$d volume has gone quiet</string>
-    <string name="library_quiet_volumes_many">%1$d volumes have gone quiet</string>
     <string name="library_memory_title_forgotten">The Forgotten Volume</string>
     <string name="library_memory_title_old_margin">The Old Margin</string>
     <string name="library_memory_title_long_silence">The Long Silence</string>
@@ -1122,7 +1043,6 @@
     <string name="reader_notebook_activity_after_mark">VOLUME ACTIVITY CONTINUED AFTER THIS MARK</string>
     <string name="reader_notebook_annotate">Annotate</string>
     <string name="reader_notebook_edit_annotation">Edit annotation</string>
-    <string name="reader_notebook_search_limited">Showing the first %1$d matches. Refine the search to narrow the result set.</string>
     <string name="reader_notebook_no_search_matches">No matches found in this book.</string>
     <string name="reader_notebook_match">MATCH</string>
     <string name="reader_notebook_search_match">Search match</string>
@@ -1171,7 +1091,6 @@
     <string name="entry_handoff_ritual">The old seal opens. Your page remains.</string>
     <string name="entry_handoff_returning">The archive recedes. Your book remains.</string>
     <string name="entry_handoff_first">The archive recedes. The first page remains.</string>
-    <string name="common_cover_of">Cover of %1$s</string>
     <string name="capsule_session_detail_legacy">Session details were preserved by an older archive version.</string>
     <string name="capsule_paced_turns">%1$s paced turns</string>
     <string name="capsule_highlight_event_one">%1$s highlight event</string>
@@ -1188,7 +1107,6 @@
     <!-- W11 · Arrodes Mirror -->
     <string name="mirror_portal_eyebrow">ARRODES</string>
     <string name="mirror_portal_title">The Memory Mirror</string>
-    <string name="mirror_portal_body">%1$d saved traces can return through the glass.</string>
     <string name="mirror_portal_action">Enter the mirror</string>
     <string name="mirror_eyebrow">ARRODES · MEMORY MIRROR</string>
     <string name="mirror_title">Echoes behind the glass</string>
@@ -1209,7 +1127,6 @@
     <!-- W11 · Manga Hub -->
     <string name="manga_portal_eyebrow">MANGA</string>
     <string name="manga_portal_title">Manga Hub</string>
-    <string name="manga_portal_body">%1$d local comic volumes · dedicated reader foundation</string>
     <string name="manga_portal_action">Open Manga Hub</string>
     <string name="manga_hub_eyebrow">ARCHIVE · MANGA</string>
     <string name="manga_hub_title">Manga Hub</string>
@@ -1257,24 +1174,20 @@
     <string name="manga_hub_live_sources_off">Online sources are off by default. Nothing is fetched unless you explicitly add it.</string>
     <string name="manga_hub_empty_body">Import a CBZ from the Library to begin. Veil keeps its pages local, remembers your place, and opens it in the visual reader.</string>
     <string name="manga_hub_open_library">Import from Library</string>
-    <string name="manga_hub_reader_ready">Saved locally and ready for Veil’s visual reader.</string>
-    <string name="manga_hub_read">Read manga</string>
     <string name="manga_hub_saved_offline">Saved locally · ready offline</string>
     <string name="manga_hub_finished">Completed · available offline</string>
     <string name="manga_hub_continue">Continue</string>
     <string name="manga_hub_start">Start reading</string>
     <string name="manga_hub_read_again">Read again</string>
     <string name="manga_hub_add_chapter">Add chapters</string>
-    <string name="notice_manga_chapter_added">Added chapter %2$d to %1$s.</string>
     <string name="notice_manga_chapter_duplicate">That CBZ is already part of %1$s.</string>
     <string name="notice_manga_chapter_import_failed">The Manga chapter could not be added.</string>
-    <string name="manga_hub_storage_summary">%1$d chapters · %2$s sources · %3$s page cache</string>
     <string name="manga_hub_clear_cache">Free page cache</string>
     <string name="notice_manga_cache_cleared">Manga page cache cleared. It will rebuild from your local CBZ files when needed.</string>
     <string name="notice_manga_cache_clear_failed">The Manga page cache could not be cleared.</string>
     <string name="notice_manga_cache_repair_failed">Local Manga pages could not be rebuilt from the saved CBZ files.</string>
-    <string name="notice_manga_chapters_added">Added %1$d chapters to %2$s.</string>
-    <string name="notice_manga_chapters_added_with_duplicates">Added %1$d chapters to %3$s; %2$d were already present.</string>
+    <string name="notice_manga_chapters_added">Added %1$s to %2$s.</string>
+    <string name="notice_manga_chapters_added_with_duplicates">Added %1$s to %3$s; %2$s.</string>
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
@@ -1283,7 +1196,6 @@
     <string name="manga_chapter_title_label">Chapter title</string>
     <string name="manga_chapter_delete_title">Delete chapter?</string>
     <string name="manga_chapter_delete_body">Delete “%1$s” from this Manga? The original CBZ for this added chapter and its generated page cache will be removed.</string>
-    <string name="manga_chapter_metadata">Position %1$d · Ch. %2$s · %3$d pages · %4$s</string>
     <string name="manga_chapter_unknown_number">—</string>
     <string name="manga_chapter_primary_badge">Primary chapter · pinned</string>
     <string name="manga_chapter_move_up">Up</string>
@@ -1394,14 +1306,12 @@
     <string name="tts_sleep_timer">Sleep timer</string>
     <string name="tts_sleep_timer_off">Off</string>
     <string name="tts_sleep_timer_active">Timer active</string>
-    <string name="tts_sleep_timer_minutes">%1$d minutes</string>
     <string name="tts_preview_sample_fa">این صدا برای خواندن کتاب در ویل ریدر استفاده می‌شود.</string>
     <string name="tts_preview_sample_ar">سيُستخدم هذا الصوت لقراءة الكتاب في فيل ريدر.</string>
     <string name="tts_preview_sample_default">This voice will read your book in Veil Reader.</string>
     <string name="reader_eta_minutes">%1$d min</string>
     <string name="reader_eta_hours_minutes">%1$d h %2$d min</string>
     <string name="reader_eta_remaining">~%1$s left</string>
-    <string name="reader_eta_range_description">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</string>
     <string name="reader_theme_specimen">Aa</string>
     <string name="library_all_series">All series</string>
     <string name="observatory_show_all_connections">Show all %1$s connections</string>
@@ -1440,4 +1350,202 @@
     <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
     <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
     <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
+
+    <!-- Quantity-aware captions; compound counts choose each noun independently. -->
+    <plurals name="book_detail_session_count">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="book_detail_passage_count">
+        <item quantity="one">%1$d passage</item>
+        <item quantity="other">%1$d passages</item>
+    </plurals>
+    <plurals name="book_detail_place_count">
+        <item quantity="one">%1$d saved place</item>
+        <item quantity="other">%1$d saved places</item>
+    </plurals>
+    <plurals name="book_detail_more_preserved">
+        <item quantity="one">+%1$d more preserved in Hidden Archive</item>
+        <item quantity="other">+%1$d more preserved in Hidden Archive</item>
+    </plurals>
+    <plurals name="book_detail_silence_months">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <plurals name="book_detail_silence_weeks">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
+    <plurals name="book_detail_silence_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="library_mark_count">
+        <item quantity="one">%1$d mark</item>
+        <item quantity="other">%1$d marks</item>
+    </plurals>
+    <plurals name="library_saved_count">
+        <item quantity="one">%1$d saved</item>
+        <item quantity="other">%1$d saved</item>
+    </plurals>
+    <plurals name="library_group_volume_count">
+        <item quantity="one">%1$d volume</item>
+        <item quantity="other">%1$d volumes</item>
+    </plurals>
+    <plurals name="library_memory_traces">
+        <item quantity="one">%1$d trace</item>
+        <item quantity="other">%1$d traces</item>
+    </plurals>
+    <plurals name="library_recent_active">
+        <item quantity="one">%1$d active</item>
+        <item quantity="other">%1$d active</item>
+    </plurals>
+    <plurals name="library_wings_mapped">
+        <item quantity="one">%1$d mapped</item>
+        <item quantity="other">%1$d mapped</item>
+    </plurals>
+    <plurals name="castle_path_summary">
+        <item quantity="one">%1$s · %2$d finished volume</item>
+        <item quantity="other">%1$s · %2$d finished volumes</item>
+    </plurals>
+    <plurals name="castle_memory_volumes">
+        <item quantity="one">%1$d volume</item>
+        <item quantity="other">%1$d volumes</item>
+    </plurals>
+    <plurals name="castle_memory_passages">
+        <item quantity="one">%1$d preserved passage</item>
+        <item quantity="other">%1$d preserved passages</item>
+    </plurals>
+    <plurals name="castle_memory_records">
+        <item quantity="one">%1$d sealed record</item>
+        <item quantity="other">%1$d sealed records</item>
+    </plurals>
+    <plurals name="castle_memory_links">
+        <item quantity="one">%1$d atlas link</item>
+        <item quantity="other">%1$d atlas links</item>
+    </plurals>
+    <plurals name="castle_mutation_evidence">
+        <item quantity="one">%1$d evidence mark · %2$s</item>
+        <item quantity="other">%1$d evidence marks · %2$s</item>
+    </plurals>
+    <plurals name="profile_awakened_count">
+        <item quantity="one">%1$d awakened</item>
+        <item quantity="other">%1$d awakened</item>
+    </plurals>
+    <plurals name="profile_revealed_count">
+        <item quantity="one">%1$d/%2$d revealed</item>
+        <item quantity="other">%1$d/%2$d revealed</item>
+    </plurals>
+    <plurals name="profile_sessions_count">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="threshold_quest_progress">
+        <item quantity="one">%1$d/%2$d complete</item>
+        <item quantity="other">%1$d/%2$d complete</item>
+    </plurals>
+    <plurals name="threshold_quest_read">
+        <item quantity="one">Keep a quiet reading session for %1$d active minute</item>
+        <item quantity="other">Keep a quiet reading session for %1$d active minutes</item>
+    </plurals>
+    <plurals name="threshold_quest_pages">
+        <item quantity="one">Turn %1$d paced page without rushing</item>
+        <item quantity="other">Turn %1$d paced pages without rushing</item>
+    </plurals>
+    <plurals name="threshold_quest_dreamwalker">
+        <item quantity="one">Dwell in another world for %1$d active minute</item>
+        <item quantity="other">Dwell in another world for %1$d active minutes</item>
+    </plurals>
+    <plurals name="threshold_quest_vanguard">
+        <item quantity="one">Advance through %1$d paced page</item>
+        <item quantity="other">Advance through %1$d paced pages</item>
+    </plurals>
+    <plurals name="threshold_quest_nocturne">
+        <item quantity="one">Keep the night watch for %1$d reading minute</item>
+        <item quantity="other">Keep the night watch for %1$d reading minutes</item>
+    </plurals>
+    <plurals name="threshold_quest_oracle">
+        <item quantity="one">Preserve %1$d passage that reveals hidden structure</item>
+        <item quantity="other">Preserve %1$d passages that reveal hidden structure</item>
+    </plurals>
+    <plurals name="sanctum_recognized_count">
+        <item quantity="one">%1$d recognized</item>
+        <item quantity="other">%1$d recognized</item>
+    </plurals>
+    <plurals name="observatory_recorded_links">
+        <item quantity="one">%1$d recorded link</item>
+        <item quantity="other">%1$d recorded links</item>
+    </plurals>
+    <plurals name="library_wing_volume_count">
+        <item quantity="one">%1$d volume</item>
+        <item quantity="other">%1$d volumes</item>
+    </plurals>
+    <plurals name="library_wing_active">
+        <item quantity="one">%1$d active</item>
+        <item quantity="other">%1$d active</item>
+    </plurals>
+    <plurals name="library_wing_sealed">
+        <item quantity="one">%1$d sealed</item>
+        <item quantity="other">%1$d sealed</item>
+    </plurals>
+    <plurals name="library_quiet_volume_count">
+        <item quantity="one">%1$d volume has gone quiet</item>
+        <item quantity="other">%1$d volumes have gone quiet</item>
+    </plurals>
+    <plurals name="reader_notebook_search_limited">
+        <item quantity="one">Showing the first %1$d match. Refine the search to narrow the result set.</item>
+        <item quantity="other">Showing the first %1$d matches. Refine the search to narrow the result set.</item>
+    </plurals>
+    <plurals name="mirror_portal_body">
+        <item quantity="one">%1$d saved trace can return through the glass.</item>
+        <item quantity="other">%1$d saved traces can return through the glass.</item>
+    </plurals>
+    <plurals name="manga_portal_body">
+        <item quantity="one">%1$d local comic volume · dedicated reader foundation</item>
+        <item quantity="other">%1$d local comic volumes · dedicated reader foundation</item>
+    </plurals>
+    <plurals name="manga_hub_storage_summary">
+        <item quantity="one">%1$d chapter · %2$s sources · %3$s page cache</item>
+        <item quantity="other">%1$d chapters · %2$s sources · %3$s page cache</item>
+    </plurals>
+    <plurals name="manga_chapter_metadata">
+        <item quantity="one">Position %1$d · Ch. %2$s · %3$d page · %4$s</item>
+        <item quantity="other">Position %1$d · Ch. %2$s · %3$d pages · %4$s</item>
+    </plurals>
+    <plurals name="tts_sleep_timer_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <plurals name="reader_eta_range_description">
+        <item quantity="one">Estimated %1$s to %2$s remaining, learned from %3$d real page interval.</item>
+        <item quantity="other">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</item>
+    </plurals>
+    <plurals name="observatory_volume_count">
+        <item quantity="one">%1$d volume</item>
+        <item quantity="other">%1$d volumes</item>
+    </plurals>
+    <plurals name="observatory_link_count">
+        <item quantity="one">%1$d recorded link</item>
+        <item quantity="other">%1$d recorded links</item>
+    </plurals>
+    <plurals name="observatory_solitary_count">
+        <item quantity="one">%1$d solitary</item>
+        <item quantity="other">%1$d solitary</item>
+    </plurals>
+    <plurals name="notice_restored_book_count">
+        <item quantity="one">%1$d book</item>
+        <item quantity="other">%1$d books</item>
+    </plurals>
+    <plurals name="notice_restored_highlight_count">
+        <item quantity="one">%1$d highlight</item>
+        <item quantity="other">%1$d highlights</item>
+    </plurals>
+    <plurals name="notice_added_chapter_count">
+        <item quantity="one">%1$d chapter</item>
+        <item quantity="other">%1$d chapters</item>
+    </plurals>
+    <plurals name="notice_duplicate_chapter_count">
+        <item quantity="one">%1$d was already present</item>
+        <item quantity="other">%1$d were already present</item>
+    </plurals>
 </resources>

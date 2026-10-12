@@ -217,7 +217,7 @@ internal fun ArchiveRecordContent(
                         modifier = Modifier.heightIn(min = 48.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text(VeilBackLabel(stringResource(R.string.archive_back)))
+                        Text(veilBackLabel(stringResource(R.string.archive_back)))
                     }
                     Spacer(Modifier.weight(1f))
                     ArchiveMicroLabel(

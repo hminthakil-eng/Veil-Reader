@@ -2,6 +2,7 @@ package com.veilreader.app.data
 
 import android.content.Context
 import android.os.SystemClock
+import androidx.core.content.edit
 import java.time.LocalTime
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
@@ -54,9 +55,10 @@ class GameRepository(context: Context) {
     init {
         // Old builds counted every highlight for every Path. Preserve Oracle progress only.
         if (prefs.getInt("ritualVersion", 1) < 2) {
-            val editor = prefs.edit().putInt("ritualVersion", 2)
-            if (prefs.getString("pathId", "oracle") != "oracle") editor.putInt("ritualProgress", 0)
-            editor.commit()
+            prefs.commitDurably {
+                putInt("ritualVersion", 2)
+                if (prefs.getString("pathId", "oracle") != "oracle") putInt("ritualProgress", 0)
+            }
         }
         if (prefs.getInt("pathMasteryVersion", 0) < 1) {
             val path = SampleData.paths.firstOrNull {
@@ -65,23 +67,22 @@ class GameRepository(context: Context) {
             val rank = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex)
             val legacyProgress = prefs.getInt("ritualProgress", 0).coerceAtLeast(0)
             val legacyTarget = ReadingPolicy.ritualTarget(path.id, rank).coerceAtLeast(1)
-            val editor = prefs.edit()
-                .putInt("pathMasteryVersion", 1)
-                .putInt("pathMasteryInsightBaseline", 0)
-                .putInt("pathMasteryStabilityBaseline", 0)
-            if (legacyProgress >= legacyTarget && rank < path.ranks.lastIndex) {
-                editor
-                    .putString("pathMasteryGrandfatherPath", path.id)
-                    .putInt("pathMasteryGrandfatherRank", rank)
+            prefs.commitDurably {
+                putInt("pathMasteryVersion", 1)
+                putInt("pathMasteryInsightBaseline", 0)
+                putInt("pathMasteryStabilityBaseline", 0)
+                if (legacyProgress >= legacyTarget && rank < path.ranks.lastIndex) {
+                    putString("pathMasteryGrandfatherPath", path.id)
+                    putInt("pathMasteryGrandfatherRank", rank)
+                }
             }
-            editor.commit()
         }
         rollDayIfNeeded()
         publish()
     }
 
     fun syncExistingHighlights(count: Int) {
-        if (count > prefs.getInt("totalHighlights", 0)) prefs.edit().putInt("totalHighlights", count).apply()
+        if (count > prefs.getInt("totalHighlights", 0)) prefs.edit { putInt("totalHighlights", count) }
         publish()
     }
 
@@ -93,7 +94,7 @@ class GameRepository(context: Context) {
     fun syncExistingBookCompletions(finishedBooks: Int, sealedBooks: Int) {
         val evidence = completionEvidenceFloor(finishedBooks, sealedBooks)
         if (evidence > prefs.getInt("booksFinished", 0)) {
-            prefs.edit().putInt("booksFinished", evidence).apply()
+            prefs.edit { putInt("booksFinished", evidence) }
         }
         publish()
     }
@@ -105,7 +106,7 @@ class GameRepository(context: Context) {
     fun setDailyGoal(minutes: Int) {
         rollDayIfNeeded()
         val safe = minutes.coerceIn(5, 180)
-        prefs.edit().putInt("dailyGoalMinutes", safe).apply()
+        prefs.edit { putInt("dailyGoalMinutes", safe) }
         _dailyGoalMinutes.value = safe
         // A lower goal can make today's reading quest complete immediately. Award it now instead
         // of waiting for another reading event, while claimedQuestIds still prevents duplicates.
@@ -117,8 +118,9 @@ class GameRepository(context: Context) {
     /** Equip an already-earned sigil in the Treasury. Pass null to clear the display slot. */
     fun equipSigil(sigilId: String?): Boolean {
         if (sigilId != null && sigilId !in buildProfile().earnedSigils) return false
-        if (sigilId == null) prefs.edit().remove("equippedSigil").commit()
-        else prefs.edit().putString("equippedSigil", sigilId).commit()
+        prefs.commitDurably {
+            if (sigilId == null) remove("equippedSigil") else putString("equippedSigil", sigilId)
+        }
         _equippedSigil.value = sigilId
         return true
     }
@@ -140,7 +142,7 @@ class GameRepository(context: Context) {
 
     fun selectCastleTitle(title: String): Boolean {
         if (title !in availableCastleTitles()) return false
-        prefs.edit().putString("castleTitle", title).commit()
+        prefs.commitDurably { putString("castleTitle", title) }
         _castleTitle.value = title
         return true
     }
@@ -148,7 +150,7 @@ class GameRepository(context: Context) {
     private fun recordRitualEvent(event: String) {
         val profile = buildProfile()
         if (!ReadingPolicy.acceptsEvent(profile.path.id, event)) return
-        prefs.edit().putInt("ritualProgress", (profile.ritualProgress + 1).coerceAtMost(profile.ritualTarget)).apply()
+        prefs.edit { putInt("ritualProgress", (profile.ritualProgress + 1).coerceAtMost(profile.ritualTarget)) }
     }
 
     fun recordNote(id: String, note: String) {
@@ -156,7 +158,7 @@ class GameRepository(context: Context) {
         rollDayIfNeeded()
         val credited = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().toMutableSet()
         if (!credited.add(id)) return
-        prefs.edit().putStringSet("creditedNotes", credited).apply()
+        prefs.edit { putStringSet("creditedNotes", credited) }
         todayNotes += 1
         recordRitualEvent("note")
         awardCompletedQuestRewards()
@@ -174,7 +176,7 @@ class GameRepository(context: Context) {
             recordRitualEvent("nightMinute")
         }
         val previousMinutes = prefs.getInt("minutesRead", 0)
-        prefs.edit().putInt("minutesRead", previousMinutes + 1).apply()
+        prefs.edit { putInt("minutesRead", previousMinutes + 1) }
         touchReadingDay()
         awardCompletedQuestRewards()
         persistCounters()
@@ -188,7 +190,7 @@ class GameRepository(context: Context) {
         recordRitualEvent("page")
         totalXp += GamificationEngine.XP_PER_PAGE
         todayPages += 1
-        prefs.edit().putInt("pagesRead", prefs.getInt("pagesRead", 0) + 1).apply()
+        prefs.edit { putInt("pagesRead", prefs.getInt("pagesRead", 0) + 1) }
         touchReadingDay()
         awardCompletedQuestRewards()
         persistCounters()
@@ -199,7 +201,7 @@ class GameRepository(context: Context) {
     fun recordHighlight() {
         rollDayIfNeeded()
         todayHighlights += 1
-        prefs.edit().putInt("totalHighlights", prefs.getInt("totalHighlights", 0) + 1).apply()
+        prefs.edit { putInt("totalHighlights", prefs.getInt("totalHighlights", 0) + 1) }
         recordRitualEvent("highlight")
         touchReadingDay()
         awardCompletedQuestRewards()
@@ -210,7 +212,7 @@ class GameRepository(context: Context) {
     fun recordBookFinished() {
         rollDayIfNeeded()
         totalXp += GamificationEngine.BOOK_FINISH_BONUS
-        prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).commit()
+        prefs.commitDurably { putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1) }
         persistCounters(durable = true)
         publish()
     }
@@ -225,18 +227,18 @@ class GameRepository(context: Context) {
         val nextRankIndex = current.rankIndex + 1
         val sealedAt = System.currentTimeMillis().coerceAtLeast(1L)
         val evidenceTotals = currentMasteryEvidenceTotals(current.path.id)
-        prefs.edit()
-            .putInt("rankIndex", nextRankIndex)
-            .putInt("ritualProgress", 0)
-            .putString("ritualAftermathPathId", current.path.id)
-            .putInt("ritualAftermathFromRank", current.rankIndex)
-            .putInt("ritualAftermathToRank", nextRankIndex)
-            .putLong("ritualAftermathSealedAt", sealedAt)
-            .putInt("pathMasteryInsightBaseline", evidenceTotals.first)
-            .putInt("pathMasteryStabilityBaseline", evidenceTotals.second)
-            .remove("pathMasteryGrandfatherPath")
-            .remove("pathMasteryGrandfatherRank")
-            .commit()
+        prefs.commitDurably {
+            putInt("rankIndex", nextRankIndex)
+            putInt("ritualProgress", 0)
+            putString("ritualAftermathPathId", current.path.id)
+            putInt("ritualAftermathFromRank", current.rankIndex)
+            putInt("ritualAftermathToRank", nextRankIndex)
+            putLong("ritualAftermathSealedAt", sealedAt)
+            putInt("pathMasteryInsightBaseline", evidenceTotals.first)
+            putInt("pathMasteryStabilityBaseline", evidenceTotals.second)
+            remove("pathMasteryGrandfatherPath")
+            remove("pathMasteryGrandfatherRank")
+        }
         publish()
         return true
     }
@@ -248,14 +250,14 @@ class GameRepository(context: Context) {
         if (prefs.getString("pathId", "oracle") == pathId) return true
         if (SampleData.paths.none { it.id == pathId }) return false
         val evidenceTotals = currentMasteryEvidenceTotals(pathId)
-        prefs.edit()
-            .putString("pathId", pathId)
-            .putInt("ritualProgress", 0)
-            .putInt("pathMasteryInsightBaseline", evidenceTotals.first)
-            .putInt("pathMasteryStabilityBaseline", 0)
-            .remove("pathMasteryGrandfatherPath")
-            .remove("pathMasteryGrandfatherRank")
-            .commit()
+        prefs.commitDurably {
+            putString("pathId", pathId)
+            putInt("ritualProgress", 0)
+            putInt("pathMasteryInsightBaseline", evidenceTotals.first)
+            putInt("pathMasteryStabilityBaseline", 0)
+            remove("pathMasteryGrandfatherPath")
+            remove("pathMasteryGrandfatherRank")
+        }
         publish()
         return true
     }
@@ -277,12 +279,12 @@ class GameRepository(context: Context) {
             prefs.getInt("streakDays", 0),
             streak
         )
-        prefs.edit()
-            .putString("lastReadDate", todayString)
-            .putInt("streakDays", streak)
-            .putInt("longestStreakDays", longestStreak)
-            .putInt("readingDaysTotal", readingDaysTotal)
-            .apply()
+        prefs.edit {
+            putString("lastReadDate", todayString)
+            putInt("streakDays", streak)
+            putInt("longestStreakDays", longestStreak)
+            putInt("readingDaysTotal", readingDaysTotal)
+        }
     }
 
     private fun rollDayIfNeeded() {
@@ -294,7 +296,7 @@ class GameRepository(context: Context) {
         todayHighlights = 0
         todayNotes = 0
         todayNightMinutes = 0
-        prefs.edit().remove("claimedQuestIds").apply()
+        prefs.edit { remove("claimedQuestIds") }
         persistCounters()
     }
 
@@ -306,10 +308,10 @@ class GameRepository(context: Context) {
         if (newlyCompleted.isEmpty()) return
         totalXp += newlyCompleted.sumOf { it.xpReward }
         claimed += newlyCompleted.map { it.id }
-        prefs.edit()
-            .putStringSet("claimedQuestIds", claimed)
-            .putInt("totalXp", totalXp)
-            .commit()
+        prefs.commitDurably {
+            putStringSet("claimedQuestIds", claimed)
+            putInt("totalXp", totalXp)
+        }
     }
 
     /**
@@ -318,20 +320,18 @@ class GameRepository(context: Context) {
      * use the durable path, which also acts as a fence for earlier SharedPreferences.apply() writes.
      */
     private fun persistCounters(durable: Boolean = false): Boolean {
-        val editor = prefs.edit()
-            .putInt("totalXp", totalXp)
-            .putString("dayKey", dayKey)
-            .putInt("todayMinutes", todayMinutes)
-            .putInt("todayPages", todayPages)
-            .putInt("todayHighlights", todayHighlights)
-            .putInt("todayNotes", todayNotes)
-            .putInt("todayNightMinutes", todayNightMinutes)
-        return if (durable) {
-            editor.commit()
-        } else {
-            editor.apply()
-            true
+        val update: android.content.SharedPreferences.Editor.() -> Unit = {
+            putInt("totalXp", totalXp)
+            putString("dayKey", dayKey)
+            putInt("todayMinutes", todayMinutes)
+            putInt("todayPages", todayPages)
+            putInt("todayHighlights", todayHighlights)
+            putInt("todayNotes", todayNotes)
+            putInt("todayNightMinutes", todayNightMinutes)
         }
+        if (durable) return prefs.commitDurably(update)
+        prefs.edit(action = update)
+        return true
     }
 
     /**
@@ -363,10 +363,10 @@ class GameRepository(context: Context) {
         if (p.rankIndex >= 3 && earned.size >= 5) discoveries.add("unnamed_chamber")
 
         if (earned != storedEarned || discoveries != storedDiscoveries) {
-            prefs.edit()
-                .putStringSet("earnedSigils", earned)
-                .putStringSet("earnedDiscoveries", discoveries)
-                .commit()
+            prefs.commitDurably {
+                putStringSet("earnedSigils", earned)
+                putStringSet("earnedDiscoveries", discoveries)
+            }
         }
         _profile.value = buildProfile()
         _quests.value = buildQuests()
@@ -376,7 +376,7 @@ class GameRepository(context: Context) {
         val allowedTitles = availableCastleTitles()
         val selectedTitle = prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil"
         if (selectedTitle !in allowedTitles) {
-            prefs.edit().putString("castleTitle", "Reader of the Veil").commit()
+            prefs.commitDurably { putString("castleTitle", "Reader of the Veil") }
             _castleTitle.value = "Reader of the Veil"
         } else {
             _castleTitle.value = selectedTitle

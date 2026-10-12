@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -232,7 +234,7 @@ fun TreasuryScreen(
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel(stringResource(R.string.profile_stat_castle)), style = MaterialTheme.typography.labelMedium)
+            Text(veilBackLabel(stringResource(R.string.profile_stat_castle)), style = MaterialTheme.typography.labelMedium)
         }
 
         ScreenHeader(
@@ -681,7 +683,7 @@ fun SanctumScreen(
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel(stringResource(R.string.profile_stat_castle)), style = MaterialTheme.typography.labelMedium)
+            Text(veilBackLabel(stringResource(R.string.profile_stat_castle)), style = MaterialTheme.typography.labelMedium)
         }
 
         ScreenHeader(
@@ -705,7 +707,11 @@ fun SanctumScreen(
         ArchiveChamberHeading(
             eyebrow = stringResource(R.string.sanctum_permanent_identity),
             title = stringResource(R.string.sanctum_castle_title),
-            trailing = stringResource(R.string.sanctum_recognized_count, availableTitles.size)
+            trailing = pluralStringResource(
+                R.plurals.sanctum_recognized_count,
+                resourceQuantity(availableTitles.size),
+                availableTitles.size
+            )
         )
 
         availableTitles.forEachIndexed { index, title ->

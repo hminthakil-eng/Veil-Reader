@@ -46,10 +46,10 @@ jobs:
           android sdk install "build-tools/37.0.0"
           android sdk install "platform-tools"
 
-      - name: Set up Gradle 9.6
+      - name: Set up Gradle 9.8.1
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
-          gradle-version: "9.6.0"
+          gradle-version: "9.8.1"
 
       - name: Run Company OS command
         shell: powershell

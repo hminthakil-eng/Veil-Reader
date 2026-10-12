@@ -9,7 +9,6 @@
     <string name="nav_path">مسیر</string>
     <string name="nav_profile">پروفایل</string>
     <string name="common_back">بازگشت</string>
-    <string name="common_read">مطالعه</string>
     <string name="common_delete">حذف</string>
     <string name="common_save">ذخیره</string>
     <string name="common_cancel">لغو</string>
@@ -18,11 +17,6 @@
     <string name="common_untitled_book">کتاب بدون عنوان</string>
 
     <string name="notebook_eyebrow">آرشیو پنهان</string>
-    <string name="notebook_title">دفتر یادداشت</string>
-    <string name="notebook_counts">%1$d هایلایت · %2$d نشانک</string>
-    <string name="notebook_search_label">جست‌وجوی کتاب‌ها، بخش‌ها و یادداشت‌ها</string>
-    <string name="notebook_highlights_count">هایلایت‌ها %1$d</string>
-    <string name="notebook_bookmarks_count">نشانک‌ها %1$d</string>
     <string name="notebook_no_highlights_title">هنوز هایلایتی ندارید</string>
     <string name="notebook_no_matching_highlights_title">هایلایت مطابقی پیدا نشد</string>
     <string name="notebook_no_highlights_body">هنگام مطالعه متن را انتخاب کنید تا یک بخش ذخیره شود. یادداشت‌های متصل به هایلایت‌ها نیز اینجا جمع می‌شوند.</string>
@@ -31,21 +25,14 @@
     <string name="notebook_no_matching_bookmarks_title">نشانک مطابقی پیدا نشد</string>
     <string name="notebook_no_bookmarks_body">از گزینهٔ نشانک در کنترل‌های Reader استفاده کنید تا موقعیت‌های مهم همیشه نزدیک باشند.</string>
     <string name="notebook_no_matching_bookmarks_body">عنوان کتاب، نویسنده یا نام نشانک دیگری را جست‌وجو کنید.</string>
-    <string name="notebook_note_label">یادداشت</string>
-    <string name="notebook_add_note">افزودن یادداشت</string>
-    <string name="notebook_edit_note">ویرایش یادداشت</string>
     <string name="notebook_note_dialog_title">یادداشت برای این بخش</string>
-    <string name="notebook_note_field_label">یادداشت شما</string>
     <string name="notebook_delete_highlight_title">هایلایت حذف شود؟</string>
     <string name="notebook_delete_highlight_body">بخش ذخیره‌شده و یادداشت آن از کتابخانهٔ محلی شما حذف می‌شود.</string>
     <string name="notebook_delete_bookmark_title">نشانک حذف شود؟</string>
     <string name="notebook_delete_bookmark_body">این موقعیت ذخیره‌شده از کتابخانهٔ محلی شما حذف می‌شود.</string>
     <string name="notebook_saved_location">موقعیت ذخیره‌شده</string>
 
-    <string name="book_detail_local_publication_format">نسخهٔ محلی · %1$s</string>
-    <string name="book_detail_sample_entry">نمونه</string>
     <string name="book_detail_finished">تمام‌شده</string>
-    <string name="book_detail_percent_read">%1$d٪ مطالعه‌شده</string>
     <string name="book_detail_not_started">شروع‌نشده</string>
     <string name="book_detail_read_again">مطالعه دوباره</string>
     <string name="book_detail_continue_reading">ادامه مطالعه</string>
@@ -57,7 +44,6 @@
     <string name="book_detail_edit_details">ویرایش جزئیات</string>
     <string name="book_detail_local_copy_controls">نسخهٔ محلی</string>
     <string name="book_detail_delete_local_body">این کتاب واردشده را از Veil حذف کن. پیش از هر حذفی از تو تأیید گرفته می‌شود.</string>
-    <string name="book_detail_publication_details">جزئیات کتاب</string>
     <string name="book_detail_format">فرمت</string>
     <string name="book_format_epub">EPUB</string>
     <string name="book_format_pdf">PDF</string>
@@ -120,7 +106,6 @@
     <string name="settings_text_size">اندازهٔ متن</string>
     <string name="settings_line_height">فاصلهٔ سطرها</string>
     <string name="settings_page_margins">حاشیهٔ صفحه</string>
-    <string name="settings_reading_motion">حالت جابه‌جایی</string>
     <string name="settings_reading_mode_title">حالت مطالعه</string>
     <string name="settings_reading_mode_paged_description">مطالعه به‌صورت صفحه‌های جدا؛ نوع ورق‌زدن را جداگانه انتخاب کنید.</string>
     <string name="settings_page_turn_title">ورق‌زدن</string>
@@ -185,11 +170,6 @@
     <string name="reader_show_controls">نمایش کنترل‌های مطالعه</string>
     <string name="reader_hide_controls">پنهان‌کردن کنترل‌های مطالعه</string>
     <string name="reader_close">بستن کتاب</string>
-    <string name="reader_percent_read">%1$d٪ مطالعه‌شده</string>
-    <string name="reader_notes">یادداشت‌ها</string>
-    <string name="reader_mark">نشانک</string>
-    <string name="reader_type">ظاهر متن</string>
-    <string name="reader_zoom">بزرگ‌نمایی</string>
     <string name="reader_chrome_search">جست‌وجو</string>
     <string name="reader_search_title">جست‌وجو در کتاب</string>
     <string name="reader_search_query">واژه یا عبارت</string>
@@ -298,8 +278,6 @@
     <string name="archive_echo">طنین</string>
     <string name="archive_annotated">یادداشت‌دار</string>
     <string name="archive_passage">متن</string>
-    <string name="archive_annotation">یادداشت</string>
-    <string name="archive_note_only">یادداشت محفوظ</string>
     <string name="archive_return_to_passage">بازگشت به متن</string>
     <string name="archive_annotate">یادداشت‌گذاری</string>
     <string name="archive_edit_annotation">ویرایش یادداشت</string>
@@ -367,24 +345,14 @@
     <string name="book_detail_archive_history">تاریخچهٔ آرشیو</string>
     <string name="book_detail_archived">بایگانی‌شده</string>
     <string name="book_detail_first_opened">نخستین گشودن</string>
-    <string name="book_detail_journey_marks">نشان‌های مسیر</string>
     <string name="book_detail_progress_reached">رسیدن به %1$s</string>
     <string name="book_detail_cycle_completed">پایان دور مطالعهٔ %1$d</string>
-    <string name="book_detail_latest_cycle">آخرین پایان · دور %1$d</string>
-    <string name="book_detail_completed_at">پایان مطالعه</string>
     <string name="book_detail_reading_cycles">دورهای مطالعه</string>
     <string name="book_detail_archive_depth">عمق آرشیو</string>
     <string name="book_detail_material_memory">ردّ مطالعه</string>
-    <string name="book_detail_session_one">%1$d نشست</string>
-    <string name="book_detail_session_many">%1$d نشست</string>
-    <string name="book_detail_passage_one">%1$d بریده</string>
-    <string name="book_detail_passage_many">%1$d بریده</string>
-    <string name="book_detail_place_one">%1$d جای ذخیره‌شده</string>
-    <string name="book_detail_place_many">%1$d جای ذخیره‌شده</string>
     <string name="book_detail_preserved_memory">حافظهٔ ماندگار</string>
     <string name="book_detail_preserved_fragments">بریده‌های نگه‌داشته‌شده</string>
     <string name="book_detail_preserved_note_only">یادداشت محفوظ</string>
-    <string name="book_detail_more_preserved">%1$d بریدهٔ دیگر در آرشیو پنهان</string>
     <string name="book_detail_favorite_badge">علاقه‌مندی</string>
     <string name="book_detail_series_index">#%1$s</string>
     <string name="book_detail_collection_identity">مجموعه‌ها · %1$s</string>
@@ -395,9 +363,6 @@
     <string name="book_detail_archive_forgotten">فراموش‌شده · %1$s دور از مطالعه</string>
     <string name="book_detail_silence_years_months">%1$d سال و %2$d ماه</string>
     <string name="book_detail_silence_years">%1$d سال</string>
-    <string name="book_detail_silence_months">%1$d ماه</string>
-    <string name="book_detail_silence_weeks">%1$d هفته</string>
-    <string name="book_detail_silence_days">%1$d روز</string>
     <string name="book_detail_silence_today">امروز</string>
     <string name="book_detail_record_pristine">ثبت‌شده</string>
     <string name="book_detail_record_opened">گشوده‌شده</string>
@@ -502,19 +467,11 @@
     <string name="library_hide_overview">بستن نمای کلی آرشیو</string>
     <string name="library_view_semantics">نمای %1$s</string>
 
-    <string name="library_section_archive">آرشیو</string>
-    <string name="library_section_shelves">قفسه‌ها</string>
-    <string name="library_tap_to_filter">برای فیلتر لمس کنید</string>
     <string name="library_shelf_favorites">علاقه‌مندی‌ها</string>
-    <string name="library_shelf_favorites_subtitle">کتاب‌هایی که نزدیک نگه داشته‌اید</string>
     <string name="library_shelf_reading">در حال مطالعه</string>
-    <string name="library_shelf_reading_subtitle">مسیرهای باز</string>
     <string name="library_shelf_completed">تمام‌شده‌ها</string>
-    <string name="library_shelf_completed_subtitle">کتاب‌های بسته‌شده</string>
     <string name="library_shelf_deep">قفسهٔ ژرف</string>
-    <string name="library_shelf_deep_subtitle">کتاب‌هایی که مدت‌ها باز نشده‌اند</string>
     <string name="library_shelf_unread">برای مطالعه</string>
-    <string name="library_shelf_unread_subtitle">هنوز گشوده نشده‌اند</string>
     <string name="library_group_filtered">آرشیو فیلترشده</string>
     <string name="library_group_matching">کتاب‌های مطابق</string>
     <string name="library_group_journey">مسیر مطالعه</string>
@@ -535,20 +492,14 @@
     <string name="library_remove_favorite_semantics">حذف %1$s از علاقه‌مندی‌ها</string>
     <string name="library_unopened">گشوده‌نشده</string>
     <string name="library_completed">تمام‌شده</string>
-    <string name="library_mark_count">%1$d نشان</string>
-    <string name="library_saved_count">%1$d ذخیره‌شده</string>
-    <string name="library_group_volume_count">%1$d کتاب</string>
 
     <string name="library_memory_eyebrow">حافظهٔ بازیافته</string>
     <string name="library_memory_title">آرشیو به یاد می‌آورد</string>
-    <string name="library_memory_traces">%1$d رد</string>
     <string name="library_recent_eyebrow">تازه گشوده‌شده</string>
     <string name="library_recent_title">کتاب‌های در حال مطالعه</string>
-    <string name="library_recent_active">%1$d فعال</string>
     <string name="library_continue_book_semantics">ادامهٔ %1$s</string>
     <string name="library_wings_eyebrow">فهرست فضایی</string>
     <string name="library_wings_title">بخش‌های آرشیو</string>
-    <string name="library_wings_mapped">%1$d بخش</string>
 
     <string name="path_name_oracle">مسیر پیشگو</string>
     <string name="path_name_dreamwalker">مسیر رویاگرد</string>
@@ -609,20 +560,13 @@
 
     <string name="castle_header_eyebrow">قلعه · آرشیو زنده</string>
     <string name="castle_header_title">دژ به یاد می‌آورد</string>
-    <string name="castle_inner_keep_eyebrow">دژ درونی</string>
     <string name="castle_awakened_chambers_title">تالارهای بیدارشده</string>
     <string name="castle_inner_keep_body">راه‌پلهٔ مرکزی را دنبال کنید. تالارهای باز اکنون قابل استفاده‌اند؛ تالارهای مهرشده رتبهٔ لازم برای بیدارشدن را نشان می‌دهند.</string>
     <string name="castle_growth_note">هیچ چیز در قلعه فروخته یا زمان‌قفل نشده است. قلعه از پیشرفت مطالعه‌ای رشد می‌کند که همین حالا روی دستگاه شما ثبت شده است.</string>
     <string name="castle_keep_tier">سطح دژ %1$d</string>
-    <string name="castle_path_summary_one">%1$s · %2$d کتاب تمام‌شده</string>
-    <string name="castle_path_summary_many">%1$s · %2$d کتاب تمام‌شده</string>
     <string name="castle_awakened_chambers_eyebrow">تالارهای بیدارشده</string>
     <string name="castle_perform_advancement">اجرای آیین پیشرفت</string>
     <string name="castle_foundation_memory">حافظهٔ بنیاد</string>
-    <string name="castle_memory_volumes">%1$d کتاب</string>
-    <string name="castle_memory_passages">%1$d بریدهٔ نگه‌داشته‌شده</string>
-    <string name="castle_memory_records">%1$d رکورد مهرشده</string>
-    <string name="castle_memory_links">%1$d پیوند اطلس</string>
 
     <string name="castle_world_label">جهان · %1$s</string>
     <string name="castle_stage_dormant">خاموش</string>
@@ -659,7 +603,6 @@
     <string name="castle_mutation_title_return">چراغ‌های بازگشت</string>
     <string name="castle_mutation_title_path">معماری وابسته به مسیر</string>
     <string name="castle_mutation_title_seal">پیشرفت مهرشده</string>
-    <string name="castle_mutation_evidence">%1$d نشانِ شاهد · %2$s</string>
     <string name="castle_mutation_durable">ماندگار</string>
     <string name="castle_mutation_transient">گذرا</string>
 
@@ -688,9 +631,7 @@
     <string name="path_ascent_title">صعود شما</string>
     <string name="path_other_paths_eyebrow">مسیرهای دیگر</string>
     <string name="path_choose_fit_title">مسیر مناسب خود را انتخاب کنید</string>
-    <string name="path_choice_rooted_title">انتخاب شما ریشه گرفته است</string>
     <string name="path_change_before_first">تا پیش از نخستین پیشرفت می‌توانید مسیر را عوض کنید. مسیر فقط سبک پیشرفت را تغییر می‌دهد و هرگز دسترسی به کتاب‌هایتان را محدود نمی‌کند.</string>
-    <string name="path_change_after_first">مسیرهای دیگر به‌عنوان بخشی از جهان باقی می‌مانند. مسیر فعلی شما برای این سفر ثابت شده است.</string>
     <string name="path_level">سطح %1$d</string>
     <string name="path_xp">%1$d/%2$d XP</string>
     <string name="path_complete">مسیر کامل شده</string>
@@ -700,7 +641,6 @@
     <string name="path_mastery_rule">پیشرفت با زندگی‌کردنِ مسیر، فهم آنچه می‌خوانید و حفظ پایداری در مطالعه به دست می‌آید. XP جای هیچ‌یک از مهرها را نمی‌گیرد.</string>
     <string name="path_dissonance">ناهم‌آهنگی · %1$d٪ · یکی از مهرها سریع‌تر از بقیه پیش می‌رود. چیزی از دست نمی‌رود؛ پیش از آیین، شیوهٔ مطالعه را متعادل‌تر کنید.</string>
     <string name="path_perform_advancement">اجرای آیین پیشرفت</string>
-    <string name="path_complete_three_seals">سه مهر را کامل کنید</string>
     <string name="path_rank_number">رتبهٔ %1$s</string>
     <string name="path_rank_mastered">تسلط‌یافته</string>
     <string name="path_rank_current">مهر فعلی</string>
@@ -803,10 +743,8 @@
     <string name="profile_minutes_current">%1$d دقیقه · فعلی</string>
     <string name="profile_known_marks">نشان‌های شناخته‌شده</string>
     <string name="profile_sigil_registry">دفتر نشان‌ها</string>
-    <string name="profile_awakened_count">%1$d بیدارشده</string>
     <string name="profile_restricted_folio">دفتر محدود</string>
     <string name="profile_veiled_discoveries">کشف‌های پشت پرده</string>
-    <string name="profile_revealed_count">%1$d از %2$d آشکار</string>
     <string name="profile_discovery_hint">شرایط آن‌ها پنهان می‌ماند. وقتی بخش‌های جداگانهٔ تاریخچهٔ مطالعه الگویی واقعی بسازند، خودشان آشکار می‌شوند.</string>
     <string name="profile_open_hidden_archive">باز کردن آرشیو پنهان</string>
 
@@ -818,7 +756,6 @@
 
     <string name="profile_ledger_eyebrow">دفتر ماندگار</string>
     <string name="profile_ledger_title">تاریخچهٔ ثبت‌شده</string>
-    <string name="profile_sessions_count">%1$d نشست</string>
     <string name="profile_archive_span">بازهٔ آرشیو</string>
     <string name="profile_active_time">زمان فعال ثبت‌شده</string>
     <string name="profile_completion_records">رکوردهای پایان</string>
@@ -898,7 +835,7 @@
     <string name="notice_backup_exported">نسخهٔ پشتیبان کتابخانه ذخیره شد.</string>
     <string name="notice_notebook_exported">دفترچه ذخیره شد.</string>
     <string name="notice_export_failed">خروجی کامل نشد. ممکن است فایل مقصد ناقص باشد. محل دیگری انتخاب کنید و دوباره تلاش کنید.</string>
-    <string name="notice_restore_success">%1$d کتاب و %2$d هایلایت بازیابی شد. برای بارگذاری، برنامه را دوباره باز کنید.</string>
+    <string name="notice_restore_success">%1$s و %2$s بازیابی شد. برای بارگذاری، برنامه را دوباره باز کنید.</string>
     <string name="notice_restore_failed">بازیابی انجام نشد و داده‌های محلی فعلی حفظ شدند. فایل پشتیبان را بررسی و دوباره تلاش کنید.</string>
     <string name="notice_sample_no_file">این نمونه فایل کتاب ندارد. یک فایل EPUB یا PDF از فایل‌های دستگاه اضافه کنید.</string>
     <string name="notice_import_failed">این کتاب افزوده نشد. از معتبر بودن فایل EPUB یا PDF مطمئن شوید و دوباره تلاش کنید.</string>
@@ -937,15 +874,8 @@
     <string name="threshold_whisper_preserved">نجوا · بخش محفوظ</string>
     <string name="threshold_whisper_optional">نجوا · اختیاری</string>
     <string name="threshold_quiet_invitation">دعوتی آرام</string>
-    <string name="threshold_quest_progress">%1$d از %2$d کامل</string>
-    <string name="threshold_quest_read">%1$d دقیقه مطالعهٔ آرام و فعال داشته باش</string>
-    <string name="threshold_quest_pages">بدون شتاب %1$d صفحه را ورق بزن</string>
-    <string name="threshold_quest_dreamwalker">%1$d دقیقه فعال در جهانی دیگر بمان</string>
-    <string name="threshold_quest_vanguard">%1$d صفحه با ریتم حساب‌شده پیش برو</string>
-    <string name="threshold_quest_nocturne">%1$d دقیقه در شب به مطالعه ادامه بده</string>
     <string name="threshold_quest_archivist">یک یادداشت معنادار برای یک بخش ثبت کن</string>
     <string name="threshold_quest_artificer">یک یادداشت معنادار دربارهٔ یک مفهوم ثبت کن</string>
-    <string name="threshold_quest_oracle">%1$d بخش را که ساختار پنهان را آشکار می‌کنند محفوظ کن</string>
     <string name="threshold_stat_reading">مطالعه</string>
     <string name="threshold_first_eyebrow">آستانهٔ نخست</string>
     <string name="threshold_first_title">نخستین جلدت در انتظار است</string>
@@ -1009,7 +939,6 @@
     <string name="sanctum_header_body">حریم، آستانه‌های پیموده‌شده، صورت‌های فلکی کامل‌شده و عنوان‌هایی را ثبت می‌کند که قلعه ماندگار می‌داند.</string>
     <string name="sanctum_permanent_identity">هویت ماندگار</string>
     <string name="sanctum_castle_title">عنوان قلعه</string>
-    <string name="sanctum_recognized_count">%1$d عنوان شناخته‌شده</string>
     <string name="sanctum_active_title">عنوان فعال</string>
     <string name="sanctum_recognized_title">عنوان شناخته‌شده</string>
     <string name="sanctum_seal_open">مهر گشوده است</string>
@@ -1036,17 +965,15 @@
     <string name="observatory_header_eyebrow">رصدخانه · اطلس حافظه</string>
     <string name="observatory_header_title">صورت‌های فلکیِ آنچه خوانده‌ای</string>
     <string name="observatory_header_body">نقشه‌ای خصوصی و آفلاین که فقط از فرادادهٔ کتاب‌ها، نشست‌های مطالعهٔ ماندگار و بخش‌هایی که خودت حفظ کرده‌ای ساخته می‌شود.</string>
-    <string name="observatory_summary">%1$d جلد · %2$d پیوند ثبت‌شده</string>
-    <string name="observatory_summary_with_solitary">%1$d جلد · %2$d پیوند ثبت‌شده · %3$d منفرد</string>
+    <string name="observatory_summary">%1$s · %2$s</string>
+    <string name="observatory_summary_with_solitary">%1$s · %2$s · %3$s</string>
     <string name="observatory_index_eyebrow">نمایهٔ صورت فلکی</string>
     <string name="observatory_index_title">جلدهای موجود در اطلس</string>
     <string name="observatory_links_disclaimer">پیوندهای اطلس رابطه‌های ثبت‌شده‌اند، نه ادعای هوش مصنوعی: نویسنده، مجموعه، کالکشن مشترک یا واژگان تکرارشونده در بخش‌هایی که خودت حفظ کرده‌ای.</string>
-    <string name="observatory_canvas_semantics">اطلس حافظه با %1$d جلد و %2$d پیوند ثبت‌شده</string>
+    <string name="observatory_canvas_semantics">اطلس حافظه با %1$s و %2$s</string>
     <string name="observatory_sky_empty">آسمان خالی است</string>
     <string name="observatory_sky_empty_body">جلدها را وارد و بخش‌ها را حفظ کن؛ رصدخانه فقط رابطه‌هایی را ترسیم می‌کند که آرشیوت واقعاً پشتیبانی می‌کند.</string>
     <string name="observatory_selected_constellation">صورت فلکی انتخاب‌شده</string>
-    <string name="observatory_recorded_link_one">%1$d پیوند ثبت‌شده</string>
-    <string name="observatory_recorded_links_many">%1$d پیوند ثبت‌شده</string>
     <string name="observatory_standalone_body">این جلد فعلاً تنها ایستاده است. Veil فقط برای متراکم‌تر نشان دادن صورت فلکی، رابطه‌ای ساختگی ایجاد نمی‌کند.</string>
     <string name="observatory_enter_volume">ورود به جلد</string>
     <string name="observatory_source_unavailable">منبع در دسترس نیست</string>
@@ -1070,15 +997,9 @@
     <string name="library_atmosphere_first_shelves">نخستین قفسه‌ها در حال شکل‌گرفتن‌اند.</string>
     <string name="library_wing_collection">بالِ کالکشن</string>
     <string name="library_wing_series">راهروی مجموعه</string>
-    <string name="library_wing_volume_one">%1$d جلد</string>
-    <string name="library_wing_volumes_many">%1$d جلد</string>
-    <string name="library_wing_active">%1$d فعال</string>
-    <string name="library_wing_sealed">%1$d مهرشده</string>
     <string name="library_memory_event_return">رویداد بازگشت</string>
     <string name="library_memory_event_margin_echo">پژواک حاشیه</string>
     <string name="library_memory_event_archive_return">بازگشت آرشیو</string>
-    <string name="library_quiet_volume_one">%1$d جلد به سکوت رفته است</string>
-    <string name="library_quiet_volumes_many">%1$d جلد به سکوت رفته‌اند</string>
     <string name="library_memory_title_forgotten">جلد فراموش‌شده</string>
     <string name="library_memory_title_old_margin">حاشیهٔ قدیمی</string>
     <string name="library_memory_title_long_silence">سکوت طولانی</string>
@@ -1122,7 +1043,6 @@
     <string name="reader_notebook_activity_after_mark">فعالیت جلد پس از این علامت ادامه داشته است</string>
     <string name="reader_notebook_annotate">یادداشت‌گذاری</string>
     <string name="reader_notebook_edit_annotation">ویرایش یادداشت</string>
-    <string name="reader_notebook_search_limited">%1$d نتیجهٔ نخست نمایش داده می‌شود. برای محدودتر کردن نتایج، عبارت جست‌وجو را دقیق‌تر کنید.</string>
     <string name="reader_notebook_no_search_matches">در این کتاب نتیجه‌ای پیدا نشد.</string>
     <string name="reader_notebook_match">نتیجه</string>
     <string name="reader_notebook_search_match">نتیجهٔ جست‌وجو</string>
@@ -1171,7 +1091,6 @@
     <string name="entry_handoff_ritual">مهر کهنه باز می‌شود؛ صفحه‌ات باقی است.</string>
     <string name="entry_handoff_returning">آرشیو کنار می‌رود؛ کتابت باقی است.</string>
     <string name="entry_handoff_first">آرشیو کنار می‌رود؛ صفحهٔ نخست باقی است.</string>
-    <string name="common_cover_of">جلد %1$s</string>
     <string name="capsule_session_detail_legacy">جزئیات این نشست توسط نسخهٔ قدیمی‌تری از آرشیو ذخیره شده است.</string>
     <string name="capsule_paced_turns">%1$s ورق‌زدن با ریتم معتبر</string>
     <string name="capsule_highlight_event_one">%1$s رویداد هایلایت</string>
@@ -1188,7 +1107,6 @@
     <!-- W11 · آینه آرودز -->
     <string name="mirror_portal_eyebrow">آرودز</string>
     <string name="mirror_portal_title">آینه‌ی حافظه</string>
-    <string name="mirror_portal_body">%1$d ردِ ذخیره‌شده می‌توانند از میان آینه بازگردند.</string>
     <string name="mirror_portal_action">ورود به آینه</string>
     <string name="mirror_eyebrow">آرودز · آینه‌ی حافظه</string>
     <string name="mirror_title">پژواک‌های پشت شیشه</string>
@@ -1209,7 +1127,6 @@
     <!-- W11 · مانگا -->
     <string name="manga_portal_eyebrow">مانگا</string>
     <string name="manga_portal_title">مرکز مانگا</string>
-    <string name="manga_portal_body">%1$d جلد کمیک محلی · زیرساخت اختصاصی مطالعه مانگا</string>
     <string name="manga_portal_action">باز کردن مرکز مانگا</string>
     <string name="manga_hub_eyebrow">آرشیو · مانگا</string>
     <string name="manga_hub_title">مرکز مانگا</string>
@@ -1257,24 +1174,20 @@
     <string name="manga_hub_live_sources_off">منابع آنلاین به‌طور پیش‌فرض خاموش‌اند. تا وقتی خودت چیزی اضافه نکنی، هیچ داده‌ای دریافت نمی‌شود.</string>
     <string name="manga_hub_empty_body">برای شروع یک فایل CBZ را از کتابخانه وارد کن. Veil صفحه‌ها را محلی نگه می‌دارد، جای مطالعه را به خاطر می‌سپارد و آن را در خوانندهٔ تصویری باز می‌کند.</string>
     <string name="manga_hub_open_library">ورود از کتابخانه</string>
-    <string name="manga_hub_reader_ready">به‌صورت محلی ذخیره شده و برای خوانندهٔ تصویری Veil آماده است.</string>
-    <string name="manga_hub_read">مطالعهٔ مانگا</string>
     <string name="manga_hub_saved_offline">ذخیره‌شده روی دستگاه · آمادهٔ مطالعهٔ آفلاین</string>
     <string name="manga_hub_finished">تکمیل‌شده · در دسترس آفلاین</string>
     <string name="manga_hub_continue">ادامهٔ مطالعه</string>
     <string name="manga_hub_start">شروع مطالعه</string>
     <string name="manga_hub_read_again">مطالعهٔ دوباره</string>
     <string name="manga_hub_add_chapter">افزودن فصل‌ها</string>
-    <string name="notice_manga_chapter_added">فصل %2$d به %1$s اضافه شد.</string>
     <string name="notice_manga_chapter_duplicate">این فایل CBZ از قبل بخشی از %1$s است.</string>
     <string name="notice_manga_chapter_import_failed">افزودن فصل مانگا ممکن نشد.</string>
-    <string name="manga_hub_storage_summary">%1$d فصل · %2$s فایل اصلی · %3$s کش صفحه</string>
     <string name="manga_hub_clear_cache">آزادسازی کش صفحه</string>
     <string name="notice_manga_cache_cleared">کش صفحه‌های مانگا پاک شد و هنگام نیاز از فایل‌های محلی CBZ دوباره ساخته می‌شود.</string>
     <string name="notice_manga_cache_clear_failed">پاک‌کردن کش صفحه‌های مانگا ممکن نشد.</string>
     <string name="notice_manga_cache_repair_failed">بازسازی صفحه‌های مانگا از فایل‌های محلی CBZ ممکن نشد.</string>
-    <string name="notice_manga_chapters_added">%1$d فصل به %2$s اضافه شد.</string>
-    <string name="notice_manga_chapters_added_with_duplicates">%1$d فصل به %3$s اضافه شد؛ %2$d فصل از قبل وجود داشت.</string>
+    <string name="notice_manga_chapters_added">%1$s به %2$s اضافه شد.</string>
+    <string name="notice_manga_chapters_added_with_duplicates">%1$s به %3$s اضافه شد؛ %2$s.</string>
     <string name="action_save">ذخیره</string>
     <string name="action_cancel">لغو</string>
     <string name="action_delete">حذف</string>
@@ -1283,7 +1196,6 @@
     <string name="manga_chapter_title_label">عنوان فصل</string>
     <string name="manga_chapter_delete_title">فصل حذف شود؟</string>
     <string name="manga_chapter_delete_body">«%1$s» از این مانگا حذف شود؟ فایل اصلی CBZ این فصل اضافه‌شده و کش صفحه‌های ساخته‌شده نیز حذف می‌شوند.</string>
-    <string name="manga_chapter_metadata">جایگاه %1$d · فصل %2$s · %3$d صفحه · %4$s</string>
     <string name="manga_chapter_unknown_number">—</string>
     <string name="manga_chapter_primary_badge">فصل پایه · ثابت</string>
     <string name="manga_chapter_move_up">بالاتر</string>
@@ -1394,14 +1306,12 @@
     <string name="tts_sleep_timer">تایمر خواب</string>
     <string name="tts_sleep_timer_off">خاموش</string>
     <string name="tts_sleep_timer_active">تایمر فعال است</string>
-    <string name="tts_sleep_timer_minutes">%1$d دقیقه</string>
     <string name="tts_preview_sample_fa">این صدا برای خواندن کتاب در ویل ریدر استفاده می‌شود.</string>
     <string name="tts_preview_sample_ar">سيُستخدم هذا الصوت لقراءة الكتاب في فيل ريدر.</string>
     <string name="tts_preview_sample_default">This voice will read your book in Veil Reader.</string>
     <string name="reader_eta_minutes">%1$d دقیقه</string>
     <string name="reader_eta_hours_minutes">%1$d ساعت و %2$d دقیقه</string>
     <string name="reader_eta_remaining">حدود %1$s مانده</string>
-    <string name="reader_eta_range_description">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</string>
     <string name="reader_theme_specimen">کتاب</string>
     <string name="library_all_series">همهٔ مجموعه‌های دنباله‌دار</string>
     <string name="observatory_show_all_connections">نمایش همهٔ %1$s ارتباط</string>
@@ -1440,4 +1350,202 @@
     <string name="reader_fixed_layout_transition_unavailable">این کتاب با چیدمان ثابت از ورق‌زدن ساده استفاده می‌کند. ورق‌زدن پویانمایی‌شده و پیمایش در دسترس نیستند؛ تنظیم ذخیره‌شدهٔ شما تغییر نکرده است.</string>
     <string name="tts_checkpoint_failed">موقعیت شنیدن ذخیره یا بازیابی نشد. برای حفظ جای شما، پخش متوقف می‌شود. پس از بررسی فضای ذخیره‌سازی دوباره تلاش کنید.</string>
     <string name="notice_highlight_delete_failed">برجسته‌سازی حذف نشد. بخش ذخیره‌شده و یادداشت آن همچنان حفظ شده‌اند.</string>
+
+    <!-- Quantity-aware captions; compound counts choose each noun independently. -->
+    <plurals name="book_detail_session_count">
+        <item quantity="one">%1$d نشست</item>
+        <item quantity="other">%1$d نشست</item>
+    </plurals>
+    <plurals name="book_detail_passage_count">
+        <item quantity="one">%1$d بریده</item>
+        <item quantity="other">%1$d بریده</item>
+    </plurals>
+    <plurals name="book_detail_place_count">
+        <item quantity="one">%1$d جای ذخیره‌شده</item>
+        <item quantity="other">%1$d جای ذخیره‌شده</item>
+    </plurals>
+    <plurals name="book_detail_more_preserved">
+        <item quantity="one">%1$d بریدهٔ دیگر در آرشیو پنهان</item>
+        <item quantity="other">%1$d بریدهٔ دیگر در آرشیو پنهان</item>
+    </plurals>
+    <plurals name="book_detail_silence_months">
+        <item quantity="one">%1$d ماه</item>
+        <item quantity="other">%1$d ماه</item>
+    </plurals>
+    <plurals name="book_detail_silence_weeks">
+        <item quantity="one">%1$d هفته</item>
+        <item quantity="other">%1$d هفته</item>
+    </plurals>
+    <plurals name="book_detail_silence_days">
+        <item quantity="one">%1$d روز</item>
+        <item quantity="other">%1$d روز</item>
+    </plurals>
+    <plurals name="library_mark_count">
+        <item quantity="one">%1$d نشان</item>
+        <item quantity="other">%1$d نشان</item>
+    </plurals>
+    <plurals name="library_saved_count">
+        <item quantity="one">%1$d ذخیره‌شده</item>
+        <item quantity="other">%1$d ذخیره‌شده</item>
+    </plurals>
+    <plurals name="library_group_volume_count">
+        <item quantity="one">%1$d کتاب</item>
+        <item quantity="other">%1$d کتاب</item>
+    </plurals>
+    <plurals name="library_memory_traces">
+        <item quantity="one">%1$d رد</item>
+        <item quantity="other">%1$d رد</item>
+    </plurals>
+    <plurals name="library_recent_active">
+        <item quantity="one">%1$d فعال</item>
+        <item quantity="other">%1$d فعال</item>
+    </plurals>
+    <plurals name="library_wings_mapped">
+        <item quantity="one">%1$d بخش</item>
+        <item quantity="other">%1$d بخش</item>
+    </plurals>
+    <plurals name="castle_path_summary">
+        <item quantity="one">%1$s · %2$d کتاب تمام‌شده</item>
+        <item quantity="other">%1$s · %2$d کتاب تمام‌شده</item>
+    </plurals>
+    <plurals name="castle_memory_volumes">
+        <item quantity="one">%1$d کتاب</item>
+        <item quantity="other">%1$d کتاب</item>
+    </plurals>
+    <plurals name="castle_memory_passages">
+        <item quantity="one">%1$d بریدهٔ نگه‌داشته‌شده</item>
+        <item quantity="other">%1$d بریدهٔ نگه‌داشته‌شده</item>
+    </plurals>
+    <plurals name="castle_memory_records">
+        <item quantity="one">%1$d رکورد مهرشده</item>
+        <item quantity="other">%1$d رکورد مهرشده</item>
+    </plurals>
+    <plurals name="castle_memory_links">
+        <item quantity="one">%1$d پیوند اطلس</item>
+        <item quantity="other">%1$d پیوند اطلس</item>
+    </plurals>
+    <plurals name="castle_mutation_evidence">
+        <item quantity="one">%1$d نشانِ شاهد · %2$s</item>
+        <item quantity="other">%1$d نشانِ شاهد · %2$s</item>
+    </plurals>
+    <plurals name="profile_awakened_count">
+        <item quantity="one">%1$d بیدارشده</item>
+        <item quantity="other">%1$d بیدارشده</item>
+    </plurals>
+    <plurals name="profile_revealed_count">
+        <item quantity="one">%1$d از %2$d آشکار</item>
+        <item quantity="other">%1$d از %2$d آشکار</item>
+    </plurals>
+    <plurals name="profile_sessions_count">
+        <item quantity="one">%1$d نشست</item>
+        <item quantity="other">%1$d نشست</item>
+    </plurals>
+    <plurals name="threshold_quest_progress">
+        <item quantity="one">%1$d از %2$d کامل</item>
+        <item quantity="other">%1$d از %2$d کامل</item>
+    </plurals>
+    <plurals name="threshold_quest_read">
+        <item quantity="one">%1$d دقیقه مطالعهٔ آرام و فعال داشته باش</item>
+        <item quantity="other">%1$d دقیقه مطالعهٔ آرام و فعال داشته باش</item>
+    </plurals>
+    <plurals name="threshold_quest_pages">
+        <item quantity="one">بدون شتاب %1$d صفحه را ورق بزن</item>
+        <item quantity="other">بدون شتاب %1$d صفحه را ورق بزن</item>
+    </plurals>
+    <plurals name="threshold_quest_dreamwalker">
+        <item quantity="one">%1$d دقیقه فعال در جهانی دیگر بمان</item>
+        <item quantity="other">%1$d دقیقه فعال در جهانی دیگر بمان</item>
+    </plurals>
+    <plurals name="threshold_quest_vanguard">
+        <item quantity="one">%1$d صفحه با ریتم حساب‌شده پیش برو</item>
+        <item quantity="other">%1$d صفحه با ریتم حساب‌شده پیش برو</item>
+    </plurals>
+    <plurals name="threshold_quest_nocturne">
+        <item quantity="one">%1$d دقیقه در شب به مطالعه ادامه بده</item>
+        <item quantity="other">%1$d دقیقه در شب به مطالعه ادامه بده</item>
+    </plurals>
+    <plurals name="threshold_quest_oracle">
+        <item quantity="one">%1$d بخش را که ساختار پنهان را آشکار می‌کند محفوظ کن</item>
+        <item quantity="other">%1$d بخش را که ساختار پنهان را آشکار می‌کنند محفوظ کن</item>
+    </plurals>
+    <plurals name="sanctum_recognized_count">
+        <item quantity="one">%1$d عنوان شناخته‌شده</item>
+        <item quantity="other">%1$d عنوان شناخته‌شده</item>
+    </plurals>
+    <plurals name="observatory_recorded_links">
+        <item quantity="one">%1$d پیوند ثبت‌شده</item>
+        <item quantity="other">%1$d پیوند ثبت‌شده</item>
+    </plurals>
+    <plurals name="library_wing_volume_count">
+        <item quantity="one">%1$d جلد</item>
+        <item quantity="other">%1$d جلد</item>
+    </plurals>
+    <plurals name="library_wing_active">
+        <item quantity="one">%1$d فعال</item>
+        <item quantity="other">%1$d فعال</item>
+    </plurals>
+    <plurals name="library_wing_sealed">
+        <item quantity="one">%1$d مهرشده</item>
+        <item quantity="other">%1$d مهرشده</item>
+    </plurals>
+    <plurals name="library_quiet_volume_count">
+        <item quantity="one">%1$d جلد به سکوت رفته است</item>
+        <item quantity="other">%1$d جلد به سکوت رفته‌اند</item>
+    </plurals>
+    <plurals name="reader_notebook_search_limited">
+        <item quantity="one">%1$d نتیجهٔ نخست نمایش داده می‌شود. برای محدودتر کردن نتایج، عبارت جست‌وجو را دقیق‌تر کنید.</item>
+        <item quantity="other">%1$d نتیجهٔ نخست نمایش داده می‌شود. برای محدودتر کردن نتایج، عبارت جست‌وجو را دقیق‌تر کنید.</item>
+    </plurals>
+    <plurals name="mirror_portal_body">
+        <item quantity="one">%1$d ردِ ذخیره‌شده می‌تواند از میان آینه بازگردد.</item>
+        <item quantity="other">%1$d ردِ ذخیره‌شده می‌توانند از میان آینه بازگردند.</item>
+    </plurals>
+    <plurals name="manga_portal_body">
+        <item quantity="one">%1$d جلد کمیک محلی · زیرساخت اختصاصی مطالعه مانگا</item>
+        <item quantity="other">%1$d جلد کمیک محلی · زیرساخت اختصاصی مطالعه مانگا</item>
+    </plurals>
+    <plurals name="manga_hub_storage_summary">
+        <item quantity="one">%1$d فصل · %2$s فایل اصلی · %3$s کش صفحه</item>
+        <item quantity="other">%1$d فصل · %2$s فایل اصلی · %3$s کش صفحه</item>
+    </plurals>
+    <plurals name="manga_chapter_metadata">
+        <item quantity="one">جایگاه %1$d · فصل %2$s · %3$d صفحه · %4$s</item>
+        <item quantity="other">جایگاه %1$d · فصل %2$s · %3$d صفحه · %4$s</item>
+    </plurals>
+    <plurals name="tts_sleep_timer_minutes">
+        <item quantity="one">%1$d دقیقه</item>
+        <item quantity="other">%1$d دقیقه</item>
+    </plurals>
+    <plurals name="reader_eta_range_description">
+        <item quantity="one">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</item>
+        <item quantity="other">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</item>
+    </plurals>
+    <plurals name="observatory_volume_count">
+        <item quantity="one">%1$d جلد</item>
+        <item quantity="other">%1$d جلد</item>
+    </plurals>
+    <plurals name="observatory_link_count">
+        <item quantity="one">%1$d پیوند ثبت‌شده</item>
+        <item quantity="other">%1$d پیوند ثبت‌شده</item>
+    </plurals>
+    <plurals name="observatory_solitary_count">
+        <item quantity="one">%1$d منفرد</item>
+        <item quantity="other">%1$d منفرد</item>
+    </plurals>
+    <plurals name="notice_restored_book_count">
+        <item quantity="one">%1$d کتاب</item>
+        <item quantity="other">%1$d کتاب</item>
+    </plurals>
+    <plurals name="notice_restored_highlight_count">
+        <item quantity="one">%1$d هایلایت</item>
+        <item quantity="other">%1$d هایلایت</item>
+    </plurals>
+    <plurals name="notice_added_chapter_count">
+        <item quantity="one">%1$d فصل</item>
+        <item quantity="other">%1$d فصل</item>
+    </plurals>
+    <plurals name="notice_duplicate_chapter_count">
+        <item quantity="one">%1$d فصل از قبل وجود داشت</item>
+        <item quantity="other">%1$d فصل از قبل وجود داشت</item>
+    </plurals>
 </resources>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-feature
@@ -16,6 +17,7 @@
     </queries>
     <application
         android:allowBackup="false"
+        android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:hardwareAccelerated="true"
         android:icon="@drawable/ic_veil_reader_icon"
@@ -23,10 +25,14 @@
         android:label="${veilAppLabel}"
         android:supportsRtl="true"
         android:theme="@style/Theme.VeilReader">
+        <!-- Media3 requires external controller binding for background transport.
+             Private publication/voice commands remain guarded in SessionCallback.
+             See docs/governance/LINT_WARNING_CLEANUP_2026-10-12.md. -->
         <service
             android:name=".ui.reader.tts.ReaderTtsPlaybackService"
             android:exported="true"
-            android:foregroundServiceType="mediaPlayback">
+            android:foregroundServiceType="mediaPlayback"
+            tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>

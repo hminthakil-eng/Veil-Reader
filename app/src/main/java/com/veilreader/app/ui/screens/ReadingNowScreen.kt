@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
@@ -1057,8 +1059,9 @@ private fun ThresholdWhisperCard(
         whisper.body
     }
     val displayDetail = if (whisper.kind == ThresholdWhisperKind.READING_PROMPT) {
-        stringResource(
-            R.string.threshold_quest_progress,
+        pluralStringResource(
+            R.plurals.threshold_quest_progress,
+            resourceQuantity(whisper.questProgress?.coerceAtLeast(0) ?: 0),
             whisper.questProgress?.coerceAtLeast(0) ?: 0,
             promptTarget
         )
@@ -1302,15 +1305,15 @@ private fun localizedThresholdQuest(
     pathId: String,
     target: Int
 ): String = when (questId) {
-    "read" -> stringResource(R.string.threshold_quest_read, target)
-    "pages" -> stringResource(R.string.threshold_quest_pages, target)
+    "read" -> pluralStringResource(R.plurals.threshold_quest_read, resourceQuantity(target), target)
+    "pages" -> pluralStringResource(R.plurals.threshold_quest_pages, resourceQuantity(target), target)
     "mark" -> when (pathId) {
-        "dreamwalker" -> stringResource(R.string.threshold_quest_dreamwalker, target)
-        "vanguard" -> stringResource(R.string.threshold_quest_vanguard, target)
-        "nocturne" -> stringResource(R.string.threshold_quest_nocturne, target)
+        "dreamwalker" -> pluralStringResource(R.plurals.threshold_quest_dreamwalker, resourceQuantity(target), target)
+        "vanguard" -> pluralStringResource(R.plurals.threshold_quest_vanguard, resourceQuantity(target), target)
+        "nocturne" -> pluralStringResource(R.plurals.threshold_quest_nocturne, resourceQuantity(target), target)
         "archivist" -> stringResource(R.string.threshold_quest_archivist)
         "artificer" -> stringResource(R.string.threshold_quest_artificer)
-        else -> stringResource(R.string.threshold_quest_oracle, target)
+        else -> pluralStringResource(R.plurals.threshold_quest_oracle, resourceQuantity(target), target)
     }
     else -> stringResource(R.string.threshold_quest_generic)
 }
@@ -1382,7 +1385,7 @@ private fun MirrorPortalCard(
                     color = VeilPalette.Moon
                 )
                 Text(
-                    stringResource(R.string.mirror_portal_body, savedTraceCount),
+                    pluralStringResource(R.plurals.mirror_portal_body, resourceQuantity(savedTraceCount), savedTraceCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.86f),
                     maxLines = 2,

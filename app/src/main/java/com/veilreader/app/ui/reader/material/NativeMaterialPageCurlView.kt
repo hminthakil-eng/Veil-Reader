@@ -42,12 +42,12 @@ import javax.microedition.khronos.opengles.GL10
  * No demo Activity, second navigator, synthetic book or native slide fallback.
  * Original engine retained for explicit rollback; debug/benchmark select this backend.
  */
-internal class NativeMaterialPageCurlView(
+internal class NativeMaterialPageCurlView @JvmOverloads constructor(
     context: Context,
-    private val state: MaterialPageEngineState,
-    private val onReady: (Boolean) -> Unit,
-    private val onFailure: () -> Unit,
-    private val onSuccessfulFrame: () -> Unit
+    private val state: MaterialPageEngineState = MaterialPageEngineState(),
+    private val onReady: (Boolean) -> Unit = {},
+    private val onFailure: () -> Unit = {},
+    private val onSuccessfulFrame: () -> Unit = {}
 ) : GLTextureView(context), GLSurfaceView.Renderer {
     private data class Frame(
         val bitmap: Bitmap?, val epoch: Long, val generation: Long, val viewport: Long,
@@ -138,7 +138,7 @@ internal class NativeMaterialPageCurlView(
             val old = frame
             if (active && (old?.bitmap !== bitmap || old.epoch != state.sheetEpoch || old.generation != generation)) {
                 revision = nextGpuMaterialTextureRevision(revision)
-                state.markSnapshotSubmittedForGpu(bitmap!!, generation, revision)
+                state.markSnapshotSubmittedForGpu(bitmap, generation, revision)
                 leases += MaterialPageGpuUploadLease(bitmap, generation, revision)
             }
             frame = Frame(bitmap, state.sheetEpoch, generation, viewport, revision, active,

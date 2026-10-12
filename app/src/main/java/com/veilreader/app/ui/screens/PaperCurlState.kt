@@ -249,9 +249,9 @@ internal class PaperCurlState {
 @Composable
 internal fun PaperCurlOverlay(
     state: PaperCurlState,
+    modifier: Modifier = Modifier,
     patina: Float = 0.35f,
-    tone: MaterialPageTone = MaterialPageTone.LIGHT,
-    modifier: Modifier = Modifier
+    tone: MaterialPageTone = MaterialPageTone.LIGHT
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
     LaunchedEffect(state, patina, tone, reducedMotion) {

@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -117,7 +119,7 @@ fun ObservatoryScreen(
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
             Text(
-                VeilBackLabel(stringResource(R.string.profile_stat_castle)),
+                veilBackLabel(stringResource(R.string.profile_stat_castle)),
                 style = MaterialTheme.typography.labelMedium
             )
         }
@@ -143,15 +145,15 @@ fun ObservatoryScreen(
                         if (atlas.isolatedCount > 0) {
                             stringResource(
                                 R.string.observatory_summary_with_solitary,
-                                atlas.nodes.size,
-                                atlas.edges.size,
-                                atlas.isolatedCount
+                                pluralStringResource(R.plurals.observatory_volume_count, resourceQuantity(atlas.nodes.size), atlas.nodes.size),
+                                pluralStringResource(R.plurals.observatory_link_count, resourceQuantity(atlas.edges.size), atlas.edges.size),
+                                pluralStringResource(R.plurals.observatory_solitary_count, resourceQuantity(atlas.isolatedCount), atlas.isolatedCount)
                             )
                         } else {
                             stringResource(
                                 R.string.observatory_summary,
-                                atlas.nodes.size,
-                                atlas.edges.size
+                                pluralStringResource(R.plurals.observatory_volume_count, resourceQuantity(atlas.nodes.size), atlas.nodes.size),
+                                pluralStringResource(R.plurals.observatory_link_count, resourceQuantity(atlas.edges.size), atlas.edges.size)
                             )
                         },
                         style = MaterialTheme.typography.labelSmall,
@@ -206,8 +208,8 @@ private fun ObservatoryAtlasPanel(
 ) {
     val atlasDescription = stringResource(
         R.string.observatory_canvas_semantics,
-        atlas.nodes.size,
-        atlas.edges.size
+        pluralStringResource(R.plurals.observatory_volume_count, resourceQuantity(atlas.nodes.size), atlas.nodes.size),
+        pluralStringResource(R.plurals.observatory_link_count, resourceQuantity(atlas.edges.size), atlas.edges.size)
     )
     val relatedBookIds = remember(atlas.edges, selectedBookId) {
         if (selectedBookId == null) {
@@ -438,9 +440,9 @@ internal fun ObservatorySelection(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        stringResource(
-                            if (node.connectionCount == 1) R.string.observatory_recorded_link_one
-                            else R.string.observatory_recorded_links_many,
+                        pluralStringResource(
+                            R.plurals.observatory_recorded_links,
+                            resourceQuantity(node.connectionCount),
                             node.connectionCount
                         ),
                         style = MaterialTheme.typography.bodySmall,

@@ -54,7 +54,7 @@ fun MangaCoilPage(
 
     when (val page = resolved) {
         ResolvedUiPage.Loading -> {
-            Box(pageModifier(mode, modifier), contentAlignment = Alignment.Center) {
+            Box(modifier.pageModifier(mode), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
@@ -63,7 +63,7 @@ fun MangaCoilPage(
             MangaImageError(
                 message = stringResource(R.string.manga_reader_page_failed),
                 onRetry = { retryKey += 1 },
-                modifier = pageModifier(mode, modifier)
+                modifier = modifier.pageModifier(mode)
             )
         }
 
@@ -79,12 +79,12 @@ fun MangaCoilPage(
             var loading by remember(request) { mutableStateOf(true) }
             var failed by remember(request) { mutableStateOf(false) }
 
-            Box(pageModifier(mode, modifier), contentAlignment = Alignment.Center) {
+            Box(modifier.pageModifier(mode), contentAlignment = Alignment.Center) {
                 AsyncImage(
                     model = request,
                     imageLoader = imageLoader,
                     contentDescription = null,
-                    modifier = imageModifier(mode),
+                    modifier = Modifier.imageModifier(mode),
                     contentScale = ContentScale.Fit,
                     onLoading = {
                         loading = true
@@ -133,15 +133,14 @@ private fun MangaImageError(
     }
 }
 
-private fun pageModifier(
-    mode: MangaReaderMode,
-    modifier: Modifier
+private fun Modifier.pageModifier(
+    mode: MangaReaderMode
 ): Modifier = when (mode) {
-    MangaReaderMode.PAGED -> modifier.fillMaxSize()
-    MangaReaderMode.WEBTOON -> modifier.fillMaxWidth().wrapContentHeight()
+    MangaReaderMode.PAGED -> fillMaxSize()
+    MangaReaderMode.WEBTOON -> fillMaxWidth().wrapContentHeight()
 }
 
-private fun imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
-    MangaReaderMode.PAGED -> Modifier.fillMaxSize()
-    MangaReaderMode.WEBTOON -> Modifier.fillMaxWidth().wrapContentHeight()
+private fun Modifier.imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
+    MangaReaderMode.PAGED -> fillMaxSize()
+    MangaReaderMode.WEBTOON -> fillMaxWidth().wrapContentHeight()
 }

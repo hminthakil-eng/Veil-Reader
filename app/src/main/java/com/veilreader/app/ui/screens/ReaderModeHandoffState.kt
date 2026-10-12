@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.view.View
@@ -97,7 +98,7 @@ internal class ReaderModeHandoffState {
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
             }
-            val bitmap = reusable ?: Bitmap.createBitmap(
+            val bitmap = reusable ?: createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888

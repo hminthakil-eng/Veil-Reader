@@ -65,8 +65,8 @@ internal fun PdfZoomControls(
     navigator: Navigator?,
     appearance: ReaderAppearance,
     onAppearanceChange: (ReaderAppearance) -> Unit,
-    reducedMotion: Boolean = false,
     modifier: Modifier = Modifier,
+    reducedMotion: Boolean = false,
     onDone: () -> Unit
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle

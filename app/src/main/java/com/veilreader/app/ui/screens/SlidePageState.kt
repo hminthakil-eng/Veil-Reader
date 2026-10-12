@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.view.View
@@ -175,7 +176,7 @@ internal class SlidePageState {
         current?.takeIf {
             !it.isRecycled && it.width == targetWidth && it.height == targetHeight &&
                 it.config == Bitmap.Config.ARGB_8888
-        } ?: Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888).also {
+        } ?: createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888).also {
             current?.takeIf { !it.isRecycled }?.recycle()
         }
     }.getOrNull()

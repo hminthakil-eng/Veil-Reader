@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.reader.material
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.SystemClock
@@ -436,7 +437,7 @@ internal class MaterialPageEngineState(
                 prepared != null &&
                 snapshotBuffers[preparedSnapshotBufferSlot] === prepared.bitmap
         val capture =
-            if (usePrepared && prepared != null) {
+            if (usePrepared) {
                 snapshotBufferCursor = preparedSnapshotBufferSlot
                 preparedSnapshot = null
                 preparedSnapshotBufferSlot = -1
@@ -1058,7 +1059,7 @@ internal class MaterialPageEngineState(
                     it.width == targetWidth &&
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
-            } ?: Bitmap.createBitmap(
+            } ?: createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888

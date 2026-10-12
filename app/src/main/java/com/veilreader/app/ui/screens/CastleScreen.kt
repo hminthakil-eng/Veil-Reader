@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -263,9 +265,9 @@ private fun CastleKeep(
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val localizedRank = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
     val localizedPath = localizedPathName(profile.path)
-    val pathSummary = stringResource(
-        if (profile.booksFinished == 1) R.string.castle_path_summary_one
-        else R.string.castle_path_summary_many,
+    val pathSummary = pluralStringResource(
+        R.plurals.castle_path_summary,
+        resourceQuantity(profile.booksFinished),
         localizedPath,
         profile.booksFinished
     )
@@ -410,10 +412,26 @@ private fun CastleKeep(
 
 @Composable
 private fun CastleMemoryInscription(memory: CastleMemoryState) {
-    val volumesText = stringResource(R.string.castle_memory_volumes, memory.volumeCount)
-    val passagesText = stringResource(R.string.castle_memory_passages, memory.passageCount)
-    val recordsText = stringResource(R.string.castle_memory_records, memory.sealedCapsuleCount)
-    val linksText = stringResource(R.string.castle_memory_links, memory.atlasLinkCount)
+    val volumesText = pluralStringResource(
+        R.plurals.castle_memory_volumes,
+        resourceQuantity(memory.volumeCount),
+        memory.volumeCount
+    )
+    val passagesText = pluralStringResource(
+        R.plurals.castle_memory_passages,
+        resourceQuantity(memory.passageCount),
+        memory.passageCount
+    )
+    val recordsText = pluralStringResource(
+        R.plurals.castle_memory_records,
+        resourceQuantity(memory.sealedCapsuleCount),
+        memory.sealedCapsuleCount
+    )
+    val linksText = pluralStringResource(
+        R.plurals.castle_memory_links,
+        resourceQuantity(memory.atlasLinkCount),
+        memory.atlasLinkCount
+    )
     val facts = buildList {
         add(volumesText)
         if (memory.passageCount > 0) add(passagesText)
@@ -575,8 +593,9 @@ private fun CastleMutationLedgerSummary(ledger: WorldMutationLedger) {
                     color = VeilPalette.Moon
                 )
                 Text(
-                    stringResource(
-                        R.string.castle_mutation_evidence,
+                    pluralStringResource(
+                        R.plurals.castle_mutation_evidence,
+                        resourceQuantity(entry.evidenceCount),
                         entry.evidenceCount,
                         durability
                     ),

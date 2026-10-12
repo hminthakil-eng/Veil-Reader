@@ -54,10 +54,10 @@ jobs:
               -dname "CN=Veil Forge QA,O=Veil Reader QA,C=US"
           fi
 
-      - name: Set up Gradle 9.6
+      - name: Set up Gradle 9.8.1
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
-          gradle-version: '9.6.0'
+          gradle-version: '9.8.1'
 
       - name: Test, lint and build the separate QA installation
         run: >-

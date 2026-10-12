@@ -70,7 +70,14 @@ android {
     }
 
     sourceSets {
-        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
+    }
+
+    // Both supported languages remain available for offline locale changes.
+    bundle { language { enableSplit = false } }
+
+    lint {
+        warningsAsErrors = true
     }
 
     compileOptions {
@@ -81,6 +88,12 @@ android {
 
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+}
+
+kotlin {
+    compilerOptions {
+        allWarningsAsErrors.set(true)
     }
 }
 
@@ -104,24 +117,25 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
 }
 
 dependencies {
-    // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
+    // Stable AndroidX updates retain Readium 3.4.0's compatible API family.
     implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.fragment:fragment-ktx:1.8.9")
+    implementation("androidx.fragment:fragment-ktx:1.9.1")
     implementation("androidx.compose.ui:ui:1.12.1")
     implementation("androidx.compose.ui:ui-tooling-preview:1.12.1")
     implementation("androidx.compose.foundation:foundation:1.12.1")
     implementation("androidx.compose.material3:material3:1.4.0")
     // Stable adaptive window/posture APIs for phone, tablet, desktop-window and foldable layouts.
     implementation("androidx.compose.material3.adaptive:adaptive:1.3.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.metrics:metrics-performance:1.0.0")
     // Media3 owns background TTS system integration: MediaSession, notification and media buttons.
     implementation("androidx.media3:media3-session:1.11.1")
     implementation("com.irurueta:irurueta-android-glutils:1.1.11")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("com.jakewharton.timber:timber:5.0.1")
 
     // Neural TTS model packages ship as tar.bz2 upstream. Extraction is fail-closed in
     // ReaderTtsModelArchiveExtractor: no links, no traversal, bounded entry count/expanded bytes.
@@ -145,7 +159,7 @@ dependencies {
     // Manga image delivery: request-scoped network headers + large-image subsampling.
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
-    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3-core:1.5.0")
+    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3-core:1.7.0")
 
     baselineProfile(project(":benchmark"))
 
@@ -156,9 +170,9 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // Reuse the native Compose test stack for cloud rendering; no production dependency.
     testImplementation("androidx.compose.ui:ui-test-junit4:1.12.1")
-    testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
+    testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.11.0")
     testImplementation("org.robolectric:robolectric:4.17")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 
     // Real Room verification runs on an Android emulator for data-layer changes.
     androidTestImplementation("androidx.test:core:1.7.0")

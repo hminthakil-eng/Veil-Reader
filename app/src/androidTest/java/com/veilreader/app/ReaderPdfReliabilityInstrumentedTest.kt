@@ -13,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
@@ -555,7 +556,8 @@ class ReaderPdfReliabilityInstrumentedTest {
             val description = it.contentDescription?.toString().orEmpty()
             it.isVisibleToUser &&
                 it.isCheckable &&
-                it.isChecked &&
+                AccessibilityNodeInfoCompat.wrap(it).checked ==
+                    AccessibilityNodeInfoCompat.CHECKED_STATE_TRUE &&
                 (description == page || description == scroll) &&
                 description != excluding
         }

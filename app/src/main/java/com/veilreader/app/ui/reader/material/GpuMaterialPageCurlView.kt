@@ -13,7 +13,7 @@ import android.opengl.GLUtils
 import android.os.SystemClock
 import android.os.Trace
 import com.veilreader.app.diagnostics.ReaderTrace
-import android.util.Log
+import com.veilreader.app.diagnostics.DiagnosticLog
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -509,7 +509,7 @@ internal class GpuMaterialPageCurlView(
 
         val staleDrawError = consumeGpuPageGlErrors()
         if (staleDrawError != GLES20.GL_NO_ERROR) {
-            Log.w(TAG, "Cleared stale GL error before Paper draw: $staleDrawError")
+            DiagnosticLog.warn(TAG, "Cleared stale GL error before Paper draw: $staleDrawError")
         }
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vertexBufferId)
@@ -660,9 +660,9 @@ internal class GpuMaterialPageCurlView(
     ) {
         rendererFailed = true
         if (error != null) {
-            Log.e(TAG, message, error)
+            DiagnosticLog.error(TAG, message, error)
         } else {
-            Log.e(TAG, message)
+            DiagnosticLog.error(TAG, message)
         }
         if (!failureReported) {
             failureReported = true
@@ -805,7 +805,7 @@ internal class GpuMaterialPageCurlView(
 
         val staleError = consumeGpuPageGlErrors()
         if (staleError != GLES20.GL_NO_ERROR) {
-            Log.w(TAG, "Cleared stale GL error before texture preallocation: $staleError")
+            DiagnosticLog.warn(TAG, "Cleared stale GL error before texture preallocation: $staleError")
         }
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
         GLES20.glTexImage2D(
@@ -831,7 +831,7 @@ internal class GpuMaterialPageCurlView(
             // dimensions mismatched so the first real frame retries with texImage2D.
             frontTextureWidth = 1
             frontTextureHeight = 1
-            Log.w(TAG, "GPU page texture preallocation skipped: glError=$error")
+            DiagnosticLog.warn(TAG, "GPU page texture preallocation skipped: glError=$error")
         }
     }
 
@@ -849,7 +849,7 @@ internal class GpuMaterialPageCurlView(
         try {
             val staleError = consumeGpuPageGlErrors()
             if (staleError != GLES20.GL_NO_ERROR) {
-                Log.w(TAG, "Cleared stale GL error before texture upload: $staleError")
+                DiagnosticLog.warn(TAG, "Cleared stale GL error before texture upload: $staleError")
             }
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
             if (
