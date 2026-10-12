@@ -28,11 +28,13 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
+import org.readium.r2.navigator.epub.EpubSettings
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
+import com.veilreader.app.ui.reader.material.nextMaterialPageSnapshotRevision
 import kotlin.math.abs
 
 internal data class PaperDestinationSnapshot(
@@ -79,6 +81,10 @@ internal fun paperPreviewSamePage(first: Locator, second: Locator): Boolean =
 /** Separate Readium pagination, no input listeners, progress collector or publication ownership. */
 @OptIn(ExperimentalReadiumApi::class)
 internal class PaperPreviewNavigator {
+    private data class RenderedOrigin(val bitmap: Bitmap, val sourceRevision: Long,
+        val locator: Locator, val forwardDestination: Locator, val settings: EpubSettings)
+    private var renderedOrigin: RenderedOrigin? = null
+    fun releaseHistory() { renderedOrigin = null }
     var navigator: EpubNavigatorFragment? by mutableStateOf(null)
     private val pages = MutableStateFlow(0L)
     val paginationListener = object : EpubNavigatorFragment.PaginationListener {
@@ -122,7 +128,21 @@ internal class PaperPreviewNavigator {
                 preview.settings.first { it == settingsAtRequest }
                 pages.first { it > before }
             }
+            // After one forward commit, the previously captured source IS the
+            // previous page. Reuse immutable ink instead of repaginating/capturing
+            // it again. Extra invalidations (annotations/reflow) reject this cache.
+            val previous = renderedOrigin?.takeIf {
+                nextMaterialPageSnapshotRevision(it.sourceRevision) == revision &&
+                    paperPreviewSamePage(it.forwardDestination, origin) && it.settings == settingsAtRequest &&
+                    !it.bitmap.isRecycled && it.bitmap.width == width && it.bitmap.height == height
+            }
+            if (previous != null && valid()) {
+                state.destinationPreview.publish(PaperTurnDirection.BACKWARD,
+                    PaperDestinationSnapshot(previous.bitmap, revision, origin, previous.locator))
+                ReaderTrace.event("paper_destination_reused_origin", details = "revision=$revision")
+            }
             for (direction in PaperTurnDirection.entries) {
+                if (direction == PaperTurnDirection.BACKWARD && previous != null) continue
                 if (!valid()) return@withTimeoutOrNull
                 if (!paperPreviewSamePage(preview.currentLocator.value, origin)) {
                     val before = pages.value
@@ -150,13 +170,24 @@ internal class PaperPreviewNavigator {
                 val destination = preview.currentLocator.value
                 if (!awaitMaterialPageSourceVisualReady(preview.publicationView, revision, 1_000L)) continue
                 if (!valid() || !paperPreviewSamePage(destination, preview.currentLocator.value)) continue
-                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val bitmap = try { Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888) }
+                catch (_: OutOfMemoryError) {
+                    releaseHistory()
+                    state.destinationPreview.invalidate()
+                    ReaderTrace.event("paper_destination_memory_pressure", details = "revision=$revision")
+                    return@withTimeoutOrNull
+                }
                 val result = ViewDrawImmediateMaterialPageSnapshotProvider.capture(
                     preview.publicationView, bitmap, revision
                 )
                 if (result is MaterialPageSnapshotCapture.Ready && valid()) {
                     state.destinationPreview.publish(direction,
                         PaperDestinationSnapshot(bitmap, revision, origin, destination))
+                    if (direction == PaperTurnDirection.FORWARD) {
+                        renderedOrigin = state.materialEngine.copyPreparedOrigin(revision, width, height)?.let {
+                            RenderedOrigin(it, revision, origin, destination, settingsAtRequest)
+                        }
+                    }
                     ReaderTrace.event("paper_destination_prepared",
                         details = "revision=$revision direction=$direction width=$width height=$height")
                 } else {
@@ -225,6 +256,7 @@ internal fun ReaderPaperDestinationPreviewHost(
         owner.navigator = fragment as EpubNavigatorFragment
         onDispose {
             owner.navigator = null
+            owner.releaseHistory()
             state.invalidate()
             if (fragment.isAdded) manager.beginTransaction().remove(fragment).commitNowAllowingStateLoss()
         }

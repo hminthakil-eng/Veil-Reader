@@ -3214,6 +3214,8 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible =
                 !controlsVisible &&
+                    !paperCurlState.active &&
+                    !slidePageState.active &&
                     readerSessionReady &&
                     !showNotebook &&
                     !showAppearance &&
@@ -6144,12 +6146,12 @@ internal fun ReaderNavigationModeSelector(
                 ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide
                 ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll
             }),
-            description = stringResource(when (mode) {
-                ReaderNavigationMode.PAGED -> R.string.settings_mode_paged_description
-                ReaderNavigationMode.PAPER_CURL -> R.string.settings_mode_curl_description
-                ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide_description
-                ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll_description
-            }),
+            description = when (mode) {
+                ReaderNavigationMode.PAGED -> localizedPageTurnStyleDescription(PageTurnStyle.NONE)
+                ReaderNavigationMode.PAPER_CURL -> localizedPageTurnStyleDescription(PageTurnStyle.PAPER)
+                ReaderNavigationMode.SLIDE -> localizedPageTurnStyleDescription(PageTurnStyle.SLIDE)
+                ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll_description)
+            },
             previewMode = mode, active = selected == mode, enabled = enabled,
             modifier = modifier, onClick = { if (enabled) onSelect(mode) }
         )
@@ -6159,8 +6161,8 @@ internal fun ReaderNavigationModeSelector(
         Column(Modifier.fillMaxWidth().selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (stacked) choices.forEach { choice(it, Modifier.fillMaxWidth()) }
             else choices.chunked(2).forEach { pair ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    pair.forEach { choice(it, Modifier.weight(1f)) }
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pair.forEach { choice(it, Modifier.weight(1f).fillMaxHeight()) }
                 }
             }
         }

@@ -406,6 +406,15 @@ internal class MaterialPageEngineState(
         return true
     }
 
+    /** Freeze already captured Readium ink for an adjacent-page cache, outside input. */
+    internal fun copyPreparedOrigin(revision: Long, width: Int, height: Int): Bitmap? {
+        val prepared = preparedSnapshot
+        if (active || !materialPagePreparedSnapshotIsCurrent(prepared, revision, width, height,
+                SystemClock.elapsedRealtimeNanos())) return null
+        return try { prepared?.bitmap?.copy(Bitmap.Config.ARGB_8888, false) }
+        catch (_: OutOfMemoryError) { null }
+    }
+
     fun begin(
         view: View,
         side: MaterialPageSide,

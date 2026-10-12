@@ -41,8 +41,17 @@ jobs:
       - name: Generate and submit Gradle dependency graph
         uses: gradle/actions/dependency-submission@v6
         with:
-          dependency-graph: generate-and-submit
+          dependency-graph: generate-submit-and-upload
+          dependency-graph-continue-on-failure: false
           cache-provider: basic
+          artifact-retention-days: 7
+
+      - name: Verify patched build crypto in the submitted head graph
+        env:
+          EXPECTED_GRAPH_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 tools/test_build_dependency_graph.py
+          python3 tools/verify_build_dependency_graph.py dependency-graph-reports "$EXPECTED_GRAPH_SHA"
 
       - name: Prepare SBOM output
         run: mkdir -p build/reports/sbom
@@ -68,3 +77,41 @@ jobs:
           syft-version: v1.54.0
           upload-artifact-retention: 14
           upload-release-assets: false
+
+  # A documentation-only base commit may have no push-triggered graph. Submit
+  # its ACTUAL checkout with the same correlator as the head, without editing main.
+  dependency-base-graph:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact PR base
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Generate and submit exact base graph
+        uses: gradle/actions/dependency-submission@v6
+        env:
+          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_DEPENDENCY_GRAPH_REF: refs/heads/${{ github.base_ref }}
+          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: dependency_baseline-dependency-graph
+        with:
+          dependency-graph: generate-and-submit
+          dependency-graph-continue-on-failure: false
+          cache-provider: basic
+          artifact-retention-days: 7
+
+      - name: Preserve exact base dependency graph
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-base-dependency-graph
+          path: dependency-graph-reports/*.json
+          if-no-files-found: error
+          retention-days: 7

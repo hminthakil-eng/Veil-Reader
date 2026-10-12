@@ -197,6 +197,13 @@ class NativePaperRealReaderInstrumentedTest {
                 changedFraction(baseline, held, bounds) > 0.04)
             assertTrue("The flat front must preserve book ink, not sample a blank texture corner",
                 retainedFrontInk(baseline, held, bounds, rtl) > 0.75)
+            instrumentation.runOnMainSync {
+                val curlBounds = Rect()
+                assertTrue(requireNotNull(native()).getGlobalVisibleRect(curlBounds))
+                assertTrue("Exposed ink must be the independent destination, not the live source",
+                    revealedDestinationInk(held, requireNotNull(previews()?.previews?.activeSnapshot).bitmap,
+                        curlBounds, rtl) > 0.95)
+            }
             baseline.recycle(); held.recycle()
             // Deliberately reverse the pull before releasing: same locator, no commit.
             for (step in 13 downTo 0) {
@@ -257,6 +264,54 @@ class NativePaperRealReaderInstrumentedTest {
                 afterBack.getJSONObject("locations").getDouble("progression") <
                     beforeBack.getJSONObject("locations").getDouble("progression"))
             screenshot("$prefix-06-backward-committed.png").recycle()
+
+            // Jump near the end of the fixture's first resource. Independent
+            // pagination must render the next chapter without moving the live one.
+            var chapterHref: org.readium.r2.shared.util.Url? = null
+            instrumentation.runOnMainSync {
+                val nav = requireNotNull(navigator())
+                val source = nav.currentLocator.value
+                chapterHref = source.href
+                assertTrue(nav.go(source.copy(
+                    locations = source.locations.copy(progression = 0.95),
+                    text = org.readium.r2.shared.publication.Locator.Text()
+                ), animated = false))
+            }
+            waitUntil("Independent next-chapter page prepared at the real resource boundary") {
+                var ready = false
+                instrumentation.runOnMainSync {
+                    val adjacent = previews()?.previews?.prepared(PaperTurnDirection.FORWARD)
+                    val current = navigator()?.currentLocator?.value
+                    ready = adjacent != null && current != null &&
+                        paperPreviewSamePage(adjacent.origin, current) &&
+                        adjacent.origin.href == chapterHref && adjacent.destination.href != chapterHref
+                }
+                ready
+            }
+            down = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, x, y, down)
+            for (step in 1..16) {
+                inject(MotionEvent.ACTION_MOVE, x + direction * bounds.width() * 0.65f * step / 16, y, down)
+                SystemClock.sleep(22)
+            }
+            waitUntil("Chapter-boundary source sheet acquired") {
+                var ready = false
+                instrumentation.runOnMainSync { ready = (native()?.currentAcquiredSheetEpoch ?: 0L) > 0L }
+                ready
+            }
+            instrumentation.runOnMainSync {
+                assertEquals("Holding at a chapter boundary must retain the source chapter",
+                    chapterHref, navigator()?.currentLocator?.value?.href)
+                assertNotEquals(chapterHref, requireNotNull(previews()?.previews?.activeSnapshot).destination.href)
+            }
+            screenshot("$prefix-07-chapter-boundary-held.png").recycle()
+            inject(MotionEvent.ACTION_UP, x + direction * bounds.width() * 0.65f, y, down)
+            waitUntil("Release commits the actual next chapter") {
+                var changed = false
+                instrumentation.runOnMainSync { changed = navigator()?.currentLocator?.value?.href?.let { it != chapterHref } ?: false }
+                changed
+            }
+            screenshot("$prefix-08-next-chapter.png").recycle()
         }
     }
 
@@ -340,6 +395,31 @@ class NativePaperRealReaderInstrumentedTest {
             total++
         }
         return changed.toDouble() / total.coerceAtLeast(1)
+    }
+
+    private fun revealedDestinationInk(screen: Bitmap, destination: Bitmap, bounds: Rect, rtl: Boolean): Double {
+        assertEquals(destination.width, bounds.width())
+        assertEquals(destination.height, bounds.height())
+        val start = (destination.width * if (rtl) 0.07 else 0.79).toInt()
+        val end = (destination.width * if (rtl) 0.21 else 0.93).toInt()
+        var ink = 0
+        var matched = 0
+        for (y in (destination.height * 0.2).toInt() until (destination.height * 0.8).toInt() step 3) {
+            for (x in start until end step 3) {
+                val expected = destination.getPixel(x, y)
+                val er = android.graphics.Color.red(expected)
+                val eg = android.graphics.Color.green(expected)
+                val eb = android.graphics.Color.blue(expected)
+                if ((er + eg + eb) / 3 >= 170) continue
+                ink++
+                val actual = screen.getPixel(bounds.left + x, bounds.top + y)
+                if (kotlin.math.abs(er - android.graphics.Color.red(actual)) < 36 &&
+                    kotlin.math.abs(eg - android.graphics.Color.green(actual)) < 36 &&
+                    kotlin.math.abs(eb - android.graphics.Color.blue(actual)) < 36) matched++
+            }
+        }
+        assertTrue("The revealed fixture region must contain real destination glyphs", ink > 100)
+        return matched.toDouble() / ink
     }
 
     private fun sourceInkFraction(bitmap: Bitmap): Double {
