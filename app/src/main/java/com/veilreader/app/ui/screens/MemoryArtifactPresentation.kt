@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,6 +13,7 @@ import com.veilreader.app.R
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilContentScript
 
 internal enum class MemoryArtifactKind {
     PASSAGE,
@@ -33,7 +35,8 @@ internal fun memoryArtifactKind(highlight: Highlight): MemoryArtifactKind {
 internal fun MemoryArtifactContent(
     highlight: Highlight,
     modifier: Modifier = Modifier,
-    noteEmphasis: Boolean = false
+    noteEmphasis: Boolean = false,
+    colors: ColorScheme? = null
 ) {
     val kind = memoryArtifactKind(highlight)
 
@@ -58,7 +61,8 @@ internal fun MemoryArtifactContent(
                 ) {
                     VeilMicroLabel(
                         text = stringResource(R.string.memory_artifact_passage),
-                        color = VeilPalette.Mist.copy(alpha = 0.72f)
+                        color = colors?.onSurfaceVariant ?: VeilPalette.Mist.copy(alpha = 0.72f),
+                        strong = colors != null
                     )
                     Text(
                         "“${highlight.quote.trim()}”",
@@ -66,8 +70,8 @@ internal fun MemoryArtifactContent(
                             MaterialTheme.typography.bodyMedium
                         } else {
                             MaterialTheme.typography.bodyLarge
-                        },
-                        color = VeilPalette.Moon.copy(alpha = 0.92f)
+                        }.withVeilContentScript(highlight.quote),
+                        color = colors?.onSurface ?: VeilPalette.Moon.copy(alpha = 0.92f)
                     )
                 }
             }
@@ -95,7 +99,9 @@ internal fun MemoryArtifactContent(
                             } else {
                                 R.string.memory_artifact_annotation
                             }
-                        )
+                        ),
+                        color = colors?.primary ?: VeilPalette.Brass,
+                        strong = colors != null
                     )
                     Text(
                         highlight.note.trim(),
@@ -103,8 +109,8 @@ internal fun MemoryArtifactContent(
                             MaterialTheme.typography.bodyLarge
                         } else {
                             MaterialTheme.typography.bodyMedium
-                        },
-                        color = VeilPalette.Moon
+                        }.withVeilContentScript(highlight.note),
+                        color = colors?.onSurface ?: VeilPalette.Moon
                     )
                 }
             }

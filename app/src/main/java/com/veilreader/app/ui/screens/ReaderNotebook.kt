@@ -1,9 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import com.veilreader.app.ui.resourceQuantity
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.selectable
@@ -11,19 +7,21 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,21 +34,15 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.ui.theme.withVeilContentScript
-import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
-import com.veilreader.app.ui.theme.VeilMaterials
-import com.veilreader.app.ui.theme.VeilPalette
-import com.veilreader.app.ui.theme.usesArabicScript
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.services.search.isSearchable
-import org.readium.r2.shared.publication.services.search.search
 
-private enum class ReaderNotebookTab(val labelRes: Int) {
+internal enum class ReaderNotebookTab(val labelRes: Int) {
     CONTENTS(R.string.reader_notebook_tab_contents),
     BOOKMARKS(R.string.reader_notebook_tab_bookmarks),
     NOTES(R.string.reader_notebook_tab_notes),
@@ -114,85 +106,64 @@ private fun ReaderNotebookActionRail(
 
 @Composable
 private fun ReaderNotebookTabButton(
-    tab: ReaderNotebookTab,
-    selected: Boolean,
-    count: Int?,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    tab: ReaderNotebookTab, selected: Boolean, count: Int?,
+    modifier: Modifier = Modifier, onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val formatInteger = rememberVeilIntegerFormatter()
-    val rawLabel = stringResource(tab.labelRes)
-    val label = if (usesArabicScript(rawLabel)) {
-        rawLabel
-    } else {
-        rawLabel.uppercase()
-    }
-
     Surface(
-        modifier = modifier
-            .heightIn(min = 48.dp)
-            .selectable(
-                selected = selected,
-                role = Role.Tab,
-                onClick = onClick
-            ),
+        modifier = modifier.heightIn(min = 48.dp).selectable(selected, role = Role.Tab, onClick = onClick),
         shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilPalette.Archive.copy(alpha = 0.52f)
-        } else {
-            androidx.compose.ui.graphics.Color.Transparent
-        },
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        color = if (selected) colors.surfaceVariant else colors.surface,
+        border = if (selected) BorderStroke(1.dp, colors.primary) else null,
+        tonalElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (selected) {
-                        VeilPalette.Moon
-                    } else {
-                        VeilPalette.Mist.copy(alpha = 0.74f)
-                    }
-                )
-                count?.let {
-                    Text(
-                        formatInteger(it),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (selected) {
-                            VeilPalette.Brass
-                        } else {
-                            VeilPalette.Mist.copy(alpha = 0.48f)
-                        }
-                    )
-                }
-            }
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        if (selected) {
-                            VeilPalette.Brass.copy(alpha = 0.82f)
-                        } else {
-                            androidx.compose.ui.graphics.Color.Transparent
-                        }
-                    )
-            )
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(stringResource(tab.labelRes), style = MaterialTheme.typography.labelLarge,
+                color = colors.onSurface)
+            count?.let { Text(formatInteger(it), style = MaterialTheme.typography.labelMedium,
+                color = colors.onSurfaceVariant) }
+            if (selected) Box(Modifier.padding(top = 4.dp).width(24.dp).height(2.dp).background(colors.primary))
         }
     }
 }
 
-/** Reading tools stay in a dismissible sheet, away from the reading surface. */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalReadiumApi::class)
+/** Keep the chapter viewport available: a dropdown in short windows, wrapping tabs otherwise. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReaderNotebookTabs(
+    tabs: List<ReaderNotebookTab>, tab: ReaderNotebookTab, counts: Map<ReaderNotebookTab, Int>,
+    shortWindow: Boolean, onTab: (ReaderNotebookTab) -> Unit
+) {
+    if (shortWindow) {
+        var expanded by remember { mutableStateOf(false) }
+        Box(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text(stringResource(tab.labelRes), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                Icon(Icons.Default.ExpandMore, contentDescription = null)
+            }
+            DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+                tabs.forEach { item -> DropdownMenuItem(
+                    text = { Text(stringResource(item.labelRes)) },
+                    onClick = { expanded = false; onTab(item) },
+                    trailingIcon = { RadioButton(selected = tab == item, onClick = null) },
+                    modifier = Modifier.heightIn(min = 48.dp).semantics { selected = tab == item }
+                ) }
+            }
+        }
+    } else BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+        val columns = if (shouldStackDenseChoices(maxWidth.value.toInt(), LocalDensity.current.fontScale, tabs.size)) 2 else tabs.size
+        FlowRow(Modifier.fillMaxWidth().selectableGroup(), maxItemsInEachRow = columns,
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            tabs.forEach { item -> ReaderNotebookTabButton(item, tab == item, counts[item],
+                Modifier.weight(1f), onClick = { onTab(item) }) }
+        }
+    }
+}
+
+/** Reading tools stay in a dismissible native sheet, away from the publication. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderNotebook(
     opened: OpenedPublication,
@@ -204,17 +175,45 @@ fun ReaderNotebook(
     onDismiss: () -> Unit,
     onGo: (String) -> Unit,
     onChapter: (Link) -> Unit,
+    onSearchResult: (Locator) -> Unit,
     onSaveNote: suspend (String, String) -> Unit,
     onDeleteHighlight: (String) -> Unit,
     onDeleteBookmark: (String) -> Unit
 ) {
+    ModalBottomSheet(onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetMaxWidth = 720.dp, containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface, tonalElevation = 0.dp) {
+        ReaderNotebookPanel(opened, readerSessionInstanceId, currentHref, highlights, bookmarks,
+            passageVisits, onDismiss, onGo, onChapter, onSearchResult, onSaveNote,
+            onDeleteHighlight, onDeleteBookmark, Modifier.fillMaxWidth().fillMaxHeight(.9f))
+    }
+}
+
+@OptIn(ExperimentalReadiumApi::class)
+@Composable
+internal fun ReaderNotebookPanel(
+    opened: OpenedPublication,
+    readerSessionInstanceId: String,
+    currentHref: String? = null,
+    highlights: List<Highlight>,
+    bookmarks: List<Bookmark>,
+    passageVisits: List<PassageVisit>,
+    onDismiss: () -> Unit,
+    onGo: (String) -> Unit,
+    onChapter: (Link) -> Unit,
+    onSearchResult: (Locator) -> Unit,
+    onSaveNote: suspend (String, String) -> Unit,
+    onDeleteHighlight: (String) -> Unit,
+    onDeleteBookmark: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showCurrentRequest by remember { mutableIntStateOf(0) }
+    val colors = MaterialTheme.colorScheme
     val scope = rememberCoroutineScope()
-    var searchJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
-    var searchSerial by remember(readerSessionInstanceId) { mutableIntStateOf(0) }
     var noteSaveJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     DisposableEffect(readerSessionInstanceId) {
         onDispose {
-            searchJob?.cancel()
             noteSaveJob?.cancel()
         }
     }
@@ -228,7 +227,7 @@ fun ReaderNotebook(
         }
     }
     var tabName by rememberSaveable(opened.book.id, readerSessionInstanceId, searchable) {
-        mutableStateOf(ReaderNotebookTab.NOTES.name)
+        mutableStateOf(ReaderNotebookTab.CONTENTS.name)
     }
     val tab = ReaderNotebookTab.entries
         .firstOrNull { it.name == tabName && it in tabs }
@@ -241,12 +240,7 @@ fun ReaderNotebook(
     var noteSaveErrorRes by remember(readerSessionInstanceId) { mutableStateOf<Int?>(null) }
     var deletingId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val deleting = deletingId?.let { id -> highlights.firstOrNull { it.id == id } }
-    var bookSearchQuery by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
-    var bookSearchResults by remember(readerSessionInstanceId) { mutableStateOf<List<Locator>>(emptyList()) }
-    var bookSearchErrorRes by remember(readerSessionInstanceId) { mutableStateOf<Int?>(null) }
-    var bookSearchLimited by remember(readerSessionInstanceId) { mutableStateOf(false) }
-    var searchingBook by remember(readerSessionInstanceId) { mutableStateOf(false) }
-    var submittedBookSearchQuery by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    var chapterQuery by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
 
     val chapters = remember(opened.book.id, readerSessionInstanceId) {
         fun flatten(links: List<Link>, depth: Int): List<Pair<Link, Int>> =
@@ -257,253 +251,68 @@ fun ReaderNotebook(
         query.isBlank() || it.quote.contains(query.trim(), true) || it.note.contains(query.trim(), true)
     }
 
-    fun cancelBookSearch() {
-        searchSerial += 1
-        searchJob?.cancel()
-        searchJob = null
-        searchingBook = false
-        submittedBookSearchQuery = null
-        bookSearchResults = emptyList()
-        bookSearchLimited = false
-        bookSearchErrorRes = null
+    val visibleChapters = chapters.filter { (link, _) ->
+        chapterQuery.isBlank() || link.title.orEmpty().contains(chapterQuery.trim(), ignoreCase = true)
     }
-
-    fun runBookSearch() {
-        val term = bookSearchQuery.trim()
-        if (term.length < 2 || searchingBook) return
-        searchJob?.cancel()
-        val requestSerial = ++searchSerial
-        searchingBook = true
-        submittedBookSearchQuery = term
-        searchJob = scope.launch {
-            bookSearchErrorRes = null
-            bookSearchLimited = false
-            bookSearchResults = emptyList()
-            try {
-                val completed = withTimeoutOrNull(READER_BOOK_SEARCH_TIMEOUT_MS) {
-                    val iterator = opened.publication.search(term)
-                    if (iterator == null) {
-                        if (requestSerial == searchSerial) {
-                            bookSearchErrorRes = R.string.reader_notebook_search_unavailable
-                        }
-                        return@withTimeoutOrNull true
-                    }
-                    try {
-                        val found = ArrayList<Locator>(
-                            READER_SEARCH_RESULT_LIMIT + 1
-                        )
-                        var failed = false
-                        while (
-                            requestSerial == searchSerial &&
-                            !failed &&
-                            found.size <= READER_SEARCH_RESULT_LIMIT
-                        ) {
-                            var pageLocators: List<Locator>? = null
-                            var reachedEnd = false
-                            iterator.next()
-                                .onSuccess { page ->
-                                    if (page == null) {
-                                        reachedEnd = true
-                                    } else {
-                                        pageLocators = page.locators
-                                    }
-                                }
-                                .onFailure {
-                                    failed = true
-                                    if (requestSerial == searchSerial) {
-                                        bookSearchErrorRes =
-                                            R.string.reader_notebook_search_failed
-                                    }
-                                }
-
-                            if (failed || reachedEnd || requestSerial != searchSerial) break
-                            val remaining =
-                                READER_SEARCH_RESULT_LIMIT + 1 - found.size
-                            found += pageLocators.orEmpty().take(remaining)
-                        }
-                        if (requestSerial != searchSerial) return@withTimeoutOrNull true
-                        bookSearchLimited =
-                            found.size > READER_SEARCH_RESULT_LIMIT
-                        bookSearchResults =
-                            found.take(READER_SEARCH_RESULT_LIMIT)
-                    } finally {
-                        iterator.close()
-                    }
-                    true
-                }
-                if (completed == null && requestSerial == searchSerial) {
-                    bookSearchErrorRes = R.string.reader_notebook_search_timed_out
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (error: Exception) {
-                if (requestSerial == searchSerial) {
-                    bookSearchErrorRes = R.string.reader_notebook_search_failed
-                }
-            } finally {
-                if (requestSerial == searchSerial) {
-                    searchingBook = false
-                    searchJob = null
-                }
-            }
-        }
+    val fullCurrentIndex = chapters.indexOfFirst { (link, _) ->
+        isCurrentReaderSection(link.href.toString(), currentHref)
     }
+    val currentIndex = visibleChapters.indexOfFirst { (link, _) ->
+        isCurrentReaderSection(link.href.toString(), currentHref)
+    }.coerceAtLeast(0)
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = VeilPalette.Ink,
-        contentColor = VeilPalette.Moon,
-        tonalElevation = 0.dp
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(.85f)
-                .padding(horizontal = 20.dp)
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Text(
-                    stringResource(R.string.reader_notebook_eyebrow),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Brass
-                )
-                BrassRule(Modifier.width(84.dp))
-                Text(
-                    stringResource(R.string.reader_notebook_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = VeilPalette.Moon
-                )
-                Text(
-                    opened.book.title.ifBlank {
-                        stringResource(R.string.common_untitled_book)
-                    },
-                    style = MaterialTheme.typography.bodySmall.withVeilContentScript(opened.book.title.ifBlank {
-                        stringResource(R.string.common_untitled_book)
-                    }),
-                    color = VeilPalette.Mist.copy(alpha = 0.74f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            BoxWithConstraints(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                val stackedTabs = shouldStackDenseChoices(
-                    widthDp = maxWidth.value.toInt(),
-                    fontScale = LocalDensity.current.fontScale,
-                    optionCount = tabs.size
-                )
-
-                if (stackedTabs) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectableGroup(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        tabs.forEach { item ->
-                            val selected = tab == item
-                            val count = when (item) {
-                                ReaderNotebookTab.CONTENTS -> chapters.size
-                                ReaderNotebookTab.BOOKMARKS -> bookmarks.size
-                                ReaderNotebookTab.NOTES -> highlights.size
-                                ReaderNotebookTab.SEARCH -> null
-                            }
-                            ReaderNotebookTabButton(
-                                tab = item,
-                                selected = selected,
-                                count = count,
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { tabName = item.name }
-                            )
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectableGroup(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        tabs.forEach { item ->
-                            val selected = tab == item
-                            val count = when (item) {
-                                ReaderNotebookTab.CONTENTS -> chapters.size
-                                ReaderNotebookTab.BOOKMARKS -> bookmarks.size
-                                ReaderNotebookTab.NOTES -> highlights.size
-                                ReaderNotebookTab.SEARCH -> null
-                            }
-                            ReaderNotebookTabButton(
-                                tab = item,
-                                selected = selected,
-                                count = count,
-                                modifier = Modifier.weight(1f),
-                                onClick = { tabName = item.name }
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (tab == ReaderNotebookTab.NOTES) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    label = { Text(stringResource(R.string.reader_notebook_search_notes)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-                )
-            }
-
+    BoxWithConstraints(modifier.fillMaxSize().background(colors.surface)) {
+        val shortWindow = maxHeight < 420.dp ||
+            (LocalDensity.current.fontScale >= 1.75f && maxHeight < 600.dp)
+        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            ReaderToolsHeader(stringResource(R.string.reader_notebook_title), onDismiss)
+            if (!shortWindow) Text(opened.book.title.ifBlank { stringResource(R.string.common_untitled_book) },
+                style = MaterialTheme.typography.bodyMedium.withVeilContentScript(opened.book.title),
+                color = colors.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(bottom = 12.dp))
+            ReaderNotebookTabs(tabs, tab, mapOf(ReaderNotebookTab.CONTENTS to chapters.size,
+                ReaderNotebookTab.BOOKMARKS to bookmarks.size, ReaderNotebookTab.NOTES to highlights.size),
+                shortWindow, onTab = { tabName = it.name })
             if (tab == ReaderNotebookTab.SEARCH) {
-                Column(
-                    Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = bookSearchQuery,
-                        onValueChange = { value ->
-                            bookSearchQuery = value
-                            cancelBookSearch()
-                        },
-                        label = { Text(stringResource(R.string.reader_notebook_search_book)) },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { runBookSearch() }),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Button(
-                        onClick = ::runBookSearch,
-                        enabled = bookSearchQuery.trim().length >= 2 && !searchingBook,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                    ) {
-                        Text(stringResource(if (searchingBook) R.string.reader_notebook_searching
-                            else R.string.reader_notebook_find))
+                ReaderBookSearchPanel(opened.publication, onSearchResult, Modifier.weight(1f))
+            } else key(tab) {
+                val listState = rememberLazyListState()
+                // One scroll owner, after query recomposition. Never put a target under a sticky filter.
+                LaunchedEffect(tab, chapterQuery, showCurrentRequest) {
+                    if (tab == ReaderNotebookTab.CONTENTS) {
+                        listState.scrollToItem(if (chapterQuery.isBlank()) currentIndex else 0)
                     }
-                    if (searchingBook) {
-                        TextButton(onClick = ::cancelBookSearch,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Text(stringResource(R.string.common_cancel))
+                }
+                if (tab == ReaderNotebookTab.CONTENTS) {
+                    Row(Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(chapterQuery, onValueChange = { chapterQuery = it },
+                            label = { Text(stringResource(R.string.reader_notebook_search_chapters)) },
+                            singleLine = true, modifier = Modifier.weight(1f))
+                        if (fullCurrentIndex >= 0) IconButton(onClick = {
+                            chapterQuery = ""
+                            showCurrentRequest++
+                        }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)) {
+                            Icon(Icons.Default.MyLocation, stringResource(R.string.reader_notebook_show_current))
                         }
                     }
                 }
-            }
-
-            LazyColumn(
-                Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 28.dp)
-            ) {
+                LazyColumn(Modifier.weight(1f), state = listState,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 20.dp)) {
+                    if (tab == ReaderNotebookTab.NOTES) item {
+                        OutlinedTextField(query, onValueChange = { query = it },
+                            label = { Text(stringResource(R.string.reader_notebook_search_notes)) },
+                            singleLine = true, modifier = Modifier.fillMaxWidth())
+                    }
                 when (tab) {
                     ReaderNotebookTab.CONTENTS -> {
-                        if (chapters.isEmpty()) item { Text(stringResource(R.string.reader_notebook_no_chapters)) }
-                        items(chapters) { (link, depth) ->
+                        if (visibleChapters.isEmpty()) item {
+                            Text(stringResource(if (chapterQuery.isBlank()) R.string.reader_notebook_no_chapters
+                                else R.string.reader_notebook_no_matching_chapters), color = colors.onSurfaceVariant)
+                        }
+                        items(visibleChapters) { (link, depth) ->
                             val current = isCurrentReaderSection(
                                 linkHref = link.href.toString(),
                                 currentHref = currentHref
@@ -514,14 +323,14 @@ fun ReaderNotebook(
                                     .padding(start = (depth.coerceAtMost(4) * 12).dp),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 color = if (current) {
-                                    VeilPalette.Archive.copy(alpha = 0.72f)
+                                    colors.surfaceVariant
                                 } else {
                                     androidx.compose.ui.graphics.Color.Transparent
                                 },
                                 border = if (current) {
                                     BorderStroke(
                                         1.dp,
-                                        VeilPalette.Brass.copy(alpha = 0.32f)
+                                        colors.outline
                                     )
                                 } else {
                                     null
@@ -534,20 +343,20 @@ fun ReaderNotebook(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .heightIn(min = 48.dp)
+                                        .semantics { selected = current }
                                 ) {
-                                    Row(
+                                    Column(
                                         modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement =
-                                            Arrangement.spacedBy(8.dp)
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
                                         Text(
                                             link.title?.takeIf { it.isNotBlank() } ?: stringResource(
                                                 R.string.reader_notebook_untitled_section
                                             ),
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            style = MaterialTheme.typography.bodyLarge.withVeilContentScript(link.title.orEmpty()),
                                             color = if (current) {
-                                                VeilPalette.Moon
+                                                colors.onSurface
                                             } else {
                                                 LocalContentColor.current
                                             }
@@ -557,8 +366,8 @@ fun ReaderNotebook(
                                                 stringResource(
                                                     R.string.reader_notebook_current_section
                                                 ),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = VeilPalette.Brass
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = colors.primary
                                             )
                                         }
                                     }
@@ -575,7 +384,7 @@ fun ReaderNotebook(
                             Surface(
                                 modifier = Modifier.fillMaxWidth().veilLedgerRule(),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilMaterials.Surface,
+                                color = colors.surface,
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {
@@ -585,8 +394,8 @@ fun ReaderNotebook(
                                 ) {
                                     Text(
                                         stringResource(R.string.reader_notebook_saved_place),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = VeilPalette.Brass
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = colors.primary
                                     )
                                     val bookmarkLabel = bookmark.label.ifBlank {
                                         stringResource(R.string.reader_notebook_saved_place)
@@ -594,7 +403,7 @@ fun ReaderNotebook(
                                     Text(
                                         bookmarkLabel,
                                         style = MaterialTheme.typography.titleSmall.withVeilContentScript(bookmarkLabel),
-                                        color = VeilPalette.Moon
+                                        color = colors.onSurface
                                     )
                                     ReaderNotebookActionRail(
                                         actions = listOf(
@@ -633,7 +442,7 @@ fun ReaderNotebook(
                             Surface(
                                 modifier = Modifier.fillMaxWidth().veilLedgerRule(),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilMaterials.Surface,
+                                color = colors.surface,
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {
@@ -643,8 +452,8 @@ fun ReaderNotebook(
                                 ) {
                                     Text(
                                         localizedHighlightAgeLabel(marginMemory),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = VeilPalette.Brass
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = colors.primary
                                     )
                                     if (marginMemory.revisitCount > 0) {
                                         Text(
@@ -660,19 +469,20 @@ fun ReaderNotebook(
                                                     append(" · ").append(it)
                                                 }
                                             },
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = VeilPalette.Spirit
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = colors.secondary
                                         )
                                     } else if (marginMemory.bookActivityAfterMark) {
                                         Text(
                                             stringResource(R.string.reader_notebook_activity_after_mark),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = VeilMaterials.TextSecondary
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = colors.onSurfaceVariant
                                         )
                                     }
                                     MemoryArtifactContent(
                                         highlight = highlight,
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = colors
                                     )
 
                                     ReaderNotebookActionRail(
@@ -703,77 +513,8 @@ fun ReaderNotebook(
                         }
                     }
 
-                    ReaderNotebookTab.SEARCH -> {
-                        if (bookSearchLimited) {
-                            item {
-                                ReaderCapabilityNotice(
-                                    text = pluralStringResource(
-                                        R.plurals.reader_notebook_search_limited,
-                                        resourceQuantity(READER_SEARCH_RESULT_LIMIT),
-                                        READER_SEARCH_RESULT_LIMIT
-                                    )
-                                )
-                            }
-                        }
-                        bookSearchErrorRes?.let { messageRes ->
-                            item { Text(stringResource(messageRes), color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
-                        }
-                        if (shouldShowReaderSearchNoMatches(
-                                query = bookSearchQuery,
-                                submittedQuery = submittedBookSearchQuery,
-                                searching = searchingBook,
-                                failed = bookSearchErrorRes != null,
-                                hasResults = bookSearchResults.isNotEmpty()
-                            )) {
-                            item {
-                                Text(
-                                    stringResource(R.string.reader_notebook_no_search_matches),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        items(bookSearchResults) { locator ->
-                            Surface(
-                                modifier = Modifier.fillMaxWidth().veilLedgerRule(),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilPalette.Archive.copy(alpha = 0.64f),
-
-                                tonalElevation = 0.dp,
-                                shadowElevation = 0.dp
-                            ) {
-                                Column(
-                                    Modifier.padding(14.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        stringResource(R.string.reader_notebook_match),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = VeilPalette.Brass
-                                    )
-                                    locator.title?.takeIf { it.isNotBlank() }?.let {
-                                        Text(
-                                            it,
-                                            style = MaterialTheme.typography.titleSmall.withVeilContentScript(it),
-                                            color = VeilPalette.Moon
-                                        )
-                                    }
-                                    val snippet = searchSnippet(
-                                        locator, stringResource(R.string.reader_notebook_search_match)
-                                    )
-                                    Text(
-                                        snippet,
-                                        style = MaterialTheme.typography.bodyMedium.withVeilContentScript(snippet),
-                                        color = VeilPalette.Mist.copy(alpha = 0.88f)
-                                    )
-                                    TextButton(
-                                        onClick = { onGo(locator.toJSON().toString()) },
-                                        modifier = Modifier.heightIn(min = 48.dp)
-                                    ) { Text(stringResource(R.string.reader_notebook_return_match)) }
-                                }
-                            }
-                        }
-                    }
+                    ReaderNotebookTab.SEARCH -> Unit
+                }
                 }
             }
         }
@@ -804,145 +545,39 @@ fun ReaderNotebook(
                 Surface(
                     modifier = Modifier
                         .widthIn(max = 560.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth().fillMaxHeight(.98f),
                     shape = MaterialTheme.shapes.medium,
-                    color = VeilPalette.Archive,
+                    color = colors.surface,
                     border = BorderStroke(
                         1.dp,
-                        VeilPalette.Brass.copy(alpha = 0.48f)
+                        colors.outlineVariant
                     ),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
-                    Box {
-                        GrayfogOrnamentFrame(
-                            modifier = Modifier.matchParentSize(),
-                            strength = 0.24f
-                        )
-                        Column(
-                            modifier = Modifier
-                                .padding(20.dp)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                stringResource(R.string.reader_notebook_eyebrow),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = VeilPalette.Brass
-                            )
-                            Text(
-                                stringResource(R.string.reader_notebook_passage_note),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = VeilPalette.Moon
-                            )
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilPalette.Ink.copy(alpha = 0.44f),
-                                border = BorderStroke(
-                                    1.dp,
-                                    VeilPalette.Brass.copy(alpha = 0.22f)
-                                ),
-                                tonalElevation = 0.dp,
-                                shadowElevation = 0.dp
-                            ) {
-                                highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
-                                    Text(
-                                        "“$quote”",
-                                        modifier = Modifier.padding(12.dp),
-                                        style = MaterialTheme.typography.bodyMedium.withVeilContentScript(quote),
-                                        color = VeilPalette.Moon.copy(alpha = 0.78f),
-                                        maxLines = 4,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                } ?: Text(
-                                    stringResource(R.string.reader_notebook_note_only),
-                                    modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = VeilPalette.Brass.copy(alpha = 0.82f)
-                                )
-                            }
-                            OutlinedTextField(
-                                value = note,
-                                onValueChange = { note = it },
-                                label = {
-                                    Text(
-                                        stringResource(
-                                            R.string.reader_notebook_your_thoughts
-                                        )
-                                    )
-                                },
-                                minLines = 4,
-                                maxLines = 8,
-                                enabled = !savingNote,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            noteSaveErrorRes?.let { messageRes ->
-                                Text(
-                                    stringResource(messageRes),
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                            VeilAdaptiveDialogActions(
-                                spacing = 8.dp,
-                                first = { actionModifier ->
-                                    OutlinedButton(
-                                        enabled = !savingNote,
-                                        onClick = {
-                                            editingId = null
-                                            noteSaveErrorRes = null
-                                        },
-                                        modifier = actionModifier.heightIn(min = 48.dp),
-                                        shape = MaterialTheme.shapes.extraSmall
-                                    ) {
-                                        Text(stringResource(R.string.common_cancel))
-                                    }
-                                },
-                                second = { actionModifier ->
-                                    Button(
-                                        enabled = !savingNote,
-                                        onClick = {
-                                            noteSaveJob = scope.launch {
-                                                savingNote = true
-                                                noteSaveErrorRes = null
-                                                try {
-                                                    onSaveNote(highlight.id, note)
-                                                    editingId = null
-                                                } catch (cancelled: CancellationException) {
-                                                    throw cancelled
-                                                } catch (error: Exception) {
-                                                    noteSaveErrorRes =
-                                                        R.string.reader_notebook_note_save_failed
-                                                } finally {
-                                                    savingNote = false
-                                                    noteSaveJob = null
-                                                }
-                                            }
-                                        },
-                                        modifier = actionModifier.heightIn(min = 48.dp),
-                                        shape = MaterialTheme.shapes.extraSmall,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = VeilPalette.Brass,
-                                            contentColor = androidx.compose.ui.graphics.Color(
-                                                0xFF17120A
-                                            )
-                                        )
-                                    ) {
-                                        Text(
-                                            stringResource(
-                                                if (savingNote) {
-                                                    R.string.reader_notebook_saving
-                                                } else {
-                                                    R.string.common_save
-                                                }
-                                            )
-                                        )
-                                    }
+                    ReaderNoteEditorContent(highlight, note,
+                        onNoteChange = { note = it }, saving = savingNote, errorRes = noteSaveErrorRes,
+                        onCancel = { editingId = null; noteSaveErrorRes = null },
+                        onSave = {
+                            noteSaveJob = scope.launch {
+                                savingNote = true
+                                noteSaveErrorRes = null
+                                try {
+                                    onSaveNote(highlight.id, note)
+                                    editingId = null
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    noteSaveErrorRes =
+                                        R.string.reader_notebook_note_save_failed
+                                } finally {
+                                    savingNote = false
+                                    noteSaveJob = null
                                 }
-                            )
-                        }
-                    }
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
@@ -969,10 +604,10 @@ fun ReaderNotebook(
                         .widthIn(max = 520.dp)
                         .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    color = VeilPalette.Archive,
+                    color = colors.surface,
                     border = BorderStroke(
                         1.dp,
-                        VeilPalette.Brass.copy(alpha = 0.40f)
+                        colors.outlineVariant
                     ),
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
@@ -985,26 +620,26 @@ fun ReaderNotebook(
                     ) {
                         Text(
                             stringResource(R.string.reader_notebook_eyebrow),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = VeilPalette.Brass
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.primary
                         )
                         Text(
                             stringResource(R.string.reader_notebook_delete_highlight),
                             style = MaterialTheme.typography.titleLarge,
-                            color = VeilPalette.Moon
+                            color = colors.onSurface
                         )
                         highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
                             Text(
                                 "“$quote”",
                                 style = MaterialTheme.typography.bodyMedium.withVeilContentScript(quote),
-                                color = VeilPalette.Moon.copy(alpha = 0.72f),
+                                color = colors.onSurface,
                                 maxLines = 3,
                                 overflow = TextOverflow.Ellipsis
                             )
                         } ?: Text(
                             stringResource(R.string.reader_notebook_note_only),
                             style = MaterialTheme.typography.labelMedium,
-                            color = VeilPalette.Brass.copy(alpha = 0.82f)
+                            color = colors.primary
                         )
                         Text(
                             stringResource(
@@ -1051,7 +686,8 @@ fun ReaderNotebook(
                 }
             }
         }
-    }}
+    }
+}
 
 @Composable
 private fun localizedHighlightAgeLabel(memory: com.veilreader.app.domain.HighlightMemory): String = when {
@@ -1087,8 +723,6 @@ private fun localizedLastViewedLabel(memory: com.veilreader.app.domain.Highlight
     }
 }
 
-private const val READER_SEARCH_RESULT_LIMIT = 250
-
 internal fun isCurrentReaderSection(
     linkHref: String,
     currentHref: String?
@@ -1105,26 +739,3 @@ internal fun isCurrentReaderSection(
         ?: return false
     return link == current
 }
-
-private fun searchSnippet(locator: Locator, fallback: String): String {
-    val before = locator.text.before.orEmpty().replace(Regex("\\s+"), " ").trim().takeLast(100)
-    val hit = locator.text.highlight.orEmpty().replace(Regex("\\s+"), " ").trim()
-    val after = locator.text.after.orEmpty().replace(Regex("\\s+"), " ").trim().take(100)
-    return buildString {
-        if (before.isNotBlank()) append("…").append(before).append(' ')
-        if (hit.isNotBlank()) append(hit)
-        if (after.isNotBlank()) append(' ').append(after).append("…")
-    }.ifBlank { locator.title ?: fallback }
-}
-
-
-private const val READER_BOOK_SEARCH_TIMEOUT_MS = 30_000L
-
-internal fun shouldShowReaderSearchNoMatches(
-    query: String,
-    submittedQuery: String?,
-    searching: Boolean,
-    failed: Boolean,
-    hasResults: Boolean
-): Boolean = query.trim().length >= 2 && submittedQuery == query.trim() &&
-    !searching && !failed && !hasResults

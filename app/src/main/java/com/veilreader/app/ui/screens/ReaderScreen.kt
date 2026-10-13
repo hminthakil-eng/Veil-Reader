@@ -3976,60 +3976,63 @@ fun ReaderScreen(
         }
     }
 
+    val onBookSearchResult: (Locator) -> Unit = { result ->
+        showReaderSearch = false
+        showNotebook = false
+        val expectedSessionId = readerSessionInstanceId
+        scope.launch {
+            if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
+                readerMessage = savedLocationFailedMessage
+                return@launch
+            }
+            if (
+                closeInFlight ||
+                !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) ||
+                !readerAsyncResultBelongsToSession(
+                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                    expectedSessionInstanceId = expectedSessionId
+                )
+            ) return@launch
+            val nav = latestNavigator.value ?: return@launch
+            val origin = nav.currentLocator.value
+            val targetIdentity = result.toReaderNavigationIdentity()
+            if (!shouldStartReaderIdentityJump(
+                    origin = origin.toReaderNavigationIdentity(),
+                    target = targetIdentity
+                )
+            ) {
+                controlsVisible = false
+                return@launch
+            }
+            readerViewModel.onUserInteraction(expectedSessionId)
+            game.rebasePagePacing()
+            val token = beginProgrammaticNavigation(
+                originLocatorJson = origin.toVeilPersistedJson(opened.format),
+                targetIdentity = targetIdentity,
+                // A search hit is exploration, not a bookmark/note visit.
+                // The existing SEARCH_RESULT policy preserves the saved
+                // reading anchor until the user actually reads onward.
+                reason = ReaderNavigationReason.SEARCH_RESULT
+            )
+            if (nav.go(
+                    result,
+                    animated = shouldAnimateReaderJump(latestReducedMotion.value)
+                )
+            ) {
+                controlsVisible = false
+            } else {
+                cancelProgrammaticNavigation(token)
+                readerMessage = savedLocationFailedMessage
+            }
+        }
+    }
+
     if (showReaderSearch) {
         key(readerSessionInstanceId) {
             ReaderBookSearchDialog(
                 publication = opened.publication,
                 onDismiss = { showReaderSearch = false },
-                onResult = { result ->
-                    showReaderSearch = false
-                    val expectedSessionId = readerSessionInstanceId
-                    scope.launch {
-                        if (!settlePagePreviewsBeforeProgrammaticNavigation()) {
-                            readerMessage = savedLocationFailedMessage
-                            return@launch
-                        }
-                        if (
-                            closeInFlight ||
-                            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) ||
-                            !readerAsyncResultBelongsToSession(
-                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                expectedSessionInstanceId = expectedSessionId
-                            )
-                        ) return@launch
-                        val nav = latestNavigator.value ?: return@launch
-                        val origin = nav.currentLocator.value
-                        val targetIdentity = result.toReaderNavigationIdentity()
-                        if (!shouldStartReaderIdentityJump(
-                                origin = origin.toReaderNavigationIdentity(),
-                                target = targetIdentity
-                            )
-                        ) {
-                            controlsVisible = false
-                            return@launch
-                        }
-                        readerViewModel.onUserInteraction(expectedSessionId)
-                        game.rebasePagePacing()
-                        val token = beginProgrammaticNavigation(
-                            originLocatorJson = origin.toVeilPersistedJson(opened.format),
-                            targetIdentity = targetIdentity,
-                            // A search hit is exploration, not a bookmark/note visit.
-                            // The existing SEARCH_RESULT policy preserves the saved
-                            // reading anchor until the user actually reads onward.
-                            reason = ReaderNavigationReason.SEARCH_RESULT
-                        )
-                        if (nav.go(
-                                result,
-                                animated = shouldAnimateReaderJump(latestReducedMotion.value)
-                            )
-                        ) {
-                            controlsVisible = false
-                        } else {
-                            cancelProgrammaticNavigation(token)
-                            readerMessage = savedLocationFailedMessage
-                        }
-                    }
-                }
+                onResult = onBookSearchResult
             )
         }
     }
@@ -4044,6 +4047,7 @@ fun ReaderScreen(
             bookmarks = bookBookmarks,
             passageVisits = bookPassageVisits,
             onDismiss = { showNotebook = false },
+            onSearchResult = onBookSearchResult,
             onGo = { json ->
                 val locator =
                     runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
