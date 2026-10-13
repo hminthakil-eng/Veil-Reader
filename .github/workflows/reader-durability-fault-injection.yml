@@ -2,7 +2,7 @@ name: Reader Durability Fault Injection
 
 on:
   pull_request:
-    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "codex/reader-quality-hardening-20261007", "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "reader/native-paper-rebuild-20261011", "grand-forge/p0-kindle-reader-quality-20261008", "codex/reader-quality-hardening-20261007", "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
     paths:
       - "app/src/main/java/com/veilreader/app/data/LocalLibraryRepository.kt"
       - "app/src/main/java/com/veilreader/app/ui/reader/ReaderLocatorPolicy.kt"

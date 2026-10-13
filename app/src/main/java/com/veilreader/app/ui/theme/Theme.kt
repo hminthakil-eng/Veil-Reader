@@ -44,10 +44,10 @@ object VeilPalette {
     val LightSurface = ArenaPalette.ParchmentLight
     val LightElevated = Color(0xFFE2D1AF)
     val LightInk = ArenaPalette.InkOnPaper
-    val LightMist = Color(0xFF6D6357)
+    val LightMist = Color(0xFF5F5447)
     val BorderLight = ArenaPalette.ParchmentShadow
     val StrongBorderLight = Color(0xFF806C4D)
-    val LightBrass = Color(0xFF7B5727)
+    val LightBrass = Color(0xFF725022)
     val LightSpirit = Color(0xFF315F66)
     val LightCrimson = Color(0xFF70232D)
 

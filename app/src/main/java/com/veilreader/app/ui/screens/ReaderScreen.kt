@@ -44,12 +44,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -2973,7 +2974,7 @@ fun ReaderScreen(
     }
     val readerChromeBackground = chromeColors.background
     val readerChromeForeground = chromeColors.foreground
-    val readerChromeMuted = readerChromeForeground.copy(alpha = 0.56f)
+    val readerChromeMuted = chromeColors.muted
     val readerChromeAccent = chromeColors.accent
     val readerBookTitle = opened.book.title.ifBlank {
         stringResource(R.string.common_untitled_book)
@@ -3443,12 +3444,17 @@ fun ReaderScreen(
                             )
                     )
 
-                    Row(
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val columns = if (shouldStackDenseChoices(
+                        maxWidth.value.toInt(), LocalDensity.current.fontScale, 4
+                    )) 2 else 4
+                    FlowRow(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 2.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xxs),
+                        maxItemsInEachRow = columns
                     ) {
                         ReaderControl(
                             action = ReaderAction.NOTEBOOK,
@@ -3558,6 +3564,7 @@ fun ReaderScreen(
                                 }
                             }
                         }
+                    }
                     }
 
                     if (ttsSession != null || ttsServiceController != null) {
@@ -4214,60 +4221,44 @@ fun ReaderScreen(
     }
 
     if (showAppearance) {
-        Dialog(
+        val windowHeight = with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height.toDp()
+        }
+        ModalBottomSheet(
             onDismissRequest = { closeAppearanceAfterRendererSettles() },
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = false,
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surface,
+            scrimColor = Color.Black.copy(alpha = 0.30f),
+            dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = VeilPalette.Ink,
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
-            ) {
-                Box(
+            // Overlay the publication without resizing its Readium viewport.
+            // Dismissal still waits for the existing renderer-settle contract.
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                EpubAppearancePanel(
+                    appearance = readerAppearance,
+                    readerChromeAutoHideEnabled = readerChromeAutoHideEnabled,
+                    onReaderChromeAutoHideChange = onReaderChromeAutoHideChange,
+                    fixedLayout = fixedLayoutPublication,
+                    fixedLayoutSpread = activeFixedLayoutSpread,
+                    publicationLanguage = publicationLanguage,
+                    onSpreadChange = { mode ->
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                        activeFixedLayoutSpread = mode
+                        onFixedLayoutSpreadChange(mode)
+                    },
+                    onChange = {
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                        onReaderAppearanceChange(it)
+                    },
+                    onDone = { finalAppearance ->
+                        closeAppearanceAfterRendererSettles(finalAppearance)
+                    },
+                    compactSheet = true,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color(0xFF141821),
-                                    VeilPalette.Ink,
-                                    Color(0xFF080A0E)
-                                )
-                            )
-                        )
-                        .windowInsetsPadding(WindowInsets.safeDrawing),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    EpubAppearancePanel(
-                        appearance = readerAppearance,
-                        readerChromeAutoHideEnabled = readerChromeAutoHideEnabled,
-                        onReaderChromeAutoHideChange = onReaderChromeAutoHideChange,
-                        fixedLayout = fixedLayoutPublication,
-                        fixedLayoutSpread = activeFixedLayoutSpread,
-                        publicationLanguage = publicationLanguage,
-                        onSpreadChange = { mode ->
-                            readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            activeFixedLayoutSpread = mode
-                            onFixedLayoutSpreadChange(mode)
-                        },
-                        onChange = {
-                            readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            onReaderAppearanceChange(it)
-                        },
-                        onDone = { finalAppearance ->
-                            closeAppearanceAfterRendererSettles(finalAppearance)
-                        },
-                        modifier = Modifier
-                            .widthIn(max = 720.dp)
-                            .fillMaxSize()
-                    )
-                }
+                        .widthIn(max = 720.dp)
+                        .heightIn(max = minOf(windowHeight * 0.72f, 620.dp))
+                        .fillMaxWidth()
+                )
             }
         }
     }
@@ -4789,9 +4780,9 @@ private fun ReaderControl(
             )
             Text(
                 label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Medium,
-                color = if (enabled) foreground.copy(alpha = 0.78f)
+                color = if (enabled) foreground
                     else foreground.copy(alpha = 0.28f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -4919,10 +4910,14 @@ internal fun EpubAppearancePanel(
     onDone: (ReaderAppearance) -> Unit,
     modifier: Modifier = Modifier,
     initiallyAdvanced: Boolean = false,
+    compactSheet: Boolean = false,
     readerChromeAutoHideEnabled: Boolean = true,
     onReaderChromeAutoHideChange: (Boolean) -> Unit = {}
 ) {
-    com.veilreader.app.ui.VeilSystemBars(lightBackground = false)
+    val colors = MaterialTheme.colorScheme
+    com.veilreader.app.ui.VeilSystemBars(
+        lightBackground = MaterialTheme.colorScheme.surface.luminance() > 0.5f
+    )
     val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
     var draft by remember { mutableStateOf(appearance) }
@@ -4933,7 +4928,9 @@ internal fun EpubAppearancePanel(
         LocalDensity.current.fontScale, with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.height.toDp().value.toInt()
         })
-    var showPreview by remember(condensedApproach) { mutableStateOf(!condensedApproach) }
+    var showPreview by remember(condensedApproach, compactSheet) {
+        mutableStateOf(!condensedApproach && !compactSheet)
+    }
     val capabilities = readerAppearanceCapabilities(
         fixedLayout = fixedLayout,
         languageTag = publicationLanguage,
@@ -4984,631 +4981,642 @@ internal fun EpubAppearancePanel(
         }
     }
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = VeilSpacing.lg, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            if (!condensedApproach) {
+    @Composable
+    fun FinishAppearance() {
+        Button(
+            onClick = { commitDraft(); onDone(draft) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            shape = MaterialTheme.shapes.extraSmall
+        ) { Text(stringResource(R.string.reader_back_to_reading)) }
+    }
+
+    Column(modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)) {
+        Column(
+            Modifier
+                .then(if (compactSheet) Modifier.weight(1f, fill = false) else Modifier)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VeilSpacing.md)
+                .padding(top = if (compactSheet) VeilSpacing.xxs else VeilSpacing.lg, bottom = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (!condensedApproach && !compactSheet) {
+                    VeilMicroLabel(
+                        text = stringResource(R.string.reader_instruments),
+                        strong = true
+                    , color = MaterialTheme.colorScheme.primary)
+                    BrassRule(Modifier.width(76.dp))
+                }
+                Text(
+                    stringResource(R.string.settings_appearance_title),
+                    modifier = Modifier.semantics { heading() },
+                    style = if (compactSheet) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    stringResource(R.string.reader_changes_live),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            if (!capabilities.fixedLayout && !compactSheet) {
+                if (condensedApproach) {
+                    TextButton(
+                        onClick = { showPreview = !showPreview },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    ) {
+                        Text(
+                            stringResource(
+                                if (showPreview) R.string.reader_hide_reading_preview
+                                else R.string.reader_show_reading_preview
+                            )
+                        )
+                    }
+                }
+                if (showPreview) {
+                    ReaderAppearancePreview(
+                        appearance = draft,
+                        typographyEnabled = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            if (capabilities.fixedLayout) {
+                ReaderCapabilityNotice(
+                    text = stringResource(R.string.reader_fixed_layout_notice)
+                )
+            }
+
+            if (capabilities.fixedLayout) {
                 VeilMicroLabel(
-                    text = stringResource(R.string.reader_instruments),
+                    text = stringResource(R.string.reader_fixed_spread_title),
                     strong = true
-                )
-                BrassRule(Modifier.width(76.dp))
-            }
-            Text(
-                stringResource(R.string.settings_appearance_title),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                stringResource(R.string.reader_changes_live),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        if (!capabilities.fixedLayout) {
-            if (condensedApproach) {
-                TextButton(
-                    onClick = { showPreview = !showPreview },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                ) {
-                    Text(
-                        stringResource(
-                            if (showPreview) R.string.reader_hide_reading_preview
-                            else R.string.reader_show_reading_preview
-                        )
+                , color = MaterialTheme.colorScheme.primary)
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val stackedSpreadChoices = shouldStackDenseChoices(
+                        widthDp = maxWidth.value.toInt(),
+                        fontScale = LocalDensity.current.fontScale,
+                        optionCount = ReaderFixedLayoutSpread.entries.size
                     )
-                }
-            }
-            if (showPreview) {
-                ReaderAppearancePreview(
-                    appearance = draft,
-                    typographyEnabled = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        if (capabilities.fixedLayout) {
-            ReaderCapabilityNotice(
-                text = stringResource(R.string.reader_fixed_layout_notice)
-            )
-        }
-
-        if (capabilities.fixedLayout) {
-            VeilMicroLabel(
-                text = stringResource(R.string.reader_fixed_spread_title),
-                strong = true
-            )
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val stackedSpreadChoices = shouldStackDenseChoices(
-                    widthDp = maxWidth.value.toInt(),
-                    fontScale = LocalDensity.current.fontScale,
-                    optionCount = ReaderFixedLayoutSpread.entries.size
-                )
-                if (stackedSpreadChoices) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectableGroup(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        ReaderFixedLayoutSpread.entries.forEach { mode ->
-                            ReaderAppearanceChoice(
-                                label = when (mode) {
-                                    ReaderFixedLayoutSpread.AUTO ->
-                                        stringResource(R.string.reader_fixed_spread_auto)
-                                    ReaderFixedLayoutSpread.SINGLE ->
-                                        stringResource(R.string.reader_fixed_spread_single)
-                                    ReaderFixedLayoutSpread.DUAL ->
-                                        stringResource(R.string.reader_fixed_spread_dual)
-                                },
-                                selected = fixedLayoutSpread == mode,
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { onSpreadChange(mode) }
-                            )
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectableGroup(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        ReaderFixedLayoutSpread.entries.forEach { mode ->
-                            ReaderAppearanceChoice(
-                                label = when (mode) {
-                                    ReaderFixedLayoutSpread.AUTO ->
-                                        stringResource(R.string.reader_fixed_spread_auto)
-                                    ReaderFixedLayoutSpread.SINGLE ->
-                                        stringResource(R.string.reader_fixed_spread_single)
-                                    ReaderFixedLayoutSpread.DUAL ->
-                                        stringResource(R.string.reader_fixed_spread_dual)
-                                },
-                                selected = fixedLayoutSpread == mode,
-                                modifier = Modifier.weight(1f),
-                                onClick = { onSpreadChange(mode) }
-                            )
-                        }
-                    }
-                }
-            }
-            Text(
-                stringResource(R.string.reader_fixed_spread_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            BrassRule(Modifier.fillMaxWidth())
-        }
-
-        if (!capabilities.fixedLayout) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                listOf(
-                    false to stringResource(R.string.reader_quick),
-                    true to stringResource(R.string.reader_advanced)
-                ).forEach { (advanced, label) ->
-                val selected = showAdvanced == advanced
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .selectable(
-                            selected = selected,
-                            role = Role.Tab
-                        ) { showAdvanced = advanced },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilMaterials.ElevatedSurface
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.78f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                    )
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        VeilMicroLabel(
-                            text = label,
-                            color = if (selected) {
-                                VeilPalette.Moon
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                    if (stackedSpreadChoices) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectableGroup(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            ReaderFixedLayoutSpread.entries.forEach { mode ->
+                                ReaderAppearanceChoice(
+                                    label = when (mode) {
+                                        ReaderFixedLayoutSpread.AUTO ->
+                                            stringResource(R.string.reader_fixed_spread_auto)
+                                        ReaderFixedLayoutSpread.SINGLE ->
+                                            stringResource(R.string.reader_fixed_spread_single)
+                                        ReaderFixedLayoutSpread.DUAL ->
+                                            stringResource(R.string.reader_fixed_spread_dual)
+                                    },
+                                    selected = fixedLayoutSpread == mode,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { onSpreadChange(mode) }
+                                )
                             }
-                        )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectableGroup(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            ReaderFixedLayoutSpread.entries.forEach { mode ->
+                                ReaderAppearanceChoice(
+                                    label = when (mode) {
+                                        ReaderFixedLayoutSpread.AUTO ->
+                                            stringResource(R.string.reader_fixed_spread_auto)
+                                        ReaderFixedLayoutSpread.SINGLE ->
+                                            stringResource(R.string.reader_fixed_spread_single)
+                                        ReaderFixedLayoutSpread.DUAL ->
+                                            stringResource(R.string.reader_fixed_spread_dual)
+                                    },
+                                    selected = fixedLayoutSpread == mode,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onSpreadChange(mode) }
+                                )
+                            }
+                        }
                     }
                 }
-            }
-        }
-        }
-
-        if (!showAdvanced) {
-            if (!capabilities.fixedLayout) {
-            VeilMicroLabel(
-                text = stringResource(R.string.settings_publication_theme),
-                strong = true
-            )
-
-            listOf(
-                listOf(
-                    ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper),
-                    ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)
-                ),
-                listOf(
-                    ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk),
-                    ReaderTheme.OLED to stringResource(R.string.settings_reader_oled)
+                Text(
+                    stringResource(R.string.reader_fixed_spread_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            ).forEach { presets ->
+                BrassRule(Modifier.fillMaxWidth())
+            }
+
+            if (!capabilities.fixedLayout) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    presets.forEach { (theme, label) ->
-                        AppearancePreset(
-                            label = label,
-                            theme = theme,
-                            selected = draft.theme == theme,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            updateDraft(draft.withTheme(theme))
+                    listOf(
+                        false to stringResource(R.string.reader_quick),
+                        true to stringResource(R.string.reader_advanced)
+                    ).forEach { (advanced, label) ->
+                    val selected = showAdvanced == advanced
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                            .selectable(
+                                selected = selected,
+                                role = Role.Tab
+                            ) { showAdvanced = advanced },
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = if (selected) {
+                            colors.surfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
+                        },
+                        border = BorderStroke(
+                            1.dp,
+                            if (selected) colors.primary.copy(alpha = 0.78f)
+                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+                        )
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            VeilMicroLabel(
+                                text = label,
+                                color = if (selected) {
+                                    colors.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
                         }
                     }
                 }
             }
+            }
 
-            BrassRule(Modifier.fillMaxWidth())
-
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            if (!showAdvanced) {
+                if (!capabilities.fixedLayout) {
                 VeilMicroLabel(
-                    text = stringResource(R.string.settings_text_size),
-                    modifier = Modifier.weight(1f),
+                    text = stringResource(R.string.settings_publication_theme),
                     strong = true
-                )
-                Text(
-                    formatPercent(draft.fontScale.toFloat()),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Slider(
-                value = draft.fontScale.toFloat(),
-                onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                valueRange = .75f..1.8f,
-                enabled = capabilities.typographyEditable,
-                modifier = Modifier.semantics {
-                    contentDescription = textSizeLabel
-                    stateDescription = formatPercent(draft.fontScale.toFloat())
+                , color = MaterialTheme.colorScheme.primary)
+
+                if (compactSheet) {
+                    ReaderCompactThemeSelector(selected = draft.theme) { theme ->
+                        updateDraft(draft.withTheme(theme))
+                    }
+                } else {
+                listOf(
+                    listOf(
+                        ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper),
+                        ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)
+                    ),
+                    listOf(
+                        ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk),
+                        ReaderTheme.OLED to stringResource(R.string.settings_reader_oled)
+                    )
+                ).forEach { presets ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        presets.forEach { (theme, label) ->
+                            AppearancePreset(
+                                label = label,
+                                theme = theme,
+                                selected = draft.theme == theme,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                updateDraft(draft.withTheme(theme))
+                            }
+                        }
+                    }
                 }
-            )
 
-            BrassRule(Modifier.fillMaxWidth())
-            }
+                }
 
-            VeilMicroLabel(
-                text = stringResource(R.string.settings_reading_mode_title),
-                strong = true
-            )
-            ReaderNavigationModeSelector(
-                selected = if (capabilities.fixedLayout) ReaderNavigationMode.PAGED else draft.navigationMode,
-                scrollEnabled = capabilities.continuousScrollEditable,
-                paperEnabled = !capabilities.fixedLayout && MaterialPageEngineRollout.isEnabled(),
-                slideEnabled = !capabilities.fixedLayout,
-                onSelect = { mode -> updateDraft(draft.withNavigationMode(mode)) }
-            )
-            if (!capabilities.fixedLayout && !MaterialPageEngineRollout.isEnabled()) {
-                ReaderCapabilityNotice(text = stringResource(R.string.settings_mode_curl_unavailable))
-            }
-            BrassRule(Modifier.fillMaxWidth())
-            ReaderMenuAutoHideControl(readerChromeAutoHideEnabled, onReaderChromeAutoHideChange)
-        } else {
-            VeilMicroLabel(
-                text = stringResource(R.string.reader_typography_layout),
-                strong = true
-            )
+                BrassRule(Modifier.fillMaxWidth())
 
-            if (draft.publisherStyles) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = VeilPalette.Archive.copy(alpha = 0.60f),
-                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    VeilMicroLabel(
+                        text = stringResource(R.string.settings_text_size),
+                        modifier = Modifier.weight(1f),
+                        strong = true
+                    , color = MaterialTheme.colorScheme.primary)
                     Text(
-                        stringResource(R.string.reader_publisher_override_note),
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
+                        formatPercent(draft.fontScale.toFloat()),
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-
-            Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.titleSmall)
-            ReaderAppearanceChoiceGroup(
-                entries = ReaderFontFamily.entries.toList(),
-                selected = draft.fontFamily,
-                label = { family ->
-                    when (family) {
-                        ReaderFontFamily.PUBLISHER -> stringResource(R.string.settings_book_default)
-                        ReaderFontFamily.SERIF -> stringResource(R.string.settings_font_serif)
-                        ReaderFontFamily.SANS_SERIF -> stringResource(R.string.settings_font_sans)
-                        ReaderFontFamily.MONOSPACE -> stringResource(R.string.settings_font_mono)
-                        ReaderFontFamily.OPEN_DYSLEXIC -> stringResource(R.string.settings_font_opendyslexic)
-                        ReaderFontFamily.ACCESSIBLE_DFA -> stringResource(R.string.settings_font_accessible)
-                        ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
-                    }
-                },
-                enabled = { capabilities.typographyEditable },
-                scrollWhenInline = true,
-                onSelect = { family -> updateDraft(draft.withFontFamily(family)) }
-            )
-
-            ReaderAppearanceNullableSlider(
-                label = stringResource(R.string.settings_font_weight),
-                value = draft.fontWeight,
-                valueRange = 0f..2.5f,
-                nullPreviewValue = 1f,
-                valueLabel = { formatPercent(it) },
-                onValueChange = {
-                    previewTypography(draft.withFontWeight(it.toDouble()))
-                },
-                onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(fontWeight = null)) },
-                enabled = capabilities.typographyEditable
-            )
-
-            ReaderAppearanceSlider(
-                label = stringResource(R.string.settings_line_height),
-                value = draft.lineHeight.toFloat(),
-                valueRange = 1.1f..2.0f,
-                valueLabel = { "${formatNumber(it)}×" },
-                onValueChange = { previewTypography(draft.withLineHeight(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                enabled = capabilities.typographyEditable
-            )
-
-            ReaderAppearanceSlider(
-                label = stringResource(R.string.settings_page_margins),
-                value = draft.pageMargins.toFloat(),
-                valueRange = 0.5f..2.0f,
-                valueLabel = { formatPercent(it) },
-                onValueChange = { previewTypography(draft.withPageMargins(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                enabled = capabilities.typographyEditable
-            )
-
-            Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.titleSmall)
-            ReaderAppearanceChoiceGroup(
-                entries = ReaderTextAlignment.entries.toList(),
-                selected = draft.textAlignment,
-                label = { alignment ->
-                    when (alignment) {
-                        ReaderTextAlignment.PUBLISHER -> stringResource(R.string.settings_book_default)
-                        ReaderTextAlignment.START -> stringResource(R.string.settings_align_start)
-                        ReaderTextAlignment.JUSTIFY -> stringResource(R.string.settings_align_justify)
-                        ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
-                    }
-                },
-                enabled = { capabilities.textAlignmentEditable },
-                onSelect = { alignment -> updateDraft(draft.withTextAlignment(alignment)) }
-            )
-
-            Text(stringResource(R.string.settings_columns), style = MaterialTheme.typography.titleSmall)
-            ReaderAppearanceChoiceGroup(
-                entries = ReaderColumnMode.entries.toList(),
-                selected = draft.columnMode,
-                label = { mode ->
-                    when (mode) {
-                        ReaderColumnMode.AUTO -> stringResource(R.string.settings_column_auto)
-                        ReaderColumnMode.ONE -> stringResource(R.string.settings_column_one)
-                        ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
-                    }
-                },
-                enabled = { capabilities.columnsEditable },
-                onSelect = { mode ->
-                    updateDraft(
-                        draft.copy(
-                            columnMode = mode,
-                            publisherStyles = if (mode == ReaderColumnMode.AUTO) {
-                                draft.publisherStyles
-                            } else {
-                                false
-                            }
-                        )
-                    )
-                }
-            )
-            if (capabilities.columnsEditable) {
-                Text(
-                    stringResource(R.string.reader_columns_adaptive_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
-                Text(
-                    stringResource(R.string.reader_columns_paged_only),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
-                )
-            }
-
-            BrassRule(Modifier.fillMaxWidth())
-
-            VeilMicroLabel(
-                text = stringResource(R.string.reader_spacing_shaping),
-                strong = true
-            )
-            if (capabilities.rtlPublication && !capabilities.fixedLayout) {
-                ReaderCapabilityNotice(
-                    text = stringResource(R.string.reader_rtl_typography_notice)
-                )
-            } else if (capabilities.cjkPublication && !capabilities.fixedLayout) {
-                ReaderCapabilityNotice(
-                    text = stringResource(R.string.reader_cjk_typography_notice)
-                )
-            }
-
-            ReaderAppearanceTriState(
-                title = stringResource(R.string.reader_hyphenation),
-                value = draft.hyphenation,
-                onChange = { option ->
-                    updateDraft(
-                        draft.copy(
-                            hyphenation = option,
-                            publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
-                                draft.publisherStyles
-                            } else {
-                                false
-                            }
-                        )
-                    )
-                },
-                enabled = capabilities.hyphenationEditable
-            )
-            ReaderAppearanceTriState(
-                title = stringResource(R.string.reader_ligatures),
-                value = draft.ligatures,
-                onChange = { option ->
-                    updateDraft(
-                        draft.copy(
-                            ligatures = option,
-                            publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
-                                draft.publisherStyles
-                            } else {
-                                false
-                            }
-                        )
-                    )
-                },
-                enabled = capabilities.ligaturesEditable
-            )
-            ReaderAppearanceTriState(
-                title = stringResource(R.string.reader_text_normalization),
-                value = draft.textNormalization,
-                onChange = { option ->
-                    updateDraft(
-                        draft.copy(
-                            textNormalization = option,
-                            publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
-                                draft.publisherStyles
-                            } else {
-                                false
-                            }
-                        )
-                    )
-                },
-                enabled = capabilities.typographyEditable
-            )
-
-            ReaderAppearanceNullableSlider(
-                label = stringResource(R.string.reader_paragraph_spacing),
-                value = draft.paragraphSpacing,
-                valueRange = 0f..2f,
-                nullPreviewValue = 0f,
-                valueLabel = { "${formatNumber(it)}×" },
-                onValueChange = { previewDraft(draft.withParagraphSpacing(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(paragraphSpacing = null)) },
-                enabled = capabilities.typographyEditable
-            )
-            ReaderAppearanceNullableSlider(
-                label = stringResource(R.string.reader_paragraph_indent),
-                value = draft.paragraphIndent,
-                valueRange = 0f..3f,
-                nullPreviewValue = 0f,
-                valueLabel = { "${formatNumber(it)}×" },
-                onValueChange = { previewDraft(draft.withParagraphIndent(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(paragraphIndent = null)) },
-                enabled = capabilities.paragraphIndentEditable
-            )
-            ReaderAppearanceNullableSlider(
-                label = stringResource(R.string.reader_letter_spacing),
-                value = draft.letterSpacing,
-                valueRange = 0f..0.2f,
-                nullPreviewValue = 0f,
-                valueLabel = { formatNumber(it) },
-                onValueChange = { previewDraft(draft.withLetterSpacing(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(letterSpacing = null)) },
-                enabled = capabilities.letterSpacingEditable
-            )
-            ReaderAppearanceNullableSlider(
-                label = stringResource(R.string.reader_word_spacing),
-                value = draft.wordSpacing,
-                valueRange = 0f..1f,
-                nullPreviewValue = 0f,
-                valueLabel = { formatNumber(it) },
-                onValueChange = { previewDraft(draft.withWordSpacing(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(wordSpacing = null)) },
-                enabled = capabilities.wordSpacingEditable
-            )
-            ReaderAppearanceNullableSlider(
-                label = stringResource(R.string.reader_type_scale),
-                value = draft.typeScale,
-                valueRange = 1f..2f,
-                nullPreviewValue = 1f,
-                valueLabel = { "${formatNumber(it)}×" },
-                onValueChange = { previewDraft(draft.withTypeScale(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(typeScale = null)) },
-                enabled = capabilities.typographyEditable
-            )
-
-            BrassRule(Modifier.fillMaxWidth())
-
-            if (draft.theme == ReaderTheme.PAPER || draft.theme == ReaderTheme.SEPIA) {
-                ReaderAppearanceSlider(
-                    label = stringResource(R.string.settings_paper_age),
-                    value = draft.paperPatina.toFloat(),
-                    valueRange = 0f..1f,
-                    valueLabel = { formatPercent(it) },
-                    onValueChange = { previewDraft(draft.withPaperPatina(it.toDouble())) },
-                    onValueChangeFinished = ::commitDraft
-                )
-                Text(
-                    stringResource(R.string.settings_paper_age_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            val darkTheme = draft.theme == ReaderTheme.DUSK || draft.theme == ReaderTheme.OLED
-            Text(stringResource(R.string.settings_dark_images), style = MaterialTheme.typography.titleSmall)
-            ReaderAppearanceChoiceGroup(
-                entries = ReaderDarkImageTreatment.entries.toList(),
-                selected = draft.darkImageTreatment,
-                label = { treatment ->
-                    when (treatment) {
-                        ReaderDarkImageTreatment.NONE -> stringResource(R.string.settings_dark_images_original)
-                        ReaderDarkImageTreatment.DARKEN -> stringResource(R.string.settings_dark_images_darken)
-                        ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
-                    }
-                },
-                enabled = { darkTheme && !capabilities.fixedLayout },
-                onSelect = { treatment -> updateDraft(draft.withDarkImageTreatment(treatment)) }
-            )
-            Text(
-                stringResource(
-                    if (darkTheme) R.string.settings_dark_images_hint
-                    else R.string.settings_dark_images_unavailable
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.reader_publisher_styling),
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    Text(
-                        stringResource(R.string.reader_publisher_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = draft.publisherStyles,
+                Slider(
+                    value = draft.fontScale.toFloat(),
+                    onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    valueRange = .75f..1.8f,
                     enabled = capabilities.typographyEditable,
-                    onCheckedChange = {
-                        updateDraft(draft.copy(publisherStyles = it))
-                    },
                     modifier = Modifier.semantics {
-                        contentDescription = publisherStyleLabel
+                        contentDescription = textSizeLabel
+                        stateDescription = formatPercent(draft.fontScale.toFloat())
                     }
                 )
-            }
 
-            OutlinedButton(
-                onClick = {
-                    updateDraft(
-                        ReaderAppearance().copy(
-                            scroll = draft.scroll,
-                            pageTurnStyle = draft.pageTurnStyle,
-                            screenBrightness = draft.screenBrightness
-                        )
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
+                BrassRule(Modifier.fillMaxWidth())
+                }
+
+                VeilMicroLabel(
+                    text = stringResource(R.string.settings_reading_mode_title),
+                    strong = true
+                , color = MaterialTheme.colorScheme.primary)
+                ReaderNavigationModeSelector(
+                    selected = if (capabilities.fixedLayout) ReaderNavigationMode.PAGED else draft.navigationMode,
+                    scrollEnabled = capabilities.continuousScrollEditable,
+                    paperEnabled = !capabilities.fixedLayout && MaterialPageEngineRollout.isEnabled(),
+                    slideEnabled = !capabilities.fixedLayout,
+                    showDescriptions = !compactSheet,
+                    onSelect = { mode -> updateDraft(draft.withNavigationMode(mode)) }
                 )
-            ) {
-                Text(stringResource(R.string.reader_reset_appearance))
+                if (!capabilities.fixedLayout && !MaterialPageEngineRollout.isEnabled()) {
+                    ReaderCapabilityNotice(text = stringResource(R.string.settings_mode_curl_unavailable))
+                }
+                BrassRule(Modifier.fillMaxWidth())
+            } else {
+                ReaderMenuAutoHideControl(readerChromeAutoHideEnabled, onReaderChromeAutoHideChange)
+                VeilMicroLabel(
+                    text = stringResource(R.string.reader_typography_layout),
+                    strong = true
+                , color = MaterialTheme.colorScheme.primary)
+
+                if (draft.publisherStyles) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = colors.surface.copy(alpha = 0.60f),
+                        border = BorderStroke(1.dp, colors.primary.copy(alpha = 0.28f))
+                    ) {
+                        Text(
+                            stringResource(R.string.reader_publisher_override_note),
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.titleSmall)
+                ReaderAppearanceChoiceGroup(
+                    entries = ReaderFontFamily.entries.toList(),
+                    selected = draft.fontFamily,
+                    label = { family ->
+                        when (family) {
+                            ReaderFontFamily.PUBLISHER -> stringResource(R.string.settings_book_default)
+                            ReaderFontFamily.SERIF -> stringResource(R.string.settings_font_serif)
+                            ReaderFontFamily.SANS_SERIF -> stringResource(R.string.settings_font_sans)
+                            ReaderFontFamily.MONOSPACE -> stringResource(R.string.settings_font_mono)
+                            ReaderFontFamily.OPEN_DYSLEXIC -> stringResource(R.string.settings_font_opendyslexic)
+                            ReaderFontFamily.ACCESSIBLE_DFA -> stringResource(R.string.settings_font_accessible)
+                            ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
+                        }
+                    },
+                    enabled = { capabilities.typographyEditable },
+                    scrollWhenInline = true,
+                    onSelect = { family -> updateDraft(draft.withFontFamily(family)) }
+                )
+
+                ReaderAppearanceNullableSlider(
+                    label = stringResource(R.string.settings_font_weight),
+                    value = draft.fontWeight,
+                    valueRange = 0f..2.5f,
+                    nullPreviewValue = 1f,
+                    valueLabel = { formatPercent(it) },
+                    onValueChange = {
+                        previewTypography(draft.withFontWeight(it.toDouble()))
+                    },
+                    onValueChangeFinished = ::commitDraft,
+                    onReset = { updateDraft(draft.copy(fontWeight = null)) },
+                    enabled = capabilities.typographyEditable
+                )
+
+                ReaderAppearanceSlider(
+                    label = stringResource(R.string.settings_line_height),
+                    value = draft.lineHeight.toFloat(),
+                    valueRange = 1.1f..2.0f,
+                    valueLabel = { "${formatNumber(it)}×" },
+                    onValueChange = { previewTypography(draft.withLineHeight(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    enabled = capabilities.typographyEditable
+                )
+
+                ReaderAppearanceSlider(
+                    label = stringResource(R.string.settings_page_margins),
+                    value = draft.pageMargins.toFloat(),
+                    valueRange = 0.5f..2.0f,
+                    valueLabel = { formatPercent(it) },
+                    onValueChange = { previewTypography(draft.withPageMargins(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    enabled = capabilities.typographyEditable
+                )
+
+                Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.titleSmall)
+                ReaderAppearanceChoiceGroup(
+                    entries = ReaderTextAlignment.entries.toList(),
+                    selected = draft.textAlignment,
+                    label = { alignment ->
+                        when (alignment) {
+                            ReaderTextAlignment.PUBLISHER -> stringResource(R.string.settings_book_default)
+                            ReaderTextAlignment.START -> stringResource(R.string.settings_align_start)
+                            ReaderTextAlignment.JUSTIFY -> stringResource(R.string.settings_align_justify)
+                            ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
+                        }
+                    },
+                    enabled = { capabilities.textAlignmentEditable },
+                    onSelect = { alignment -> updateDraft(draft.withTextAlignment(alignment)) }
+                )
+
+                Text(stringResource(R.string.settings_columns), style = MaterialTheme.typography.titleSmall)
+                ReaderAppearanceChoiceGroup(
+                    entries = ReaderColumnMode.entries.toList(),
+                    selected = draft.columnMode,
+                    label = { mode ->
+                        when (mode) {
+                            ReaderColumnMode.AUTO -> stringResource(R.string.settings_column_auto)
+                            ReaderColumnMode.ONE -> stringResource(R.string.settings_column_one)
+                            ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
+                        }
+                    },
+                    enabled = { capabilities.columnsEditable },
+                    onSelect = { mode ->
+                        updateDraft(
+                            draft.copy(
+                                columnMode = mode,
+                                publisherStyles = if (mode == ReaderColumnMode.AUTO) {
+                                    draft.publisherStyles
+                                } else {
+                                    false
+                                }
+                            )
+                        )
+                    }
+                )
+                if (capabilities.columnsEditable) {
+                    Text(
+                        stringResource(R.string.reader_columns_adaptive_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
+                    Text(
+                        stringResource(R.string.reader_columns_paged_only),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+                    )
+                }
+
+                BrassRule(Modifier.fillMaxWidth())
+
+                VeilMicroLabel(
+                    text = stringResource(R.string.reader_spacing_shaping),
+                    strong = true
+                , color = MaterialTheme.colorScheme.primary)
+                if (capabilities.rtlPublication && !capabilities.fixedLayout) {
+                    ReaderCapabilityNotice(
+                        text = stringResource(R.string.reader_rtl_typography_notice)
+                    )
+                } else if (capabilities.cjkPublication && !capabilities.fixedLayout) {
+                    ReaderCapabilityNotice(
+                        text = stringResource(R.string.reader_cjk_typography_notice)
+                    )
+                }
+
+                ReaderAppearanceTriState(
+                    title = stringResource(R.string.reader_hyphenation),
+                    value = draft.hyphenation,
+                    onChange = { option ->
+                        updateDraft(
+                            draft.copy(
+                                hyphenation = option,
+                                publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
+                                    draft.publisherStyles
+                                } else {
+                                    false
+                                }
+                            )
+                        )
+                    },
+                    enabled = capabilities.hyphenationEditable
+                )
+                ReaderAppearanceTriState(
+                    title = stringResource(R.string.reader_ligatures),
+                    value = draft.ligatures,
+                    onChange = { option ->
+                        updateDraft(
+                            draft.copy(
+                                ligatures = option,
+                                publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
+                                    draft.publisherStyles
+                                } else {
+                                    false
+                                }
+                            )
+                        )
+                    },
+                    enabled = capabilities.ligaturesEditable
+                )
+                ReaderAppearanceTriState(
+                    title = stringResource(R.string.reader_text_normalization),
+                    value = draft.textNormalization,
+                    onChange = { option ->
+                        updateDraft(
+                            draft.copy(
+                                textNormalization = option,
+                                publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
+                                    draft.publisherStyles
+                                } else {
+                                    false
+                                }
+                            )
+                        )
+                    },
+                    enabled = capabilities.typographyEditable
+                )
+
+                ReaderAppearanceNullableSlider(
+                    label = stringResource(R.string.reader_paragraph_spacing),
+                    value = draft.paragraphSpacing,
+                    valueRange = 0f..2f,
+                    nullPreviewValue = 0f,
+                    valueLabel = { "${formatNumber(it)}×" },
+                    onValueChange = { previewDraft(draft.withParagraphSpacing(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    onReset = { updateDraft(draft.copy(paragraphSpacing = null)) },
+                    enabled = capabilities.typographyEditable
+                )
+                ReaderAppearanceNullableSlider(
+                    label = stringResource(R.string.reader_paragraph_indent),
+                    value = draft.paragraphIndent,
+                    valueRange = 0f..3f,
+                    nullPreviewValue = 0f,
+                    valueLabel = { "${formatNumber(it)}×" },
+                    onValueChange = { previewDraft(draft.withParagraphIndent(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    onReset = { updateDraft(draft.copy(paragraphIndent = null)) },
+                    enabled = capabilities.paragraphIndentEditable
+                )
+                ReaderAppearanceNullableSlider(
+                    label = stringResource(R.string.reader_letter_spacing),
+                    value = draft.letterSpacing,
+                    valueRange = 0f..0.2f,
+                    nullPreviewValue = 0f,
+                    valueLabel = { formatNumber(it) },
+                    onValueChange = { previewDraft(draft.withLetterSpacing(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    onReset = { updateDraft(draft.copy(letterSpacing = null)) },
+                    enabled = capabilities.letterSpacingEditable
+                )
+                ReaderAppearanceNullableSlider(
+                    label = stringResource(R.string.reader_word_spacing),
+                    value = draft.wordSpacing,
+                    valueRange = 0f..1f,
+                    nullPreviewValue = 0f,
+                    valueLabel = { formatNumber(it) },
+                    onValueChange = { previewDraft(draft.withWordSpacing(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    onReset = { updateDraft(draft.copy(wordSpacing = null)) },
+                    enabled = capabilities.wordSpacingEditable
+                )
+                ReaderAppearanceNullableSlider(
+                    label = stringResource(R.string.reader_type_scale),
+                    value = draft.typeScale,
+                    valueRange = 1f..2f,
+                    nullPreviewValue = 1f,
+                    valueLabel = { "${formatNumber(it)}×" },
+                    onValueChange = { previewDraft(draft.withTypeScale(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft,
+                    onReset = { updateDraft(draft.copy(typeScale = null)) },
+                    enabled = capabilities.typographyEditable
+                )
+
+                BrassRule(Modifier.fillMaxWidth())
+
+                if (draft.theme == ReaderTheme.PAPER || draft.theme == ReaderTheme.SEPIA) {
+                    ReaderAppearanceSlider(
+                        label = stringResource(R.string.settings_paper_age),
+                        value = draft.paperPatina.toFloat(),
+                        valueRange = 0f..1f,
+                        valueLabel = { formatPercent(it) },
+                        onValueChange = { previewDraft(draft.withPaperPatina(it.toDouble())) },
+                        onValueChangeFinished = ::commitDraft
+                    )
+                    Text(
+                        stringResource(R.string.settings_paper_age_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                val darkTheme = draft.theme == ReaderTheme.DUSK || draft.theme == ReaderTheme.OLED
+                Text(stringResource(R.string.settings_dark_images), style = MaterialTheme.typography.titleSmall)
+                ReaderAppearanceChoiceGroup(
+                    entries = ReaderDarkImageTreatment.entries.toList(),
+                    selected = draft.darkImageTreatment,
+                    label = { treatment ->
+                        when (treatment) {
+                            ReaderDarkImageTreatment.NONE -> stringResource(R.string.settings_dark_images_original)
+                            ReaderDarkImageTreatment.DARKEN -> stringResource(R.string.settings_dark_images_darken)
+                            ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
+                        }
+                    },
+                    enabled = { darkTheme && !capabilities.fixedLayout },
+                    onSelect = { treatment -> updateDraft(draft.withDarkImageTreatment(treatment)) }
+                )
+                Text(
+                    stringResource(
+                        if (darkTheme) R.string.settings_dark_images_hint
+                        else R.string.settings_dark_images_unavailable
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.reader_publisher_styling),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text(
+                            stringResource(R.string.reader_publisher_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = draft.publisherStyles,
+                        enabled = capabilities.typographyEditable,
+                        onCheckedChange = {
+                            updateDraft(draft.copy(publisherStyles = it))
+                        },
+                        modifier = Modifier.semantics {
+                            contentDescription = publisherStyleLabel
+                        }
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        updateDraft(
+                            ReaderAppearance().copy(
+                                scroll = draft.scroll,
+                                pageTurnStyle = draft.pageTurnStyle,
+                                screenBrightness = draft.screenBrightness
+                            )
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
+                    )
+                ) {
+                    Text(stringResource(R.string.reader_reset_appearance))
+                }
             }
-        }
 
-        BrassRule(Modifier.fillMaxWidth())
+            BrassRule(Modifier.fillMaxWidth())
 
-        ReaderBrightnessControls(
-            appearance = draft,
-            onChange = ::updateDraft
-        )
-
-        Button(
-            onClick = {
-                commitDraft()
-                onDone(draft)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp),
-            shape = MaterialTheme.shapes.extraSmall,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VeilPalette.DeepBrass,
-                contentColor = VeilPalette.Moon
+            ReaderBrightnessControls(
+                appearance = draft,
+                onChange = ::updateDraft
             )
-        ) {
-            Text(stringResource(R.string.reader_back_to_reading))
+
+            if (!compactSheet) FinishAppearance()
+        }
+        if (compactSheet) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Box(Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.xs)) {
+                FinishAppearance()
+            }
         }
     }
 }
@@ -5618,13 +5626,14 @@ internal fun ReaderCapabilityNotice(
     text: String,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.62f),
+        color = colors.surface.copy(alpha = 0.62f),
         border = BorderStroke(
             1.dp,
-            VeilPalette.Brass.copy(alpha = 0.26f)
+            colors.primary.copy(alpha = 0.26f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -5725,9 +5734,10 @@ private fun ReaderAppearanceChoice(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val foreground = when {
         !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-        selected -> VeilPalette.Moon
+        selected -> colors.onSurface
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Surface(
@@ -5741,9 +5751,9 @@ private fun ReaderAppearanceChoice(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilMaterials.ElevatedSurface
+            colors.surfaceVariant
         } else {
-            VeilPalette.Archive.copy(alpha = 0.66f)
+            colors.surface.copy(alpha = 0.66f)
         },
         contentColor = foreground,
         tonalElevation = 0.dp,
@@ -5751,9 +5761,9 @@ private fun ReaderAppearanceChoice(
         border = BorderStroke(
             if (selected) 1.5.dp else 1.dp,
             if (selected) {
-                VeilPalette.Brass.copy(alpha = 0.76f)
+                colors.primary.copy(alpha = 0.76f)
             } else {
-                VeilPalette.Brass.copy(alpha = 0.22f)
+                colors.primary.copy(alpha = 0.22f)
             }
         )
     ) {
@@ -6150,6 +6160,7 @@ internal fun ReaderNavigationModeSelector(
     scrollEnabled: Boolean,
     paperEnabled: Boolean,
     slideEnabled: Boolean = true,
+    showDescriptions: Boolean = true,
     onSelect: (ReaderNavigationMode) -> Unit
 ) {
     val choices = listOf(ReaderNavigationMode.PAGED, ReaderNavigationMode.PAPER_CURL,
@@ -6168,7 +6179,7 @@ internal fun ReaderNavigationModeSelector(
                 ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide
                 ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll
             }),
-            description = when (mode) {
+            description = if (!showDescriptions) null else when (mode) {
                 ReaderNavigationMode.PAGED -> localizedPageTurnStyleDescription(PageTurnStyle.NONE)
                 ReaderNavigationMode.PAPER_CURL -> localizedPageTurnStyleDescription(PageTurnStyle.PAPER)
                 ReaderNavigationMode.SLIDE -> localizedPageTurnStyleDescription(PageTurnStyle.SLIDE)
@@ -6365,6 +6376,7 @@ private fun ReaderModeChoice(
     description: String? = null,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     Surface(
         modifier = modifier
             .heightIn(min = if (description == null) 58.dp else 106.dp)
@@ -6376,14 +6388,14 @@ private fun ReaderModeChoice(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (active) {
-            VeilMaterials.ElevatedSurface
+            colors.surfaceVariant
         } else {
             MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
         },
         border = BorderStroke(
             1.dp,
             if (active) {
-                VeilPalette.Brass.copy(alpha = 0.82f)
+                colors.primary.copy(alpha = 0.82f)
             } else {
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
             }
@@ -6394,6 +6406,12 @@ private fun ReaderModeChoice(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
+            RadioButton(
+                selected = active,
+                onClick = null,
+                enabled = enabled,
+                modifier = Modifier.size(20.dp).clearAndSetSemantics { }
+            )
             ReaderMotionPreview(
                 mode = previewMode,
                 active = active,
@@ -6407,7 +6425,7 @@ private fun ReaderModeChoice(
                 color = when {
                     !enabled ->
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                    active -> VeilPalette.Moon
+                    active -> colors.onSurface
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
                 maxLines = 2,
@@ -6432,8 +6450,9 @@ internal fun ReaderMotionPreview(
     active: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
     val lineColor = if (active) {
-        VeilPalette.Brass
+        colors.primary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
     }
@@ -6571,6 +6590,7 @@ private fun AppearancePreset(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val (paperArgb, inkArgb) = readiumThemeColors(theme)
     val paper = Color(paperArgb)
     val ink = Color(inkArgb)
@@ -6585,13 +6605,13 @@ private fun AppearancePreset(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilMaterials.ElevatedSurface
+            colors.surfaceVariant
         } else {
             Color.Transparent
         },
         border = BorderStroke(
             1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
+            if (selected) colors.primary.copy(alpha = 0.88f)
             else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
         ),
         tonalElevation = 0.dp,
@@ -6626,14 +6646,14 @@ private fun AppearancePreset(
                 Text(
                     label,
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (selected) VeilPalette.Moon
+                    color = if (selected) colors.onSurface
                     else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
                 )
                 if (selected) {
                     Text(
                         "●",
-                        color = VeilPalette.Brass,
+                        color = colors.primary,
                         style = MaterialTheme.typography.labelSmall
                     )
                 }

@@ -53,7 +53,8 @@ fun Modifier.grayfogAtmosphere(
     realm: VeilRealm,
     seed: Int = 0,
     intensity: Float = 1f,
-    qualityTier: VeilQualityTier = VeilQualityTier.FULL
+    qualityTier: VeilQualityTier = VeilQualityTier.FULL,
+    palette: androidx.compose.material3.ColorScheme? = null
 ): Modifier = drawBehind {
     val budget = visualBudgetFor(realm)
     val quality = qualityPolicyFor(qualityTier)
@@ -66,9 +67,9 @@ fun Modifier.grayfogAtmosphere(
 
     val w = size.width
     val h = size.height
-    val brass = VeilPalette.Brass
-    val archive = VeilPalette.Archive
-    val ink = VeilPalette.Ink
+    val brass = palette?.primary ?: VeilPalette.Brass
+    val archive = palette?.surface ?: VeilPalette.Archive
+    val ink = palette?.background ?: VeilPalette.Ink
 
     drawRect(
         brush = Brush.verticalGradient(
@@ -116,7 +117,7 @@ fun Modifier.grayfogAtmosphere(
             brush = Brush.verticalGradient(
                 listOf(
                     Color.Transparent,
-                    VeilPalette.Mist.copy(alpha = (0.018f + index * 0.006f) * atmosphere),
+                    (palette?.onSurfaceVariant ?: VeilPalette.Mist).copy(alpha = (0.018f + index * 0.006f) * atmosphere),
                     Color.Transparent
                 ),
                 startY = y,
@@ -133,7 +134,7 @@ fun Modifier.grayfogAtmosphere(
         val yUnit = ((index * 61 + seed * 7 + 29) % 103) / 102f
         val radius = if (index % 4 == 0) 1.15.dp.toPx() else 0.65.dp.toPx()
         drawCircle(
-            color = VeilPalette.Moon.copy(
+            color = (palette?.onSurface ?: VeilPalette.Moon).copy(
                 alpha = (0.018f + (index % 3) * 0.006f) * atmosphere
             ),
             radius = radius,

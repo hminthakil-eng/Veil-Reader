@@ -74,14 +74,17 @@ internal fun ReaderMenuAutoHideControl(enabled: Boolean, onChange: (Boolean) -> 
     }
 }
 
-internal data class ReaderAccessColors(val background: Color, val foreground: Color, val accent: Color)
+internal data class ReaderAccessColors(val background: Color, val foreground: Color, val accent: Color, val muted: Color)
 
 /** The existing Sanctuary chrome palette, shared by live Reader and review specimens. */
 internal fun readerAccessColors(theme: ReaderTheme): ReaderAccessColors {
     val light = theme == ReaderTheme.PAPER || theme == ReaderTheme.SEPIA
     return ReaderAccessColors(
-        background = (if (light) Color(0xFFF0E4CC) else VeilPalette.Ink).copy(alpha = 0.94f),
+        // Reader controls must remain opaque over unpredictable publication artwork and pages.
+        background = if (light) Color(0xFFF0E4CC) else VeilPalette.Ink,
         foreground = if (light) Color(0xFF2B241B) else VeilPalette.Moon,
-        accent = if (light) Color(0xFF8A6630) else VeilPalette.Brass
+        // 5.2:1 contrast against the light reader chrome background for text/icon labels.
+        accent = if (light) Color(0xFF795723) else VeilPalette.Brass,
+        muted = if (light) Color(0xFF685B48) else VeilPalette.Mist
     )
 }

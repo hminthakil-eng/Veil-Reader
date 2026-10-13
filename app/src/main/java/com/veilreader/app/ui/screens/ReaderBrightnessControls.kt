@@ -27,9 +27,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReaderAppearance
-import com.veilreader.app.ui.theme.VeilPalette
 
 @Composable
 internal fun ReaderBrightnessEffect(
@@ -86,8 +84,8 @@ internal fun ReaderBrightnessControls(
     ) {
         Text(
             stringResource(R.string.settings_brightness),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-            color = VeilPalette.Brass
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
         )
 
         Row(
@@ -124,9 +122,9 @@ internal fun ReaderBrightnessControls(
                     )
                 },
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = VeilPalette.Moon,
-                    checkedTrackColor = VeilPalette.DeepBrass,
-                    checkedBorderColor = VeilPalette.Brass,
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                    checkedBorderColor = MaterialTheme.colorScheme.primary,
                     uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                     uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant
@@ -150,7 +148,7 @@ internal fun ReaderBrightnessControls(
                 Text(
                     formatPercent(draft),
                     style = MaterialTheme.typography.labelMedium,
-                    color = VeilPalette.Brass
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
