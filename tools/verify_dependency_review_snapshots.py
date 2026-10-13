@@ -56,7 +56,8 @@ def comparison_fetcher(repository, base_sha, head_sha, token, api_url):
         raise ValueError("Dependency Review requires a GitHub API token")
     url = (
         f"{api_url.rstrip('/')}/repos/{repository}/dependency-graph/compare/"
-        f"{base_sha}...{head_sha}?per_page=100"
+        # Match dependency-review-action v5's comparison request exactly.
+        f"{base_sha}...{head_sha}?per_page=5"
     )
 
     def fetch():

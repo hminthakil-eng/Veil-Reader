@@ -1,6 +1,8 @@
 import base64
+import io
 import unittest
 from email.message import Message
+from unittest.mock import patch
 
 from verify_dependency_review_snapshots import (
     WARNINGS_HEADER,
@@ -68,6 +70,29 @@ class SnapshotReadinessTest(unittest.TestCase):
     def test_branch_names_cannot_replace_exact_source_shas(self):
         with self.assertRaisesRegex(ValueError, "exact base and head"):
             comparison_fetcher("owner/repo", "main", "a" * 40, "test-token", "https://api.github.com")
+
+    def test_fetcher_uses_review_actions_exact_comparison_query(self):
+        response = io.BytesIO(b"[]")
+        response.headers = self.headers()
+        with patch("verify_dependency_review_snapshots.urlopen", return_value=response) as request:
+            fetch = comparison_fetcher("owner/repo", "a" * 40, "b" * 40,
+                                       "test-token", "https://api.github.com")
+            self.assertEqual(self.headers(), fetch())
+        self.assertEqual(
+            f"https://api.github.com/repos/owner/repo/dependency-graph/compare/{'a' * 40}...{'b' * 40}?per_page=5",
+            request.call_args.args[0].full_url,
+        )
+
+    def test_invalid_comparison_delta_cannot_establish_readiness(self):
+        for payload in (b"{}", b"null", b"not json"):
+            with self.subTest(payload=payload):
+                response = io.BytesIO(payload)
+                response.headers = self.headers()
+                with patch("verify_dependency_review_snapshots.urlopen", return_value=response):
+                    fetch = comparison_fetcher("owner/repo", "a" * 40, "b" * 40,
+                                               "test-token", "https://api.github.com")
+                    with self.assertRaises(ValueError):
+                        fetch()
 
 
 if __name__ == "__main__":
