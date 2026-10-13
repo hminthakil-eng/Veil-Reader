@@ -3,24 +3,27 @@
 package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.buildAnnotatedString
@@ -89,8 +92,32 @@ internal fun ReaderToolsHeader(title: String, onDismiss: () -> Unit) {
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface)
         IconButton(onClick = onDismiss, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)) {
-            Icon(Icons.Default.Close, stringResource(R.string.reader_back_to_reading),
-                tint = MaterialTheme.colorScheme.onSurface)
+            ReaderToolIcon(ReaderToolSymbol.CLOSE, stringResource(R.string.reader_back_to_reading))
+        }
+    }
+}
+
+internal enum class ReaderToolSymbol { CLOSE, EXPAND, CURRENT }
+
+/** Same lightweight Canvas/stroke language as the existing native Reader and Library icons. */
+@Composable
+internal fun ReaderToolIcon(symbol: ReaderToolSymbol, label: String? = null) {
+    val tint = MaterialTheme.colorScheme.onSurface
+    Canvas(Modifier.size(24.dp).semantics { label?.let { contentDescription = it } }) {
+        val w = size.width
+        val h = size.height
+        val stroke = 1.8.dp.toPx()
+        fun line(x1: Float, y1: Float, x2: Float, y2: Float) =
+            drawLine(tint, Offset(w * x1, h * y1), Offset(w * x2, h * y2), stroke, StrokeCap.Round)
+        when (symbol) {
+            ReaderToolSymbol.CLOSE -> { line(.25f, .25f, .75f, .75f); line(.75f, .25f, .25f, .75f) }
+            ReaderToolSymbol.EXPAND -> { line(.2f, .4f, .5f, .7f); line(.5f, .7f, .8f, .4f) }
+            ReaderToolSymbol.CURRENT -> {
+                drawCircle(tint, w * .28f, Offset(w * .5f, h * .5f), style = Stroke(stroke))
+                drawCircle(tint, w * .08f, Offset(w * .5f, h * .5f))
+                line(.5f, .08f, .5f, .22f); line(.5f, .78f, .5f, .92f)
+                line(.08f, .5f, .22f, .5f); line(.78f, .5f, .92f, .5f)
+            }
         }
     }
 }
@@ -239,7 +266,7 @@ internal fun ReaderBookSearchContent(
                 singleLine = true, label = { Text(stringResource(R.string.reader_search_query)) },
                 trailingIcon = if (query.isNotEmpty()) {
                     { IconButton(onClick = { onQueryChange("") }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)) {
-                        Icon(Icons.Default.Close, stringResource(R.string.library_search_clear))
+                        ReaderToolIcon(ReaderToolSymbol.CLOSE, stringResource(R.string.library_search_clear))
                     } }
                 } else null,
                 isError = query.trim().length > 128 || '\u0000' in query,

@@ -11,9 +11,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -141,7 +138,7 @@ private fun ReaderNotebookTabs(
         Box(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(tab.labelRes), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                Icon(Icons.Default.ExpandMore, contentDescription = null)
+                ReaderToolIcon(ReaderToolSymbol.EXPAND)
             }
             DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
                 tabs.forEach { item -> DropdownMenuItem(
@@ -294,7 +291,7 @@ internal fun ReaderNotebookPanel(
                             chapterQuery = ""
                             showCurrentRequest++
                         }, modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)) {
-                            Icon(Icons.Default.MyLocation, stringResource(R.string.reader_notebook_show_current))
+                            ReaderToolIcon(ReaderToolSymbol.CURRENT, stringResource(R.string.reader_notebook_show_current))
                         }
                     }
                 }
