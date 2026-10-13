@@ -5240,7 +5240,8 @@ internal fun EpubAppearancePanel(
                     strong = true
                 , color = MaterialTheme.colorScheme.primary)
                 ReaderNavigationModeSelector(
-                    selected = if (capabilities.fixedLayout) ReaderNavigationMode.PAGED else draft.navigationMode,
+                    selected = if (capabilities.fixedLayout) ReaderNavigationMode.PAGED else
+                        readerConsoleVisibleMode(draft, MaterialPageEngineRollout.isEnabled()),
                     scrollEnabled = capabilities.continuousScrollEditable,
                     paperEnabled = !capabilities.fixedLayout && MaterialPageEngineRollout.isEnabled(),
                     slideEnabled = !capabilities.fixedLayout,

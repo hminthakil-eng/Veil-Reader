@@ -48,6 +48,7 @@ implementation; it is not a claim of market superiority or iOS compliance.
 | Modes and menu choices rely on color alone | Native radio marks plus parent selected semantics | Selection, enabled state and TalkBack traversal |
 | Small PAPER metadata ~3.43:1 | Explicit muted ink `#685B48` on opaque `#F0E4CC`: 5.25:1 | Captured composited pixels / device |
 | Four fixed columns at large text | Existing dense-choice policy drives a wrapping 2-column toolbar | Compact, 200%, landscape, native touch |
+| SCROLL with stored PAPER remapped to PAGED when Paper rollout is off | Gate only effective PAPER_CURL; show the effective selected mode without rewriting saved preference | All stored styles retain SCROLL; disabled Paper still fails closed |
 | LIGHT semantic secondary/accent below 4.5 on raised surface | Darker role tokens, minimum 4.91/4.84:1 on authored light surfaces | No translucent-text regressions |
 
 Keep Grayfog architecture in bounded dark imagery; LIGHT uses paper surfaces.
@@ -75,6 +76,10 @@ three views, suppression during search, compact editor theme preservation, and
 return reachability after advanced scroll, LIGHT English 100% and Persian 200%.
 Their native Skia captures are written into the existing `grayfog-cloud` artifact.
 These are UI specimens, not actual book-page or physical-device evidence.
+
+The effective-mode helper and four contract cases reuse the earlier native
+reading-console work from #488. A separate rollout regression checks that all
+three stored page styles preserve SCROLL while the Paper engine is disabled.
 
 The existing Android, storage/UI instrumentation, durability and performance
 workflow base filters now cover stacked changes to the canonical Reader branch.
