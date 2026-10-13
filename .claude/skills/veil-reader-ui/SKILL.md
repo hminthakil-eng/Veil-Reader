@@ -50,3 +50,10 @@ Reading clarity > navigation predictability > library discoverability > progress
 - Does it adapt to larger windows?
 - Is motion meaningful and reducible?
 - Does the reader remain the quietest, least decorative surface?
+
+## Apple-inspired quality review (native Android adapter)
+For UI audits and polish also read `.claude/skills/veil-apple-design-audit/SKILL.md`.
+Its two source-pinned GitHub skills supply cross-platform principles and an evidence format,
+**not** iOS-specific controls, fonts, Liquid Glass or a second design system.
+Before marking Reader chrome changes complete, run `python3 tools/check_veil_ui_contrast.py`
+and preserve separate live-book/device acceptance gates.

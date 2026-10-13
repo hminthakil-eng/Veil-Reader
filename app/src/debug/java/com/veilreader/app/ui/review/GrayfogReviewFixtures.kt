@@ -107,12 +107,16 @@ enum class GrayfogReviewSurface {
 }
 
 @Composable
-fun GrayfogReviewContent(surface: GrayfogReviewSurface, highContrast: Boolean = false) {
+fun GrayfogReviewContent(
+    surface: GrayfogReviewSurface,
+    highContrast: Boolean = false,
+    themeMode: AppThemeMode = AppThemeMode.DARK
+) {
     val context = LocalContext.current
     val books = remember(context) { GrayfogReviewFixtures.booksWithOriginalCover(context) }
     val notes = GrayfogReviewFixtures.notes
     val profile = GrayfogReviewFixtures.advancedProfile
-    VeilTheme(themeMode = AppThemeMode.DARK, highContrastEnabled = highContrast) {
+    VeilTheme(themeMode = themeMode, highContrastEnabled = highContrast) {
         CompositionLocalProvider(LocalVeilReducedMotion provides true) {
             VeilWorldBackdrop {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {

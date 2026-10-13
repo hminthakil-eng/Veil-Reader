@@ -495,8 +495,6 @@
 
     <string name="library_memory_eyebrow">Recovered memory</string>
     <string name="library_memory_title">The archive remembers</string>
-    <string name="library_recent_eyebrow">Recently opened</string>
-    <string name="library_recent_title">Volumes in progress</string>
     <string name="library_continue_book_semantics">Continue %1$s</string>
     <string name="library_wings_eyebrow">Spatial index</string>
     <string name="library_wings_title">Archive Wings</string>
@@ -1014,10 +1012,6 @@
     <string name="reader_notebook_eyebrow">HIDDEN ARCHIVE · READING TOOLS</string>
     <string name="reader_notebook_title">Reading tools</string>
     <string name="reader_notebook_search_notes">Search highlights and notes</string>
-    <string name="reader_notebook_search_book">Search inside this book</string>
-    <string name="reader_notebook_find">Find</string>
-    <string name="reader_notebook_search_unavailable">Search is not available for this publication.</string>
-    <string name="reader_notebook_search_failed">Search could not be completed.</string>
     <string name="reader_notebook_current_section">CURRENT</string>
     <string name="reader_notebook_no_chapters">This book has no chapter list.</string>
     <string name="reader_notebook_untitled_section">Untitled section</string>
@@ -1043,10 +1037,6 @@
     <string name="reader_notebook_activity_after_mark">VOLUME ACTIVITY CONTINUED AFTER THIS MARK</string>
     <string name="reader_notebook_annotate">Annotate</string>
     <string name="reader_notebook_edit_annotation">Edit annotation</string>
-    <string name="reader_notebook_no_search_matches">No matches found in this book.</string>
-    <string name="reader_notebook_match">MATCH</string>
-    <string name="reader_notebook_search_match">Search match</string>
-    <string name="reader_notebook_return_match">Return to match</string>
     <string name="reader_notebook_passage_note">Passage note</string>
     <string name="reader_notebook_note_only">Preserved note</string>
     <string name="reader_notebook_your_thoughts">Your thoughts</string>
@@ -1338,8 +1328,6 @@
     <string name="tts_listening_mode_position">Listening position</string>
     <string name="tts_listening_mode_settings">Voice &amp; settings</string>
 
-    <string name="reader_notebook_searching">Searching…</string>
-    <string name="reader_notebook_search_timed_out">Search took too long. Refine the phrase and try again.</string>
     <string name="reader_paper_snapshot_failed">Could not prepare this page for a paper turn. Try again or use Slide.</string>
     <string name="reader_paper_presentation_failed">The paper turn could not be displayed. Try again or use Slide.</string>
     <string name="reader_paper_renderer_unavailable">Paper animation is unavailable right now. Simple paging still works; you can use Slide.</string>
@@ -1395,10 +1383,6 @@
     <plurals name="library_memory_traces">
         <item quantity="one">%1$d trace</item>
         <item quantity="other">%1$d traces</item>
-    </plurals>
-    <plurals name="library_recent_active">
-        <item quantity="one">%1$d active</item>
-        <item quantity="other">%1$d active</item>
     </plurals>
     <plurals name="library_wings_mapped">
         <item quantity="one">%1$d mapped</item>
@@ -1492,10 +1476,6 @@
         <item quantity="one">%1$d volume has gone quiet</item>
         <item quantity="other">%1$d volumes have gone quiet</item>
     </plurals>
-    <plurals name="reader_notebook_search_limited">
-        <item quantity="one">Showing the first %1$d match. Refine the search to narrow the result set.</item>
-        <item quantity="other">Showing the first %1$d matches. Refine the search to narrow the result set.</item>
-    </plurals>
     <plurals name="mirror_portal_body">
         <item quantity="one">%1$d saved trace can return through the glass.</item>
         <item quantity="other">%1$d saved traces can return through the glass.</item>
@@ -1548,4 +1528,9 @@
         <item quantity="one">%1$d was already present</item>
         <item quantity="other">%1$d were already present</item>
     </plurals>
+
+    <string name="reader_notebook_search_chapters">Find a chapter</string>
+    <string name="reader_notebook_show_current">Show current chapter</string>
+    <string name="reader_notebook_no_matching_chapters">No matching chapters. Clear the search or try another title.</string>
+    <plurals name="reader_search_matches_shown"><item quantity="one">%1$d match shown</item><item quantity="other">%1$d matches shown</item></plurals>
 </resources>

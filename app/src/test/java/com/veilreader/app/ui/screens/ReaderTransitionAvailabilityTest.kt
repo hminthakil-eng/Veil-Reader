@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderNavigationMode
 import org.junit.Assert.assertEquals
@@ -8,6 +9,16 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ReaderTransitionAvailabilityTest {
+    @Test
+    fun scrollRetainsOwnershipWithEveryStoredStyleWhenPaperRolloutIsOff() {
+        PageTurnStyle.entries.forEach { style ->
+            val requested = ReaderAppearance(scroll = true, pageTurnStyle = style)
+            val effective = applyMaterialPageRolloutToAppearance(requested, BookFormat.EPUB, false, false)
+            assertEquals(requested, effective)
+            assertEquals(ReaderNavigationMode.SCROLL, effective.navigationMode)
+        }
+    }
+
     @Test
     fun disabledPaper_explainsRemap_withoutPretendingSlideIsPaper() {
         val requested = ReaderAppearance().withNavigationMode(ReaderNavigationMode.PAPER_CURL)

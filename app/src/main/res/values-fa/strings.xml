@@ -495,8 +495,6 @@
 
     <string name="library_memory_eyebrow">حافظهٔ بازیافته</string>
     <string name="library_memory_title">آرشیو به یاد می‌آورد</string>
-    <string name="library_recent_eyebrow">تازه گشوده‌شده</string>
-    <string name="library_recent_title">کتاب‌های در حال مطالعه</string>
     <string name="library_continue_book_semantics">ادامهٔ %1$s</string>
     <string name="library_wings_eyebrow">فهرست فضایی</string>
     <string name="library_wings_title">بخش‌های آرشیو</string>
@@ -1014,10 +1012,6 @@
     <string name="reader_notebook_eyebrow">آرشیو پنهان · ابزارهای مطالعه</string>
     <string name="reader_notebook_title">ابزارهای مطالعه</string>
     <string name="reader_notebook_search_notes">جست‌وجو در هایلایت‌ها و یادداشت‌ها</string>
-    <string name="reader_notebook_search_book">جست‌وجو داخل این کتاب</string>
-    <string name="reader_notebook_find">پیدا کن</string>
-    <string name="reader_notebook_search_unavailable">جست‌وجو برای این کتاب در دسترس نیست.</string>
-    <string name="reader_notebook_search_failed">جست‌وجو کامل نشد.</string>
     <string name="reader_notebook_current_section">بخش فعلی</string>
     <string name="reader_notebook_no_chapters">این کتاب فهرست فصل ندارد.</string>
     <string name="reader_notebook_untitled_section">بخش بدون عنوان</string>
@@ -1043,10 +1037,6 @@
     <string name="reader_notebook_activity_after_mark">فعالیت جلد پس از این علامت ادامه داشته است</string>
     <string name="reader_notebook_annotate">یادداشت‌گذاری</string>
     <string name="reader_notebook_edit_annotation">ویرایش یادداشت</string>
-    <string name="reader_notebook_no_search_matches">در این کتاب نتیجه‌ای پیدا نشد.</string>
-    <string name="reader_notebook_match">نتیجه</string>
-    <string name="reader_notebook_search_match">نتیجهٔ جست‌وجو</string>
-    <string name="reader_notebook_return_match">بازگشت به نتیجه</string>
     <string name="reader_notebook_passage_note">یادداشت این بخش</string>
     <string name="reader_notebook_note_only">یادداشت محفوظ</string>
     <string name="reader_notebook_your_thoughts">یادداشت تو</string>
@@ -1338,8 +1328,6 @@
     <string name="tts_listening_mode_position">موقعیت شنیدن</string>
     <string name="tts_listening_mode_settings">صدا و تنظیمات</string>
 
-    <string name="reader_notebook_searching">در حال جست‌وجو…</string>
-    <string name="reader_notebook_search_timed_out">جست‌وجو بیش از حد طول کشید. عبارت را دقیق‌تر کنید و دوباره تلاش کنید.</string>
     <string name="reader_paper_snapshot_failed">آماده‌کردن این صفحه برای ورق کاغذ ممکن نشد. دوباره تلاش کنید یا از اسلاید استفاده کنید.</string>
     <string name="reader_paper_presentation_failed">نمایش ورق کاغذ ممکن نشد. دوباره تلاش کنید یا از اسلاید استفاده کنید.</string>
     <string name="reader_paper_renderer_unavailable">نمایش کاغذ فعلاً در دسترس نیست. ورق‌زدن ساده همچنان کار می‌کند؛ می‌توانید از اسلاید استفاده کنید.</string>
@@ -1395,10 +1383,6 @@
     <plurals name="library_memory_traces">
         <item quantity="one">%1$d رد</item>
         <item quantity="other">%1$d رد</item>
-    </plurals>
-    <plurals name="library_recent_active">
-        <item quantity="one">%1$d فعال</item>
-        <item quantity="other">%1$d فعال</item>
     </plurals>
     <plurals name="library_wings_mapped">
         <item quantity="one">%1$d بخش</item>
@@ -1492,10 +1476,6 @@
         <item quantity="one">%1$d جلد به سکوت رفته است</item>
         <item quantity="other">%1$d جلد به سکوت رفته‌اند</item>
     </plurals>
-    <plurals name="reader_notebook_search_limited">
-        <item quantity="one">%1$d نتیجهٔ نخست نمایش داده می‌شود. برای محدودتر کردن نتایج، عبارت جست‌وجو را دقیق‌تر کنید.</item>
-        <item quantity="other">%1$d نتیجهٔ نخست نمایش داده می‌شود. برای محدودتر کردن نتایج، عبارت جست‌وجو را دقیق‌تر کنید.</item>
-    </plurals>
     <plurals name="mirror_portal_body">
         <item quantity="one">%1$d ردِ ذخیره‌شده می‌تواند از میان آینه بازگردد.</item>
         <item quantity="other">%1$d ردِ ذخیره‌شده می‌توانند از میان آینه بازگردند.</item>
@@ -1548,4 +1528,9 @@
         <item quantity="one">%1$d فصل از قبل وجود داشت</item>
         <item quantity="other">%1$d فصل از قبل وجود داشت</item>
     </plurals>
+
+    <string name="reader_notebook_search_chapters">پیدا کردن فصل</string>
+    <string name="reader_notebook_show_current">نمایش فصل فعلی</string>
+    <string name="reader_notebook_no_matching_chapters">فصل منطبقی پیدا نشد. جست‌وجو را پاک کنید یا عنوان دیگری بنویسید.</string>
+    <plurals name="reader_search_matches_shown"><item quantity="one">%1$d نتیجه نمایش داده شده</item><item quantity="other">%1$d نتیجه نمایش داده شده</item></plurals>
 </resources>

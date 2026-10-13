@@ -1,0 +1,23 @@
+name: Veil UI Contrast Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - reader/native-paper-rebuild-20261011
+  push:
+    branches:
+      - design/apple-principles-native-audit-20261012
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reader-chrome-contrast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify accessible, opaque Reader chrome
+        run: python3 tools/check_veil_ui_contrast.py

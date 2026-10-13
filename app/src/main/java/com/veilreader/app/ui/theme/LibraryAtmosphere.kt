@@ -40,17 +40,18 @@ internal fun archiveTimePhaseForHour(hour: Int): ArchiveTimePhase = when (hour) 
 fun Modifier.libraryArchiveAtmosphere(
     state: LibraryAtmosphereState,
     seed: Int = 0,
-    timePhase: ArchiveTimePhase = ArchiveTimePhase.DAY
+    timePhase: ArchiveTimePhase = ArchiveTimePhase.DAY,
+    palette: androidx.compose.material3.ColorScheme? = null
 ): Modifier = drawBehind {
     val w = size.width
     val h = size.height
     if (w <= 1f || h <= 1f) return@drawBehind
 
-    val brass = VeilPalette.Brass
-    val ink = VeilPalette.Ink
-    val archive = VeilPalette.Archive
-    val mist = VeilPalette.Mist
-    val spirit = VeilPalette.Spirit
+    val brass = palette?.primary ?: VeilPalette.Brass
+    val ink = palette?.background ?: VeilPalette.Ink
+    val archive = palette?.surface ?: VeilPalette.Archive
+    val mist = palette?.onSurfaceVariant ?: VeilPalette.Mist
+    val spirit = palette?.secondary ?: VeilPalette.Spirit
 
     val vanishingX = w * (0.48f + ((seed and 7) - 3) * 0.008f)
     val vanishingY = h * 0.265f

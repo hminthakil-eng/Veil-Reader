@@ -24,7 +24,7 @@ internal fun applyMaterialPageRolloutToAppearance(
         // explicitly from Settings once; subsequent Slide/Paged/Scroll choices
         // must remain user-owned instead of being rewritten on every recomposition.
         format == BookFormat.EPUB &&
-            appearance.pageTurnStyle == PageTurnStyle.PAPER &&
+            appearance.navigationMode == ReaderNavigationMode.PAPER_CURL &&
             !materialPageEnabled ->
             appearance
                 .withReadingMode(ReaderReadingMode.PAGED)
@@ -162,3 +162,14 @@ internal fun readerTransitionUnavailableReason(
     }
     return null
 }
+
+/** The selected instrument reflects the effective mode without changing saved preferences. */
+internal fun readerConsoleVisibleMode(
+    appearance: ReaderAppearance,
+    paperAvailable: Boolean
+): ReaderNavigationMode =
+    if (!paperAvailable && appearance.navigationMode == ReaderNavigationMode.PAPER_CURL) {
+        ReaderNavigationMode.PAGED
+    } else {
+        appearance.navigationMode
+    }

@@ -38,3 +38,10 @@ Use this skill for UX, UI, interaction design, onboarding, navigation, reader ch
 - Does it remain usable with large text and TalkBack?
 
 Prefer precise component-level recommendations over vague aesthetic adjectives.
+
+## Cross-platform design reference gate
+Read `.claude/skills/veil-apple-design-audit/SKILL.md` for the source-pinned
+`apple-design-skill` and `apple-hig` review process. Apply clarity,
+accessibility, hierarchy and craft to native Compose without importing
+Apple-owned assets or replacing Android patterns. Measure foreground contrast
+against composited background, not a presumed solid document canvas.

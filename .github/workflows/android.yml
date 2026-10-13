@@ -17,7 +17,7 @@ on:
       - "tools/**"
       - ".github/workflows/android.yml"
   pull_request:
-    branches: [ "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
+    branches: [ "reader/native-paper-rebuild-20261011", "grand-forge/p0-kindle-reader-quality-20261008", "grand-forge/tts-neural-shared-assets-hardening-v1", "grand-forge/tts-listening-mode-v1", "grand-forge/arena-app-hardening-v1", "integration/page-engine-canonical-v1", "main" ]
   workflow_dispatch:
 
 permissions:
@@ -118,5 +118,6 @@ jobs:
           path: |
             app/build/test-results/testDebugUnitTest/TEST-*.xml
             app/build/reports/lint-results-debug.xml
+            app/build/outputs/grayfog-cloud/**
           if-no-files-found: ignore
           retention-days: 7
