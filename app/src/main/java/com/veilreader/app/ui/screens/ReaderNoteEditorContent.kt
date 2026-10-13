@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -75,7 +76,7 @@ internal fun ReaderNoteEditorContent(
             OutlinedTextField(value = note, onValueChange = onNoteChange,
                 label = { Text(stringResource(R.string.reader_notebook_your_thoughts)) },
                 minLines = 4, maxLines = 8, enabled = !saving,
-                modifier = Modifier.fillMaxWidth())
+                modifier = Modifier.fillMaxWidth().testTag("reader_note_editor_input"))
             errorRes?.let { Text(stringResource(it),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium) }

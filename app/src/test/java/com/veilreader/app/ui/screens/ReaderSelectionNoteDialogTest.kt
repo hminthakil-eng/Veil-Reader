@@ -73,7 +73,8 @@ class ReaderSelectionNoteDialogTest {
         compose.onNode(isDialog()).assertExists().assertIsDisplayed()
         val save = compose.onNodeWithText(context.getString(R.string.common_save))
         val cancel = compose.onNodeWithText(context.getString(R.string.common_cancel))
-        val input = compose.onNode(hasSetTextAction())
+        val input = compose.onNodeWithTag("reader_note_editor_input")
+        input.assert(hasSetTextAction())
         save.assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         cancel.assertIsDisplayed().assertIsEnabled().assertHeightIsAtLeast(48.dp)
         if (isNewNote) {
