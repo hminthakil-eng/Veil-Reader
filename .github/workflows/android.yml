@@ -118,5 +118,6 @@ jobs:
           path: |
             app/build/test-results/testDebugUnitTest/TEST-*.xml
             app/build/reports/lint-results-debug.xml
+            app/build/outputs/grayfog-cloud/**
           if-no-files-found: ignore
           retention-days: 7

@@ -495,8 +495,6 @@
 
     <string name="library_memory_eyebrow">Recovered memory</string>
     <string name="library_memory_title">The archive remembers</string>
-    <string name="library_recent_eyebrow">Recently opened</string>
-    <string name="library_recent_title">Volumes in progress</string>
     <string name="library_continue_book_semantics">Continue %1$s</string>
     <string name="library_wings_eyebrow">Spatial index</string>
     <string name="library_wings_title">Archive Wings</string>
@@ -1395,10 +1393,6 @@
     <plurals name="library_memory_traces">
         <item quantity="one">%1$d trace</item>
         <item quantity="other">%1$d traces</item>
-    </plurals>
-    <plurals name="library_recent_active">
-        <item quantity="one">%1$d active</item>
-        <item quantity="other">%1$d active</item>
     </plurals>
     <plurals name="library_wings_mapped">
         <item quantity="one">%1$d mapped</item>

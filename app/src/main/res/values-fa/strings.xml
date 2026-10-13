@@ -495,8 +495,6 @@
 
     <string name="library_memory_eyebrow">حافظهٔ بازیافته</string>
     <string name="library_memory_title">آرشیو به یاد می‌آورد</string>
-    <string name="library_recent_eyebrow">تازه گشوده‌شده</string>
-    <string name="library_recent_title">کتاب‌های در حال مطالعه</string>
     <string name="library_continue_book_semantics">ادامهٔ %1$s</string>
     <string name="library_wings_eyebrow">فهرست فضایی</string>
     <string name="library_wings_title">بخش‌های آرشیو</string>
@@ -1395,10 +1393,6 @@
     <plurals name="library_memory_traces">
         <item quantity="one">%1$d رد</item>
         <item quantity="other">%1$d رد</item>
-    </plurals>
-    <plurals name="library_recent_active">
-        <item quantity="one">%1$d فعال</item>
-        <item quantity="other">%1$d فعال</item>
     </plurals>
     <plurals name="library_wings_mapped">
         <item quantity="one">%1$d بخش</item>
