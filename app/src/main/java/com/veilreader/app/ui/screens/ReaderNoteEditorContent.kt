@@ -27,7 +27,34 @@ internal fun ReaderNoteEditorContent(
     errorRes: Int?,
     onCancel: () -> Unit,
     onSave: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    saveEnabled: Boolean = true
+) {
+    ReaderNoteEditorContent(
+        quote = highlight.quote,
+        note = note,
+        onNoteChange = onNoteChange,
+        saving = saving,
+        errorRes = errorRes,
+        onCancel = onCancel,
+        onSave = onSave,
+        modifier = modifier,
+        saveEnabled = saveEnabled
+    )
+}
+
+/** A selection draft supplies a quote without manufacturing a persisted highlight. */
+@Composable
+internal fun ReaderNoteEditorContent(
+    quote: String,
+    note: String,
+    onNoteChange: (String) -> Unit,
+    saving: Boolean,
+    errorRes: Int?,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+    saveEnabled: Boolean = true
 ) {
     val colors = MaterialTheme.colorScheme
     BoxWithConstraints(modifier.fillMaxSize().padding(16.dp)) {
@@ -38,11 +65,11 @@ internal fun ReaderNoteEditorContent(
             color = colors.onSurface, style = MaterialTheme.typography.titleLarge)
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val quote = highlight.quote.trim()
-            if (!shortWindow && quote.isNotBlank()) Surface(color = colors.surfaceVariant,
+            val displayedQuote = quote.trim()
+            if (!shortWindow && displayedQuote.isNotBlank()) Surface(color = colors.surfaceVariant,
                 shape = MaterialTheme.shapes.small, border = BorderStroke(1.dp, colors.outlineVariant)) {
-                Text("“$quote”", Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyMedium.withVeilContentScript(quote),
+                Text("“$displayedQuote”", Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium.withVeilContentScript(displayedQuote),
                     color = colors.onSurface, maxLines = 4, overflow = TextOverflow.Ellipsis)
             }
             OutlinedTextField(value = note, onValueChange = onNoteChange,
@@ -60,7 +87,7 @@ internal fun ReaderNoteEditorContent(
             }
         }
         val saveAction: @Composable (Modifier) -> Unit = { actionModifier ->
-            Button(onClick = onSave, enabled = !saving,
+            Button(onClick = onSave, enabled = !saving && saveEnabled,
                 modifier = actionModifier.heightIn(min = 48.dp)) {
                 Text(stringResource(if (saving) R.string.reader_notebook_saving else R.string.common_save))
             }

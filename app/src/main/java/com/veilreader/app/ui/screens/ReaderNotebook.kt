@@ -274,8 +274,9 @@ internal fun ReaderNotebookPanel(
                 ReaderBookSearchPanel(opened.publication, onSearchResult, Modifier.weight(1f))
             } else key(tab) {
                 val listState = rememberLazyListState()
-                // One scroll owner, after query recomposition. Never put a target under a sticky filter.
-                LaunchedEffect(tab, chapterQuery, showCurrentRequest) {
+                // Recenter when the current resource arrives; fragment updates retain the viewport.
+                // Filters always start with the first match.
+                LaunchedEffect(tab, chapterQuery, currentIndex, showCurrentRequest) {
                     if (tab == ReaderNotebookTab.CONTENTS) {
                         listState.scrollToItem(if (chapterQuery.isBlank()) currentIndex else 0)
                     }

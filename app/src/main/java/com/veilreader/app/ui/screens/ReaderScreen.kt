@@ -981,12 +981,16 @@ fun ReaderScreen(
         mutableStateOf("")
     }
     var noteSaving by remember(readerSessionInstanceId) { mutableStateOf(false) }
+    var noteSaveErrorRes by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<Int?>(null)
+    }
 
     fun clearPendingSelectionNoteDraft() {
         pendingNoteHighlightId = null
         pendingNoteLocatorJson = null
         pendingNoteQuote = ""
         pendingNoteText = ""
+        noteSaveErrorRes = null
     }
 
     fun dismissPendingSelectionNote() {
@@ -1282,7 +1286,7 @@ fun ReaderScreen(
             closeInFlight = closeInFlight,
             preferencesSettling = rendererPreferencesSettling,
             selectionActive = selectionModeActive,
-            blockingOverlayVisible = showNotebook || showAppearance || showPdfZoom ||
+            blockingOverlayVisible = showNotebook || showReaderSearch || showAppearance || showPdfZoom ||
                 footnote != null || imageLoading || imageViewer != null,
             noteLocatorJson = pendingNoteLocatorJson,
             accessibilityActive = readerHardwareAccessibilityActive(accessibilityManager)
@@ -3745,235 +3749,89 @@ fun ReaderScreen(
         val existingHighlightId = pendingNoteHighlightId
         val isNewNoteDraft = existingHighlightId == null
 
-        Dialog(
-            onDismissRequest = {
-                if (!noteSaving) {
-                    dismissPendingSelectionNote()
-                }
-            },
-            properties = DialogProperties(
-                dismissOnBackPress = !noteSaving,
-                dismissOnClickOutside = false,
-                usePlatformDefaultWidth = false
-            )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .imePadding()
-                    .padding(VeilSpacing.lg),
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .widthIn(max = 560.dp)
-                        .fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    color = VeilPalette.Archive,
-                    border = BorderStroke(
-                        1.dp,
-                        VeilPalette.Brass.copy(alpha = 0.48f)
-                    ),
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
-                ) {
-                    Box {
-                        Column(
-                            modifier = Modifier
-                                .padding(VeilSpacing.lg)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ReaderSelectionNoteDialog(
+            quote = pendingNoteQuote,
+            note = pendingNoteText,
+            onNoteChange = { pendingNoteText = it; noteSaveErrorRes = null },
+            saving = noteSaving,
+            saveEnabled = canSavePendingSelectionNote(
+                isNewNote = isNewNoteDraft,
+                note = pendingNoteText
+            ),
+            errorRes = noteSaveErrorRes,
+            onCancel = ::dismissPendingSelectionNote,
+            onSave = {
+                val expectedSessionId = readerSessionInstanceId
+                val noteToSave = pendingNoteText
+                val quoteToSave = pendingNoteQuote
+                val existingId = existingHighlightId
+                scope.launch {
+                    noteSaving = true
+                    noteSaveErrorRes = null
+                    try {
+                        val committed =
+                            library.commitSelectionNote(
+                                bookId = opened.book.id,
+                                quote = quoteToSave,
+                                locatorJson = pendingLocatorJson,
+                                existingHighlightId = existingId,
+                                note = noteToSave
+                            ) ?: error(
+                                "Selection note target is no longer available."
+                            )
+                        library.flushWrites()
+                        if (
+                            !readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId =
+                                    latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId =
+                                    expectedSessionId
+                            )
                         ) {
-                            VeilMicroLabel(
-                                text = stringResource(R.string.reader_note_eyebrow),
-                                strong = true
+                            return@launch
+                        }
+                        if (committed.created) {
+                            readerViewModel.onHighlightAdded(
+                                expectedSessionId
                             )
-                            Text(
-                                stringResource(R.string.notebook_note_dialog_title),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = VeilPalette.Moon
+                        }
+                        readerViewModel.onNoteSaved(
+                            expectedSessionId,
+                            committed.highlight.id,
+                            noteToSave
+                        )
+                        onSensoryEvent(VeilSensoryEvent.NOTE)
+                        clearPendingSelectionNoteDraft()
+                        readerMessage = noteSavedMessage
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        if (
+                            readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId =
+                                    latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId =
+                                    expectedSessionId
                             )
-                            BrassRule(Modifier.fillMaxWidth())
-
-                            pendingNoteQuote
-                                .takeIf { it.isNotBlank() }
-                                ?.let { quote ->
-                                    Surface(
-                                        shape = MaterialTheme.shapes.extraSmall,
-                                        color = VeilPalette.Ink.copy(alpha = 0.54f),
-                                        border = BorderStroke(
-                                            1.dp,
-                                            VeilPalette.Brass.copy(alpha = 0.28f)
-                                        ),
-                                        tonalElevation = 0.dp,
-                                        shadowElevation = 0.dp
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                            Text(
-                                                stringResource(R.string.reader_selected_passage),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = VeilPalette.Brass.copy(alpha = 0.82f)
-                                            )
-                                            Text(
-                                                "“$quote”",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = VeilPalette.Moon.copy(alpha = 0.78f),
-                                                maxLines = 4,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
-
-                            OutlinedTextField(
-                                value = pendingNoteText,
-                                onValueChange = { pendingNoteText = it },
-                                enabled = !noteSaving,
-                                placeholder = {
-                                    Text(stringResource(R.string.reader_note_hint))
-                                },
-                                minLines = 4,
-                                maxLines = 8,
-                                shape = MaterialTheme.shapes.extraSmall,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.84f),
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(
-                                        alpha = 0.72f
-                                    ),
-                                    focusedContainerColor = VeilPalette.Ink.copy(alpha = 0.36f),
-                                    unfocusedContainerColor = VeilPalette.Ink.copy(alpha = 0.24f)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
+                        ) {
+                            noteSaveErrorRes = R.string.reader_note_save_failed
+                            readerMessage = noteSaveFailedMessage
+                        }
+                    } finally {
+                        if (
+                            readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId =
+                                    latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId =
+                                    expectedSessionId
                             )
-
-                            Text(
-                                stringResource(
-                                    R.string.reader_characters_count,
-                                    pendingNoteText.length
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                    alpha = 0.70f
-                                ),
-                                modifier = Modifier.align(Alignment.End)
-                            )
-
-                            VeilAdaptiveDialogActions(
-                                spacing = VeilSpacing.xs,
-                                first = { actionModifier ->
-                                    OutlinedButton(
-                                        enabled = !noteSaving,
-                                        onClick = ::dismissPendingSelectionNote,
-                                        modifier = actionModifier.heightIn(min = 48.dp),
-                                        shape = MaterialTheme.shapes.extraSmall
-                                    ) {
-                                        Text(stringResource(R.string.common_cancel))
-                                    }
-                                },
-                                second = { actionModifier ->
-                                    Button(
-                                        enabled = !noteSaving &&
-                                            canSavePendingSelectionNote(
-                                                isNewNote = isNewNoteDraft,
-                                                note = pendingNoteText
-                                            ),
-                                        onClick = {
-                                            val expectedSessionId = readerSessionInstanceId
-                                            val noteToSave = pendingNoteText
-                                            val quoteToSave = pendingNoteQuote
-                                            val existingId = existingHighlightId
-                                            scope.launch {
-                                                noteSaving = true
-                                                try {
-                                                    val committed =
-                                                        library.commitSelectionNote(
-                                                            bookId = opened.book.id,
-                                                            quote = quoteToSave,
-                                                            locatorJson = pendingLocatorJson,
-                                                            existingHighlightId = existingId,
-                                                            note = noteToSave
-                                                        ) ?: error(
-                                                            "Selection note target is no longer available."
-                                                        )
-                                                    library.flushWrites()
-                                                    if (
-                                                        !readerAsyncResultBelongsToSession(
-                                                            currentSessionInstanceId =
-                                                                latestReaderSessionInstanceId.value,
-                                                            expectedSessionInstanceId =
-                                                                expectedSessionId
-                                                        )
-                                                    ) {
-                                                        return@launch
-                                                    }
-                                                    if (committed.created) {
-                                                        readerViewModel.onHighlightAdded(
-                                                            expectedSessionId
-                                                        )
-                                                    }
-                                                    readerViewModel.onNoteSaved(
-                                                        expectedSessionId,
-                                                        committed.highlight.id,
-                                                        noteToSave
-                                                    )
-                                                    onSensoryEvent(VeilSensoryEvent.NOTE)
-                                                    clearPendingSelectionNoteDraft()
-                                                    readerMessage = noteSavedMessage
-                                                } catch (cancelled: CancellationException) {
-                                                    throw cancelled
-                                                } catch (error: Exception) {
-                                                    if (
-                                                        readerAsyncResultBelongsToSession(
-                                                            currentSessionInstanceId =
-                                                                latestReaderSessionInstanceId.value,
-                                                            expectedSessionInstanceId =
-                                                                expectedSessionId
-                                                        )
-                                                    ) {
-                                                        readerMessage = noteSaveFailedMessage
-                                                    }
-                                                } finally {
-                                                    if (
-                                                        readerAsyncResultBelongsToSession(
-                                                            currentSessionInstanceId =
-                                                                latestReaderSessionInstanceId.value,
-                                                            expectedSessionInstanceId =
-                                                                expectedSessionId
-                                                        )
-                                                    ) {
-                                                        noteSaving = false
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        modifier = actionModifier.heightIn(min = 48.dp),
-                                        shape = MaterialTheme.shapes.extraSmall,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = VeilPalette.Brass,
-                                            contentColor = Color(0xFF17120A)
-                                        )
-                                    ) {
-                                        Text(
-                                            stringResource(
-                                                if (noteSaving) {
-                                                    R.string.reader_saving_note
-                                                } else {
-                                                    R.string.reader_save_note
-                                                }
-                                            )
-                                        )
-                                    }
-                                }
-                            )
+                        ) {
+                            noteSaving = false
                         }
                     }
                 }
             }
-        }
+        )
     }
 
     val onBookSearchResult: (Locator) -> Unit = { result ->

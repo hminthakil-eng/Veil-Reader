@@ -20,6 +20,16 @@ Scope: chapters, Notebook, note editing, in-book search and return to reading.
 - Note Save/Cancel remain outside the scrolling body. Short wide layouts omit
   optional quote/title chrome and put actions side by side. Awaited persistence,
   disabled-saving state, failure recovery and parent ownership remain intact.
+- The selection/new-note dialog uses the same semantic editor and pinned actions,
+  preserves the atomic selection-note write and exact text, and shows a recoverable
+  save error inside the dialog. New blank drafts remain unsaveable; existing notes
+  can still be cleared. The former LIGHT text on a fixed dark input measured about
+  1.2:1 and is replaced by the matched theme roles.
+- Contents recenters when a delayed current **resource** arrives. Changes to a
+  fragment within that resource preserve manual browsing; an active title filter
+  still starts at the first match.
+- Direct Search now shares Notebook's foreground-speech overlay fence. This
+  corrects the foreground `FORGE_QA` path; background speech policy is unchanged.
 - Both Search entries reuse the existing paged Readium search session and the same
   `SEARCH_RESULT` navigation callback. Search exploration preserves the reading
   anchor without counting a saved-passage revisit. Notes/bookmarks keep their
@@ -70,6 +80,16 @@ is 48dp and remains reachable; long note text saves exactly while actions remain
 visible; saving disables both actions. LIGHT English, Persian 200%, 340/520dp
 height, 220dp note viewport, wide DARK and increased contrast are exercised.
 Captured PNGs are fictional Compose specimens, not actual publication pixels.
+
+Continuation fixtures cover a late null/stale chapter locator, stable browsing
+across same-resource fragment changes, filter-first behavior, and the actual
+selection-note Dialog in LIGHT/DARK and a Persian 200% short window. They exercise
+blank-new/empty-existing note policies, exact Unicode, disabled saving and visible
+live error recovery. The short Search fixture waits for loading to settle before
+scrolling to the lazy result; it retains the ten-second timeout and all navigation,
+cursor-close, display and exit assertions. The `52c179c1` receipt had 1,095 tests and
+one failure from waiting for an offscreen lazy result. Fresh source receipts belong
+to the full candidate SHA recorded in the draft PR; prior results are historical.
 
 Search cancellation is tested during the IO cursor ownership transfer, including
 an open operation that finishes after cancellation. The visible empty-state

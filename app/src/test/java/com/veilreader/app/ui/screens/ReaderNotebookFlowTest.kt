@@ -66,6 +66,45 @@ abstract class ReaderNotebookFlowFixture {
         }
     }
 
+    protected fun checkDelayedCurrentChapter(initialHref: String?) {
+        val links = (0 until 100).map { Link(Url("chapter$it.xhtml")!!, MediaType.XHTML, chapterTitle(it)) }
+        val publication = Publication(Manifest(metadata = Metadata(identifier = "fixture"),
+            readingOrder = links, tableOfContents = links))
+        val opened = OpenedPublication(Book("fixture", "The fog register", "Fictional author"), publication, BookFormat.EPUB, null)
+        val currentHref = mutableStateOf(initialHref)
+        compose.setContent {
+            VeilTheme(AppThemeMode.LIGHT) {
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    ReaderNotebookPanel(opened, "fixture-session", currentHref.value,
+                        emptyList(), emptyList(), emptyList(), onDismiss = {}, onGo = {},
+                        onChapter = {}, onSearchResult = {}, onSaveNote = { _, _ -> },
+                        onDeleteHighlight = {}, onDeleteBookmark = {},
+                        modifier = Modifier.fillMaxWidth().height(680.dp))
+                }
+            }
+        }
+        compose.onNodeWithText(chapterTitle(0)).assertIsDisplayed()
+        // Deliver the reader's resource after the already open panel has settled.
+        compose.runOnIdle { currentHref.value = "chapter80.xhtml#anchor" }
+        compose.onNodeWithText(chapterTitle(80)).assertIsDisplayed().assertIsSelected()
+
+        // Precise locator movement within the same resource must preserve manual browsing.
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(20)
+        compose.onNodeWithText(chapterTitle(20)).assertIsDisplayed()
+        compose.runOnIdle { currentHref.value = "chapter80.xhtml#later-anchor" }
+        compose.onNodeWithText(chapterTitle(20)).assertIsDisplayed()
+
+        val filter = compose.onNode(hasSetTextAction() and hasText(context.getString(R.string.reader_notebook_search_chapters)))
+        val filterQuery = chapterTitle(8).substringBefore(" ·")
+        filter.performTextReplacement(filterQuery)
+        compose.onNodeWithText(chapterTitle(8)).assertIsDisplayed().assertIsNotSelected()
+        // A new current resource cannot displace the first matching chapter while filtering.
+        compose.runOnIdle { currentHref.value = "chapter89.xhtml#anchor" }
+        filter.assert(hasText(filterQuery))
+        compose.onNodeWithText(chapterTitle(8)).assertIsDisplayed().assertIsNotSelected()
+        publication.close()
+    }
+
     protected fun checkChapterAndSearch(scale: Float, height: Int, mode: AppThemeMode, name: String, highContrast: Boolean = false) {
         val search = FictionalSearch()
         val links = (0 until 100).map { Link(Url("chapter$it.xhtml")!!, MediaType.XHTML, chapterTitle(it)) }
@@ -108,9 +147,14 @@ abstract class ReaderNotebookFlowFixture {
         if (compose.onAllNodesWithText(context.getString(R.string.reader_notebook_tab_search)).fetchSemanticsNodes().isEmpty()) compose.onNodeWithText(context.getString(R.string.reader_notebook_tab_contents)).performClick()
         compose.onNodeWithText(context.getString(R.string.reader_notebook_tab_search)).performClick()
         compose.onNode(hasSetTextAction() and hasText(context.getString(R.string.reader_search_query))).performTextInput("a")
-        compose.onNodeWithText(context.getString(R.string.reader_search_submit)).performScrollTo().performClick()
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Fixture match 0").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Fixture match 0").performScrollTo().assertIsDisplayed()
+        val submitText = context.getString(R.string.reader_search_submit)
+        compose.onNodeWithText(submitText).performScrollTo().performClick()
+        // A short viewport can leave loaded results outside the lazy composition.
+        compose.waitUntil(10_000) {
+            compose.onAllNodes(hasText(submitText) and isEnabled()).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Fixture match 0"))
+        compose.onNodeWithText("Fixture match 0").assertIsDisplayed()
         capture("$name-search")
         exit.assertIsDisplayed()
         compose.onNodeWithText("Fixture match 0").performClick()
@@ -164,6 +208,8 @@ abstract class ReaderNotebookFlowFixture {
 @Config(sdk = [35], qualifiers = "en-w360dp-h800dp-mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ReaderNotebookFlowTest : ReaderNotebookFlowFixture() {
+    @Test fun delayedFirstLocatorShowsCurrentChapter() = checkDelayedCurrentChapter(null)
+    @Test fun delayedResourceChangeShowsCurrentChapter() = checkDelayedCurrentChapter("chapter0.xhtml#anchor")
     @Test fun lightChaptersAndCanonicalSearch() = checkChapterAndSearch(1f, 680, AppThemeMode.LIGHT, "en-light-100")
     @Test fun lightNoteActionsStayVisible() = checkNoteFooter(1f, AppThemeMode.LIGHT, "en-light-100")
 }
