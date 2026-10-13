@@ -54,15 +54,19 @@ class ReaderSearchAcquisitionTest {
         compose.setContent { VeilTheme(AppThemeMode.LIGHT) {
             if (visible.value) ReaderBookSearchPanel(publication, onResult = { results++ })
         } }
-        val context = RuntimeEnvironment.getApplication()
-        compose.onNode(hasSetTextAction()).performTextInput("fog")
-        compose.onNodeWithText(context.getString(R.string.reader_search_submit)).performClick()
-        compose.waitUntil(10_000) { entered.get() }
-        compose.runOnIdle { visible.value = false }
-        compose.waitForIdle()
-        released.complete(Unit)
-        compose.waitUntil(10_000) { closes.get() == 1 }
-        compose.runOnIdle { assertEquals(0, results); assertEquals(1, closes.get()) }
-        publication.close()
+        try {
+            val context = RuntimeEnvironment.getApplication()
+            compose.onNode(hasSetTextAction()).performTextInput("fog")
+            compose.onNodeWithText(context.getString(R.string.reader_search_submit)).performClick()
+            compose.waitUntil(10_000) { entered.get() }
+            compose.runOnIdle { visible.value = false }
+            compose.waitForIdle()
+            released.complete(Unit)
+            compose.waitUntil(10_000) { closes.get() == 1 }
+            compose.runOnIdle { assertEquals(0, results); assertEquals(1, closes.get()) }
+        } finally {
+            released.complete(Unit)
+            publication.close()
+        }
     }
 }
