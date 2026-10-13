@@ -96,7 +96,9 @@ abstract class ReaderNotebookFlowFixture {
         capture("$name-contents-current")
         val filter = compose.onNode(hasSetTextAction() and hasText(context.getString(R.string.reader_notebook_search_chapters)))
         filter.performTextReplacement(chapterTitle(99))
-        compose.onNodeWithText(chapterTitle(99)).assertIsDisplayed().performClick()
+        // The editable query also contains this title. Target the actual chapter action.
+        compose.onNode(hasText(chapterTitle(99)) and hasClickAction() and !hasSetTextAction())
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
         compose.runOnIdle { assertEquals(links[99], chosen) }
         filter.performTextReplacement("no such chapter")
         compose.onNodeWithText(context.getString(R.string.reader_notebook_no_matching_chapters)).assertIsDisplayed()
