@@ -33,6 +33,11 @@ class ReaderFrameBenchmark {
                 sectionName = "paper.gpu.texture_upload",
                 mode = TraceSectionMetric.Mode.Max,
                 label = "paperTextureUpload"
+            ),
+            TraceSectionMetric(
+                sectionName = "paper.destination.capture",
+                mode = TraceSectionMetric.Mode.Max,
+                label = "paperDestinationCapture"
             )
         ),
         compilationMode = CompilationMode.Partial(

@@ -6,7 +6,8 @@ import android.view.MotionEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.veilreader.app.data.GameRepository
@@ -28,6 +29,7 @@ import kotlinx.coroutines.withContext
 /** Isolated test entry using the production importer, Readium and ReaderScreen. */
 class NativePaperReaderActivity : FragmentActivity() {
     companion object { const val EXTRA_RTL_BOOK = "native-paper-rtl-book" }
+    internal var fixtureAppearance by mutableStateOf(ReaderAppearance(pageTurnStyle = PageTurnStyle.PAPER))
     internal var receivedTouchDowns = 0
         private set
 
@@ -56,11 +58,10 @@ class NativePaperReaderActivity : FragmentActivity() {
             }
             val session = "native-paper-device-${UUID.randomUUID()}"
             setContent {
-                val appearance = remember { mutableStateOf(ReaderAppearance(pageTurnStyle = PageTurnStyle.PAPER)) }
                 VeilTheme {
                     ReaderScreen(opened = opened, readerSessionInstanceId = session,
-                        library = library, game = game, readerAppearance = appearance.value,
-                        onReaderAppearanceChange = { appearance.value = it }, onClose = ::finish)
+                        library = library, game = game, readerAppearance = fixtureAppearance,
+                        onReaderAppearanceChange = { fixtureAppearance = it }, onClose = ::finish)
                 }
             }
         }

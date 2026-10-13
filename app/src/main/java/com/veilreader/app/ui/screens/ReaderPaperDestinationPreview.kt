@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Trace
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -157,13 +158,20 @@ internal class PaperPreviewNavigator {
                 ReaderTrace.event("paper_destination_cache_hit", details = "revision=$revision")
                 return@withTimeoutOrNull
             }
-            // Readium signals settings before all visual work is complete. Also require a
-            // pagination notification when settings change, then a WebView visual barrier.
-            if (preview.settings.value != settingsAtRequest) {
-                val before = pages.value
+            // Color changes need no pagination, and reflow on page zero may leave
+            // its scroll unchanged. After settings and fonts are ready, cross the
+            // exact document's visual barrier and reload the origin once. Readium's
+            // loadLocator reports progression even for an unchanged page, providing
+            // a pagination witness without waiting for a nonexistent settings event.
+            var originNeedsSettingsPagination = preview.settings.value != settingsAtRequest
+            if (originNeedsSettingsPagination) {
                 preview.submitPreferences(preferences)
                 preview.settings.first { it == settingsAtRequest }
-                pages.first { it > before }
+                while (preview.evaluateJavascript(documentReady) != "true") {
+                    if (!valid()) return@withTimeoutOrNull
+                    delay(32L)
+                }
+                if (!valid() || !awaitSelectedDocument(preview, revision)) return@withTimeoutOrNull
             }
             // After one forward commit, the previously captured source IS the
             // previous page. Reuse immutable ink instead of repaginating/capturing
@@ -181,10 +189,11 @@ internal class PaperPreviewNavigator {
             for (direction in pending) {
                 if (direction == PaperTurnDirection.BACKWARD && previous != null) continue
                 if (!valid()) return@withTimeoutOrNull
-                if (!paperPreviewSamePage(preview.currentLocator.value, origin)) {
+                if (originNeedsSettingsPagination || !paperPreviewSamePage(preview.currentLocator.value, origin)) {
                     val before = pages.value
                     if (!preview.go(origin, animated = false)) return@withTimeoutOrNull
                     pages.first { it > before && paperPreviewSamePage(preview.currentLocator.value, origin) }
+                    originNeedsSettingsPagination = false
                 }
                 // A locator notification is not evidence of paint. Wait before navigation
                 // so a newly loaded resource cannot use its provisional pagination.
@@ -214,9 +223,16 @@ internal class PaperPreviewNavigator {
                     ReaderTrace.event("paper_destination_memory_pressure", details = "revision=$revision")
                     return@withTimeoutOrNull
                 }
-                val result = ViewDrawImmediateMaterialPageSnapshotProvider.capture(
-                    preview.publicationView, bitmap, revision
-                )
+                // Keep destination drawing separate from live-source capture.
+                // This synchronous section never spans a coroutine wait.
+                Trace.beginSection("paper.destination.capture")
+                val result = try {
+                    ViewDrawImmediateMaterialPageSnapshotProvider.capture(
+                        preview.publicationView, bitmap, revision
+                    )
+                } finally {
+                    Trace.endSection()
+                }
                 if (result is MaterialPageSnapshotCapture.Ready && valid()) {
                     state.destinationPreview.publish(direction,
                         PaperDestinationSnapshot(bitmap, revision, origin, destination))

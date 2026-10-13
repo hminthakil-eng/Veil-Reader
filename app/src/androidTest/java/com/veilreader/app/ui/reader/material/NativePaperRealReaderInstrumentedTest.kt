@@ -10,22 +10,29 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
+import androidx.core.graphics.createBitmap
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.veilreader.app.debug.NativePaperReaderActivity
+import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.screens.PaperDestinationSnapshot
 import com.veilreader.app.ui.screens.PaperPreviewContainer
 import com.veilreader.app.ui.screens.PaperTurnDirection
 import com.veilreader.app.ui.screens.paperPreviewSamePage
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.launch
+import org.json.JSONTokener
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.preferences.ReadingProgression
+import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 /** Uses the production importer + Readium + ReaderScreen, never a fake page counter. */
@@ -44,7 +51,107 @@ class NativePaperRealReaderInstrumentedTest {
         verifyRealBook(rtl = true)
     }
 
-    private fun verifyRealBook(rtl: Boolean) {
+    @Test fun realEpub_themeAndFirstPageReflow_refreshIndependentDestination() {
+        withActualPaperMotion {
+            capturePrefix = "appearance"
+            val launch = Intent(instrumentation.targetContext, NativePaperReaderActivity::class.java)
+            ActivityScenario.launch<NativePaperReaderActivity>(launch).use { scenario ->
+                var activity: NativePaperReaderActivity? = null
+                scenario.onActivity { activity = it }
+                val host = requireNotNull(activity)
+                fun navigator(): EpubNavigatorFragment? = fragments(host.supportFragmentManager.fragments)
+                    .filterIsInstance<EpubNavigatorFragment>().firstOrNull { it.tag?.startsWith("reader-") == true }
+                fun previews(): PaperPreviewContainer? = views(host.window.decorView)
+                    .filterIsInstance<PaperPreviewContainer>().firstOrNull()
+                fun preparedAfter(previous: PaperDestinationSnapshot?, theme: Theme, fontSize: Double): PaperDestinationSnapshot {
+                    var prepared: PaperDestinationSnapshot? = null
+                    waitUntil("Independent ink refreshes after appearance changes without a live turn") {
+                        instrumentation.runOnMainSync {
+                            val nav = navigator()
+                            val next = previews()?.previews?.prepared(PaperTurnDirection.FORWARD)
+                            prepared = next?.takeIf {
+                                nav != null && nav.settings.value.theme == theme &&
+                                    kotlin.math.abs(nav.settings.value.fontSize - fontSize) < 0.00001 &&
+                                    (previous == null || it.sourceRevision > previous.sourceRevision) &&
+                                    paperPreviewSamePage(it.origin, nav.currentLocator.value) &&
+                                    !paperPreviewSamePage(it.origin, it.destination) &&
+                                    sourceInkFraction(it.bitmap) > 0.01
+                            }
+                        }
+                        prepared != null
+                    }
+                    return requireNotNull(prepared)
+                }
+                val initial = preparedAfter(null, Theme.LIGHT, 1.0)
+                assertEquals("Exercise settings at page zero, where reflow need not scroll",
+                    0.0, requireNotNull(initial.origin.locations.progression), 0.00001)
+
+                scenario.onActivity { it.fixtureAppearance = it.fixtureAppearance.copy(theme = ReaderTheme.SEPIA) }
+                val themed = preparedAfter(initial, Theme.SEPIA, 1.0)
+                assertTrue("Theme preparation must retain the live page", paperPreviewSamePage(initial.origin, themed.origin))
+                assertTrue("The new independent capture must contain the applied theme colors",
+                    changedFraction(initial.bitmap, themed.bitmap,
+                        Rect(0, 0, themed.bitmap.width, themed.bitmap.height), minimumColorDifference = 20) > 0.4)
+
+                scenario.onActivity { it.fixtureAppearance = it.fixtureAppearance.copy(fontScale = 1.35) }
+                val reflowed = preparedAfter(themed, Theme.SEPIA, 1.35)
+                assertTrue("Font preparation must retain page zero", paperPreviewSamePage(initial.origin, reflowed.origin))
+                assertFalse("Larger type must repaginate the independent next page",
+                    paperPreviewSamePage(themed.destination, reflowed.destination))
+                instrumentation.runOnMainSync { assertTrue(requireNotNull(navigator()).goForward(animated = false)) }
+                waitUntil("The independent reflowed page predicts the actual live destination") {
+                    var reached = false
+                    instrumentation.runOnMainSync {
+                        reached = navigator()?.currentLocator?.value?.let {
+                            paperPreviewSamePage(reflowed.destination, it)
+                        } == true
+                    }
+                    reached
+                }
+                val painted = CountDownLatch(1)
+                var selectedUrl: String? = null
+                var live: Bitmap? = null
+                instrumentation.runOnMainSync {
+                    val nav = requireNotNull(navigator())
+                    nav.viewLifecycleOwner.lifecycleScope.launch {
+                        val value = nav.evaluateJavascript(
+                            "document.readyState === 'complete' && !!document.body && " +
+                                "(!document.fonts || document.fonts.status === 'loaded') ? document.location.href : null"
+                        )
+                        val url = value?.let { JSONTokener(it).nextValue() as? String }
+                        if (url != null && awaitMaterialPageSourceVisualReady(
+                                nav.publicationView, 1L, 1_500L, expectedWebViewUrl = url)) {
+                            selectedUrl = url
+                            painted.countDown()
+                        }
+                    }
+                }
+                assertTrue("The actual reflowed destination must cross its visual-state barrier", painted.await(3, TimeUnit.SECONDS))
+                instrumentation.runOnMainSync {
+                    val nav = requireNotNull(navigator())
+                    assertTrue(paperPreviewSamePage(reflowed.destination, nav.currentLocator.value))
+                    val source = nav.publicationView
+                    assertNotNull("Only the selected fully visible document can acknowledge this capture",
+                        materialPageVisibleWebView(source, requireNotNull(selectedUrl)))
+                    live = createBitmap(source.width, source.height, Bitmap.Config.ARGB_8888)
+                    assertTrue(ViewDrawImmediateMaterialPageSnapshotProvider.capture(source, requireNotNull(live), 1L)
+                        is MaterialPageSnapshotCapture.Ready)
+                }
+                requireNotNull(live).let {
+                    try {
+                        assertTrue("Independent appearance ink must match the actual committed page",
+                            matchingPageInk(reflowed.bitmap, it) > 0.95)
+                        saveCapture("appearance-independent-reflowed.png", reflowed.bitmap)
+                        saveCapture("appearance-actual-reflowed.png", it)
+                    } finally { it.recycle() }
+                }
+            }
+        }
+    }
+
+    private fun verifyRealBook(rtl: Boolean) = withActualPaperMotion { verifyAnimatedBook(rtl) }
+
+    private fun withActualPaperMotion(verify: () -> Unit) {
         // General storage tests disable Android animators. Veil correctly treats
         // that as Reduced Motion; a real curl test must explicitly enable them.
         val previousScale = shell("settings get global animator_duration_scale").trim()
@@ -54,7 +161,7 @@ class NativePaperRealReaderInstrumentedTest {
             waitUntil("System animation policy allows an actual paper fold") {
                 ValueAnimator.areAnimatorsEnabled()
             }
-            verifyAnimatedBook(rtl)
+            verify()
         } finally {
             if (previousScale == "null") shell("settings delete global animator_duration_scale")
             else shell("settings put global animator_duration_scale $previousScale")
@@ -449,7 +556,7 @@ class NativePaperRealReaderInstrumentedTest {
         } finally { script.delete() }
     }
 
-    private fun changedFraction(before: Bitmap, after: Bitmap, bounds: Rect): Double {
+    private fun changedFraction(before: Bitmap, after: Bitmap, bounds: Rect, minimumColorDifference: Int = 45): Double {
         var changed = 0
         var total = 0
         // Ignore chrome/HUD; compare ink and paper in the middle of the real viewport.
@@ -461,7 +568,7 @@ class NativePaperRealReaderInstrumentedTest {
             val difference = kotlin.math.abs(android.graphics.Color.red(a) - android.graphics.Color.red(b)) +
                 kotlin.math.abs(android.graphics.Color.green(a) - android.graphics.Color.green(b)) +
                 kotlin.math.abs(android.graphics.Color.blue(a) - android.graphics.Color.blue(b))
-            if (difference > 45) changed++
+            if (difference > minimumColorDifference) changed++
             total++
         }
         return changed.toDouble() / total.coerceAtLeast(1)

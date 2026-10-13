@@ -264,3 +264,37 @@ power-of-two bucket. Context, format or type changes still allocate normally.
 The library's default transparent-padding API is unchanged. A native-graphics
 regression verifies raw owned ink, compatibility UVs and source ownership;
 real-GL LTR/RTL tests and unchanged performance limits must validate this head.
+
+## 2026-10-13 — appearance readiness and complete dependency review
+
+The initial inspection found live head `7a365c4e` already ahead of the supplied
+`da68cfba` receipt. On resumption, the branch had reached `5fdaa496` with
+cancellation reuse, actual font readiness and scoped covered-source opacity.
+This continuation preserves those changes. Exact-source results for the new
+continuation must be recorded separately in PR #509 after its checks complete.
+
+Appearance readiness must not depend on a pagination notification from a
+color-only settings change. Readium can update CSS/background without emitting
+that event, and font reflow at page zero can also leave scroll unchanged. The
+preview awaits the requested settings, loaded document/fonts and exact selected
+WebView visual-state barrier, then explicitly loads the origin once. Readium's
+loadLocator emits its progression callback even for an unchanged page. The
+existing adjacent navigation and capture barriers still apply. A real-book
+regression changes theme and font at page zero, verifies the unchanged live
+origin, and compares independently prepared ink with the committed live page.
+Destination capture has a separate synchronous trace section and physical
+benchmark metric so it can be distinguished from source capture.
+
+Dependency Review must wait for the exact base/head dependency snapshots. Its
+action can otherwise report success after a snapshot-warning retry timeout while
+examining only a partial delta. The complete-head Bouncy Castle verifier remains
+mandatory, independently of Review's unchanged vulnerability/license policy.
+The new precheck waits for both exact SHA snapshots and fails on a bounded
+timeout. The action uses those same SHAs and its result is rejected if it still
+contains snapshot warnings. No vulnerability or license exception is added.
+
+The physical acceptance gate stays open: actual phones, 60/120 Hz, first/last
+boundaries, 100 turns, rotation, appearance/background changes, retained memory
+and subjective paper quality. No phone is attached to this execution environment.
+Grayfog controls and Lord of Mysteries presentation remain intact; PR stays
+Draft, unmerged, and production native rollout stays OFF.
