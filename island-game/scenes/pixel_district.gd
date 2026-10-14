@@ -10,7 +10,7 @@ func show_view(next_zone: String, completed: bool) -> void:
 	queue_redraw()
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(620, 220)
+	custom_minimum_size = Vector2(0, 216)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _rect(x: float, y: float, w: float, h: float, c: Color) -> void:

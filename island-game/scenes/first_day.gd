@@ -2,6 +2,7 @@ extends Control
 ## Player-operated first-day vertical-slice greybox, not final pixel art or audiobook app.
 ## Persian dialogue is rendered in the high-resolution Control layer above the world.
 var day: IslandFirstDayController = IslandFirstDayController.new()
+var portrait_mode: bool = false
 var checkpoints: IslandDayCheckpointStore = IslandDayCheckpointStore.new()
 var pixel_stage: Control
 var status: Label
@@ -13,14 +14,17 @@ var scene_zone: String = "shop"
 var latest: String = "استاد صحاف در را باز می‌کند: «کار کتاب‌فروشی با یک مشتری شروع می‌شود، نه با یک امپراتوری.»"
 
 func _ready() -> void:
-	var shell := HBoxContainer.new()
-	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	portrait_mode = get_viewport_rect().size.y > get_viewport_rect().size.x
+	var shell: BoxContainer = VBoxContainer.new() if portrait_mode else HBoxContainer.new()
 	shell.add_theme_constant_override("separation", 8)
+	# Keep scene, cash and current novel paragraph visible while the action deck scrolls.
+	# A whole-page scroll felt like an administration form, not a living bookshop RPG.
+	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shell)
 
 	var story_area := VBoxContainer.new()
 	story_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	story_area.custom_minimum_size = Vector2(600,0)
+	story_area.custom_minimum_size = Vector2.ZERO if portrait_mode else Vector2(600,0)
 	shell.add_child(story_area)
 
 	var title := Label.new()
@@ -30,7 +34,7 @@ func _ready() -> void:
 
 	pixel_stage = load("res://scenes/pixel_district.gd").new()
 	pixel_stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pixel_stage.custom_minimum_size = Vector2(610,220)
+	pixel_stage.custom_minimum_size = Vector2(0,162) if portrait_mode else Vector2(610,220)
 	story_area.add_child(pixel_stage)
 
 	var zone_bar := HBoxContainer.new()
@@ -58,13 +62,15 @@ func _ready() -> void:
 	story_area.add_child(briefing)
 
 	var controls := ScrollContainer.new()
-	controls.custom_minimum_size = Vector2(315,0)
-	controls.size_flags_horizontal = Control.SIZE_SHRINK_END
+	controls.custom_minimum_size = Vector2.ZERO if portrait_mode else Vector2(315,0)
+	controls.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL if portrait_mode else Control.SIZE_SHRINK_END
 	controls.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	shell.add_child(controls)
 	var action_stack := VBoxContainer.new()
-	action_stack.custom_minimum_size = Vector2(287,0)
+	action_stack.custom_minimum_size = Vector2.ZERO if portrait_mode else Vector2(287,0)
 	action_stack.add_theme_constant_override("separation",5)
+	action_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	controls.add_child(action_stack)
 	_section(action_stack, "صندوق شش کتاب خیالی")
 	picked = OptionButton.new()
@@ -103,6 +109,7 @@ func _section(parent: VBoxContainer, value: String) -> void:
 func _make_button(parent: BoxContainer, key: String, value: String, handler: Callable) -> void:
 	var button := Button.new()
 	button.text = value
+	button.custom_minimum_size.y = 56 if portrait_mode else 38
 	button.text_direction = Control.TEXT_DIRECTION_RTL
 	button.pressed.connect(handler)
 	parent.add_child(button)

@@ -41,4 +41,5 @@ Invoke-GodotGate 'New single-authority world commerce session' @('--headless', '
 Invoke-GodotGate 'Player operated first day scene smoke' @('--headless', '--path', $project, '--scene', 'res://scenes/first_day.tscn', '--quit-after', '3')
 Invoke-GodotGate 'First day six books two customers three investment strategies' @('--headless', '--path', $project, '--script', 'res://tests/run_first_day_tests.gd') 'FIRST_DAY_TEST_RESULTS passes=118 failures=0'
 Invoke-GodotGate 'Versioned checkpoint and recovery fault simulation' @('--headless', '--path', $project, '--script', 'res://tests/run_checkpoint_tests.gd') 'DAY_CHECKPOINT_TEST_RESULTS passes=45 failures=0'
-Write-Output 'ISLAND_GODOT_GATE PASS - 19 shop + 30 economy + 25 unified commerce + 118 day-one + 45 checkpoint = 237 passing assertions. No Android/device QA.'
+Invoke-GodotGate 'Mobile responsive portrait and landscape layout' @('--headless', '--path', $project, '--script', 'res://tests/run_mobile_layout_tests.gd') 'MOBILE_LAYOUT_TEST_RESULTS passes=20 failures=0'
+Write-Output 'ISLAND_GODOT_GATE PASS - 19 shop + 30 economy + 25 unified commerce + 118 day-one + 45 checkpoint + 20 mobile-layout = 257 passing assertions. No physical Android/device QA.'
