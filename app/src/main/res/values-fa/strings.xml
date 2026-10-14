@@ -1607,4 +1607,8 @@
     <string name="avatar_save_failed">ذخیرهٔ شخصیت ناموفق بود؛ دوباره امتحان کنید</string>
     <string name="avatar_exit">بازگشت به جهان</string>
     <string name="avatar_open_creator">شخصی‌سازی شخصیت</string>
+    <string name="avatar_discard_title">تغییرات شخصیت کنار گذاشته شوند؟</string>
+    <string name="avatar_discard_message">ظاهر شخصیت را تغییر داده‌اید ولی هنوز ذخیره نکرده‌اید. بدون ذخیره خارج می‌شوید؟</string>
+    <string name="avatar_discard">کنار گذاشتن تغییرات</string>
+    <string name="avatar_keep_editing">ادامهٔ ویرایش</string>
 </resources>
