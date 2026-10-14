@@ -299,7 +299,7 @@ fun SettingsScreen(
             onClick = onClose,
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel(stringResource(R.string.common_back)))
+            Text(veilBackLabel(stringResource(R.string.common_back)))
         }
 
         Column(
@@ -478,7 +478,7 @@ fun SettingsScreen(
                 displayValue = { formatPercent(it) },
                 onCommit = { value ->
                     commitReaderAppearance { current ->
-                        current.withFontWeight(value?.toDouble()).let { updated ->
+                        current.withFontWeight(value).let { updated ->
                             if (value == null) updated else updated.copy(publisherStyles = false)
                         }
                     }

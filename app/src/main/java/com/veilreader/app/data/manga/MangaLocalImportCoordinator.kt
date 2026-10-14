@@ -1,5 +1,6 @@
 package com.veilreader.app.data.manga
 
+import androidx.core.graphics.scale
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -1369,8 +1370,7 @@ class MangaLocalImportCoordinator(
                 COVER_MAX_HEIGHT.toFloat() / decoded.height.toFloat()
             ).coerceAtMost(1f)
             val output = if (scale < 0.999f) {
-                Bitmap.createScaledBitmap(
-                    decoded,
+                decoded.scale(
                     (decoded.width * scale).toInt().coerceAtLeast(1),
                     (decoded.height * scale).toInt().coerceAtLeast(1),
                     true

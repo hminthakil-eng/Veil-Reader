@@ -393,8 +393,8 @@ fun VeilApp(
                     showNotice(
                         R.string.notice_restore_success,
                         VeilNoticeKind.SUCCESS,
-                        result.booksRestored,
-                        result.highlightsRestored
+                        context.resources.getQuantityString(R.plurals.notice_restored_book_count, resourceQuantity(result.booksRestored), result.booksRestored),
+                        context.resources.getQuantityString(R.plurals.notice_restored_highlight_count, resourceQuantity(result.highlightsRestored), result.highlightsRestored)
                     )
                 }
             } catch (cancelled: CancellationException) {
@@ -492,8 +492,8 @@ fun VeilApp(
                         showNotice(
                             R.string.notice_manga_chapters_added_with_duplicates,
                             VeilNoticeKind.SUCCESS,
-                            batch.addedCount,
-                            batch.duplicateCount,
+                            context.resources.getQuantityString(R.plurals.notice_added_chapter_count, resourceQuantity(batch.addedCount), batch.addedCount),
+                            context.resources.getQuantityString(R.plurals.notice_duplicate_chapter_count, resourceQuantity(batch.duplicateCount), batch.duplicateCount),
                             book.title
                         )
                     }
@@ -501,7 +501,7 @@ fun VeilApp(
                         showNotice(
                             R.string.notice_manga_chapters_added,
                             VeilNoticeKind.SUCCESS,
-                            batch.addedCount,
+                            context.resources.getQuantityString(R.plurals.notice_added_chapter_count, resourceQuantity(batch.addedCount), batch.addedCount),
                             book.title
                         )
                     }
@@ -976,7 +976,7 @@ fun VeilApp(
                     scope.launch {
                         try {
                             library.flushWrites()
-                            crashCheckpoint?.let(library::clearRecoveredReaderCrashCheckpoint)
+                            library.clearRecoveredReaderCrashCheckpoint(crashCheckpoint)
                             routeViewModel.readerCrashCheckpointRecovered(
                                 targetId,
                                 openRequestId

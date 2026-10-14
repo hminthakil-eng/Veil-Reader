@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.core.graphics.get
 import android.annotation.SuppressLint
 
 import android.graphics.BitmapFactory
@@ -189,10 +190,10 @@ internal fun veilRevealDurationFor(realm: VeilRealm?): Int =
 
 @Composable
 fun VeilReveal(
+    modifier: Modifier = Modifier,
     delayMillis: Int = 0,
     distance: Dp = 14.dp,
     realm: VeilRealm? = null,
-    modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
@@ -254,7 +255,7 @@ internal fun backLabelFor(
     }
 
 @Composable
-internal fun VeilBackLabel(destination: String): String =
+internal fun veilBackLabel(destination: String): String =
     backLabelFor(
         destination = destination,
         rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
@@ -449,7 +450,7 @@ private fun extractBookAura(bitmap: android.graphics.Bitmap): Color {
         for (yStep in 1..5) {
             val x = ((bitmap.width - 1) * xStep / 6).coerceIn(0, bitmap.width - 1)
             val y = ((bitmap.height - 1) * yStep / 6).coerceIn(0, bitmap.height - 1)
-            val pixel = bitmap.getPixel(x, y)
+            val pixel = bitmap[x, y]
             red += (pixel shr 16) and 0xFF
             green += (pixel shr 8) and 0xFF
             blue += pixel and 0xFF
@@ -554,7 +555,7 @@ private fun sampledBookAura(bitmap: android.graphics.Bitmap): Color {
             val y = ((yIndex + 0.5f) / rows * bitmap.height)
                 .toInt()
                 .coerceIn(0, bitmap.height - 1)
-            val pixel = bitmap.getPixel(x, y)
+            val pixel = bitmap[x, y]
             val alpha = (pixel ushr 24) and 0xFF
             if (alpha >= 128) {
                 red += (pixel ushr 16) and 0xFF

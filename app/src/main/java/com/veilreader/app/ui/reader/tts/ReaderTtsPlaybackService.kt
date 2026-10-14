@@ -71,7 +71,7 @@ class ReaderTtsPlaybackService : MediaSessionService() {
         ): MediaSession.ConnectionResult {
             val base = super.onConnect(session, controller)
             if (controller.packageName != packageName) return base
-            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                 .setAvailableSessionCommands(
                     base.availableSessionCommands.buildUpon()
                         .add(SessionCommand(ReaderTtsPlaybackRequest.ACTION_LOAD_AND_PLAY, Bundle.EMPTY))

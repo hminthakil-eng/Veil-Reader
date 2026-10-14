@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.reader.material
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.PointF
 import android.os.SystemClock
@@ -121,6 +122,12 @@ internal class MaterialPageEngineState(
     var edgeTravel: Float by mutableFloatStateOf(0f)
         private set
 
+    // The native leaf tracks the finger while dragging and can travel beyond
+    // the binding on release. Normalized GPU-v2 edgeTravel remains unchanged.
+    var nativeLeafTravel: Float by mutableFloatStateOf(0f)
+        private set
+    private var nativeReleaseCompleting = false
+
     var visualAlpha: Float by mutableFloatStateOf(1f)
         private set
 
@@ -167,7 +174,9 @@ internal class MaterialPageEngineState(
         }
     }
 
-    suspend fun awaitSheetPresented(timeoutMillis: Long = 500L): Boolean {
+    // Cold texture upload/composition can exceed 500 ms on a busy device. This
+    // is a failure deadline, never an animation delay or proof of presentation.
+    suspend fun awaitSheetPresented(timeoutMillis: Long = 1_500L): Boolean {
         val expected = sheetEpoch
         if (!active || expected <= 0L) return false
         val result = withTimeoutOrNull(timeoutMillis.coerceAtLeast(1L)) {
@@ -398,6 +407,15 @@ internal class MaterialPageEngineState(
         return true
     }
 
+    /** Freeze already captured Readium ink for an adjacent-page cache, outside input. */
+    internal fun copyPreparedOrigin(revision: Long, width: Int, height: Int): Bitmap? {
+        val prepared = preparedSnapshot
+        if (active || !materialPagePreparedSnapshotIsCurrent(prepared, revision, width, height,
+                SystemClock.elapsedRealtimeNanos())) return null
+        return try { prepared?.bitmap?.copy(Bitmap.Config.ARGB_8888, false) }
+        catch (_: OutOfMemoryError) { null }
+    }
+
     fun begin(
         view: View,
         side: MaterialPageSide,
@@ -419,7 +437,7 @@ internal class MaterialPageEngineState(
                 prepared != null &&
                 snapshotBuffers[preparedSnapshotBufferSlot] === prepared.bitmap
         val capture =
-            if (usePrepared && prepared != null) {
+            if (usePrepared) {
                 snapshotBufferCursor = preparedSnapshotBufferSlot
                 preparedSnapshot = null
                 preparedSnapshotBufferSlot = -1
@@ -490,6 +508,8 @@ internal class MaterialPageEngineState(
         diagonalPull = 0f
         pointerTravel = 0f
         edgeTravel = 0f
+        nativeLeafTravel = 0f
+        nativeReleaseCompleting = false
         visualAlpha = 1f
         liftCueEmitted = false
         sheetEpoch = nextMaterialPageSnapshotRevision(sheetEpoch)
@@ -549,6 +569,7 @@ internal class MaterialPageEngineState(
                 ?.coerceIn(0f, 1.5f)
                 ?: sample.rawProgress
         edgeTravel = sample.rawProgress
+        nativeLeafTravel = (inward / width).coerceIn(0f, NATIVE_PAPER_COMPLETE_TRAVEL)
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -574,10 +595,17 @@ internal class MaterialPageEngineState(
     private fun acceptAnimatedProgress(
         value: Float,
         releaseProgress: Float = progress,
-        releaseEdgeTravel: Float = edgeTravel
+        releaseEdgeTravel: Float = edgeTravel,
+        releaseNativeTravel: Float = nativeLeafTravel,
+        nativeReleaseFraction: Float? = null
     ) {
         progress = value.coerceIn(0f, 1f)
         edgeTravel = materialPageSettledEdgeTravel(value, releaseProgress, releaseEdgeTravel)
+        nativeLeafTravel = if (nativeReleaseFraction != null) {
+            nativePaperReleaseTravel(nativeReleaseFraction, releaseNativeTravel)
+        } else {
+            nativePaperSettleTravel(value, releaseProgress, releaseNativeTravel, nativeReleaseCompleting)
+        }
         pointerTravel = edgeTravel
     }
 
@@ -593,8 +621,10 @@ internal class MaterialPageEngineState(
 
     suspend fun animateTapTurn() {
         if (!active) return
+        nativeReleaseCompleting = true
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -619,7 +649,7 @@ internal class MaterialPageEngineState(
                         easing = FastOutSlowInEasing
                     )
                 ) {
-                    acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                    acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
                 }
             }
 
@@ -641,7 +671,7 @@ internal class MaterialPageEngineState(
                 ),
                 initialVelocity = launchVelocity
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -651,8 +681,11 @@ internal class MaterialPageEngineState(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        nativeReleaseCompleting = true
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
+        val releaseVerticalBias = verticalBias
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -665,6 +698,30 @@ internal class MaterialPageEngineState(
         if (reducedMotion) {
             visualAlpha = 0.08f
             progress = 1f
+        } else if (BuildConfig.NATIVE_PAPER_REBUILD) {
+            // Gesture progress can reach 1 while half the reflected leaf is
+            // still visible. Animate release time, not that saturated value,
+            // so a full-width pull still rolls smoothly out of the viewport.
+            val release = Animatable(0f)
+            release.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = materialPageSpringDamping(profile, cancelling = false),
+                    stiffness = materialPageSpringStiffness(profile),
+                    visibilityThreshold = 0.001f
+                ),
+                initialVelocity = normalizedReleaseVelocity(releaseVelocityDpPerSec).coerceIn(0f, 5f)
+            ) {
+                val fraction = value.coerceIn(0f, 1f)
+                acceptAnimatedProgress(
+                    releaseProgress + (1f - releaseProgress) * fraction,
+                    releaseProgress, releaseEdgeTravel, releaseNativeTravel,
+                    nativeReleaseFraction = fraction
+                )
+                // Relax the diagonal at the binding so no far corner can
+                // remain in the viewport when the completed sheet is cleared.
+                verticalBias = releaseVerticalBias * (1f - fraction)
+            }
         } else {
             val anim = Animatable(progress)
             anim.animateTo(
@@ -681,7 +738,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-1f, 5f)
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -691,8 +748,10 @@ internal class MaterialPageEngineState(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        nativeReleaseCompleting = false
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -720,7 +779,7 @@ internal class MaterialPageEngineState(
                     releaseVelocityDpPerSec
                 ).coerceIn(-5f, 3f)
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -728,8 +787,10 @@ internal class MaterialPageEngineState(
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
+        nativeReleaseCompleting = false
         val releaseProgress = progress
         val releaseEdgeTravel = edgeTravel
+        val releaseNativeTravel = nativeLeafTravel
         sensorySink?.emit(
             materialPageSensoryCue(
                 profile = profile,
@@ -744,7 +805,7 @@ internal class MaterialPageEngineState(
         } else {
             val anim = Animatable(progress)
             anim.animateTo(0.045f, tween(72)) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
             anim.animateTo(
                 targetValue = 0f,
@@ -754,7 +815,7 @@ internal class MaterialPageEngineState(
                     visibilityThreshold = 0.001f
                 )
             ) {
-                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel)
+                acceptAnimatedProgress(value, releaseProgress, releaseEdgeTravel, releaseNativeTravel)
             }
         }
 
@@ -998,7 +1059,7 @@ internal class MaterialPageEngineState(
                     it.width == targetWidth &&
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
-            } ?: Bitmap.createBitmap(
+            } ?: createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888

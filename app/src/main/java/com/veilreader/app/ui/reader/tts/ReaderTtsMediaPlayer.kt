@@ -286,6 +286,8 @@ internal class ReaderTtsMediaPlayer(
             Player.COMMAND_SEEK_TO_PREVIOUS,
             Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
             Player.COMMAND_SEEK_BACK -> session?.previous()
+            // This seek hook does not own unrelated or future Player commands.
+            else -> Unit
         }
         return Futures.immediateVoidFuture()
     }

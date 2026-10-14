@@ -9,5 +9,7 @@
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:taskAffinity="com.veilreader.app.reader.durability.probe" />
+        <!-- Real ReaderScreen / EPUB harness. Never a second app launcher. -->
+        <activity android:name=".debug.NativePaperReaderActivity" android:exported="false" />
     </application>
 </manifest>

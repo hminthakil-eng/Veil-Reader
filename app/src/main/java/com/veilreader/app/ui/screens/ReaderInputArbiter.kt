@@ -241,7 +241,14 @@ internal class ReaderInputArbiter(
     }
 
     override fun onDrag(event: DragEvent): Boolean {
-        when (interactionMode()) {
+        val mode = interactionMode()
+        if (event.type != DragEvent.Type.Move) {
+            com.veilreader.app.diagnostics.ReaderTrace.event(
+                "reader_drag_route",
+                details = "phase=${event.type} mode=$mode paper=${paper != null}"
+            )
+        }
+        when (mode) {
             ReaderInteractionMode.RENDERER_SELECTION,
             ReaderInteractionMode.RENDERER_ACCESSIBILITY -> return false
             ReaderInteractionMode.BLOCKED -> return true

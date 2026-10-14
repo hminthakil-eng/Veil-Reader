@@ -4,7 +4,7 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
 import android.os.Process
-import android.util.Log
+import com.veilreader.app.diagnostics.DiagnosticLog
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.domain.Book
@@ -172,7 +172,7 @@ class ReaderDurabilityProbeActivity : Activity() {
         // Record evidence, then terminate this process immediately from inside the commit path.
         // The external adb driver no longer decides when to kill us, removing its polling latency
         // from the crash window. No pause/close/flush callback is given a chance to rescue the write.
-        Log.i(
+        DiagnosticLog.info(
             PROBE_LOG_TAG,
             "COMMIT_READY token=$destinationKey pid=${Process.myPid()} event=$event committed=${commit != null}"
         )
@@ -188,7 +188,7 @@ class ReaderDurabilityProbeActivity : Activity() {
             ?: return false
         val guard = File(filesDir, REPLAY_GUARD_FILE)
         if (guard.takeIf(File::exists)?.readText()?.trim() == token) {
-            Log.i(PROBE_LOG_TAG, "REPLAY_BLOCKED token=$token pid=${Process.myPid()}")
+            DiagnosticLog.info(PROBE_LOG_TAG, "REPLAY_BLOCKED token=$token pid=${Process.myPid()}")
             finishAndRemoveTask()
             return true
         }

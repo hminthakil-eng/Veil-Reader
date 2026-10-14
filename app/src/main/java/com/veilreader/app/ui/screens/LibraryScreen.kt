@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -783,7 +785,11 @@ internal fun LibraryArchiveContent(
                     LibrarySectionHeading(
                         eyebrow = stringResource(R.string.library_memory_eyebrow),
                         title = stringResource(R.string.library_memory_title),
-                        trailing = stringResource(R.string.library_memory_traces, memoryState.events.size)
+                        trailing = pluralStringResource(
+                            R.plurals.library_memory_traces,
+                            resourceQuantity(memoryState.events.size),
+                            memoryState.events.size
+                        )
                     )
                     Row(
                         Modifier
@@ -849,7 +855,11 @@ internal fun LibraryArchiveContent(
                         LibrarySectionHeading(
                             eyebrow = stringResource(R.string.library_recent_eyebrow),
                             title = stringResource(R.string.library_recent_title),
-                            trailing = stringResource(R.string.library_recent_active, recentReading.size)
+                            trailing = pluralStringResource(
+                                R.plurals.library_recent_active,
+                                resourceQuantity(recentReading.size),
+                                recentReading.size
+                            )
                         )
                         Row(
                             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -1671,23 +1681,23 @@ internal fun BookDetailDestination(
                     }?.let { material ->
                         val pieces = mutableListOf<String>()
                         if (material.sessionCount > 0) {
-                            pieces += stringResource(
-                                if (material.sessionCount == 1) R.string.book_detail_session_one
-                                else R.string.book_detail_session_many,
+                            pieces += pluralStringResource(
+                                R.plurals.book_detail_session_count,
+                                resourceQuantity(material.sessionCount),
                                 material.sessionCount
                             )
                         }
                         if (material.highlightCount > 0) {
-                            pieces += stringResource(
-                                if (material.highlightCount == 1) R.string.book_detail_passage_one
-                                else R.string.book_detail_passage_many,
+                            pieces += pluralStringResource(
+                                R.plurals.book_detail_passage_count,
+                                resourceQuantity(material.highlightCount),
                                 material.highlightCount
                             )
                         }
                         if (material.bookmarkCount > 0) {
-                            pieces += stringResource(
-                                if (material.bookmarkCount == 1) R.string.book_detail_place_one
-                                else R.string.book_detail_place_many,
+                            pieces += pluralStringResource(
+                                R.plurals.book_detail_place_count,
+                                resourceQuantity(material.bookmarkCount),
                                 material.bookmarkCount
                             )
                         }
@@ -1896,9 +1906,9 @@ private fun BookDetailFragments(memory: BookDetailPreservedMemory) {
                 )
             }
             Text(
-                stringResource(
-                    if (memory.totalUseful == 1) R.string.book_detail_passage_one
-                    else R.string.book_detail_passage_many,
+                pluralStringResource(
+                    R.plurals.book_detail_passage_count,
+                    resourceQuantity(memory.totalUseful),
                     memory.totalUseful
                 ),
                 style = MaterialTheme.typography.labelMedium,
@@ -1965,7 +1975,11 @@ private fun BookDetailFragments(memory: BookDetailPreservedMemory) {
 
         if (memory.hiddenCount > 0) {
             Text(
-                stringResource(R.string.book_detail_more_preserved, memory.hiddenCount),
+                pluralStringResource(
+                    R.plurals.book_detail_more_preserved,
+                    resourceQuantity(memory.hiddenCount),
+                    memory.hiddenCount
+                ),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Spirit.copy(alpha = 0.72f)
             )
@@ -2580,7 +2594,7 @@ private fun LibraryArchiveWings(
         LibrarySectionHeading(
             eyebrow = stringResource(R.string.library_wings_eyebrow),
             title = stringResource(R.string.library_wings_title),
-            trailing = stringResource(R.string.library_wings_mapped, visibleWings.size)
+            trailing = pluralStringResource(R.plurals.library_wings_mapped, resourceQuantity(visibleWings.size), visibleWings.size)
         )
 
         Row(
@@ -2618,13 +2632,9 @@ private fun libraryWingSummary(
     completedCount: Int
 ): String {
     val parts = mutableListOf<String>()
-    parts += stringResource(
-        if (volumeCount == 1) R.string.library_wing_volume_one
-        else R.string.library_wing_volumes_many,
-        volumeCount
-    )
-    if (activeCount > 0) parts += stringResource(R.string.library_wing_active, activeCount)
-    if (completedCount > 0) parts += stringResource(R.string.library_wing_sealed, completedCount)
+    parts += pluralStringResource(R.plurals.library_wing_volume_count, resourceQuantity(volumeCount), volumeCount)
+    if (activeCount > 0) parts += pluralStringResource(R.plurals.library_wing_active, resourceQuantity(activeCount), activeCount)
+    if (completedCount > 0) parts += pluralStringResource(R.plurals.library_wing_sealed, resourceQuantity(completedCount), completedCount)
     return parts.joinToString(" · ")
 }
 
@@ -2924,11 +2934,7 @@ private fun DeepShelfPortal(
                     strong = true
                 )
                 Text(
-                    stringResource(
-                        if (count == 1) R.string.library_quiet_volume_one
-                        else R.string.library_quiet_volumes_many,
-                        count
-                    ),
+                    pluralStringResource(R.plurals.library_quiet_volume_count, resourceQuantity(count), count),
                     style = MaterialTheme.typography.titleMedium,
                     color = VeilPalette.Moon
                 )
@@ -3046,9 +3052,9 @@ private fun formatArchiveSilence(inactiveMillis: Long): String {
                 stringResource(R.string.book_detail_silence_years, years)
             }
         }
-        days >= 60L -> stringResource(R.string.book_detail_silence_months, days / 30L)
-        days >= 14L -> stringResource(R.string.book_detail_silence_weeks, days / 7L)
-        days > 0L -> stringResource(R.string.book_detail_silence_days, days)
+        days >= 60L -> pluralStringResource(R.plurals.book_detail_silence_months, resourceQuantity(days / 30L), days / 30L)
+        days >= 14L -> pluralStringResource(R.plurals.book_detail_silence_weeks, resourceQuantity(days / 7L), days / 7L)
+        days > 0L -> pluralStringResource(R.plurals.book_detail_silence_days, resourceQuantity(days), days)
         else -> stringResource(R.string.book_detail_silence_today)
     }
 }
@@ -3410,12 +3416,14 @@ internal fun BookLibraryRow(
                     artifactMemory != null &&
                     (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
                 ) {
-                    val marksText = stringResource(
-                        R.string.library_mark_count,
+                    val marksText = pluralStringResource(
+                        R.plurals.library_mark_count,
+                        resourceQuantity(artifactMemory.highlightCount),
                         artifactMemory.highlightCount
                     )
-                    val savedText = stringResource(
-                        R.string.library_saved_count,
+                    val savedText = pluralStringResource(
+                        R.plurals.library_saved_count,
+                        resourceQuantity(artifactMemory.bookmarkCount),
                         artifactMemory.bookmarkCount
                     )
                     Text(
@@ -3662,7 +3670,11 @@ internal fun LibraryShelvesView(
                     LibrarySectionHeading(
                         eyebrow = group.eyebrow,
                         title = group.title,
-                        trailing = stringResource(R.string.library_group_volume_count, group.books.size)
+                        trailing = pluralStringResource(
+                            R.plurals.library_group_volume_count,
+                            resourceQuantity(group.books.size),
+                            group.books.size
+                        )
                     )
                     LazyRow(
                         modifier = Modifier.fillMaxWidth().veilShelfDatum(coverHeightDp.dp),
@@ -3943,7 +3955,7 @@ private fun MangaLibraryPortal(
                     color = VeilPalette.Moon
                 )
                 Text(
-                    stringResource(R.string.manga_portal_body, localComicCount),
+                    pluralStringResource(R.plurals.manga_portal_body, resourceQuantity(localComicCount), localComicCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.84f),
                     maxLines = 2,

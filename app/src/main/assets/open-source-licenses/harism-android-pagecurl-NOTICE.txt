@@ -1,0 +1,16 @@
+android-pagecurl — Copyright 2012 Harri Smatt
+https://github.com/harism/android-pagecurl
+Source commit: 7a2c8f152bb4f1b0de3b1aa72b3cb79e1fe8e3bd
+Apache License 2.0. Full license accompanies this notice.
+
+Veil Reader reuses CurlMesh and CurlPage. CurlMesh was adapted to prepare
+textures before applying finger geometry, use linear texture filtering, and
+compose premultiplied textures/black shadows into a transparent TextureView.
+CurlMesh also reuses compatible GPU texture storage and skips redundant blank
+backing passes for opaque textures. CurlPage was adapted to return owned
+source pixels with exact-size or power-of-two UVs. NPOT-supporting contexts
+upload native-size textures; older contexts initialize white power-of-two
+storage once per source/storage size and update only source pixels each turn.
+The original transparent-padding path remains available by default. Readium pixels
+are never downsampled. The Readium integration, lifecycle/bitmap leases and
+finger endpoint solver are separate Veil Reader implementations.

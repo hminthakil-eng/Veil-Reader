@@ -1,6 +1,5 @@
 package com.veilreader.app.diagnostics
 
-import android.util.Log
 import com.veilreader.app.BuildConfig
 import java.util.concurrent.atomic.AtomicLong
 
@@ -31,7 +30,7 @@ object ReaderTrace {
             sessionId?.let { append(" sessionId=").append(it) }
             details?.takeIf { it.isNotBlank() }?.let { append(" ").append(it) }
         }
-        Log.d(TAG, payload)
+        DiagnosticLog.debug(TAG, payload)
         return seq
     }
 }

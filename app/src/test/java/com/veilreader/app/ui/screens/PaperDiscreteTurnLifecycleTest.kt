@@ -531,6 +531,51 @@ class PaperDiscreteTurnLifecycleTest {
     }
 
     @Test
+    fun `quick release survives cold source acquisition beyond the old deadline then commits once`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val clock = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
+                delay(16L)
+                return onFrame(testScheduler.currentTime * 1_000_000L)
+            }
+        }
+        val failures = mutableListOf<PaperTurnVisualFailure>()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true },
+            CoroutineScope(coroutineContext + clock), onInteraction = {},
+            onCommittedTurn = { fixture.commit() }, onVisualFailure = { failures += it })
+        try {
+            listener.onDrag(drag(DragEvent.Type.Start, 0f))
+            listener.onDrag(drag(DragEvent.Type.Move, -900f))
+            listener.onDrag(drag(DragEvent.Type.End, -900f))
+            runCurrent()
+            assertEquals(0, fixture.requests)
+            assertTrue(state.active)
+            assertEquals(0L, state.materialEngine.presentedSheetEpoch.value)
+            // A genuine cold source at 700 ms must survive the former 500 ms
+            // watchdog. Still no navigation until this exact epoch is acquired.
+            delay(700L)
+            assertTrue(state.active)
+            assertEquals(0, fixture.requests)
+            state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
+            advanceUntilIdle()
+            assertEquals(1, fixture.requests)
+            assertEquals(1, fixture.commits)
+            assertTrue(failures.isEmpty())
+            assertFalse(listener.hasPendingTurn())
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
     fun `presented drag holds the same Readium chapter until release and commits once`() = runTest {
         MaterialPageEngineRollout.setDebugOverride(true)
         val fixture = NavigatorFixture().apply { settleImmediately = true }
@@ -554,6 +599,8 @@ class PaperDiscreteTurnLifecycleTest {
             assertTrue(state.active)
             runCurrent()
             assertEquals(0, fixture.requests)
+            delay(700L)
+            assertTrue("A held source must survive a cold first buffer", state.active)
             state.materialEngine.acknowledgeSheetPresented(state.materialEngine.sheetEpoch)
             runCurrent()
             assertEquals(0, fixture.requests)
@@ -663,6 +710,41 @@ class PaperDiscreteTurnLifecycleTest {
             assertFalse(listener.hasPendingTurn())
             assertEquals(0, fixture.requests)
             assertEquals(0, fixture.commits)
+        } finally {
+            listener.forceCancelPendingTurn()
+            state.dispose()
+            activity.pause().stop().destroy()
+            MaterialPageEngineRollout.setDebugOverride(null)
+        }
+    }
+
+    @Test
+    fun `cancel after quick release prevents a late acquired buffer from navigating`() = runTest {
+        MaterialPageEngineRollout.setDebugOverride(true)
+        val fixture = NavigatorFixture().apply { settleImmediately = true }
+        val activity = Robolectric.buildActivity(Activity::class.java).setup().visible()
+        val state = PaperCurlState()
+        state.updateRendererStatus(GpuMaterialPageRendererStatus.READY)
+        fixture.attachView(activity.get())
+        val failures = mutableListOf<PaperTurnVisualFailure>()
+        val listener = PaperCurlInputListener(fixture.navigator, state, { true }, this,
+            onInteraction = {}, onCommittedTurn = { fixture.commit() },
+            onVisualFailure = { failures += it })
+        try {
+            listener.onDrag(drag(DragEvent.Type.Start, 0f))
+            listener.onDrag(drag(DragEvent.Type.Move, -900f))
+            listener.onDrag(drag(DragEvent.Type.End, -900f))
+            runCurrent()
+            val obsoleteEpoch = state.materialEngine.sheetEpoch
+            assertTrue(listener.cancelPendingTurn())
+            state.materialEngine.acknowledgeSheetPresented(obsoleteEpoch)
+            advanceUntilIdle()
+            assertEquals(0, fixture.requests)
+            assertEquals(0, fixture.commits)
+            assertEquals(fixture.origin, fixture.current.value)
+            assertTrue(failures.isEmpty())
+            assertFalse(state.active)
+            assertFalse(listener.hasPendingTurn())
         } finally {
             listener.forceCancelPendingTurn()
             state.dispose()

@@ -1,7 +1,9 @@
 package com.veilreader.app.ui.reader.material
 
+import androidx.core.view.isVisible
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.os.SystemClock
 import android.os.Trace
 import android.view.View
@@ -11,6 +13,7 @@ import com.veilreader.app.diagnostics.ReaderPerformanceMetrics
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 
 /**
  * One explicit capture boundary between Readium's publication View and the Paper renderer.
@@ -39,20 +42,24 @@ internal fun interface MaterialPagePreparedSnapshotProvider {
     ): MaterialPageSnapshotCapture
 }
 
-internal fun materialPageVisibleWebView(root: View): WebView? {
+internal fun materialPageVisibleWebView(root: View, expectedUrl: String? = null): WebView? {
+    val visible = Rect()
     if (
         root is WebView &&
-        root.visibility == View.VISIBLE &&
+        root.isVisible &&
         root.isShown &&
         root.isAttachedToWindow &&
         root.width > 0 &&
-        root.height > 0
+        root.height > 0 &&
+        root.getGlobalVisibleRect(visible) &&
+        (expectedUrl == null || (root.url?.substringBefore('#') == expectedUrl.substringBefore('#') &&
+            visible.width() > root.width * 0.75f && visible.height() > root.height * 0.75f))
     ) {
         return root
     }
     val group = root as? ViewGroup ?: return null
     for (index in 0 until group.childCount) {
-        materialPageVisibleWebView(group.getChildAt(index))?.let { return it }
+        materialPageVisibleWebView(group.getChildAt(index), expectedUrl)?.let { return it }
     }
     return null
 }
@@ -60,20 +67,31 @@ internal fun materialPageVisibleWebView(root: View): WebView? {
 internal suspend fun awaitMaterialPageSourceVisualReady(
     root: View,
     requestId: Long,
-    timeoutMillis: Long = 220L
+    timeoutMillis: Long = 220L,
+    expectedWebViewUrl: String? = null
 ): Boolean {
     if (!root.isAttachedToWindow || root.width <= 0 || root.height <= 0) {
         return false
     }
-    val webView = materialPageVisibleWebView(root) ?: return true
     return withTimeoutOrNull(timeoutMillis.coerceAtLeast(1L)) {
+        // A resource locator can change before ViewPager lays out its new child.
+        // Require the selected document's actual visible WebView, not an old
+        // chapter which is still attached during the resource handoff.
+        var selected = materialPageVisibleWebView(root, expectedWebViewUrl)
+        while (selected == null && expectedWebViewUrl != null) {
+            delay(16L) // Poll observed layout/URL; elapsed time is not paint proof.
+            selected = materialPageVisibleWebView(root, expectedWebViewUrl)
+        }
+        val webView = selected ?: return@withTimeoutOrNull true
         suspendCancellableCoroutine { continuation ->
             webView.post {
                 if (
                     !continuation.isActive ||
                     !webView.isAttachedToWindow ||
                     webView.width <= 0 ||
-                    webView.height <= 0
+                    webView.height <= 0 ||
+                    (expectedWebViewUrl != null &&
+                        materialPageVisibleWebView(root, expectedWebViewUrl) !== webView)
                 ) {
                     if (continuation.isActive) continuation.resume(false)
                     return@post
@@ -83,7 +101,8 @@ internal suspend fun awaitMaterialPageSourceVisualReady(
                     object : WebView.VisualStateCallback() {
                         override fun onComplete(requestId: Long) {
                             if (continuation.isActive) {
-                                continuation.resume(true)
+                                continuation.resume(expectedWebViewUrl == null ||
+                                    materialPageVisibleWebView(root, expectedWebViewUrl) === webView)
                             }
                         }
                     }

@@ -18,7 +18,7 @@ class MangaLocalPageVerifierTest {
     fun validLocalFilePassesSizeAndHashVerification() = runBlocking {
         val root = temp.newFolder("cache")
         val page = java.io.File(root, "manga/work/page-00000.jpg")
-        page.parentFile.mkdirs()
+        requireNotNull(page.parentFile).mkdirs()
         val bytes = "verified-page".toByteArray()
         page.writeBytes(bytes)
 

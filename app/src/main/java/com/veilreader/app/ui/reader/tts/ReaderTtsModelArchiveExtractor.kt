@@ -3,7 +3,6 @@ package com.veilreader.app.ui.reader.tts
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
 
@@ -96,7 +95,7 @@ internal class ReaderTtsModelArchiveExtractor(
                 BZip2CompressorInputStream(raw, true).use { bzip ->
                     TarArchiveInputStream(bzip).use { tar ->
                         while (true) {
-                            val entry = tar.nextEntry as? TarArchiveEntry ?: break
+                            val entry = tar.nextEntry ?: break
                             entries += 1
                             if (entries > limits.maxEntries) {
                                 return rejectAndClean(

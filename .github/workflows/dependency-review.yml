@@ -19,7 +19,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # The review action proceeds after its snapshot retry timeout. Require a
+      # complete comparison first so missing Gradle graphs cannot look clean.
+      - name: Verify complete exact-source snapshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPENDENCY_REVIEW_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          DEPENDENCY_REVIEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 tools/test_dependency_review_snapshots.py
+          python3 tools/verify_dependency_review_snapshots.py
+
       - name: Review dependency delta
+        id: review
         uses: actions/dependency-review-action@v5
         with:
           config-file: ./.github/dependency-review-config.yml
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
+          # The bounded precheck owns retrying; reject any later warning below.
+          retry-on-snapshot-warnings: false
+
+      - name: Reject an incomplete review result
+        env:
+          DEPENDENCY_REVIEW_SUMMARY: ${{ steps.review.outputs.comment-content }}
+        run: python3 tools/verify_dependency_review_snapshots.py --review-summary

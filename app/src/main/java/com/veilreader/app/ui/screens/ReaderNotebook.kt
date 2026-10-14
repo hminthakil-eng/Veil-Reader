@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.BorderStroke
@@ -705,8 +707,9 @@ fun ReaderNotebook(
                         if (bookSearchLimited) {
                             item {
                                 ReaderCapabilityNotice(
-                                    text = stringResource(
-                                        R.string.reader_notebook_search_limited,
+                                    text = pluralStringResource(
+                                        R.plurals.reader_notebook_search_limited,
+                                        resourceQuantity(READER_SEARCH_RESULT_LIMIT),
                                         READER_SEARCH_RESULT_LIMIT
                                     )
                                 )

@@ -32,8 +32,8 @@ internal fun memoryArtifactKind(highlight: Highlight): MemoryArtifactKind {
 @Composable
 internal fun MemoryArtifactContent(
     highlight: Highlight,
-    noteEmphasis: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    noteEmphasis: Boolean = false
 ) {
     val kind = memoryArtifactKind(highlight)
 

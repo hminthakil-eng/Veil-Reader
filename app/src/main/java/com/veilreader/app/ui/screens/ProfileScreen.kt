@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -161,7 +163,11 @@ fun ProfileScreen(
         ProfileSectionHeading(
             eyebrow = stringResource(R.string.profile_known_marks),
             title = stringResource(R.string.profile_sigil_registry),
-            trailing = stringResource(R.string.profile_awakened_count, p.earnedSigils.size)
+            trailing = pluralStringResource(
+                R.plurals.profile_awakened_count,
+                resourceQuantity(p.earnedSigils.size),
+                p.earnedSigils.size
+            )
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -192,8 +198,9 @@ fun ProfileScreen(
         ProfileSectionHeading(
             eyebrow = stringResource(R.string.profile_restricted_folio),
             title = stringResource(R.string.profile_veiled_discoveries),
-            trailing = stringResource(
-                R.string.profile_revealed_count,
+            trailing = pluralStringResource(
+                R.plurals.profile_revealed_count,
+                resourceQuantity(revealedDiscoveries),
                 revealedDiscoveries,
                 veiledDiscoveries.size
             )
@@ -476,7 +483,11 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 )
             }
             Text(
-                stringResource(R.string.profile_sessions_count, history.recordedSessionCount),
+                pluralStringResource(
+                    R.plurals.profile_sessions_count,
+                    resourceQuantity(history.recordedSessionCount),
+                    history.recordedSessionCount
+                ),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilMaterials.TextSecondary
             )

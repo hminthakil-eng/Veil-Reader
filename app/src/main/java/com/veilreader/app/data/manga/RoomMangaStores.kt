@@ -52,45 +52,45 @@ class RoomMangaProgressStore(
         )
     }
 
-    override suspend fun save(progressValue: MangaReadingProgress) {
-        val chapter = findPersistedChapter(progressValue)
+    override suspend fun save(progress: MangaReadingProgress) {
+        val chapter = findPersistedChapter(progress)
             ?: throw IllegalStateException(
                 "Manga progress cannot be persisted before its chapter is in the catalog"
             )
 
-        val chapters = catalog.listChapters(progressValue.mangaId.value)
+        val chapters = catalog.listChapters(progress.mangaId.value)
         val chapterIndex = chapters.indexOfFirst { it.id == chapter.id }
         val summary = if (chapterIndex >= 0 && chapters.isNotEmpty()) {
             val overallProgress = (
-                (chapterIndex.toDouble() + progressValue.chapterProgression) /
+                (chapterIndex.toDouble() + progress.chapterProgression) /
                     chapters.size.toDouble()
                 ).coerceIn(0.0, 1.0)
             MangaLibraryProgressSummary(
                 progress = overallProgress.toFloat(),
                 finished =
                     chapterIndex == chapters.lastIndex &&
-                        progressValue.chapterProgression >= FINISHED_PROGRESSION
+                        progress.chapterProgression >= FINISHED_PROGRESSION
             )
         } else {
             null
         }
 
         database.withTransaction {
-            progress.upsert(
+            this.progress.upsert(
                 MangaProgressEntity(
-                    bookId = progressValue.mangaId.value,
+                    bookId = progress.mangaId.value,
                     chapterId = chapter.id,
-                    pageIndex = progressValue.pageIndex,
-                    pageCount = progressValue.pageCount,
-                    chapterProgression = progressValue.chapterProgression,
-                    updatedAtEpochMs = progressValue.updatedAtEpochMs
+                    pageIndex = progress.pageIndex,
+                    pageCount = progress.pageCount,
+                    chapterProgression = progress.chapterProgression,
+                    updatedAtEpochMs = progress.updatedAtEpochMs
                 )
             )
             summary?.let {
                 books.updateMangaProgressSummary(
-                    id = progressValue.mangaId.value,
+                    id = progress.mangaId.value,
                     progress = it.progress,
-                    updatedAtEpochMs = progressValue.updatedAtEpochMs,
+                    updatedAtEpochMs = progress.updatedAtEpochMs,
                     finished = it.finished
                 )
             }

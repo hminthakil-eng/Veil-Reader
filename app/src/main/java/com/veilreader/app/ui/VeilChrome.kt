@@ -616,8 +616,8 @@ fun VeilSigilMark(
 
 @Composable
 fun VeilLoadingState(
-    label: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    label: String? = null
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass

@@ -583,6 +583,35 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun coldImports_keepImmediateReaderProgressAcrossFreshCollectors() = runBlocking<Unit> {
+        repeat(6) { wave ->
+            val repository = repository()
+            val id = "cold-progress-$wave"
+            try {
+                repository.addImportedBook(Book(
+                    id = id, title = "Cold Reader $wave", author = "Veil",
+                    totalPages = 100, sourceUri = "file:///cold-$wave.epub"
+                ))
+                // No wait for UI/Room readiness here: returning from import is
+                // the public contract that this real book can receive progress.
+                repeat(20) { step ->
+                    repository.saveProgress(id, step / 20.0,
+                        "{\"href\":\"cold-$wave-$step.xhtml\"}")
+                }
+                repository.flushProgress(id)
+                repository.flushWrites()
+                val stored = requireNotNull(db.books().findEntity(id))
+                assertEquals(0.95f, stored.progress, 0.000001f)
+                assertEquals(95, stored.pagesRead)
+                assertEquals("{\"href\":\"cold-$wave-19.xhtml\"}", stored.locatorJson)
+            } finally {
+                repositoryUnderTest = null
+                repository.closeForTest()
+            }
+        }
+    }
+
+    @Test
     fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(

@@ -1,0 +1,300 @@
+# Native paper rebuild — real Reader integration
+
+Status: implementation candidate; physical quality and release remain UNVERIFIED.
+Base: canonical main `bfac95f4b82e23b9f277f985bf3282f3e9c584fb`.
+Branch: `reader/native-paper-rebuild-20261011`. Acceptance owner: issue #408.
+
+## Why previous attempts failed
+
+Source-confirmed failure paths, distinct from unperformed phone reproduction:
+
+| Failure | Evidence | Rebuild response |
+|---|---|---|
+| Visual overlay intercepted publication input | Main integrated #474; negative control described in that PR | Keep `readerVisualOnlyInput` at the overlay boundary; native view never owns touch |
+| Navigation during Move replaced the source WebView before touchend | #467 and `PaperCurlInputListener` release-only transaction | Reuse the corrected transaction; never navigate during a held fold |
+| Vertex/fragment precision mismatch prevents shader link | Unmerged optical fix #468; identical uniforms/varyings had different default precision in main | Reuse its precision/acquired-buffer fix for explicit legacy rollback; new backend uses actual upstream triangle strips |
+| A valid short drag release arrives before acquired-source acknowledgement | Main `onDragEnd` required epoch equality immediately; tap path waited | Wait up to a bounded 1500 ms same-epoch acquisition barrier, preserve release intent, cancel safely on lifecycle/token change |
+| Cold first buffer exceeded the old 500 ms watchdog | Exact-head English fixture acquired its first source at 563 ms, after the watchdog had begun clearing it; RTL acquired at 253 ms | Use a bounded 1500 ms failure deadline; continue immediately on exact acquisition; held/released 700 ms regression checks |
+| Native material demos did not change real book pages | #479/#506 explicitly used fictional bitmaps | Wire the licensed mesh directly into `PaperCurlOverlay` and actual Readium source snapshots |
+| Leaf travel stopped inside the screen | Prior GPU target free edge clamps at -0.25 page widths | Finger tracks 1:1 during drag; accepted release extends to 2.08 widths so the entire reflected leaf exits |
+| Full pull skipped its release animation | Saturated gesture progress=1 leaves no remaining animation interval | Native release uses its own time fraction so the remaining leaf exits continuously |
+
+No single explanation is asserted for every prior APK. An installed build hash and
+phone recording are required to attribute an individual report.
+
+## Successful designs researched
+
+| Primary source | Mechanism | Decision |
+|---|---|---|
+| https://github.com/harism/android-pagecurl | Adaptive cylindrical CurlMesh, front/back same sheet, drop/self shadows, pointer-based manipulation | Reuse licensed mesh and texture container, pinned below; separate geometry, acquisition and Readium state |
+| https://github.com/eschao/android-PageFlip | ES2 cylinder fold, mesh density, edge/base shadows, independent draw/touch lifecycle | Existing #506/#508 remain separate evidence candidates; avoid rebuilding another demo |
+| https://github.com/albertoirurueta/irurueta-android-gl-curl | Modern Android curl host and upstream lineage | Existing #479 remains a lab; main already uses its GLTextureView utility |
+| https://github.com/readest/readest/issues/5288 | Prepare capture while idle; buffer release until surface ready; invalidate stale prepared surfaces | Reuse Veil's existing idle snapshot preparation; repair the unmatched drag-release wait |
+| https://developer.android.com/develop/ui/compose/touch-input/pointer-input/understand-gestures | Gesture ownership/dispatch | Preserve existing publication input arbiter and visual-only overlay |
+
+## Actual implementation
+
+- `NativePaperGeometry`: pure cylindrical endpoint solver; partial/full roll join
+  continuously; LTR/RTL mirror geometry without mirroring front-facing book text;
+  full release exits, cancellation returns to the initial edge.
+- `NativeMaterialPageCurlView`: licensed `CurlMesh` renders real publication
+  pixels in a transparent GLTextureView; deformation/self/drop shadows come from
+  mesh topology rather than translating an image. GPU work stays on GL thread.
+  Native draw and texture upload keep the existing `paper.gpu.draw` and
+  `paper.gpu.texture_upload` trace sections, so the physical benchmark's GPU
+  metrics observe this backend rather than missing its work.
+- Premultiplied bitmap/shadow blending preserves sheet opacity on the transparent
+  host. Native diagnostics stay in metadata traces and leave the book text clear.
+- The host explicitly initializes upstream rectangle UVs with `setFlipTexture(false)`.
+  The mesh constructor leaves every UV at zero; copying the mesh without this
+  CurlView initialization produces a white leaf despite working geometry/navigation.
+  Evidence must prove captured ink and retained front ink, not just changed pixels.
+- Same leaf is used on both surfaces, with underside tint. A destination page is
+  never mislabeled as the back of the leaf. No proprietary Kindle/Moon+ code used.
+- Source bitmap is borrowed under a generation/revision lease, copied once into
+  upstream-owned storage, and acknowledged only after the read. Superseded reads
+  are retired; submissions arriving during a draw retain their leases.
+- Source presentation is acknowledged only when TextureView acquires the exact
+  EGL buffer timestamp, epoch, GL context and viewport. RenderThread probes check
+  acquisition after callbacks; fixed delay is never proof of presentation.
+- Detach/pause invalidate presentation. Readiness/failure notifications require
+  the same attached surface generation and viewport; retired hosts cannot report
+  a new host ready or acknowledge its source leaf.
+- `PaperCurlInputListener` remains the one navigation authority. No held-drag
+  navigation; same-epoch first frame required; release commits at most once;
+  cancellation retains the source locator; reduced motion remains static.
+- Native backend is selected explicitly in debug and benchmark builds. Release
+  retains the original renderer and its OFF rollout gate. No failure automatically
+  switches to Slide or to the other renderer. Revert this branch to roll back.
+- The overlay tracks the actual Reduced Motion policy before declaring readiness.
+  Disabled system animators intentionally remove the fold and preserve static
+  accessibility paging; this is reported as REDUCED_MOTION instead of false READY.
+  The English/Persian appearance description explains this active system policy.
+
+The continuation adds an independent Readium preview navigator in an invisible,
+attached, equally sized container. It prepares adjacent forward/backward ink while
+the live reader is idle, using the same publication/preferences. It owns no touch,
+accessibility focus, progress collector or publication close. Actual pagination,
+changed locator and WebView visual readiness precede capture. The destination is
+drawn **below** the native source leaf, never on its reverse. A source revision,
+viewport and direction fence rejects stale captures; a gesture pins its destination
+through cancellation/release. Invalidation drops prepared references, while the
+pinned image survives the live commit. Published bitmaps are not recycled under
+Compose/RenderThread. Missing/cold previews retain the existing live underlay;
+this is recorded as unprepared preview, not a fabricated adjacent page.
+
+The quick appearance panel presents four literal navigation choices together,
+with separate previews/descriptions: Paged, Paper, Slide and Scroll. Persistence,
+advanced controls, the release rollout gate and reduced-motion policy remain.
+Large text and narrow windows use one column instead of truncating the choices.
+
+The old `da68cfba` receipts belong to the preceding implementation. The continuation
+has its own real-book and UI checkpoint below. PR #509 maintains the latest
+exact-source CI receipts; physical acceptance is still separate and unverified.
+
+## 2026-10-12 — independent destination and reading controls
+
+Runtime checkpoint: `43193650e5ff7314d125b410d348e7ac25fc3399`.
+
+| Check | Receipt |
+|---|---|
+| Unit suite | 1058 tests, zero failures/errors/skips; [Android CI](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296085) |
+| Actual-book, Room and UI instrumentation | 182 tests, zero failures/errors/skips; [Storage](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296084) |
+| Abrupt-process durability | 18 cycles per scenario, 144 successful scenario cycles; [Durability](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296121) |
+| Emulator performance | startup 736.713 ms, p95 250 ms / p99 300 ms, 202.5 median frame samples; unchanged absolute and main-relative limits pass; [Performance](https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38220296079) |
+| Dependency review | Clean delta after exact-base submission, but full-head graph still found independently resolved old Lint crypto; this is not security acceptance |
+
+The frame percentiles are slower than `da68cfba` (150/200 ms). They remain an open
+quality cost of preparing a second navigator, even though the existing emulator
+budgets pass. No limits or pixel resolution were relaxed. Physical smoothness is
+not inferred from this receipt.
+
+The two real-book cases now require independently captured destination ink,
+greater than 95% matching exposed glyph pixels in the held native fold, and a
+predicted destination matching the committed live locator. They test holding,
+reversal/cancellation, forward/backward release and actual cross-chapter release
+in both LTR and RTL. Captures include the independent page, held chapter boundary
+and committed next chapter. The invisible navigator is also checked for alpha
+and blocked focus. Both held-book images and the RTL chapter-boundary image were
+visually inspected. ZIP sizes, SHA-256 and CRCs were verified before analysis.
+
+After exactly one forward revision, a frozen full-resolution source can supply
+the previous-page underlay. Source identity, settings, viewport and revision
+must still match; reflow/annotation invalidations reject it. Missing/cold captures
+and allocation pressure retain the live source-underlay path. No engine/mode
+switch or live navigation occurs inside the preview preparer.
+
+The four quick-mode choices retain Grayfog styling, show the active selection,
+explain the real Reduced Motion policy and stack at narrow widths/large text.
+Their Android tests select each real mode, require correct selected state and
+reject disabled modes. Two-column cards share row height. Reader access controls
+hide during an active Paper/Slide gesture so they do not obscure the book.
+
+The build-crypto follow-up targets the actual `androidLintTool` configuration in
+both modules. Exact-head graph verification is mandatory in addition to Review's
+delta; see the [tooling record](../governance/R0_10C_BOUNCY_CASTLE_BUILD_CLASSPATH_PATCH_2026-10-06.md).
+The final source must pass Android/lint/release packaging with that patched tooling.
+Production native rollout remains OFF, PR remains Draft, and #408 remains open.
+
+The chapter-paint follow-up tightens the preview's readiness witness. Readium can
+announce a new resource locator before ViewPager lays out that resource's child.
+The preparer awaits the selected Readium document, then requires its exact URL in
+the actually visible WebView and that child's visual-state callback. An attached
+old chapter cannot acknowledge the new document. This is an observed URL/layout
+barrier; the polling interval is not treated as evidence of paint.
+
+Both native book tests additionally compare prepared next-chapter glyph pixels
+against the fully released live chapter, after the source leaf and pinned underlay
+clear and the actual chapter-two DOM crosses its visual-state callback. A fresh
+acquired epoch is mandatory at the boundary. Captures now export the independent
+chapter and actual settled chapter ink separately; immediate locator-change frames
+are not mislabeled as fully painted chapter evidence. See PR #509 for the new
+exact-head results of this stronger gate.
+
+## Verification
+
+Local: reading-policy checks (39), canonical paper guard (6), shell syntax and
+`git diff --check`. Android build cannot run locally: Gradle distribution network
+access unavailable and no Android SDK installed. GitHub CI is the Android oracle;
+record its exact source head and test merge SHA separately.
+
+New meaningful checks:
+- `NativePaperGeometryTest`: free edge tracks finger, partial/full cylinder join,
+  mirrored direction, complete exit, continuous release after saturated drag,
+  cancellation, invalid samples.
+- `PaperDiscreteTurnLifecycleTest`: quick release and held drag survive a cold first
+  buffer beyond 500 ms, then commit exactly once; existing timeout, cancel and chapter-ownership regressions.
+- `NativePaperRealReaderInstrumentedTest`: launch production import/Readium/
+  ReaderScreen with English LTR and Persian RTL EPUBs; inject actual Android finger touch events;
+  require visible page-pixel deformation while actual locator stays put; reverse
+  and release must restore; full release must change the real Readium locator;
+  opposite-edge release must reduce actual book progression.
+  Requires a currently active acquired epoch; historical acquisition cannot
+  make a cleared/failed sheet appear to pass.
+  Requires the real DOM, settled publication location and WebView visual-state
+  callback and acquired on-screen paper/ink stable across frames before touch.
+  DOM and accessibility alone are insufficient while the entry curtain fades.
+  Requires positive captured source ink and preservation of the flat front's
+  original glyph positions. This rejects a blank/zero-UV leaf even when geometry
+  and actual locator tests pass. Captures the source bitmap, six PNGs per book and any timeout image;
+  exports fixture captures before UTP uninstalls the debug app.
+- Benchmark build now exercises native backend with the existing full Reader
+  performance fixture and system animators enabled only for the Reader frame
+  run. Cold startup and profile generation retain the established disabled-animation
+  baseline. Enabling animators globally also changed the unrelated launch
+  benchmark, invalidating its comparison with the persisted main baseline.
+  The real-book tests scope
+  this setting to their own fixtures and restore it afterwards. Earlier emulator
+  frame-smoke receipts with animator scale zero only measured static paging and
+  are not native-fold performance evidence.
+  A successful emulator test is not physical acceptance.
+
+Required phone gates remain: exact APK/hash; Samsung/Pixel, 60/120 Hz; 100 turns;
+slow corners, reverse, first turn, first/last/chapter boundaries; RTL book and UI
+independently; text selection/center controls; rotation/reflow/themes/background;
+memory, frame timing and subjective paper quality. Keep #408 open until evidence.
+
+## Source provenance and adaptation
+
+Upstream: https://github.com/harism/android-pagecurl
+Pinned commit: `7a2c8f152bb4f1b0de3b1aa72b3cb79e1fe8e3bd`.
+License: Apache-2.0; original copyright headers retained, full license in
+`licenses/harism-android-pagecurl-Apache-2.0.txt`.
+Binary builds also carry the license and modification notice in
+`app/src/main/assets/open-source-licenses/`.
+
+Copied files: `CurlMesh.java`, `CurlPage.java` only; no source app, demo artwork,
+launcher or synthetic counters. `CurlMesh` adaptations:
+extract texture preparation so first upload cannot flatten current drag geometry;
+use linear texture filtering for readable ink. Veil integration and endpoint
+solver are separate Kotlin files. Transparent host uses premultiplied texture
+and black-shadow blending, avoiding squared shadow alpha. No license/authentication/content-protection
+bypass and no copying of closed-source competitor methods.
+
+## 2026-10-12 — final performance and cold-cache corrections
+
+Exact source `51404d0d`: both actual English/Persian book curl tests passed.
+The storage suite had one unrelated but real cold-import progress failure
+(expected one durable update, received zero). A delayed empty Room cache
+snapshot could overwrite the optimistically published book after import,
+causing immediate progress/metadata writes to see no book. Import now waits
+for its committed row in the observed cache before reporting ready. A new
+six-wave real-Room test saves immediate progress through fresh collectors.
+
+Cold-start comparison now retains the animation-disabled main baseline;
+Reader frame smoke alone enables normal motion. Startup returned to 769.614 ms
+(main baseline 734.977 ms). Reader p95 250 ms / p99 350 ms passed absolute
+emulator limits, but p99 exceeded the relative limit by 50 ms. It is not a
+passing complete benchmark receipt.
+
+The mesh's original power-of-two path inflated a 1080 x 2400 ARGB sheet from
+10,368,000 to 33,554,432 texture bytes and allocated a padded bitmap every turn.
+On contexts advertising `GL_OES_texture_npot` or the compatible clamped/linear
+`GL_APPLE_texture_2D_limited_npot`, CurlPage now uploads the already-owned
+full-resolution bitmap directly. Other contexts keep power-of-two support.
+CurlMesh uses texSubImage2D only when existing storage dimensions, format and
+type match; new contexts/sizes/formats allocate normally, and failed uploads
+cannot establish reusable storage. No sampling resolution or budget is reduced.
+Texture ownership/ink/UV compatibility tests accompany the real-GL and frame
+gates. Updated Apache modification notice includes both adapted files.
+
+The next exact-head emulator run at `1a077bc4` passed all 1052 unit tests,
+180 instrumentation tests, Android build/lint and abrupt-process durability.
+Its p95 275 ms / p99 325 ms still exceeded the unchanged relative frame gates.
+The original mesh draws blank front/back backing and then paints each texture
+again. Native-size sheets now compose that identical white backing once into
+an owned full-resolution bitmap, preserving opaque ink and partial alpha; mesh
+front/back each render in one opaque pass. The tint/shading still multiplies
+that bitmap, which is algebraically the same result as the prior backing plus
+premultiplied texture. Padded compatibility textures keep the original passes
+because bilinear sampling at their transparent padding edge needs the backing.
+A native-graphics pixel regression verifies transparent, opaque and half-alpha
+pixels plus borrowed-source ownership. No benchmark limits change.
+
+The head-14 benchmark log explicitly reports `npot=false` on the ES1 ANGLE
+emulator. Its per-turn uploads still took a median 149 ms, so native-size-only
+optimizations did not address this compatibility lane. The opaque path now
+allocates white power-of-two GPU backing once, then uploads only the original
+owned full-resolution bitmap into that storage. The original UV range still
+clips to the source; white padding preserves the former backing at filtered
+edges. Front/back single-pass drawing also applies to this lane. Storage
+reuse additionally requires matching source dimensions, preventing old ink
+from entering the filtered border after a viewport shrinks within the same
+power-of-two bucket. Context, format or type changes still allocate normally.
+The library's default transparent-padding API is unchanged. A native-graphics
+regression verifies raw owned ink, compatibility UVs and source ownership;
+real-GL LTR/RTL tests and unchanged performance limits must validate this head.
+
+## 2026-10-13 — appearance readiness and complete dependency review
+
+The initial inspection found live head `7a365c4e` already ahead of the supplied
+`da68cfba` receipt. On resumption, the branch had reached `5fdaa496` with
+cancellation reuse, actual font readiness and scoped covered-source opacity.
+This continuation preserves those changes. Exact-source results for the new
+continuation must be recorded separately in PR #509 after its checks complete.
+
+Appearance readiness must not depend on a pagination notification from a
+color-only settings change. Readium can update CSS/background without emitting
+that event, and font reflow at page zero can also leave scroll unchanged. The
+preview awaits the requested settings, loaded document/fonts and exact selected
+WebView visual-state barrier, then explicitly loads the origin once. Readium's
+loadLocator emits its progression callback even for an unchanged page. The
+existing adjacent navigation and capture barriers still apply. A real-book
+regression changes theme and font at page zero, verifies the unchanged live
+origin, and compares independently prepared ink with the committed live page.
+Destination capture has a separate synchronous trace section and physical
+benchmark metric so it can be distinguished from source capture.
+
+Dependency Review must wait for the exact base/head dependency snapshots. Its
+action can otherwise report success after a snapshot-warning retry timeout while
+examining only a partial delta. The complete-head Bouncy Castle verifier remains
+mandatory, independently of Review's unchanged vulnerability/license policy.
+The new precheck waits for both exact SHA snapshots and fails on a bounded
+timeout. The action uses those same SHAs and its result is rejected if it still
+contains snapshot warnings. No vulnerability or license exception is added.
+
+The physical acceptance gate stays open: actual phones, 60/120 Hz, first/last
+boundaries, 100 turns, rotation, appearance/background changes, retained memory
+and subjective paper quality. No phone is attached to this execution environment.
+Grayfog controls and Lord of Mysteries presentation remain intact; PR stays
+Draft, unmerged, and production native rollout stays OFF.

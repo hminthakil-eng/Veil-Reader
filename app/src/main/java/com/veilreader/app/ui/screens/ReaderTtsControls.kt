@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -228,10 +230,7 @@ internal fun ReaderTtsControls(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    stringResource(
-                                        R.string.tts_sleep_timer_minutes,
-                                        minutes
-                                    )
+                                    pluralStringResource(R.plurals.tts_sleep_timer_minutes, resourceQuantity(minutes), minutes)
                                 )
                             },
                             onClick = {

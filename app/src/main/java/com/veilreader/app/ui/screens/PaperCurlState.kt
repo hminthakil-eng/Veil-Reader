@@ -5,6 +5,7 @@ import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
@@ -17,15 +18,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.BuildConfig
 import com.veilreader.app.ui.reader.material.GpuMaterialPageOverlay
+import com.veilreader.app.ui.reader.material.NativeMaterialPageOverlay
 import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageSide
 import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
@@ -41,12 +46,10 @@ internal enum class PaperPerformancePhase {
 }
 
 /**
- * Single Paper runtime for the GPU Material Page Engine.
- *
- * Legacy Canvas curl and Material Canvas v1 were intentionally removed from the
- * v2 build. Git history/PR #372 remains the rollback source; this runtime has only
- * one visual Paper implementation so a device test can never silently fall back to
- * an older curl and disguise renderer/gesture defects.
+ * One Paper transaction with an explicitly selected renderer backend.
+ * Debug/benchmark use the licensed native cylinder; release keeps GPU v2 behind
+ * its existing rollout gate. Renderer failure never silently selects another
+ * backend or disguises a failed fold as a successful slide.
  */
 @Stable
 internal class PaperCurlState {
@@ -80,6 +83,8 @@ internal class PaperCurlState {
     internal val materialEngine = MaterialPageEngineState(
         initialProfile = MaterialPageEngineRollout.selectedProfile()
     )
+
+    internal val destinationPreview = PaperDestinationPreviewState()
 
     val snapshotSourceRevision: Long
         get() = materialEngine.snapshotSourceRevision
@@ -122,6 +127,7 @@ internal class PaperCurlState {
 
     fun invalidateSnapshotSource() {
         materialEngine.invalidateSnapshotSource()
+        destinationPreview.invalidate()
     }
 
     fun begin(
@@ -156,6 +162,7 @@ internal class PaperCurlState {
             this.side = side
             this.direction = direction
             active = true
+            destinationPreview.begin(direction, snapshotSourceRevision, view.width, view.height)
             performancePhase = PaperPerformancePhase.DRAG
         } else {
             performancePhase = PaperPerformancePhase.IDLE
@@ -214,6 +221,7 @@ internal class PaperCurlState {
             materialEngine.clear()
         } finally {
             active = false
+            destinationPreview.end()
             performancePhase = PaperPerformancePhase.IDLE
         }
     }
@@ -221,15 +229,18 @@ internal class PaperCurlState {
     fun clearImmediately() {
         materialEngine.clearImmediately()
         active = false
+        destinationPreview.end()
         performancePhase = PaperPerformancePhase.IDLE
     }
 
     fun releaseBufferIfIdle() {
         materialEngine.releaseBufferIfIdle()
+        if (!active) destinationPreview.release()
     }
 
     fun dispose() {
         materialEngine.dispose()
+        destinationPreview.release()
         active = false
         performancePhase = PaperPerformancePhase.IDLE
     }
@@ -238,11 +249,13 @@ internal class PaperCurlState {
 @Composable
 internal fun PaperCurlOverlay(
     state: PaperCurlState,
+    modifier: Modifier = Modifier,
     patina: Float = 0.35f,
-    tone: MaterialPageTone = MaterialPageTone.LIGHT,
-    modifier: Modifier = Modifier
+    tone: MaterialPageTone = MaterialPageTone.LIGHT
 ) {
-    LaunchedEffect(state, patina, tone) {
+    val reducedMotion = LocalVeilReducedMotion.current
+    LaunchedEffect(state, patina, tone, reducedMotion) {
+        state.configureReducedMotion(reducedMotion)
         state.materialEngine.configurePatina(patina)
         state.materialEngine.configureTone(tone)
     }
@@ -251,13 +264,38 @@ internal fun PaperCurlOverlay(
     // A nested GLTextureView must not occlude Readium's native touch recipient.
     // Share sibling hit-testing at the full visual overlay boundary.
     Box(modifier = modifier.readerVisualOnlyInput()) {
-        GpuMaterialPageOverlay(
-            state = state.materialEngine,
-            modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
-            onRendererStatus = state::updateRendererStatus
-        )
+        // The adjacent page lies UNDER the actual source leaf. Never upload it
+        // as the reverse of that leaf. Pin it for this gesture, including release.
+        val destination = state.destinationPreview.activeSnapshot
+        if (BuildConfig.NATIVE_PAPER_REBUILD && state.active &&
+            presentedEpoch == state.materialEngine.sheetEpoch && destination != null &&
+            !destination.bitmap.isRecycled) {
+            val ink = androidx.compose.runtime.remember(destination) { destination.bitmap.asImageBitmap() }
+            Canvas(Modifier.fillMaxSize().readerVisualOnlyAccessibility()) {
+                if (size.width.toInt() == ink.width && size.height.toInt() == ink.height) {
+                    drawImage(ink, dstSize = IntSize(ink.width, ink.height))
+                }
+            }
+        }
+        // Explicit build selection, never an automatic fallback after failure.
+        // The release gate and original renderer remain unchanged for rollback.
+        if (BuildConfig.NATIVE_PAPER_REBUILD) {
+            NativeMaterialPageOverlay(
+                state = state.materialEngine,
+                modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
+                onRendererStatus = state::updateRendererStatus
+            )
+        } else {
+            GpuMaterialPageOverlay(
+                state = state.materialEngine,
+                modifier = Modifier.fillMaxSize().readerVisualOnlyAccessibility(),
+                onRendererStatus = state::updateRendererStatus
+            )
+        }
 
-        if (BuildConfig.DEBUG) {
+        // The rebuilt reader keeps diagnostics in traces, leaving book ink clear.
+        // Preserve the original HUD only for the explicit legacy backend.
+        if (BuildConfig.DEBUG && !BuildConfig.NATIVE_PAPER_REBUILD) {
             val label = when {
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU CANONICAL · DISABLED"

@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.resourceQuantity
+import androidx.compose.ui.res.pluralStringResource
 import android.net.Uri
 import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -335,8 +337,9 @@ fun MangaHubScreen(
                             )
                             storage?.let { summary ->
                                 Text(
-                                    stringResource(
-                                        R.string.manga_hub_storage_summary,
+                                    pluralStringResource(
+                                        R.plurals.manga_hub_storage_summary,
+                                        resourceQuantity(summary.chapterCount),
                                         summary.chapterCount,
                                         Formatter.formatShortFileSize(context, summary.sourceBytes),
                                         Formatter.formatShortFileSize(context, summary.cacheBytes)
@@ -618,8 +621,9 @@ private fun MangaChapterManagementRow(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        stringResource(
-                            R.string.manga_chapter_metadata,
+                        pluralStringResource(
+                            R.plurals.manga_chapter_metadata,
+                            resourceQuantity(chapter.pageCount),
                             chapter.readingOrder + 1,
                             chapter.number?.let { formatChapterNumber(it) }
                                 ?: stringResource(R.string.manga_chapter_unknown_number),
