@@ -41,4 +41,6 @@ Invoke-GodotGate 'New single-authority world commerce session' @('--headless', '
 Invoke-GodotGate 'Player operated first day scene smoke' @('--headless', '--path', $project, '--scene', 'res://scenes/first_day.tscn', '--quit-after', '3')
 Invoke-GodotGate 'First day six books two customers three investment strategies' @('--headless', '--path', $project, '--script', 'res://tests/run_first_day_tests.gd') 'FIRST_DAY_TEST_RESULTS passes=118 failures=0'
 Invoke-GodotGate 'Versioned checkpoint and recovery fault simulation' @('--headless', '--path', $project, '--script', 'res://tests/run_checkpoint_tests.gd') 'DAY_CHECKPOINT_TEST_RESULTS passes=45 failures=0'
-Write-Output 'ISLAND_GODOT_GATE PASS - 19 shop + 30 economy + 25 unified commerce + 118 day-one + 45 checkpoint = 237 passing assertions. No Android/device QA.'
+Invoke-GodotGate 'Responsive grouped UI and actions' @('--headless', '--path', $project, '--script', 'res://tests/run_mobile_layout_tests.gd') 'MOBILE_LAYOUT_TEST_RESULTS passes=25 failures=0'
+Invoke-GodotGate 'Four virtual screen sizes for layout structure' @('--headless', '--path', $project, '--script', 'res://tests/run_virtual_viewport_tests.gd') 'VIRTUAL_VIEWPORT_TEST_RESULTS passes=28 failures=0'
+Write-Output 'ISLAND_GODOT_GATE PASS - 237 prior + 25 responsive + 28 virtual viewport = 290 passing assertions. No Android/device QA.'

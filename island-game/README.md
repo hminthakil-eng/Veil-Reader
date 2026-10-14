@@ -60,3 +60,10 @@ Manual Save/Load buttons in the first-day scene persist the COMPLETE fictional b
 The game does NOT silently autosave or auto-resume. Save data is not encrypted or authenticated; a checksum is NOT anti-cheat protection. Windows interruption-injection and corrupt-newest recovery were tested; Android hard process-kill/power-loss guarantees have NOT been tested. See `docs/game-studio/ADR_006_CHECKPOINT_RECOVERY_BEFORE_DAY2_20261014.md`.
 
 The strict `island-game/run_tests.ps1` test suite now expects **237/237** local headless assertions: 19 old shop, 30 economy, 25 shared commerce, 118 player-day and 45 real disk recovery tests.
+## Responsive first-day screen (2026-10-14)
+
+The first-day Godot screen now preserves its single authoritative economy, narrative choices, sale/repair state and persistent checkpoint while reflowing: two columns in wide landscape; a stacked story/pixel preview above scrollable controls in narrower or portrait-sized virtual canvases. Existing controls are **reparented, never recreated**. Actions are grouped by book / family / visitor / town works / checkpoint; Persian RTL labels and the original signals remain functional. Every action button and selector declares >=48 **Godot logical UI units** minimum height (not certified Android dp). The pixel district has no hard-coded 620-unit minimum width.
+
+Strict local headless gate: **290/290 PASS** = 237 previous +25 grouped mobile-control tests +28 four-dimension *virtual viewport* tests, via `island-game/run_tests.ps1`. See ADR-007 and QA record.
+
+**Not yet Android-ready:** Godot Android export templates and export_preset are missing; ADB showed emulator offline; no APK, device screenshot, Persian font shaping, physical touch, phone rotation or Android lifecycle tests. Simulated Godot canvas dimensions do not establish actual device visual quality. Maintain the original native Veil Reader app separately; integration comes only after a truly tested standalone game.
