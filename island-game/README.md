@@ -42,3 +42,12 @@ Added `core/economy_ledger.gd` as an independent financial proof with four expli
 To run: `& $godot --path .\island-game --scene res://scenes/economy_proof.tscn` (from repository root, with `$godot` set to the same Godot 4.7.2 executable as above).
 
 **Strict boundary:** the original `ShopLedger` maintains its own `coins` account. DO NOT add both sets to the live player state. This financial prototype must remain isolated until a single monetary authority, atomic transaction adapter and reload reconciliation are developed/tested. Worldbuilding and staged city recovery documented in `docs/game-studio/ADR_003_ISLAND_ECONOMIC_REVIVAL_20261014.md` and `LIVING_ISLAND_ECONOMY_BIBLE_v0.1.md`.
+## 2026-10-14 Single-authority bookshop+town P0 spike
+
+**New and deliberately separate live scene:** `res://scenes/unified_day.tscn` runs `core/unified_shop.gd` with one authoritative cash ledger and book-copy inventory, no independent inventory coin field. Buttons test inspect/repair, an expressly **off-island** paid sale, the bookshop and weaver's civic pledges, and the completed street-light commission. The scene is a greybox, not finished game artwork.
+
+Both financial and inventory changes are staged on deep copies and committed only on success. Book transactions, cash movements, proof of civic work and snapshots receive cross-ledger consistency checks, including rejection of basic tampering of even-sum money or unearned city upgrades.
+
+`tests/run_unified_shop_tests.gd` adds 46 headless assertions, with combined runner now totaling **95 PASS** (19 old shop + 30 standalone economy + 46 unified). See `docs/game-studio/ADR_004_SINGLE_MONEY_AUTHORITY_P0_20261014.md` and `qa/evidence/UNIFIED_SHOP_ECONOMY_P0_20261014.md`.
+
+**Do not integrate two financial authorities.** The original `ShopLedger` and its old main scene remain **legacy, isolated** for backwards test coverage. The new unified scene never instantiates it. Production default scene switching, durable disk saves, real local customer money, plot, NPCs, art and mobile testing still remain necessary.

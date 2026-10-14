@@ -22,4 +22,10 @@ if ($LASTEXITCODE -ne 0) {exit $LASTEXITCODE}
 Write-Output '=== Town economy proof scene startup ==='
 & $GodotExe --headless --path $project --scene 'res://scenes/economy_proof.tscn' --quit-after 3
 if ($LASTEXITCODE -ne 0) {exit $LASTEXITCODE}
-Write-Output 'ISLAND_GODOT_GATE PASS (both greybox systems; headless only, not device QA)'
+Write-Output '=== Staged single-authority shop+city tests ==='
+& $GodotExe --headless --path $project --script 'res://tests/run_unified_shop_tests.gd'
+if ($LASTEXITCODE -ne 0) {exit $LASTEXITCODE}
+Write-Output '=== Unified shop+city interaction scene startup ==='
+& $GodotExe --headless --path $project --scene 'res://scenes/unified_day.tscn' --quit-after 3
+if ($LASTEXITCODE -ne 0) {exit $LASTEXITCODE}
+Write-Output 'ISLAND_GODOT_GATE PASS (95 headless asserts; three isolated scenes; no device QA)'
