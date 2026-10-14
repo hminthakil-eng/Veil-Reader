@@ -81,7 +81,7 @@ enum class ShopOutcome { APPLIED, DUPLICATE, REJECTED }
 data class ShopDecision(val state: IslandShopState, val outcome: ShopOutcome, val reason: String)
 
 /** Reject tampered or partially restored snapshots before applying economic commands. */
-private fun validShopSnapshot(state: IslandShopState): Boolean {
+internal fun validShopSnapshot(state: IslandShopState): Boolean {
     if (state.schemaVersion != 1 || state.gameDay !in 1..9999 ||
         state.coins < 0 || state.sales < 0 || state.communityTrust < 0) return false
     val copyIds = state.copies.map { it.id }
