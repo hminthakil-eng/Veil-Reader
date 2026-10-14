@@ -34,8 +34,10 @@ function Invoke-GodotGate {
 Invoke-GodotGate 'Godot version' @('--headless', '--version') '4.7.2.stable.official'
 Invoke-GodotGate 'Clean source import' @('--headless', '--editor', '--path', $project, '--import', '--quit')
 Invoke-GodotGate 'Legacy fictional book + clock tests' @('--headless', '--path', $project, '--script', 'res://tests/run_headless_tests.gd') 'ISLAND_TEST_RESULTS passes=19 failures=0'
-Invoke-GodotGate 'Legacy main scene startup' @('--headless', '--path', $project, '--quit-after', '3')
+Invoke-GodotGate 'Legacy main scene startup' @('--headless', '--path', $project, '--scene', 'res://scenes/main.tscn', '--quit-after', '3')
 Invoke-GodotGate 'Town economy financial invariants' @('--headless', '--path', $project, '--script', 'res://tests/run_economy_tests.gd') 'ISLAND_ECONOMY_TEST_RESULTS passes=30 failures=0'
 Invoke-GodotGate 'Existing town economy preview startup' @('--headless', '--path', $project, '--scene', 'res://scenes/economy_proof.tscn', '--quit-after', '3')
 Invoke-GodotGate 'New single-authority world commerce session' @('--headless', '--path', $project, '--script', 'res://tests/run_unified_commerce_tests.gd') 'WORLD_COMMERCE_TEST_RESULTS passes=25 failures=0'
-Write-Output 'ISLAND_GODOT_GATE PASS - 19 legacy shop + 30 legacy economy + 25 new world commerce = 74 passing assertions. Headless only, no device QA.'
+Invoke-GodotGate 'Player operated first day scene smoke' @('--headless', '--path', $project, '--scene', 'res://scenes/first_day.tscn', '--quit-after', '3')
+Invoke-GodotGate 'First day six books two customers three investment strategies' @('--headless', '--path', $project, '--script', 'res://tests/run_first_day_tests.gd') 'FIRST_DAY_TEST_RESULTS passes=118 failures=0'
+Write-Output 'ISLAND_GODOT_GATE PASS - 19 legacy shop + 30 legacy economy + 25 world commerce + 118 first-day = 192 passing assertions. Headless only, no Android/device QA.'

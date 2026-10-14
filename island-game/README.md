@@ -49,3 +49,8 @@ To run: `& $godot --path .\island-game --scene res://scenes/economy_proof.tscn` 
 The **old** `ShopLedger` and its main scene are preserved as legacy isolated demos, not wired into the same live player state. Do not treat them as two active player wallets. Migrate only after an explicit backwards-compatible UI/save plan.
 
 `tests/run_unified_commerce_tests.gd` asserts 25 invariants; the strict `run_tests.ps1` runs 19 + 30 + 25 = **74** headless assertions and rejects silent SCRIPT ERROR traces and missing expected test counts. Exact review evidence: `qa/evidence/ISLAND_WORLD_COMMERCE_INTEGRATION_20261014.md`. No finished NPC production, mobile UI/portrait, physical art, Android build or real EPUB reader integration.
+## First playable day â€” 2026-10-14
+
+Standalone Godot default scene is `res://scenes/first_day.tscn` on this game branch. Two pixel-placeholder views, six original fictional books, Darya's ethical family-record choices, Bahram's real bounded purchase/refusal, local book repair, and three financial routes to visible street lighting. One integrated world-commerce session owns *all* cash in the new day; the older `main.tscn` remains an isolated legacy scene. No real EPUB data or Reader integration.
+
+The game is a short interactive mechanics pilot, NOT a finished 20-minute narrative, premium pixel city or Android release. Run `island-game/run_tests.ps1` to verify 192 current headless assertions; inspect ADR-005 and the QA evidence file for scope.
