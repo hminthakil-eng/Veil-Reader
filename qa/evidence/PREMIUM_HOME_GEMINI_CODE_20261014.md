@@ -17,3 +17,11 @@ Branch: `design/premium-reader-world-v1-20261014`; source base: `e37869bb`; auth
 
 ## Follow-up
 Run stage transitions at all four milestones, RTL and large fonts; measure draw allocation from house/castle window geometry; verify no animation competes with Reader paper mode. Keep this worktree separate and avoid production rollout pending acceptance.
+
+
+## Second-pass engineering and package receipt
+- Gemini authored a second-pass Kotlin optimization eliminating per-frame `listOf(Offset(...))` allocations for four House and five Castle windows. ChatGPT applied the same structural change to the real source and hoisted `Stroke` allocation into density-keyed `remember` values. Each stage now has isolated cached paths within the Crossfade content.
+- Online Gradle `:app:assembleDebug` completed successfully after downloading uncached Android desugaring dependencies. The prior offline attempt failed from **missing dependency cache**, not source code.
+- Incremental Gradle `:app:assembleDebug --offline --no-daemon --console=plain` with second-pass optimization: **BUILD SUCCESSFUL** in 1m07s, 40 actionable tasks (5 executed, 35 up-to-date).
+- Exact verified local APK: `E:\EyadStudio\Projects\Veil-Reader-Premium-20261014\app\build\outputs\apk\debug\app-debug.apk`; 52,900,455 bytes; SHA-256 `D4ECC36BE31C0D3B351056231D30AF2F665DBCAF4C4F5A21E607B75D441081F2`.
+- Windows ADB returned zero attached devices; physical and emulator visual acceptance therefore remain UNVERIFIED. This debug APK is a local test artifact, not a shipping recommendation.

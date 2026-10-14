@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -53,9 +54,14 @@ internal fun PremiumWorldProgressionArt(
         animated
     }
 
-    val terrainPath = remember { Path() }
-    val structurePath = remember { Path() }
-    val roofPath = remember { Path() }
+    // Immutable draw styles are reused across glimmer frames, rather than allocated per tick.
+    val density = LocalDensity.current
+    val strokeThin = remember(density) {
+        Stroke(width = with(density) { 1.dp.toPx() }, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    }
+    val strokeBrass = remember(density) {
+        Stroke(width = with(density) { 1.35.dp.toPx() }, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    }
 
     Crossfade(
         targetState = stage,
@@ -63,13 +69,14 @@ internal fun PremiumWorldProgressionArt(
         label = "veil-world-stage-crossfade",
         modifier = modifier.semantics { hideFromAccessibility() }
     ) { currentStage ->
+        // Each transitioning stage owns its paths; outgoing and incoming frames never share mutation.
+        val terrainPath = remember { Path() }
+        val structurePath = remember { Path() }
+        val roofPath = remember { Path() }
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
             if (!w.isFinite() || !h.isFinite() || w <= 0f || h <= 0f) return@Canvas
-
-            val strokeThin = Stroke(width = 1.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-            val strokeBrass = Stroke(width = 1.35.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
 
             drawAstronomicalSky(w, h, glimmer, strokeThin)
             drawDistantRidges(w, h, terrainPath)
@@ -257,12 +264,14 @@ private fun DrawScope.drawHouseStage(
     drawPath(roofPath, VeilPalette.Brass.copy(alpha = 0.68f), style = brassStroke)
 
     drawLine(VeilPalette.Brass.copy(alpha = 0.72f), Offset(w * 0.45f, h * 0.30f), Offset(w * 0.45f, h * 0.23f), thinStroke.width)
-    listOf(
-        Offset(w * 0.37f, h * 0.56f),
-        Offset(w * 0.52f, h * 0.56f),
-        Offset(w * 0.45f, h * 0.68f),
-        Offset(w * 0.74f, h * 0.65f)
-    ).forEach { center ->
+    // Zero List/Iterator allocations on each ambient-animation frame.
+    for (index in 0 until 4) {
+        val center = when (index) {
+            0 -> Offset(w * 0.37f, h * 0.56f)
+            1 -> Offset(w * 0.52f, h * 0.56f)
+            2 -> Offset(w * 0.45f, h * 0.68f)
+            else -> Offset(w * 0.74f, h * 0.65f)
+        }
         drawWindowGlow(center, 12.dp.toPx(), glimmer)
         drawRoundRect(
             color = VeilPalette.Brass.copy(alpha = 0.80f * glimmer),
@@ -314,13 +323,14 @@ private fun DrawScope.drawCastleStage(
     val finial = Offset(w * 0.56f, h * 0.09f)
     drawCircle(VeilPalette.Brass.copy(alpha = 0.72f * glimmer), radius = 4.dp.toPx(), center = finial, style = thinStroke)
 
-    listOf(
-        Offset(w * 0.56f, h * 0.38f),
-        Offset(w * 0.40f, h * 0.49f),
-        Offset(w * 0.56f, h * 0.54f),
-        Offset(w * 0.75f, h * 0.56f),
-        Offset(w * 0.24f, h * 0.64f)
-    ).forEach { win ->
+    for (index in 0 until 5) {
+        val win = when (index) {
+            0 -> Offset(w * 0.56f, h * 0.38f)
+            1 -> Offset(w * 0.40f, h * 0.49f)
+            2 -> Offset(w * 0.56f, h * 0.54f)
+            3 -> Offset(w * 0.75f, h * 0.56f)
+            else -> Offset(w * 0.24f, h * 0.64f)
+        }
         drawWindowGlow(win, 11.dp.toPx(), glimmer)
         drawRoundRect(
             color = VeilPalette.Brass.copy(alpha = 0.84f * glimmer),
