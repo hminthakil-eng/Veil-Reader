@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
+import com.veilreader.app.data.WorldStageStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
@@ -53,6 +55,7 @@ import com.veilreader.app.domain.ReadingHomeProgression
 import com.veilreader.app.domain.ReadingHomeStage
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveReadingHomeProgression
+import com.veilreader.app.domain.ragsToRichesStageFor
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlin.math.roundToInt
@@ -85,8 +88,20 @@ fun PremiumReadingHomeScreen(
     val current = sorted.firstOrNull { !it.finished && it.progress > 0f }
         ?: sorted.firstOrNull { !it.finished }
     val recent = sorted.filterNot { it.id == current?.id }.take(8)
-    val home = remember(profile.minutesRead, profile.booksFinished) {
-        deriveReadingHomeProgression(profile.minutesRead, profile.booksFinished)
+    val context = LocalContext.current
+    val home = remember(profile.minutesRead, profile.booksFinished, context) {
+        val live = deriveReadingHomeProgression(profile.minutesRead, profile.booksFinished)
+        val savedTier = WorldStageStore(context).read().tier
+        val savedStage = when (savedTier) {
+            3 -> ReadingHomeStage.CASTLE
+            2 -> ReadingHomeStage.HOUSE
+            1 -> ReadingHomeStage.HUT
+            else -> ReadingHomeStage.CAMP
+        }
+        // Previously earned homes remain visible if balance thresholds ever change.
+        if (savedTier > ragsToRichesStageFor(live.stage).tier) {
+            live.copy(stage = savedStage, nextStage = null, stageProgress = 1f, minutesToNextStage = 0)
+        } else live
     }
 
     Box(

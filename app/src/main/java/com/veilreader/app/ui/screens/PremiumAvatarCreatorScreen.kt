@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.data.AvatarAppearanceStore
+import com.veilreader.app.data.WorldStageStore
 import com.veilreader.app.domain.RagsToRichesAvatar
 import com.veilreader.app.domain.RagsToRichesStage
 import com.veilreader.app.domain.ReaderProfile
@@ -59,8 +60,9 @@ fun PremiumAvatarCreatorScreen(profile: ReaderProfile, onClose: () -> Unit) {
     var avatar by remember(store) { mutableStateOf(store.read()) }
     var notice by remember { mutableStateOf<Int?>(null) }
 
-    val world = remember(profile.minutesRead, profile.booksFinished, avatar) {
-        previewRagsScene(profile.minutesRead, profile.booksFinished, avatar)
+    val world = remember(profile.minutesRead, profile.booksFinished, avatar, context) {
+        previewRagsScene(profile.minutesRead, profile.booksFinished, avatar,
+            highestEarnedStage = WorldStageStore(context).read())
     }
     val progress = remember(profile.minutesRead, profile.booksFinished) {
         deriveReadingHomeProgression(profile.minutesRead, profile.booksFinished)
