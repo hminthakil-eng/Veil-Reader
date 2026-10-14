@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "id": "art.avatar.traveler.pixel",
+      "kind": "pixel",
+      "status": "planned"
+    },
+    {
+      "id": "art.avatar.traveler.portrait",
+      "kind": "portrait",
+      "status": "planned"
+    },
+    {
+      "id": "art.npc.elder.pixel",
+      "kind": "pixel",
+      "status": "planned"
+    },
+    {
+      "id": "art.world.book.workbench",
+      "kind": "pixel",
+      "status": "planned"
+    },
+    {
+      "id": "art.world.mirror",
+      "kind": "pixel",
+      "status": "planned"
+    },
+    {
+      "id": "art.world.shop.door",
+      "kind": "pixel",
+      "status": "planned"
+    },
+    {
+      "id": "art.world.shore.debris",
+      "kind": "pixel",
+      "status": "planned"
+    }
+  ]
+}

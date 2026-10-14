@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "island.bookshop.v1",
+  "width": 12,
+  "height": 8,
+  "tileSize": 16,
+  "collisionRows": [
+    "############",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "############"
+  ],
+  "spawns": {
+    "entry": {
+      "x": 9,
+      "y": 4
+    },
+    "loft_stairs": {
+      "x": 2,
+      "y": 2
+    }
+  },
+  "objects": [
+    {
+      "id": "island.bookshop.elder.v1",
+      "kind": "npc",
+      "x": 6,
+      "y": 3,
+      "artId": "art.npc.elder.pixel",
+      "dialogueId": "island.story.elder"
+    },
+    {
+      "id": "island.bookshop.workbench.v1",
+      "kind": "prop",
+      "x": 4,
+      "y": 4,
+      "artId": "art.world.book.workbench",
+      "dialogueId": "island.story.restoration"
+    },
+    {
+      "id": "island.bookshop.mirror.v1",
+      "kind": "prop",
+      "x": 3,
+      "y": 2,
+      "artId": "art.world.mirror",
+      "dialogueId": "island.story.mirror"
+    },
+    {
+      "id": "island.bookshop.to_shore.v1",
+      "kind": "portal",
+      "x": 10,
+      "y": 4,
+      "artId": "art.world.shop.door",
+      "toScene": "island.shore.v1",
+      "toSpawn": "bookshop_return"
+    }
+  ]
+}

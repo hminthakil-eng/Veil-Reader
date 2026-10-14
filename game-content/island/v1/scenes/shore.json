@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "island.shore.v1",
+  "width": 12,
+  "height": 8,
+  "tileSize": 16,
+  "collisionRows": [
+    "############",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "############"
+  ],
+  "spawns": {
+    "entry": {
+      "x": 3,
+      "y": 4
+    },
+    "bookshop_return": {
+      "x": 9,
+      "y": 4
+    }
+  },
+  "objects": [
+    {
+      "id": "island.shore.debris.v1",
+      "kind": "prop",
+      "x": 4,
+      "y": 3,
+      "artId": "art.world.shore.debris",
+      "dialogueId": "island.story.shore"
+    },
+    {
+      "id": "island.shore.elder.v1",
+      "kind": "npc",
+      "x": 7,
+      "y": 3,
+      "artId": "art.npc.elder.pixel",
+      "dialogueId": "island.story.elder"
+    },
+    {
+      "id": "island.shore.to_bookshop.v1",
+      "kind": "portal",
+      "x": 10,
+      "y": 4,
+      "artId": "art.world.shop.door",
+      "toScene": "island.bookshop.v1",
+      "toSpawn": "entry"
+    }
+  ]
+}
