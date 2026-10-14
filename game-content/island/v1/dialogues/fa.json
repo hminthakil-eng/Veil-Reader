@@ -1,0 +1,47 @@
+{
+  "locale": "fa",
+  "nodes": [
+    {
+      "id": "island.story.shore",
+      "text": "صدای دریا هنوز در گوشت می‌پیچد. چیزی از گذشته‌ات یادت نیست.",
+      "choices": [
+        {
+          "id": "leave",
+          "text": "به اطراف نگاه کن.",
+          "next": "island.story.elder"
+        }
+      ]
+    },
+    {
+      "id": "island.story.elder",
+      "text": "نفس می‌کشی؟ خوبه. بیا بالا، اینجا جای موندن نیست.",
+      "choices": [
+        {
+          "id": "accept",
+          "text": "کمکت می‌کنم.",
+          "next": "island.story.restoration"
+        }
+      ]
+    },
+    {
+      "id": "island.story.restoration",
+      "text": "چند کتاب از باران دیشب خیس شدند. می‌تونی کاغذ خشک‌کن بیاری؟",
+      "choices": [
+        {
+          "id": "help",
+          "text": "بله، از همین‌جا شروع می‌کنیم."
+        }
+      ]
+    },
+    {
+      "id": "island.story.mirror",
+      "text": "چهره را می‌بینی اما نامت را به یاد نمی‌آوری.",
+      "choices": [
+        {
+          "id": "customize",
+          "text": "ظاهر شخصیت را انتخاب کن."
+        }
+      ]
+    }
+  ]
+}

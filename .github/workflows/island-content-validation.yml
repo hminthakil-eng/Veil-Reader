@@ -1,0 +1,29 @@
+name: Island Game Content Gate
+on:
+  push:
+    paths:
+      - "game-content/island/**"
+      - "tools/island_content/**"
+      - ".github/workflows/island-content-validation.yml"
+  pull_request:
+    paths:
+      - "game-content/island/**"
+      - "tools/island_content/**"
+      - ".github/workflows/island-content-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  game-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run schema and adversarial tests
+        run: python -m unittest discover -s tools/island_content/tests -v
+      - name: Validate actual Island content
+        run: python tools/island_content/validate.py --root game-content/island/v1

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "worldId": "island.veil.v1",
+  "initialSceneId": "island.shore.v1",
+  "scenes": [
+    {
+      "id": "island.shore.v1",
+      "file": "scenes/shore.json"
+    },
+    {
+      "id": "island.bookshop.v1",
+      "file": "scenes/bookshop.json"
+    }
+  ],
+  "dialogues": {
+    "fa": "dialogues/fa.json",
+    "en": "dialogues/en.json"
+  },
+  "artCatalog": "art_catalog.json",
+  "avatarCatalog": "avatar_catalog.json"
+}

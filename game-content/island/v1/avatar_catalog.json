@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "defaultVariantId": "avatar.traveler.default",
+  "variants": [
+    {
+      "id": "avatar.traveler.default",
+      "portraitId": "art.avatar.traveler.portrait",
+      "pixelSpriteId": "art.avatar.traveler.pixel"
+    }
+  ]
+}

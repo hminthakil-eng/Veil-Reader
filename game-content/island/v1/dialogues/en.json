@@ -1,0 +1,47 @@
+{
+  "locale": "en",
+  "nodes": [
+    {
+      "id": "island.story.shore",
+      "text": "The sea is still roaring in your ears. Nothing of your past returns.",
+      "choices": [
+        {
+          "id": "leave",
+          "text": "Look around.",
+          "next": "island.story.elder"
+        }
+      ]
+    },
+    {
+      "id": "island.story.elder",
+      "text": "You're breathing? Good. Come uphill. This is no place to stay.",
+      "choices": [
+        {
+          "id": "accept",
+          "text": "I can help.",
+          "next": "island.story.restoration"
+        }
+      ]
+    },
+    {
+      "id": "island.story.restoration",
+      "text": "The storm soaked some books last night. Could you bring the blotting paper?",
+      "choices": [
+        {
+          "id": "help",
+          "text": "Yes. Let's start here."
+        }
+      ]
+    },
+    {
+      "id": "island.story.mirror",
+      "text": "The face is yours, but the name behind it is gone.",
+      "choices": [
+        {
+          "id": "customize",
+          "text": "Customize the character."
+        }
+      ]
+    }
+  ]
+}
