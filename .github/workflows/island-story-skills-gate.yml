@@ -1,0 +1,29 @@
+name: Island Story Skills and Narrative Gate
+
+on:
+  push:
+    paths:
+      - ".agents/skills/**"
+      - "tools/story_skills/**"
+      - ".github/workflows/island-story-skills-gate.yml"
+  pull_request:
+    paths:
+      - ".agents/skills/**"
+      - "tools/story_skills/**"
+      - ".github/workflows/island-story-skills-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-writing-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify source, licenses and writing skill names
+        run: python tools/story_skills/verify_skills.py
