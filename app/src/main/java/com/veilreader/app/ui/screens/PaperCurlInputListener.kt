@@ -225,7 +225,8 @@ internal class PaperCurlInputListener(
                 state.begin(
                     view = navigator.publicationView,
                     side = spec.side,
-                    direction = spec.direction
+                    direction = spec.direction,
+                    origin = originLocator
                 )
 
         if (visualReady) {
@@ -729,7 +730,8 @@ internal class PaperCurlInputListener(
         val visualReady = state.begin(
             view,
             spec.side,
-            spec.direction
+            spec.direction,
+            navigator.currentLocator.value
         )
         if (!visualReady) {
             reportVisualFailureOnce(PaperTurnVisualFailure.SNAPSHOT)

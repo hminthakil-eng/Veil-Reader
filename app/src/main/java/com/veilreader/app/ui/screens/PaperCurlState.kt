@@ -31,6 +31,7 @@ import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageSide
 import com.veilreader.app.ui.reader.material.MaterialPageTone
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import org.readium.r2.shared.publication.Locator
 
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
@@ -133,7 +134,8 @@ internal class PaperCurlState {
     fun begin(
         view: View,
         side: PaperCurlSide,
-        direction: PaperTurnDirection
+        direction: PaperTurnDirection,
+        origin: Locator
     ): Boolean {
         if (BuildConfig.DEBUG) {
             debugBeginAttempts += 1
@@ -162,7 +164,7 @@ internal class PaperCurlState {
             this.side = side
             this.direction = direction
             active = true
-            destinationPreview.begin(direction, snapshotSourceRevision, view.width, view.height)
+            destinationPreview.begin(direction, snapshotSourceRevision, origin, view.width, view.height)
             performancePhase = PaperPerformancePhase.DRAG
         } else {
             performancePhase = PaperPerformancePhase.IDLE

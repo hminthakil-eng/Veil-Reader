@@ -1,6 +1,12 @@
 package com.veilreader.app.ui.screens
 
 import android.graphics.Bitmap
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +29,7 @@ class PaperDestinationPreviewStateTest {
         val state = PaperDestinationPreviewState()
         val destination = snapshot()
         state.publish(PaperTurnDirection.FORWARD, destination)
-        state.begin(PaperTurnDirection.FORWARD, 7L, 120, 240)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(), 120, 240)
         state.invalidate() // The live navigator now commits the destination.
         state.publish(PaperTurnDirection.FORWARD, snapshot(8L))
         assertSame(destination, state.activeSnapshot)
@@ -35,17 +41,59 @@ class PaperDestinationPreviewStateTest {
     @Test fun `reflow size source epoch and wrong direction cannot expose stale ink`() {
         val state = PaperDestinationPreviewState()
         state.publish(PaperTurnDirection.FORWARD, snapshot())
-        state.begin(PaperTurnDirection.FORWARD, 8L, 120, 240)
+        state.begin(PaperTurnDirection.FORWARD, 8L, locator(), 120, 240)
         assertNull(state.activeSnapshot)
-        state.begin(PaperTurnDirection.FORWARD, 7L, 240, 120)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(), 240, 120)
         assertNull(state.activeSnapshot)
-        state.begin(PaperTurnDirection.BACKWARD, 7L, 120, 240)
+        state.begin(PaperTurnDirection.BACKWARD, 7L, locator(), 120, 240)
         assertNull(state.activeSnapshot)
-        state.begin(PaperTurnDirection.FORWARD, 7L, 120, 240)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(), 120, 240)
         assertNotNull(state.activeSnapshot)
         state.release()
-        state.begin(PaperTurnDirection.FORWARD, 7L, 120, 240)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(), 120, 240)
         assertNull(state.activeSnapshot)
+    }
+
+    @Test fun `same epoch cannot pin a destination captured for another page`() {
+        val state = PaperDestinationPreviewState()
+        val cached = snapshot()
+        state.publish(PaperTurnDirection.FORWARD, cached)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator("other.xhtml"), 120, 240)
+        assertNull(state.activeSnapshot)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(progression = 0.3), 120, 240)
+        assertNull(state.activeSnapshot)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(), 120, 240)
+        assertSame(cached, state.activeSnapshot)
+    }
+
+    @Test fun `page witness observes locator updates after the pagination event`() = runBlocking {
+        val events = MutableStateFlow(0L)
+        val locators = MutableStateFlow(locator())
+        val witness = async(start = CoroutineStart.UNDISPATCHED) {
+            withTimeout(2_000L) {
+                awaitPaperPreviewPageWitness(events, locators, 0L, locator(), expectsDifferentPage = true)
+            }
+        }
+        events.value = 1L
+        yield() // Readium may emit onPageChanged before currentLocator updates.
+        assertFalse(witness.isCompleted)
+        locators.value = locator(progression = 0.2)
+        witness.await()
+    }
+
+    @Test fun `return to origin observes locator change after pagination event`() = runBlocking {
+        val events = MutableStateFlow(3L)
+        val locators = MutableStateFlow(locator(progression = 0.2))
+        val witness = async(start = CoroutineStart.UNDISPATCHED) {
+            withTimeout(2_000L) {
+                awaitPaperPreviewPageWitness(events, locators, 3L, locator(), expectsDifferentPage = false)
+            }
+        }
+        events.value = 4L
+        yield()
+        assertFalse(witness.isCompleted)
+        locators.value = locator()
+        witness.await()
     }
 
     @Test fun `resource boundary is distinct even when progression restarts at zero`() {
@@ -61,7 +109,7 @@ class PaperDestinationPreviewStateTest {
         val backward = snapshot().copy(destination = locator(progression = 0.0))
         state.publish(PaperTurnDirection.FORWARD, forward)
         state.publish(PaperTurnDirection.BACKWARD, backward)
-        state.begin(PaperTurnDirection.FORWARD, 7L, 120, 240)
+        state.begin(PaperTurnDirection.FORWARD, 7L, locator(), 120, 240)
         state.end()
         assertTrue(state.unpreparedDirections(locator(), 7L, 120, 240).isEmpty())
         assertSame(forward, state.prepared(PaperTurnDirection.FORWARD))
