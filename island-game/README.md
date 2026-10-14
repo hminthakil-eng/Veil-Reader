@@ -42,3 +42,10 @@ Added `core/economy_ledger.gd` as an independent financial proof with four expli
 To run: `& $godot --path .\island-game --scene res://scenes/economy_proof.tscn` (from repository root, with `$godot` set to the same Godot 4.7.2 executable as above).
 
 **Strict boundary:** the original `ShopLedger` maintains its own `coins` account. DO NOT add both sets to the live player state. This financial prototype must remain isolated until a single monetary authority, atomic transaction adapter and reload reconciliation are developed/tested. Worldbuilding and staged city recovery documented in `docs/game-studio/ADR_003_ISLAND_ECONOMIC_REVIVAL_20261014.md` and `LIVING_ISLAND_ECONOMY_BIBLE_v0.1.md`.
+## 2026-10-14 — additive integrated Bookshop + Island trade, single monetary authority
+
+`core/world_commerce_session.gd` adds an optional **new** combined path. Pass a single `IslandEconomyLedger` instance to it. The new session holds fictional book inventory, ownership and sale/repair event IDs, but contains **no extra coins**. A valid repair transfers funds from `bookshop` to `weaver`; a valid sale transfers from a finite buyer wallet to `bookshop`. Privately owned collateral is not sellable. `snapshot()` and `from_snapshot()` combine book data and the economy in one versioned in-memory payload; disk-atomicity remains pending.
+
+The **old** `ShopLedger` and its main scene are preserved as legacy isolated demos, not wired into the same live player state. Do not treat them as two active player wallets. Migrate only after an explicit backwards-compatible UI/save plan.
+
+`tests/run_unified_commerce_tests.gd` asserts 25 invariants; the strict `run_tests.ps1` runs 19 + 30 + 25 = **74** headless assertions and rejects silent SCRIPT ERROR traces and missing expected test counts. Exact review evidence: `qa/evidence/ISLAND_WORLD_COMMERCE_INTEGRATION_20261014.md`. No finished NPC production, mobile UI/portrait, physical art, Android build or real EPUB reader integration.
