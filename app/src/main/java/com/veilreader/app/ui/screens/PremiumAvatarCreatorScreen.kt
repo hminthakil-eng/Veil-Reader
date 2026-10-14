@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
@@ -30,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +53,17 @@ import com.veilreader.app.domain.previewRagsScene
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 
+/** Draft choices remain in the saved instance state on rotation, not the durable game save. */
+private val avatarDraftSaver = listSaver<RagsToRichesAvatar, Int>(
+    save = { listOf(it.hairStyle, it.hairColor, it.skinTone, it.outfitStyle, it.accentColor) },
+    restore = { values ->
+        if (values.size != 5) null else RagsToRichesAvatar(
+            hairStyle = values[0], hairColor = values[1], skinTone = values[2],
+            outfitStyle = values[3], accentColor = values[4]
+        ).safeForPreview()
+    }
+)
+
 /**
  * First navigable avatar-creator vertical slice: persisted built-in cosmetics and real world tier.
  * Portrait is a lightweight Canvas fallback while a real 3D runtime is being benchmarked.
@@ -57,8 +72,34 @@ import com.veilreader.app.ui.theme.VeilPalette
 fun PremiumAvatarCreatorScreen(profile: ReaderProfile, onClose: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val store = remember(context) { AvatarAppearanceStore(context) }
-    var avatar by remember(store) { mutableStateOf(store.read()) }
-    var notice by remember { mutableStateOf<Int?>(null) }
+    var savedAvatar by remember(store) { mutableStateOf(store.read()) }
+    var avatar by rememberSaveable(store, stateSaver = avatarDraftSaver) {
+        mutableStateOf(savedAvatar)
+    }
+    var notice by rememberSaveable { mutableStateOf<Int?>(null) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    val requestClose: () -> Unit = {
+        if (avatar != savedAvatar) confirmDiscard = true else onClose()
+    }
+    BackHandler(enabled = !confirmDiscard, onBack = requestClose)
+
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(R.string.avatar_discard_title)) },
+            text = { Text(stringResource(R.string.avatar_discard_message)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDiscard = false; onClose() }) {
+                    Text(stringResource(R.string.avatar_discard))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDiscard = false }) {
+                    Text(stringResource(R.string.avatar_keep_editing))
+                }
+            }
+        )
+    }
 
     val world = remember(profile.minutesRead, profile.booksFinished, avatar, context) {
         previewRagsScene(profile.minutesRead, profile.booksFinished, avatar,
@@ -100,7 +141,7 @@ fun PremiumAvatarCreatorScreen(profile: ReaderProfile, onClose: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) {
+                TextButton(onClick = requestClose, modifier = Modifier.heightIn(min = 48.dp)) {
                     Text(stringResource(R.string.avatar_back), color = VeilPalette.Brass)
                 }
                 Spacer(Modifier.weight(1f))
@@ -153,7 +194,14 @@ fun PremiumAvatarCreatorScreen(profile: ReaderProfile, onClose: () -> Unit) {
             }
 
             Button(
-                onClick = { notice = if (store.save(avatar)) R.string.avatar_saved else R.string.avatar_save_failed },
+                onClick = {
+                    if (store.save(avatar)) {
+                        savedAvatar = avatar.safeForPreview()
+                        notice = R.string.avatar_saved
+                    } else {
+                        notice = R.string.avatar_save_failed
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = VeilPalette.Brass,
                     contentColor = VeilPalette.Ink)
@@ -163,7 +211,7 @@ fun PremiumAvatarCreatorScreen(profile: ReaderProfile, onClose: () -> Unit) {
                 Text(stringResource(message), color = VeilPalette.Moon,
                     style = MaterialTheme.typography.bodyMedium)
             }
-            OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            OutlinedButton(onClick = requestClose, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.avatar_exit))
             }
         }
