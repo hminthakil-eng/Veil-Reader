@@ -186,6 +186,13 @@ fun CastleScreen(
             subtitle = localizedCastleMemoryNarrative(memoryState.memoryNarrative)
         )
 
+        OutlinedButton(
+            onClick = { onOpenRoom("avatar") },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+        ) {
+            Text(stringResource(R.string.avatar_open_creator))
+        }
+
         VeilArchitecturalPair(
             primaryFraction = com.veilreader.app.ui.theme.VeilProportion.CastleMapPrimary,
             minimumSecondaryReadableWidth = com.veilreader.app.ui.theme.VeilComposition.CastleRecordMinWidthDp.dp,

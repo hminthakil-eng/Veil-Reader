@@ -290,6 +290,6 @@ class VeilAppViewModel(
         private const val KEY_READER_SESSION = "veil.route.reader_session"
         private const val KEY_LOCATOR = "veil.route.locator"
         private const val KEY_READER_CHECKPOINT = "veil.route.reader_checkpoint"
-        private val RESTORABLE_CHAMBERS = setOf("observatory", "treasury", "sanctum", "mirror", "manga")
+        private val RESTORABLE_CHAMBERS = setOf("observatory", "treasury", "sanctum", "mirror", "manga", "avatar")
     }
 }

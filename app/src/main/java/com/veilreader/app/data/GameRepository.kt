@@ -29,6 +29,7 @@ internal fun completionEvidenceFloor(finishedBooks: Int, sealedBooks: Int): Int 
 class GameRepository(context: Context) {
     private val prefs = context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE)
     private val pageGate = ReadingPolicy.PageGate()
+    private val worldStageStore = WorldStageStore(context)
     private var totalXp = prefs.getInt("totalXp", 0)
     private var todayMinutes = prefs.getInt("todayMinutes", 0)
     private var todayPages = prefs.getInt("todayPages", 0)
@@ -347,6 +348,8 @@ class GameRepository(context: Context) {
         val storedEarned = prefs.getStringSet("earnedSigils", emptySet()).orEmpty()
         val earned = storedEarned.toMutableSet()
         val p = buildProfile()
+        // Milestones are reconciled on durable reading state changes, never from UI drawing.
+        worldStageStore.reconcile(p.minutesRead, p.booksFinished)
         if (p.minutesRead >= 60) earned.add("first_hour")
         if (prefs.getInt("totalHighlights", 0) >= 10) earned.add("passage_keeper")
         if (prefs.getInt("streakDays", 0) >= 7) earned.add("seven_days")
