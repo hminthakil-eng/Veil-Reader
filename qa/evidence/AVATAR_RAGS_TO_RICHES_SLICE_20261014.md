@@ -19,6 +19,17 @@ Gemini desktop returned an error on the original long Kotlin request. A smaller 
 - Windows AVD `VeilReaderQA_API35` launched headless for real UI check. No successful install/screenshot evidence yet.
 - Cosmetic fields and the highest world-tier integer are now inside `veil_game_v1`, the existing v5 backup/restore preference snapshot. `GameRepository.publish()` reconciles the world high-water mark without Compose writes. Migration, restore/rollback round-trip and emulator acceptance are not yet independently verified.
 
+
+## Unsaved edit hardening — later pass (2026-10-14)
+- The avatar editor now uses a Compose `rememberSaveable` integer-list saver for the unsaved five cosmetic choices. A configuration recreation should restore the draft without prematurely committing it to `veil_game_v1`.
+- Both the in-screen Back/Return actions and Android system Back now check the draft against the most recently saved avatar. If dirty, an English/Persian Material confirmation dialog offers **Discard changes** or **Keep editing**.
+- Successful explicit Save updates the saved baseline; failed durable writes leave the draft dirty, so Back still warns.
+- GitHub-only commits (screen + localized resources) were reviewed against existing Compose/activity dependencies. **No new APK build, emulator rotation capture, or JUnit report has been obtained for these edits.** Remote Windows device was listed online but did not respond to execution/ping during this pass.
+- [ ] On an emulator: edit an avatar without Save, rotate twice, verify all five choices persist; press Back, choose Keep editing, verify draft remains; press Save, restart the app, verify all choices persist.
+- [ ] Simulate failed disk persistence, press Back, and verify Discard confirmation instead of false success.
+- [ ] Confirm the dialog layout and actions under Persian RTL, landscape, 200% font scale, hardware Back and TalkBack.
+- [ ] Re-run :app:compileDebugKotlin and the targeted Robolectric suites on a responsive clean desktop or CI runner.
+
 ## Acceptance gate checklist
 - [ ] Five Rags-to-Riches pure domain tests pass on JDK21+.
 - [ ] Full updated :app:assembleDebug passes.
