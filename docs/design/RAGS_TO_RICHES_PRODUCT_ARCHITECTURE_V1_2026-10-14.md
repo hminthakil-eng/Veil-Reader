@@ -1,7 +1,7 @@
 # Veil Reader — Rags to Riches / Premium Game Reader Architecture v1
-**Status:** design proposal, architecture-first / NOT implementation approval  
-**Date:** 2026-10-14  
-**Branch:** `design/premium-reader-world-v1-20261014`  
+**Status:** design proposal, architecture-first / NOT implementation approval
+**Date:** 2026-10-14
+**Branch:** `design/premium-reader-world-v1-20261014`
 **Partners:** ChatGPT architecture + integration; Gemini 4 Argon High peer architecture, Kotlin/game code, graphics and independent critique.
 
 ## North star and boundaries
@@ -35,10 +35,10 @@ Current pure function `deriveReadingHomeProgression(minutesRead, booksFinished)`
 
 ## System-of-record architecture
 ```text
-Readium / PDF / Manga / Audio -> Session Evidence Writer (durable Room ledger)
+Readium / PDF / Manga / Audio -> Existing GameRepository + ReadingSessionSnapshot
                                       |
                                       v
-                              EligibleReadingProjector
+                          EligibleReadingProjection (read-only adapter)
                                       |
               +-----------------------+-------------------------+
               v                                                 v
@@ -55,17 +55,17 @@ Readium / PDF / Manga / Audio -> Session Evidence Writer (durable Room ledger)
 ```
 Rules:
 - Reader owns locator, publication, session and input. No gamification component writes the reader locator.
-- Reward reducers are pure and deterministic; writes occur only in a transactionally durable repository on unique event identifiers.
+- Reward reducers are pure and deterministic; writes occur only in an idempotent game-unlock journal keyed to deterministic milestone IDs, without creating a second reading accounting store.
 - UI recomposition NEVER credits minutes, currency, XP, book completion or unlocks.
 - Anti-farming: debounced taps and background idle cannot count as sessions; no OCR or arbitrary page turn XP. Keep the existing verified-reading accounting contract. Avoid reading-speed policing that harms accessible reading.
 - Offline-first; sync optional and conflicts resolved at durable event / monotonic entitlement level. No new account required.
 - Local backup/export contains schema version, avatar IDs, outfit slots, world placements and entitlements. Never store just rendered images as authoritative avatar state.
 
 ### Proposed domain contracts (planning, not yet code)
-`ReadingEvidence { sessionId, bookId, elapsedActiveMs, committedLocatorRef, sourceType, recordedAt, ledgerVersion }`  
-`WorldState { schemaVersion, growthTier, unlockedAreaIds, placedFurnitureIds, lastAppliedEventId }`  
-`AvatarBlueprint { schemaVersion, presetId, morphPresetIds, paletteIds, outfitSlotAssetIds, expressionPreset, poseId }`  
-`GameProgressionEvent { id, sourceSessionId, kind, tierBefore, tierAfter, grantedAssetIds, createdAt }`  
+`ReadingEvidenceView { sessionId, bookId, elapsedActiveMs, committedLocatorRef, sourceType, recordedAt }` (read-only projection of existing sources, never a new accounting database)
+`WorldState { schemaVersion, highestEarnedGrowthTier, unlockedAreaIds, placedFurnitureIds, appliedMilestoneIds }`
+`AvatarBlueprint { schemaVersion, presetId, morphPresetIds, paletteIds, outfitSlotAssetIds, expressionPreset, poseId }`
+`GameProgressionEvent { id, sourceSessionId, kind, tierBefore, tierAfter, grantedAssetIds, createdAt }`
 `VisualSceneState { tier, sceneVariant, timeOfDay, decorationLayout, avatarBlueprintRef, reducedMotion }`
 Use stable canonical asset IDs; do not serialize engine nodes or transient meshes. Renderer consumes a *view projection*, not domain entity objects.
 
@@ -137,3 +137,14 @@ ADRs before implementation:
 
 ## Immediate next action
 Gemini partner: critique this ADR and propose exactly **3 evidence-driven architectural corrections**, plus a small Kotlin domain model schema/renderer interface that can compile without a 3D engine. ChatGPT reviews and resolves conflicts. Architecture first; no unreviewed massive game engine rewrite.
+
+## Gemini architecture review — integration notes (2026-10-14)
+Independent critique was requested and captured from the Windows Gemini desktop. These corrections are accepted as **architecture proposals**, not evidence that a new implementation passed tests. Confirmed in existing repository: `GameRepository.recordReadingMinute()` owns persisted lifetime minute counters, `recordBookFinished()` uses a durable save, `LocalLibraryRepository` already owns `ReadingSessionSnapshot` data, and `LibraryExport` has a schema-versioned backup.
+
+**Correction 1 — avoid split-brain reading evidence.** Replace the proposed second authoritative `ReadingEvidence Writer` with an **adapter that observes existing durable GameRepository state**. Preserve its existing accounting and page pacing. The new World/Avatar projections consume verified monotonic totals from the existing owner, while optional milestone-event journal is exclusively for deduplicating *game unlock effects*. Use deterministic milestone IDs such as `world:tier:house:v1`, never a mutable reading session ID. Store a persistent highest-earned world tier and compute `max(previousHighWater, currentProjectedTier)` to prevent regression when balance thresholds change.
+
+**Correction 2 — GPU exclusivity before Reader.** The 3D runtime must release its surface, buffers, meshes and textures **before** starting the Reader/Paper graphics stack. It is insufficient to pause the animation tick. Home remains Compose/2.5D. If 3D release fails or exceeds its performance budget, fall back to 2D rather than risking locator or paper performance. On restore of an avatar with unavailable catalog packs, render canonical starter assets but preserve unknown asset IDs/entitlements on disk for later recovery.
+
+**Correction 3 — one anime humanoid rig and authored shading.** Prototype a single canonical skeleton across body, hair and garment meshes; enforce attachment/slot constraints, body silhouette consistency and facial blendshapes as explicit asset contracts. Test actual *anime toon shading, hair/cloak secondary animation and garment swaps* in both Filament and embedded Godot, not a generic spinning glTF box. Claims about exact max morph targets, memory-release percentages or load-time thresholds are **proposed lab targets**, not proven device limits; establish measured budgets from benchmark evidence before freezing them.
+
+**Architecture status:** v1 draft, revised direction pending further verification. No new 3D runtime or game persistence migration installed by this document. Keep renderer ports isolated and all changes on the independent worktree until devices and QA prove reliability.
