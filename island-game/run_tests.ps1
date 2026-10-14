@@ -40,4 +40,5 @@ Invoke-GodotGate 'Existing town economy preview startup' @('--headless', '--path
 Invoke-GodotGate 'New single-authority world commerce session' @('--headless', '--path', $project, '--script', 'res://tests/run_unified_commerce_tests.gd') 'WORLD_COMMERCE_TEST_RESULTS passes=25 failures=0'
 Invoke-GodotGate 'Player operated first day scene smoke' @('--headless', '--path', $project, '--scene', 'res://scenes/first_day.tscn', '--quit-after', '3')
 Invoke-GodotGate 'First day six books two customers three investment strategies' @('--headless', '--path', $project, '--script', 'res://tests/run_first_day_tests.gd') 'FIRST_DAY_TEST_RESULTS passes=118 failures=0'
-Write-Output 'ISLAND_GODOT_GATE PASS - 19 legacy shop + 30 legacy economy + 25 world commerce + 118 first-day = 192 passing assertions. Headless only, no Android/device QA.'
+Invoke-GodotGate 'Versioned checkpoint and recovery fault simulation' @('--headless', '--path', $project, '--script', 'res://tests/run_checkpoint_tests.gd') 'DAY_CHECKPOINT_TEST_RESULTS passes=45 failures=0'
+Write-Output 'ISLAND_GODOT_GATE PASS - 19 shop + 30 economy + 25 unified commerce + 118 day-one + 45 checkpoint = 237 passing assertions. No Android/device QA.'
