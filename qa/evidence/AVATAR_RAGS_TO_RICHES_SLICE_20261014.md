@@ -15,7 +15,7 @@ Gemini desktop returned an error on the original long Kotlin request. A smaller 
 ## Verification
 - The initial Android source compile **passed** before importing Gemini-inspired face-shape edits.
 - Updated source `:app:compileDebugKotlin` **PASS** with JDK 17 + Android SDK 37.0, offline Gradle on the desktop (2026-10-14). This is a compile receipt only.
-- Targeted JDK 25 Robolectric tests (`AvatarAndWorldPersistenceTest` + `RagsToRichesAvatarTest`) compiled, but the worker stalled without producing a final JUnit report and was terminated. **NOT VERIFIED / NOT PASS.** A pure-domain JDK 17 retry was started separately; only an actual completed result can pass this gate.
+- Targeted JDK 25 Robolectric tests (`AvatarAndWorldPersistenceTest` + `RagsToRichesAvatarTest`) compiled, but the worker stalled without producing a final JUnit report and was terminated. **NOT VERIFIED / NOT PASS.** A separate JDK 17 pure-domain retry also stalled without a fresh JUnit XML and was stopped. **Neither run is a PASS;** repeat in a clean runner before acceptance.
 - Windows AVD `VeilReaderQA_API35` launched headless for real UI check. No successful install/screenshot evidence yet.
 - Cosmetic fields and the highest world-tier integer are now inside `veil_game_v1`, the existing v5 backup/restore preference snapshot. `GameRepository.publish()` reconciles the world high-water mark without Compose writes. Migration, restore/rollback round-trip and emulator acceptance are not yet independently verified.
 
