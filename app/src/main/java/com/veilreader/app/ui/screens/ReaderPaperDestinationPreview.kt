@@ -22,7 +22,9 @@ import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.ui.reader.material.MaterialPageSnapshotCapture
 import com.veilreader.app.ui.reader.material.ViewDrawImmediateMaterialPageSnapshotProvider
 import com.veilreader.app.ui.reader.material.awaitMaterialPageSourceVisualReady
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -69,9 +71,9 @@ internal class PaperDestinationPreviewState {
                 !paperPreviewSamePage(snapshot.origin, origin)
         }
 
-    fun begin(direction: PaperTurnDirection, revision: Long, width: Int, height: Int) {
+    fun begin(direction: PaperTurnDirection, revision: Long, origin: Locator, width: Int, height: Int) {
         activeSnapshot = prepared[direction]?.takeIf {
-            it.sourceRevision == revision && !it.bitmap.isRecycled &&
+            it.sourceRevision == revision && paperPreviewSamePage(it.origin, origin) && !it.bitmap.isRecycled &&
                 it.bitmap.width == width && it.bitmap.height == height
         }
         ReaderTrace.event("paper_destination_selected",
@@ -89,6 +91,22 @@ internal fun paperPreviewSamePage(first: Locator, second: Locator): Boolean =
     first.href == second.href && first.locations.progression != null &&
         second.locations.progression != null &&
         abs(first.locations.progression!! - second.locations.progression!!) < 0.00001
+
+/** Pagination and the current locator may arrive in separate dispatches.
+ * Observe both flows so a later locator never leaves the page witness waiting.
+ */
+internal suspend fun awaitPaperPreviewPageWitness(
+    events: Flow<Long>,
+    locators: Flow<Locator>,
+    afterEvent: Long,
+    origin: Locator,
+    expectsDifferentPage: Boolean
+) {
+    combine(events, locators) { count, current ->
+        val samePage = paperPreviewSamePage(current, origin)
+        count > afterEvent && (if (expectsDifferentPage) !samePage else samePage)
+    }.first { it }
+}
 
 /** Separate Readium pagination, no input listeners, progress collector or publication ownership. */
 @OptIn(ExperimentalReadiumApi::class)
@@ -192,7 +210,7 @@ internal class PaperPreviewNavigator {
                 if (originNeedsSettingsPagination || !paperPreviewSamePage(preview.currentLocator.value, origin)) {
                     val before = pages.value
                     if (!preview.go(origin, animated = false)) return@withTimeoutOrNull
-                    pages.first { it > before && paperPreviewSamePage(preview.currentLocator.value, origin) }
+                    awaitPaperPreviewPageWitness(pages, preview.currentLocator, before, origin, expectsDifferentPage = false)
                     originNeedsSettingsPagination = false
                 }
                 // A locator notification is not evidence of paint. Wait before navigation
@@ -210,7 +228,7 @@ internal class PaperPreviewNavigator {
                 // Readium can return true at the end of a reflowable book. Absence of an
                 // actual changed locator is a boundary, never a duplicate-page preview.
                 val reached = withTimeoutOrNull(1_200L) {
-                    pages.first { it > before && !paperPreviewSamePage(preview.currentLocator.value, origin) }
+                    awaitPaperPreviewPageWitness(pages, preview.currentLocator, before, origin, expectsDifferentPage = true)
                 } != null
                 if (!reached || !valid()) continue
                 val destination = preview.currentLocator.value
