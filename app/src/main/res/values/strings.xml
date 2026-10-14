@@ -1607,4 +1607,8 @@
     <string name="avatar_save_failed">Could not save the character; please retry</string>
     <string name="avatar_exit">Return to world</string>
     <string name="avatar_open_creator">Customize traveler</string>
+    <string name="avatar_discard_title">Discard appearance changes?</string>
+    <string name="avatar_discard_message">You have unsaved changes to your character. Leave without saving them?</string>
+    <string name="avatar_discard">Discard changes</string>
+    <string name="avatar_keep_editing">Keep editing</string>
 </resources>
