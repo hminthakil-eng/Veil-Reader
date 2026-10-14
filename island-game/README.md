@@ -34,3 +34,11 @@ $godot='E:\EyadStudio\Tools\Godot\4.7.2\Godot_v4.7.2-stable_win64_console.exe'
 No real pixel tiles, dual viewport, HD portrait rig, customer satisfaction AI, fully implemented NPC schedules, dialogue addon, localization QA, transactional disk writes/backup, Google Play export or mobile profiling here. Future read-only ReaderBridge only after game is independently shipped/tested; private book URI IDs are deliberately excluded from all game objects.
 
 See `docs/game-studio/ADR_001_GODOT_COFOUNDER_CONSENSUS_2026-10-14.md` and `qa/evidence/GODOT_GREYBOX_COUNCIL_20261014.md`.
+
+## 2026-10-14 â€” Island Economic Recovery Simulation-lite (prototype)
+
+Added `core/economy_ledger.gd` as an independent financial proof with four explicit wallets, bounded external buyer budget, local artisan income and a fully escrowed street-light project. `tests/run_economy_tests.gd` tests 30 cash integrity, replay, project and JSON state checks. `scenes/economy_proof.tscn` is a **separate** mouse/keyboard demo with five financial actions and a preview of the restored street state. It is NOT real pixel-art city scenery or the main bookshop scene.
+
+To run: `& $godot --path .\island-game --scene res://scenes/economy_proof.tscn` (from repository root, with `$godot` set to the same Godot 4.7.2 executable as above).
+
+**Strict boundary:** the original `ShopLedger` maintains its own `coins` account. DO NOT add both sets to the live player state. This financial prototype must remain isolated until a single monetary authority, atomic transaction adapter and reload reconciliation are developed/tested. Worldbuilding and staged city recovery documented in `docs/game-studio/ADR_003_ISLAND_ECONOMIC_REVIVAL_20261014.md` and `LIVING_ISLAND_ECONOMY_BIBLE_v0.1.md`.
