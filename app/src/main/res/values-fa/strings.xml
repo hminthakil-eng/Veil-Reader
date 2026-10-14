@@ -1548,4 +1548,26 @@
         <item quantity="one">%1$d فصل از قبل وجود داشت</item>
         <item quantity="other">%1$d فصل از قبل وجود داشت</item>
     </plurals>
+    <!-- بازطراحی ممتاز کتاب‌خوان و جهان زنده -->
+    <string name="premium_home_heading">پناهگاه مطالعه</string>
+    <string name="premium_volume_count">%1$d کتاب</string>
+    <string name="premium_featured_label">ادامهٔ داستان شما</string>
+    <string name="premium_resume">ادامهٔ مطالعه</string>
+    <string name="premium_progress">%1$d٪ خوانده‌شده</string>
+    <string name="premium_empty_title">هر جهان با یک کتاب آغاز می‌شود.</string>
+    <string name="premium_empty_body">اولین کتابت را اضافه کن تا ماجرا از اینجا شروع شود.</string>
+    <string name="premium_open_archive">بازکردن کتابخانه</string>
+    <string name="premium_recent_title">قفسهٔ شما</string>
+    <string name="premium_total_minutes">دقیقه مطالعه</string>
+    <string name="premium_streak_days">روز پیاپی</string>
+    <string name="premium_completed_books">کتاب تمام‌شده</string>
+    <string name="premium_world_eyebrow">جهان زندهٔ شما</string>
+    <string name="premium_world_story">خانه‌ات با مطالعهٔ واقعی رشد می‌کند؛ بدون کار اجباری روزانه یا میان‌بر ساختگی.</string>
+    <string name="premium_enter_world">ورود به جهان</string>
+    <string name="premium_world_camp">اردوگاه نخست</string>
+    <string name="premium_world_hut">پناهگاه کوچک</string>
+    <string name="premium_world_house">خانهٔ کتاب‌خوان</string>
+    <string name="premium_world_castle">ارگ افسانه‌ای</string>
+    <string name="premium_memory_title">جمله‌های به‌یادماندنی</string>
+    <string name="premium_memory_count">%1$d یادداشت رنگی ذخیره‌شده</string>
 </resources>

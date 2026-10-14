@@ -1548,4 +1548,26 @@
         <item quantity="one">%1$d was already present</item>
         <item quantity="other">%1$d were already present</item>
     </plurals>
+    <!-- Premium reader-world redesign: all visible copy remains localized. -->
+    <string name="premium_home_heading">Your sanctuary</string>
+    <string name="premium_volume_count">%1$d volumes</string>
+    <string name="premium_featured_label">CONTINUE YOUR STORY</string>
+    <string name="premium_resume">Continue reading</string>
+    <string name="premium_progress">%1$d%% complete</string>
+    <string name="premium_empty_title">Every world begins with a book.</string>
+    <string name="premium_empty_body">Add your first title and make a place for it here.</string>
+    <string name="premium_open_archive">Open library</string>
+    <string name="premium_recent_title">On your shelf</string>
+    <string name="premium_total_minutes">Minutes read</string>
+    <string name="premium_streak_days">Day streak</string>
+    <string name="premium_completed_books">Finished books</string>
+    <string name="premium_world_eyebrow">YOUR LIVING WORLD</string>
+    <string name="premium_world_story">Your home grows from time actually spent reading. No daily chores. No shortcuts.</string>
+    <string name="premium_enter_world">Enter your world</string>
+    <string name="premium_world_camp">The first camp</string>
+    <string name="premium_world_hut">A quiet refuge</string>
+    <string name="premium_world_house">The reader’s house</string>
+    <string name="premium_world_castle">Your citadel</string>
+    <string name="premium_memory_title">Collected passages</string>
+    <string name="premium_memory_count">%1$d saved highlights</string>
 </resources>

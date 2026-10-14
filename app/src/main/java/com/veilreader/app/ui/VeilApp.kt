@@ -83,7 +83,7 @@ import com.veilreader.app.ui.screens.ObservatoryScreen
 import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
-import com.veilreader.app.ui.screens.ReadingNowScreen
+import com.veilreader.app.ui.screens.PremiumReadingHomeScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
@@ -1047,7 +1047,7 @@ fun VeilApp(
 
     val mainContent: @Composable (VeilTab) -> Unit = { tab ->
         when (tab) {
-            VeilTab.READING -> ReadingNowScreen(
+            VeilTab.READING -> PremiumReadingHomeScreen(
                 books = books,
                 profile = requireNotNull(profile),
                 quests = quests,
