@@ -54,3 +54,9 @@ The **old** `ShopLedger` and its main scene are preserved as legacy isolated dem
 Standalone Godot default scene is `res://scenes/first_day.tscn` on this game branch. Two pixel-placeholder views, six original fictional books, Darya's ethical family-record choices, Bahram's real bounded purchase/refusal, local book repair, and three financial routes to visible street lighting. One integrated world-commerce session owns *all* cash in the new day; the older `main.tscn` remains an isolated legacy scene. No real EPUB data or Reader integration.
 
 The game is a short interactive mechanics pilot, NOT a finished 20-minute narrative, premium pixel city or Android release. Run `island-game/run_tests.ps1` to verify 192 current headless assertions; inspect ADR-005 and the QA evidence file for scope.
+## Checkpoint persistence gate (2026-10-14)
+Manual Save/Load buttons in the first-day scene persist the COMPLETE fictional bookshop-day state to versioned append-only JSON checkpoints in `user://island_bookshop_day1`. The save store validates canonicalized JSON with SHA-256, re-reads temp before rename-commit, keeps prior versions, and on Load selects the newest semantically valid completed checkpoint. Incomplete `.part` files are ignored. Restores preserve money, legal ownership of family documents, active conversations and paid town works.
+
+The game does NOT silently autosave or auto-resume. Save data is not encrypted or authenticated; a checksum is NOT anti-cheat protection. Windows interruption-injection and corrupt-newest recovery were tested; Android hard process-kill/power-loss guarantees have NOT been tested. See `docs/game-studio/ADR_006_CHECKPOINT_RECOVERY_BEFORE_DAY2_20261014.md`.
+
+The strict `island-game/run_tests.ps1` test suite now expects **237/237** local headless assertions: 19 old shop, 30 economy, 25 shared commerce, 118 player-day and 45 real disk recovery tests.
