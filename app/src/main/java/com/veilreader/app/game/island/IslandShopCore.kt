@@ -47,9 +47,13 @@ data class IslandShopState(
     val communityTrust: Int = 0
 )
 
-fun startingStock(): List<StockCopy> = IslandBookCatalog.titles.values.mapIndexed { index, book ->
-    StockCopy("initial-$index", book.id, if (index == 2) StockCondition.DAMAGED else StockCondition.USED,
-        if (index < 2) BookPlace.SHELF else BookPlace.STOCKROOM)
+fun startingStock(): List<StockCopy> = IslandBookCatalog.titles.values.map { book ->
+    StockCopy(
+        id = "initial:" + book.id,
+        bookId = book.id,
+        condition = if (book.id == "garden") StockCondition.DAMAGED else StockCondition.USED,
+        place = if (book.id in setOf("fog_tales", "lighthouse")) BookPlace.SHELF else BookPlace.STOCKROOM
+    )
 }
 
 /** Fixed per virtual day; reloading must not reroll a better customer. */
@@ -76,12 +80,33 @@ sealed interface ShopCommand {
 enum class ShopOutcome { APPLIED, DUPLICATE, REJECTED }
 data class ShopDecision(val state: IslandShopState, val outcome: ShopOutcome, val reason: String)
 
+/** Reject tampered or partially restored snapshots before applying economic commands. */
+private fun validShopSnapshot(state: IslandShopState): Boolean {
+    if (state.schemaVersion != 1 || state.gameDay !in 1..9999 ||
+        state.coins < 0 || state.sales < 0 || state.communityTrust < 0) return false
+    val copyIds = state.copies.map { it.id }
+    if (copyIds.size != copyIds.toSet().size) return false
+    if (state.copies.any { it.id.isBlank() || it.bookId !in IslandBookCatalog.titles }) return false
+    if (state.copies.count { it.place == BookPlace.SHELF } > 4) return false
+    if (state.appliedIds.any { it.isBlank() || it.length > 128 }) return false
+    val loanCopies = state.loans.map { it.copyId }
+    if (loanCopies.size != loanCopies.toSet().size ||
+        state.loans.map { it.id }.distinct().size != state.loans.size) return false
+    val loanedCopies = state.copies.filter { it.place == BookPlace.ON_LOAN }.map { it.id }.toSet()
+    if (loanCopies.toSet() != loanedCopies) return false
+    if (state.loans.any { it.id.isBlank() || it.returnDay !in 1..9999 }) return false
+    if (state.orders.size > 2 || state.orders.map { it.id }.distinct().size != state.orders.size) return false
+    if (state.orders.any { it.id.isBlank() || it.bookId !in IslandBookCatalog.titles ||
+            it.arrivalDay < state.gameDay || it.arrivalDay > 9999 }) return false
+    return true
+}
+
 /** Deterministic; always persist APPLIED state + transaction ID in one atomic write. */
 fun reduceShop(state: IslandShopState, command: ShopCommand): ShopDecision {
     fun reject(why: String) = ShopDecision(state, ShopOutcome.REJECTED, why)
     if (command.transactionId.isBlank() || command.transactionId.length > 128) return reject("bad-transaction-id")
     if (command.transactionId in state.appliedIds) return ShopDecision(state, ShopOutcome.DUPLICATE, "already-applied")
-    if (state.schemaVersion != 1 || state.gameDay !in 1..9999 || state.coins < 0) return reject("invalid-save")
+    if (!validShopSnapshot(state)) return reject("invalid-save")
     fun find(id: String) = state.copies.firstOrNull { it.id == id }
     fun replace(copy: StockCopy) = state.copies.map { if (it.id == copy.id) copy else it }
     fun buyer(customerId: String) = customersForDay(state.gameDay).firstOrNull { it.id == customerId }
@@ -99,7 +124,8 @@ fun reduceShop(state: IslandShopState, command: ShopCommand): ShopDecision {
             if (customer.id in state.served || copy.place != BookPlace.SHELF) return reject("unavailable")
             if (customer.interest != book.genre || copy.condition == StockCondition.DAMAGED) return reject("not-wanted")
             if (command.price !in (book.fairPrice / 2)..minOf(book.fairPrice * 2, customer.budget)) return reject("unfair-price")
-            if (state.coins > Int.MAX_VALUE - command.price) return reject("overflow")
+            if (state.coins > Int.MAX_VALUE - command.price ||
+                state.sales == Int.MAX_VALUE || state.communityTrust == Int.MAX_VALUE) return reject("overflow")
             state.copy(copies = state.copies.filterNot { it.id == copy.id },
                 coins = state.coins + command.price, served = state.served + customer.id,
                 sales = state.sales + 1, communityTrust = state.communityTrust + 1)
@@ -108,8 +134,10 @@ fun reduceShop(state: IslandShopState, command: ShopCommand): ShopDecision {
             val copy = find(command.copyId) ?: return reject("no-such-copy")
             val book = IslandBookCatalog.titles[copy.bookId] ?: return reject("unknown-fictional-book")
             val customer = buyer(command.customerId) ?: return reject("customer-not-present")
-            if (customer.id in state.served || copy.place != BookPlace.SHELF || customer.interest != book.genre) return reject("cannot-lend")
+            if (customer.id in state.served || copy.place != BookPlace.SHELF ||
+                copy.condition == StockCondition.DAMAGED || customer.interest != book.genre) return reject("cannot-lend")
             if (state.gameDay > 9997) return reject("calendar-limit")
+            if (state.communityTrust > Int.MAX_VALUE - 2) return reject("overflow")
             state.copy(copies = replace(copy.copy(place = BookPlace.ON_LOAN)),
                 loans = state.loans + ShopLoan("loan:" + command.transactionId, copy.id, customer.id, state.gameDay + 2),
                 served = state.served + customer.id, communityTrust = state.communityTrust + 2)

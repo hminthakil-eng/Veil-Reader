@@ -28,3 +28,11 @@ Scope: isolated pure Kotlin fictional bookshop logic; no Reader, GameRepository,
 6. 5-10 minute player shop-day validation.
 
 Release decision: DRAFT only, never merge into release/main without proof.
+
+## Gemini red-team hardening follow-up (same date)
+- Live Gemini 4 Argon independently critiqued the ACTUAL code, not only product concept. Accepted: reject duplicate copy IDs/corrupt state, validate loan consistency and unknown catalog IDs, guard Int sales/trust overflow, deny loans of DAMAGED stock, give starter copies stable canonical IDs independent of catalog order.
+- Replaced positional starter IDs; no public durable Island save schema had been released yet.
+- Added 5 adversarial tests (duplicate copy ID, damaged-on-shelf loan, counter overflow, stable starter IDs, overdue return without punishment).
+- Re-ran EXACT targeted suite on JDK17/SDK37 offline Gradle: BUILD SUCCESSFUL, process exit **0**. Fresh JUnit XML: **17 tests, 0 failures, 0 errors, 0 skipped**.
+- Detailed peer-review decisions and deferred economy ideas: docs/design/GEMINI_ISLAND_CORE_PEER_REVIEW_2026-10-14.md.
+- Remaining P0: versioned Room persistence/atomic action-ID durability + backups, process-kill and parallel sale tests. No playable UI, no device QA.
