@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "name": "island-bookshop-shared-writing-skills",
+  "date": "2026-10-14",
+  "licenseCopies": [
+    "_third_party_licenses/story-skills.MIT.txt",
+    "_third_party_licenses/novel-writing.MIT.txt"
+  ],
+  "sources": [
+    {
+      "repo": "danjdewhurst/story-skills",
+      "commit": "415181fea2a19fdeb762df4d689652072d138f54",
+      "license": "MIT",
+      "skills": [
+        "adaptation",
+        "chapter-writing",
+        "character-management",
+        "discovery-drafting",
+        "editorial-review",
+        "feedback-triage",
+        "genre-craft",
+        "interactive-fiction",
+        "line-editing",
+        "plot-structure",
+        "premise-workshop",
+        "reader-panel",
+        "research",
+        "revision-continuity",
+        "scene-craft",
+        "series-continuity",
+        "story-init",
+        "story-maintenance",
+        "theme-craft",
+        "voice-style",
+        "worldbuilding"
+      ]
+    },
+    {
+      "repo": "guantoubaozi/novel-writing",
+      "commit": "a6db1c892547fc9230b980d9bfd95ce8b92fe73f",
+      "license": "MIT",
+      "skills": [
+        "novel-writing"
+      ]
+    },
+    {
+      "repo": "EyadStudio/original",
+      "commit": "local-authored",
+      "license": "project",
+      "skills": [
+        "island-romance-agency",
+        "island-quest-branch-continuity",
+        "island-character-voice-room",
+        "island-world-economy-lore"
+      ]
+    }
+  ]
+}
