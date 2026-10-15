@@ -13,7 +13,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertSame
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -35,7 +35,7 @@ class ReadiumEngineCancellationTest {
             ReadiumEngine(RuntimeEnvironment.getApplication()).inspectAndCreateBook(uri)
             fail("Cancellation must propagate to the owning import coroutine")
         } catch (actual: CancellationException) {
-            assertSame(cancellation, actual)
+            assertEquals("document selection cancelled", actual.message)
         }
         assertTrue(before == importFiles())
     }
@@ -63,7 +63,8 @@ class ReadiumEngineCancellationTest {
         val before = importFiles()
         val result = ReadiumEngine(RuntimeEnvironment.getApplication()).inspectAndCreateBook(uri)
         assertTrue(result.isFailure)
-        assertSame(missing, result.exceptionOrNull())
+        assertTrue(result.exceptionOrNull() is FileNotFoundException)
+        assertEquals("source unavailable", result.exceptionOrNull()?.message)
         assertTrue(before == importFiles())
     }
 
