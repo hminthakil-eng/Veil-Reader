@@ -26,6 +26,17 @@ import org.robolectric.annotation.Config
 @Config(sdk = [37])
 class ReaderSelectionActionModeTest {
     @Test
+    fun wordWiseIsInOverflowWithoutRemovingExistingActions() = runTest {
+        val callback = callback(mutableListOf())
+        val mode = TestActionMode()
+        callback.onCreateActionMode(mode, mode.menu)
+        assertEquals("Highlight", mode.menu.findItem(0x5648)?.title?.toString())
+        assertEquals("Note", mode.menu.findItem(0x564E)?.title?.toString())
+        assertEquals("Lookup", mode.menu.findItem(0x564C)?.title?.toString())
+        assertEquals("Word Wise", mode.menu.findItem(0x5657)?.title?.toString())
+    }
+
+    @Test
     fun currentModeDestruction_releasesSelectionOwnershipExactlyOnce() = runTest {
         val states = mutableListOf<Boolean>()
         val callback = callback(states)
