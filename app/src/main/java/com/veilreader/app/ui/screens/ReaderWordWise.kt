@@ -51,7 +51,9 @@ internal object ReaderWordWise {
     /** A single English word only. Other scripts or passages fall back to system Lookup by choice. */
     fun find(selection: String): ReaderWordWiseDefinition? {
         val normalized = selection.trim()
-            .trim { !it.isLetter() }
+            .trim { it == '"' || it == '\'' || it == '“' || it == '”' ||
+                it == '(' || it == ')' || it == '!' || it == '?' ||
+                it == '.' || it == ',' || it == ';' || it == ':' }
             .lowercase(Locale.ROOT)
         if (normalized.length !in 3..40 || normalized.any { it !in 'a'..'z' && it != '-' }) {
             return null
