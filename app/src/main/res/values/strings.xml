@@ -1439,4 +1439,12 @@
     <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
     <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
     <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
+    <string name="reader_selection_word_wise">Word Wise</string>
+    <string name="reader_word_wise_title">Offline word meaning</string>
+    <string name="reader_word_wise_unknown">This word is not in the small offline glossary. You can choose Lookup to use an installed dictionary app.</string>
+    <string name="reader_word_wise_offline_hint">Only the selected word is checked on this device. No text is sent online.</string>
+    <string name="reader_word_wise_close">Close</string>
+    <string name="reader_notebook_export_markdown">Export notes (.md)</string>
+    <string name="reader_notebook_export_success">Notes saved to the selected document.</string>
+    <string name="reader_notebook_export_failed">Could not write notes to the selected document. Your original notes are unchanged.</string>
 </resources>
