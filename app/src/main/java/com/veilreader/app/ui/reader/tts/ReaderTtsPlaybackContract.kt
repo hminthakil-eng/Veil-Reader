@@ -53,6 +53,10 @@ internal data class ReaderTtsPlaybackRequest(
     companion object {
         const val ACTION_LOAD_AND_PLAY = "com.veilreader.app.tts.LOAD_AND_PLAY"
         const val ACTION_LOAD_PAUSED = "com.veilreader.app.tts.LOAD_PAUSED"
+        // App-private transport commands also work before Media3 has a media
+        // item, when COMMAND_PLAY_PAUSE is not available to MediaController.
+        const val ACTION_PAUSE_OWNER = "com.veilreader.app.tts.PAUSE_OWNER"
+        const val ACTION_RESUME_OWNER = "com.veilreader.app.tts.RESUME_OWNER"
         const val ACTION_QUERY_VOICES = "com.veilreader.app.tts.QUERY_VOICES"
         const val ACTION_PREVIEW_VOICE = "com.veilreader.app.tts.PREVIEW_VOICE"
         const val ACTION_UPDATE_VOICE_PREFERENCES =
