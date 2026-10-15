@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.BorderStroke
@@ -16,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -39,9 +42,11 @@ import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.usesArabicScript
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withContext
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
@@ -207,6 +212,36 @@ fun ReaderNotebook(
     onDeleteBookmark: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var exportStatusRes by remember(readerSessionInstanceId) { mutableStateOf<Int?>(null) }
+    val notesExporter = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/markdown")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                exportStatusRes = null
+                try {
+                    withContext(Dispatchers.IO) {
+                        val stream = context.contentResolver.openOutputStream(uri, "w")
+                            ?: error("Selected document provider returned no writable stream")
+                        stream.bufferedWriter(Charsets.UTF_8).use { writer ->
+                            writeReaderNotesMarkdown(
+                                out = writer,
+                                bookId = opened.book.id,
+                                bookTitle = opened.book.title,
+                                highlights = highlights
+                            )
+                        }
+                    }
+                    exportStatusRes = R.string.reader_notebook_export_success
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    exportStatusRes = R.string.reader_notebook_export_failed
+                }
+            }
+        }
+    }
     var searchJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     var searchSerial by remember(readerSessionInstanceId) { mutableIntStateOf(0) }
     var noteSaveJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
@@ -450,6 +485,27 @@ fun ReaderNotebook(
             }
 
             if (tab == ReaderNotebookTab.NOTES) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        enabled = highlights.any { it.bookId == opened.book.id },
+                        onClick = {
+                            exportStatusRes = null
+                            notesExporter.launch("VeilReader-${opened.book.id.take(12)}-notes.md")
+                        }
+                    ) {
+                        Text(stringResource(R.string.reader_notebook_export_markdown))
+                    }
+                }
+                exportStatusRes?.let { messageRes ->
+                    Text(
+                        text = stringResource(messageRes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
