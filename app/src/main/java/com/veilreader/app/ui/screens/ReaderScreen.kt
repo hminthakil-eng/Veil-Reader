@@ -405,6 +405,7 @@ fun ReaderScreen(
     val selectionNoteLabel =
         stringResource(R.string.reader_selection_note)
     val selectionLookupLabel = stringResource(R.string.reader_selection_lookup)
+    val selectionWordWiseLabel = stringResource(R.string.reader_selection_word_wise)
     val lookupFailedMessage = stringResource(R.string.reader_lookup_failed)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
@@ -814,6 +815,7 @@ fun ReaderScreen(
     }
     var showNotebook by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var showReaderSearch by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var wordWiseQuote by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(readerAppearance, opened.book.id, readerSessionInstanceId) {
         ReaderTrace.event(
@@ -994,6 +996,7 @@ fun ReaderScreen(
         selectionHighlightLabel,
         selectionNoteLabel,
         selectionLookupLabel,
+        selectionWordWiseLabel,
         lookupFailedMessage,
         highlightedMessage,
         alreadyHighlightedMessage,
@@ -1005,6 +1008,7 @@ fun ReaderScreen(
             highlightLabel = selectionHighlightLabel,
             noteLabel = selectionNoteLabel,
             lookupLabel = selectionLookupLabel,
+            wordWiseLabel = selectionWordWiseLabel,
             onModeChanged = { active ->
                 selectionModeActive = active
                 if (active) controlsVisible = true
@@ -1015,6 +1019,13 @@ fun ReaderScreen(
                         expectedSessionInstanceId = readerSessionInstanceId
                     ) || closeInFlight || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
                 ) return@onAction
+                if (action == ReaderSelectionAction.WORD_WISE) {
+                    // Only the explicit user selection is shown; never mutate the Readium DOM,
+                    // navigation locator, persistent annotation state or reading rewards.
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    wordWiseQuote = quote.take(120)
+                    return@onAction
+                }
                 if (action == ReaderSelectionAction.LOOKUP) {
                     readerViewModel.onUserInteraction(readerSessionInstanceId)
                     if (!launchReaderLookup(activity, quote, selectionLookupLabel)) {
@@ -1029,6 +1040,7 @@ fun ReaderScreen(
                     }
                     when (action) {
                         ReaderSelectionAction.LOOKUP -> Unit
+                        ReaderSelectionAction.WORD_WISE -> Unit
                         ReaderSelectionAction.HIGHLIGHT -> {
                             val committed = library.commitSelectionHighlight(
                                 bookId = opened.book.id, quote = quote, locatorJson = locatorJson
@@ -1633,6 +1645,7 @@ fun ReaderScreen(
         enabled =
             !showNotebook &&
             !showReaderSearch &&
+            wordWiseQuote == null &&
             !showAppearance &&
             !showPdfZoom &&
             !showTts &&
@@ -2519,6 +2532,7 @@ fun ReaderScreen(
                             // Modal search must own hardware keys/drag/tap while visible.
                             // Dialog touch interception alone does not fence Readium input.
                             showReaderSearch ||
+                            wordWiseQuote != null ||
                             showAppearance ||
                             showPdfZoom ||
                             showTts ||
@@ -3912,6 +3926,20 @@ fun ReaderScreen(
                 }
             }
         }
+    }
+
+    if (wordWiseQuote != null) {
+        ReaderWordWiseDialog(
+            selectedText = wordWiseQuote.orEmpty(),
+            onDismiss = { wordWiseQuote = null },
+            onSystemLookup = { selected ->
+                wordWiseQuote = null
+                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                if (!launchReaderLookup(activity, selected, selectionLookupLabel)) {
+                    readerMessage = lookupFailedMessage
+                }
+            }
+        )
     }
 
     if (showReaderSearch) {
