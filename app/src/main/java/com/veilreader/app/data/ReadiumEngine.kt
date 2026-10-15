@@ -17,6 +17,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -57,6 +58,7 @@ class ReadiumEngine(context: Context) {
      * temporary content-URI permission (for example, opening an EPUB from a messaging app).
      */
     suspend fun inspectAndCreateBook(uri: Uri): Result<Book> = runCatching {
+        currentCoroutineContext().ensureActive()
         val localUri = materializeImport(uri)
         var cachedCoverPath: String? = null
         try {
@@ -105,12 +107,15 @@ class ReadiumEngine(context: Context) {
             cachedCoverPath?.takeIf { it.isNotBlank() }?.let(::File)?.delete()
             throw t
         }
+    }.onFailure { error ->
+        if (error is CancellationException) throw error
     }
 
     suspend fun openBook(
         book: Book,
         persistedLocatorJsons: Set<String> = emptySet()
     ): Result<OpenedPublication> = runCatching {
+        currentCoroutineContext().ensureActive()
         val uri = requireNotNull(book.sourceUri) { "This is a demo book. Import an EPUB or PDF first." }
             .let(Uri::parse)
         val publication = openPublication(uri, allowUserInteraction = true)
@@ -149,6 +154,8 @@ class ReadiumEngine(context: Context) {
             publication.close()
             throw error
         }
+    }.onFailure { error ->
+        if (error is CancellationException) throw error
     }
 
     /**
@@ -242,7 +249,21 @@ class ReadiumEngine(context: Context) {
         digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
-    private suspend fun materializeImport(source: Uri): Uri = withContext(Dispatchers.IO) {
+    private suspend fun materializeImport(source: Uri): Uri {
+        // Ownership must outlive the worker. withContext can discard the returned URI if the
+        // caller is cancelled after the final rename but before dispatcher handoff completes.
+        var uncommittedCopy: File? = null
+        return try {
+            withContext(Dispatchers.IO) {
+                copyImport(source) { target -> uncommittedCopy = target }
+            }
+        } catch (error: Throwable) {
+            withContext(NonCancellable + Dispatchers.IO) { uncommittedCopy?.delete() }
+            throw error
+        }
+    }
+
+    private suspend fun copyImport(source: Uri, claim: (File) -> Unit): Uri {
         val importsDir = File(appContext.filesDir, "publications").apply {
             check(mkdirs() || isDirectory) {
                 "Could not prepare publication storage."
@@ -252,6 +273,7 @@ class ReadiumEngine(context: Context) {
         val id = UUID.randomUUID().toString()
         val target = File(importsDir, "$id$extension")
         val temporary = File(importsDir, ".$id.importing")
+        claim(target)
 
         try {
             val sourceStream =
@@ -285,7 +307,7 @@ class ReadiumEngine(context: Context) {
             check(target.isFile && target.length() > 0L) {
                 "The publication copy was not installed correctly."
             }
-            Uri.fromFile(target)
+            return Uri.fromFile(target)
         } catch (cancelled: CancellationException) {
             temporary.delete()
             target.delete()

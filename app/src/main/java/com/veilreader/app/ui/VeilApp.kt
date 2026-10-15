@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -334,6 +335,15 @@ fun VeilApp(
     var mangaMutationInProgress by remember { mutableStateOf(false) }
     var mangaStorageRevision by remember { mutableIntStateOf(0) }
     var notice by remember { mutableStateOf<VeilNotice?>(null) }
+
+    fun showReaderOpenFailure(bookId: String, locatorJson: String?) {
+        notice = VeilNotice(
+            message = context.getString(R.string.notice_open_failed),
+            kind = VeilNoticeKind.ERROR,
+            category = VeilIssueCategory.READER_OPEN,
+            retry = { routeViewModel.requestBook(bookId, locatorJson) }
+        )
+    }
 
     fun showNotice(
         resourceId: Int,
@@ -720,7 +730,10 @@ fun VeilApp(
             throw cancelled
         } catch (_: Exception) {
             routeViewModel.bookOpenFailed(targetId, openRequestId)
-            showNotice(R.string.notice_open_failed, category = VeilIssueCategory.READER_OPEN)
+            showReaderOpenFailure(
+                targetId,
+                route.locatorOverrideJson ?: route.readerLocatorCheckpointJson
+            )
             return@LaunchedEffect
         }
         if (book == null) {
@@ -854,7 +867,7 @@ fun VeilApp(
             onFailure = { error ->
                 if (error is CancellationException) throw error
                 routeViewModel.bookOpenFailed(targetId, openRequestId)
-                showNotice(R.string.notice_open_failed, category = VeilIssueCategory.READER_OPEN)
+                showReaderOpenFailure(targetId, initialLocatorJson)
                 return@LaunchedEffect
             }
         )
@@ -1431,7 +1444,10 @@ fun VeilApp(
             title = stringResource(heading),
             message = currentNotice.message,
             actionLabel = stringResource(R.string.notice_return),
-            onDismiss = { notice = null }
+            onDismiss = { notice = null },
+            onRetry = currentNotice.retry?.let { retry ->
+                { notice = null; retry() }
+            }
         )
     }
 }
@@ -1444,7 +1460,8 @@ internal fun VeilNoticeDialog(
     title: String,
     message: String,
     actionLabel: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onRetry: (() -> Unit)? = null
 ) {
     val accent = when (kind) {
         VeilNoticeKind.SUCCESS -> VeilPalette.Spirit
@@ -1504,7 +1521,21 @@ internal fun VeilNoticeDialog(
                         style = MaterialTheme.typography.bodyMedium,
                         color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                     )
-                    Button(
+                    if (onRetry != null) {
+                        Button(
+                            onClick = onRetry,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(stringResource(R.string.notice_retry))
+                        }
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                        ) {
+                            Text(actionLabel)
+                        }
+                    } else Button(
                         onClick = onDismiss,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1539,5 +1570,6 @@ private enum class VeilIssueCategory(val eyebrowRes: Int) {
 private data class VeilNotice(
     val message: String,
     val kind: VeilNoticeKind,
-    val category: VeilIssueCategory = VeilIssueCategory.GENERAL
+    val category: VeilIssueCategory = VeilIssueCategory.GENERAL,
+    val retry: (() -> Unit)? = null
 )

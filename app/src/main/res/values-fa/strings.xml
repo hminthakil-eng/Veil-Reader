@@ -832,6 +832,7 @@
     <string name="notice_error_eyebrow">وقفهٔ محلی</string>
     <string name="notice_error_title">عملیات کامل نشد</string>
     <string name="notice_return">بازگشت</string>
+    <string name="notice_retry">تلاش دوباره</string>
     <string name="notice_backup_exported">نسخهٔ پشتیبان کتابخانه ذخیره شد.</string>
     <string name="notice_notebook_exported">دفترچه ذخیره شد.</string>
     <string name="notice_export_failed">خروجی کامل نشد. ممکن است فایل مقصد ناقص باشد. محل دیگری انتخاب کنید و دوباره تلاش کنید.</string>

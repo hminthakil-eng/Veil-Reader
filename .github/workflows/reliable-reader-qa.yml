@@ -1,0 +1,83 @@
+name: Reliable Reader QA
+
+on:
+  push:
+    branches: ["reader/reliable-loading-20261015"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reliable-reader-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ORG_GRADLE_PROJECT_veilReliableQa: 'true'
+      ORG_GRADLE_PROJECT_veilForgeRevision: ${{ github.sha }}
+      VEIL_TEST_APPLICATION_ID: com.veilreader.app.reliable
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: '9.8.1'
+      - name: Verify source identity and reader policies
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          sh tools/test-policy.sh
+          sh tools/verify-canonical-paper.sh
+          python3 tools/test_canonical_paper_guard.py
+      - name: Run all unit tests, lint and build the independent installation
+        run: >-
+          gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+          :app:assembleDebugAndroidTest --stacktrace
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and exercise EPUB, PDF and storage on Android
+        run: bash tools/run_android_ci_emulator.sh storage
+      - name: Verify APK identity, signature and checksum
+        run: |
+          set -euo pipefail
+          mkdir -p build/reliable-reader
+          artifact="build/reliable-reader/Veil-Reader-Reliable-${GITHUB_SHA:0:8}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$artifact"
+          tools_dir="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$tools_dir/apksigner" verify --verbose --print-certs "$artifact" > build/reliable-reader/SIGNATURE.txt
+          "$tools_dir/aapt" dump badging "$artifact" > build/reliable-reader/APK-METADATA.txt
+          grep -F "package: name='com.veilreader.app.reliable'" build/reliable-reader/APK-METADATA.txt
+          grep -F "application-label:'Veil Reader Reliable'" build/reliable-reader/APK-METADATA.txt
+          printf 'source=%s\nrun=%s\npackage=com.veilreader.app.reliable\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > build/reliable-reader/BUILD.txt
+          (cd build/reliable-reader && sha256sum *.apk > SHA256SUMS)
+      - name: Upload verified installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-reliable-apk
+          path: build/reliable-reader/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-reliable-evidence
+          path: |
+            app/build/test-results/testDebugUnitTest/TEST-*.xml
+            app/build/reports/lint-results-debug.xml
+            app/build/outputs/androidTest-results/connected/debug/TEST-*.xml
+            build/reports/emulator-storage.log
+            build/reports/logcat-storage.log
+          if-no-files-found: ignore
+          retention-days: 14

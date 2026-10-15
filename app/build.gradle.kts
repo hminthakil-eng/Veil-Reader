@@ -9,6 +9,8 @@ plugins {
 // Manual device QA installs alongside Veil, with independent data and non-production signing.
 // Default app/benchmark builds retain their existing identity.
 val forgeQaBuild = providers.gradleProperty("veilForgeQa").orNull == "true"
+val reliableQaBuild = providers.gradleProperty("veilReliableQa").orNull == "true"
+require(!(forgeQaBuild && reliableQaBuild)) { "Choose only one separate QA installation." }
 val forgeQaRevision = providers.gradleProperty("veilForgeRevision").orNull
     ?.takeIf { it.matches(Regex("[0-9a-f]{7,40}")) }?.take(8) ?: "local"
 
@@ -18,14 +20,27 @@ android {
 
     defaultConfig {
         buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
-        applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
+        applicationId = when {
+            reliableQaBuild -> "com.veilreader.app.reliable"
+            forgeQaBuild -> "com.veilreader.app.forgeqa"
+            else -> "com.veilreader.app"
+        }
         minSdk = 26
         targetSdk = 37
         versionCode = 10
-        versionName = if (forgeQaBuild) "0.10.0-forge-$forgeQaRevision" else "0.10.0"
+        versionName = when {
+            reliableQaBuild -> "0.10.0-reliable-$forgeQaRevision"
+            forgeQaBuild -> "0.10.0-forge-$forgeQaRevision"
+            else -> "0.10.0"
+        }
         manifestPlaceholders["veilAppLabel"] =
-            if (forgeQaBuild) "@string/forge_qa_app_name" else "@string/app_name"
+            when {
+                reliableQaBuild -> "@string/reliable_qa_app_name"
+                forgeQaBuild -> "@string/forge_qa_app_name"
+                else -> "@string/app_name"
+            }
         if (forgeQaBuild) resValue("string", "forge_qa_app_name", "Veil Reader Forge QA")
+        if (reliableQaBuild) resValue("string", "reliable_qa_app_name", "Veil Reader Reliable")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -60,7 +75,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
-        resValues = forgeQaBuild
+        resValues = forgeQaBuild || reliableQaBuild
     }
 
     testOptions {
