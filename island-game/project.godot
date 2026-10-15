@@ -2,15 +2,20 @@
 config_version=5
 
 [application]
+config/icon="res://assets/qa_book_lantern_icon.png"
 config/name="Island Bookshop — Greybox Studio"
 run/main_scene="res://scenes/first_day.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]
-window/size/viewport_width=960
-window/size/viewport_height=540
+window/size/viewport_width=432
+window/size/viewport_height=960
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
 
 [rendering]
+
+textures/vram_compression/import_etc2_astc=true
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
