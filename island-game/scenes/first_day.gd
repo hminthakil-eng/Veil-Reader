@@ -88,6 +88,7 @@ func _ready() -> void:
 	_make_button(action_stack,"shared","مشارکت: ما ۱۰، نساجی ۴",func() -> void: _fund("shared"))
 	_make_button(action_stack,"residents","مردم مستقل از کمک مالی ما اقدام کنند",func() -> void: _fund("residents"))
 	_make_button(action_stack,"finish","پایان روز اول",_finish)
+	_make_button(action_stack,"enter_day2","شروع روز دوم / نانوایی و بایگانی",_begin_second_day)
 	_section(action_stack,"\u0630\u062e\u06cc\u0631\u0647\u0020\u0648\u0020\u0628\u0627\u0632\u06cc\u0627\u0628\u06cc\u0020\u067e\u06cc\u0634\u0631\u0641\u062a")
 	_make_button(action_stack,"save","\u0630\u062e\u06cc\u0631\u0647\u0654\u0020\u0627\u0645\u0646\u0020\u067e\u06cc\u0634\u0631\u0641\u062a", _save_checkpoint)
 	_make_button(action_stack,"load","\u0628\u0627\u0632\u06cc\u0627\u0628\u06cc\u0020\u0622\u062e\u0631\u06cc\u0646\u0020\u0630\u062e\u06cc\u0631\u0647\u0654\u0020\u0633\u0627\u0644\u0645", _load_checkpoint)
@@ -158,6 +159,19 @@ func _finish() -> void:
 		scene_zone = "street"
 	_refresh()
 
+func _begin_second_day() -> void:
+	if not day.day_closed:
+		latest = "ابتدا روز نخست را کامل کنید."
+		_refresh()
+		return
+	if not checkpoints.save_day(day):
+		latest = "ذخیرهٔ روز نخست ناموفق بود: " + checkpoints.last_status
+		_refresh()
+		return
+	if get_tree().change_scene_to_file("res://scenes/second_day.tscn") != OK:
+		latest = "ورود به روز دوم ناموفق بود؛ پیشرفت روز نخست محفوظ است."
+		_refresh()
+
 func _save_checkpoint() -> void:
 	var ok: bool = checkpoints.save_day(day)
 	latest = "\u067e\u06cc\u0634\u0631\u0641\u062a\u0020\u062b\u0628\u062a\u0020\u0634\u062f\u061b\u0020\u0646\u0633\u062e\u0647\u200c\u0647\u0627\u06cc\u0020\u0633\u0627\u0644\u0645\u0020\u0642\u0628\u0644\u06cc\u0020\u0645\u062d\u0641\u0648\u0638\u0020\u0647\u0633\u062a\u0646\u062f\u002e" if ok else "\u0630\u062e\u06cc\u0631\u0647\u0020\u0646\u0627\u0645\u0648\u0641\u0642\u0020\u0628\u0648\u062f\u003a\u0020" + checkpoints.last_status
@@ -198,4 +212,5 @@ func _refresh() -> void:
 	for key in ["solo","shared","residents"]:
 		click_buttons[key].disabled = not funding_pending
 	click_buttons["finish"].disabled = day.funding_choice.is_empty() or day.day_closed
+	click_buttons["enter_day2"].disabled = not day.day_closed
 	click_buttons["repair"].disabled = day.day_closed

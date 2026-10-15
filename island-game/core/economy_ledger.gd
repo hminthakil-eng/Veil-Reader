@@ -37,6 +37,23 @@ func _transfer(tx_id: String, from_id: String, to_id: String, amount: int, kind:
 	})
 	return true
 
+func open_local_bakery() -> bool:
+	# A new real account starts empty; no new coins enter circulation.
+	if wallets.has("bakery"):
+		return false
+	wallets["bakery"] = 0
+	return true
+
+func prepay_bakery_order(tx_id: String, payer: String, amount: int) -> bool:
+	if not wallets.has("bakery") or payer not in ["bookshop", "weaver", "external_trade"]:
+		return false
+	return _transfer(tx_id, payer, "bakery", amount, "prepaid_bread_order")
+
+func bakery_buy_apron(tx_id: String, amount: int) -> bool:
+	if not wallets.has("bakery"):
+		return false
+	return _transfer(tx_id, "bakery", "weaver", amount, "bakery_textile_purchase")
+
 func receive_off_island_order(tx_id: String, amount: int) -> bool:
 	# A finite named buyer account; never spawn money per sale.
 	return _transfer(tx_id, "external_trade", "bookshop", amount, "off_island_order")
@@ -110,8 +127,12 @@ static func from_snapshot(state: Dictionary) -> IslandEconomyLedger:
 		return null
 	if typeof(state.get("economic_events")) != TYPE_ARRAY:
 		return null
+	# Legacy first-day checkpoints have four wallets; day two adds one EMPTY
+	# bakery account and never alters the original 88-coin monetary supply.
 	var valid_accounts := ["bookshop", "weaver", "town_escrow", "external_trade"]
 	var raw_wallets: Dictionary = state["wallets"]
+	if raw_wallets.has("bakery"):
+		valid_accounts.append("bakery")
 	if raw_wallets.size() != valid_accounts.size():
 		return null
 	var validated: Dictionary = {}
