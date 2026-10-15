@@ -60,3 +60,16 @@ Manual Save/Load buttons in the first-day scene persist the COMPLETE fictional b
 The game does NOT silently autosave or auto-resume. Save data is not encrypted or authenticated; a checksum is NOT anti-cheat protection. Windows interruption-injection and corrupt-newest recovery were tested; Android hard process-kill/power-loss guarantees have NOT been tested. See `docs/game-studio/ADR_006_CHECKPOINT_RECOVERY_BEFORE_DAY2_20261014.md`.
 
 The strict `island-game/run_tests.ps1` test suite now expects **237/237** local headless assertions: 19 old shop, 30 economy, 25 shared commerce, 118 player-day and 45 real disk recovery tests.
+## Day Two — Bakery, Weaver and Harbor Registry (2026-10-15)
+
+After closing first day, choose **شروع روز دوم** in the first-day UI. The action saves the completed first-day checkpoint BEFORE loading `scenes/second_day.tscn`. Day two is a separate single-column, RTL-labelled touch-target greybox.
+
+- Meet MahTab (baker) and the port archivist; follow one of three privacy-preserving document routes.
+- Select which independently owned wallet prepays FOUR coins to the bakery (bookshop, weaver or finite external trade).
+- Spend four of six grain portions and one of two textile pieces, including a TWO-coin actual bakery-to-weaver payment, to bake four loaves.
+- Deliver them to the pantry, stalls, or evenly to both; no invisible money or replenishing bread.
+- Save/recover day two via `IslandSecondDayCheckpointStore`, which uses a separate append-only directory and falls back to prior healthy checkpoints on corrupt latest records.
+
+**Full strict Godot gate: 446 assertions, 0 failures**, including all earlier 237 tests, plus 169 second-day logic checks and 40 disk/UI checks. The second-day controller accepts old completed first-day snapshots with four wallets and registers a zero-funded bakery as a fifth account. Original four-wallet first-day saves remain loadable.
+
+**Still not a finished game:** Placeholder street illustration, limited story, no autonomous bakery supply cycle, no Android APK/device/RTL glyph visual proof and no independently confirmed Gemini 4 peer sign-off. See ADR-007 and QA evidence; do not merge this draft into Reader production.

@@ -41,4 +41,7 @@ Invoke-GodotGate 'New single-authority world commerce session' @('--headless', '
 Invoke-GodotGate 'Player operated first day scene smoke' @('--headless', '--path', $project, '--scene', 'res://scenes/first_day.tscn', '--quit-after', '3')
 Invoke-GodotGate 'First day six books two customers three investment strategies' @('--headless', '--path', $project, '--script', 'res://tests/run_first_day_tests.gd') 'FIRST_DAY_TEST_RESULTS passes=118 failures=0'
 Invoke-GodotGate 'Versioned checkpoint and recovery fault simulation' @('--headless', '--path', $project, '--script', 'res://tests/run_checkpoint_tests.gd') 'DAY_CHECKPOINT_TEST_RESULTS passes=45 failures=0'
-Write-Output 'ISLAND_GODOT_GATE PASS - 19 shop + 30 economy + 25 unified commerce + 118 day-one + 45 checkpoint = 237 passing assertions. No Android/device QA.'
+Invoke-GodotGate 'Second day playable bakery and archive startup' @('--headless', '--path', $project, '--scene', 'res://scenes/second_day.tscn', '--quit-after', '3')
+Invoke-GodotGate 'Day two finite bakery production and nine economic routes' @('--headless', '--path', $project, '--script', 'res://tests/run_second_day_tests.gd') 'SECOND_DAY_TEST_RESULTS passes=169 failures=0'
+Invoke-GodotGate 'Second day disk checkpoint and actual UI signals' @('--headless', '--path', $project, '--script', 'res://tests/run_second_day_checkpoint_tests.gd') 'SECOND_DAY_CHECKPOINT_TEST_RESULTS passes=40 failures=0'
+Write-Output 'ISLAND_GODOT_GATE PASS - 19 shop + 30 economy + 25 unified + 118 day-one + 45 first checkpoint + 169 day-two + 40 second checkpoint = 446 passing assertions. No Android/device QA.'
