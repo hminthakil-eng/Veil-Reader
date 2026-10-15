@@ -64,3 +64,14 @@ The strict `island-game/run_tests.ps1` test suite now expects **237/237** local 
 The Godot first-day scene now has a **phone-portrait pinned pixel stage, story and money status above a separate scrolling action deck** (not a whole-screen form), alongside the existing landscape two-column layout. Button target minimum heights are 56 logical pixels in portrait; RTL properties are set on story/status and narrative choices. Prototype art removes the fixed-width clipping that formerly broke 432px screens. No rendered mobile device font or notch/safe area validation yet.
 
 `tests/run_mobile_layout_tests.gd` covers portrait (432x960) and landscape (960x540) adaptation: 20/20 headless. Combined `run_tests.ps1` now enforces **257/257 assertions**. For private Android QA only, `export_presets.cfg` defines the separate `org.eyadstudio.islandbookshop.qa` package. Build scripts under `tools/` verify the official Godot 4.7.2 export template SHA-256 and post-build AndroidManifest permissions. Run template installation only after the complete official 1,281,349,702-byte TPZ has downloaded; then run the debug build script. Built APKs in `build/` are intentionally not committed. No actual APK or emulator/phone QA should be claimed before a successful binary and on-device run.
+## Verified debug Android APK — October 15 2026 (NOT phone-tested)
+The official Godot 4.7.2 Android template archive was verified with its published SHA-256, extracted and used to export a **real signed Android QA APK**. All sources are in the current `game/android-mobile-gate-v1-20261014` branch, including temporary QA icon, Android texture compression setting and fail-closed packaging scripts.
+
+Build on the authorized Windows desktop:
+`powershell -File .\island-game\tools\install_export_templates.ps1` (after separately downloading the pinned official Godot TPZ);
+`powershell -File .\island-game\tools\build_android_qa.ps1`.
+The resulting `island-game/build/IslandBookshop-QA.apk` is **57,012,198 bytes**, SHA-256 `D4D189BAE43C38509A1EA3A97DEC27AD831B88C3CD6B8F93E6B2D577ADBCC10D`. Godot export, debug signing schemes v2/v3, ARM64 + x86_64 inclusion and an `aapt` manifest audit for unrequested permissions all **PASS**.
+
+**Do not infer device-green.** The isolated `emulator-5584` failed before reaching a booted Android state; host logs show `netsimd.exe` crashes and limited physical RAM. The Reader emulator at `emulator-5554` has been deliberately left untouched. `tools/test_android_qa.ps1` refuses to install the game unless the isolated QA AVD is fully online. No Android runtime screenshots, touch/RTL validations or process-death save tests have succeeded yet. Do not publish this debug APK as a public release without approval.
+
+Evidence: `qa/evidence/ANDROID_APK_EXPORT_20261015.md`; ADR `docs/game-studio/ADR_008_ANDROID_APK_PROVENANCE_20261015.md`.

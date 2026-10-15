@@ -34,6 +34,15 @@ $forbidden = @('android.permission.INTERNET','android.permission.READ_EXTERNAL_S
 foreach ($permission in $forbidden) {
     if ($perms.Contains($permission)) { throw "Unexpected permission in Android manifest: $permission" }
 }
+$signTool = Join-Path $AndroidSdk 'build-tools\35.0.1\apksigner.bat'
+if (!(Test-Path -LiteralPath $signTool)) { throw 'No apksigner for signature audit' }
+$verify = (& $signTool verify --verbose $target 2>&1) -join "`n"
+if ($LASTEXITCODE -ne 0 -or $verify -notmatch 'Verifies') { throw 'APK signing verification failed' }
+if ($badging -notmatch "native-code:.*arm64-v8a" -or $badging -notmatch 'x86_64') {
+    throw 'APK is missing arm64 and emulator x86_64 architecture'
+}
+if ($badging -notmatch "sdkVersion:'24'") { throw 'Unexpected minimum SDK API' }
+Write-Output 'APK_SIGNATURE_AND_ABI_AUDIT PASS'
 Write-Output ('APK_QA_READY '+$target)
 Write-Output ('APK_BYTES '+(Get-Item $target).Length)
 Write-Output ('APK_SHA256 '+(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash)
