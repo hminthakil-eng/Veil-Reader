@@ -40,11 +40,14 @@ class RebornInvestigationDeskTest {
                 }
             }
         }
+        compose.onNodeWithTag("reborn-threshold-scroll").performScrollToIndex(3)
         compose.onNodeWithText("Investigation Desk").performScrollTo().performClick()
+        compose.onNodeWithTag("reborn-investigation-scroll").performScrollToIndex(3)
         compose.onNodeWithText(saved.quote, useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(saved.note, useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithContentDescription(saved.quote, useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Reveal").performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithText("This clue is sealed until you reveal it.").assertDoesNotExist()
         compose.onNodeWithText(saved.quote).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(saved.note).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Hide").performScrollTo().performClick()
@@ -52,6 +55,7 @@ class RebornInvestigationDeskTest {
         compose.onNodeWithText(saved.note, useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Return to passage").performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
         compose.runOnIdle { assertEquals(book to saved.locatorJson, opened) }
+        compose.onNodeWithTag("reborn-investigation-scroll").performScrollToIndex(0)
         compose.onNodeWithText("Back to Home").assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithTag("reborn-threshold-scroll").assertExists()
         compose.onNodeWithText(saved.quote, useUnmergedTree = true).assertDoesNotExist()

@@ -105,12 +105,12 @@ private fun RebornDeskClueCard(
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.reborn_desk_saved), style = MaterialTheme.typography.labelLarge)
-            Text(
-                stringResource(R.string.reborn_desk_sealed),
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (!isRevealed) {
+                Text(
+                    stringResource(R.string.reborn_desk_sealed),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             if (isRevealed) {
                 if (highlight.quote.isNotBlank()) {
                     Text(highlight.quote, style = MaterialTheme.typography.bodyLarge)

@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -39,6 +40,7 @@ fun RebornThresholdScreen(
     val deskGroups = remember(books, highlights) { indexInvestigationDesk(books, highlights) }
     var showInvestigationDesk by rememberSaveable { mutableStateOf(false) }
     var showWorldNote by remember { mutableStateOf(false) }
+    BackHandler(enabled = showInvestigationDesk) { showInvestigationDesk = false }
     if (showInvestigationDesk && deskGroups.isNotEmpty()) {
         RebornInvestigationDesk(
             groups = deskGroups,
