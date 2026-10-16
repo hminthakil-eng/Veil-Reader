@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reborn_brand">Veil Reader · آستانه</string>
+    <string name="reborn_welcome">بازگشتی آرام\nبه فصل بعدی کتابتان.</string>
+    <string name="reborn_continue_section">فصل بعدی شما</string>
+    <string name="reborn_continue">ادامهٔ مطالعه</string>
+    <string name="reborn_start">شروع مطالعه</string>
+    <string name="reborn_read_again">مطالعهٔ دوباره</string>
+    <string name="reborn_recent">کتاب‌های اخیر</string>
+    <string name="reborn_view_library">دیدن کتابخانه</string>
+    <string name="reborn_empty">داستان بعدی شما از اینجا شروع می‌شود.</string>
+    <string name="reborn_empty_detail">برای افزودن کتاب EPUB یا PDF، کتابخانه را باز کنید. کتاب‌هایتان آفلاین هم در دسترس هستند.</string>
+    <string name="reborn_open_library">باز کردن کتابخانه</string>
+    <string name="reborn_progress">%1$s خوانده شده</string>
+    <string name="reborn_show_world">نمایش یادداشت قلعه</string>
+    <string name="reborn_hide_world">پنهان کردن یادداشت قلعه</string>
+    <string name="reborn_world_note">هر وقت بخواهید، می‌توانید به قلعه‌تان سر بزنید.</string>
+    <string name="reborn_open_castle">دیدن قلعه</string>
+    <string name="reborn_latest_clue">تازه‌ترین سرنخ</string>
+    <string name="reborn_saved_passage">از نشان‌گذاری‌های ذخیره‌شدهٔ شما</string>
+    <string name="reborn_trace_archive">ردگیری در بایگانی</string>
+    <string name="reborn_trace_description">بازگشت به متن ذخیره‌شده در %1$s</string>
+</resources>

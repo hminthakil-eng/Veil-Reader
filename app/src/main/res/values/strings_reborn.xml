@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reborn_brand">Veil Reader · Threshold</string>
+    <string name="reborn_welcome">A quiet return\nto your next chapter.</string>
+    <string name="reborn_continue_section">Your next chapter</string>
+    <string name="reborn_continue">Continue Reading</string>
+    <string name="reborn_start">Start Reading</string>
+    <string name="reborn_read_again">Read Again</string>
+    <string name="reborn_recent">Recently on your shelf</string>
+    <string name="reborn_view_library">View library</string>
+    <string name="reborn_empty">Your next story starts here.</string>
+    <string name="reborn_empty_detail">Open your library to import an EPUB or PDF. Your books stay available offline.</string>
+    <string name="reborn_open_library">Open Library</string>
+    <string name="reborn_progress">%1$s read</string>
+    <string name="reborn_show_world">Show Castle note</string>
+    <string name="reborn_hide_world">Hide Castle note</string>
+    <string name="reborn_world_note">Your Castle is here whenever you want to visit.</string>
+    <string name="reborn_open_castle">Visit Castle</string>
+    <string name="reborn_latest_clue">Latest Clue</string>
+    <string name="reborn_saved_passage">From your saved highlights</string>
+    <string name="reborn_trace_archive">Trace in the Archive</string>
+    <string name="reborn_trace_description">Return to your saved passage in %1$s</string>
+</resources>

@@ -69,6 +69,17 @@ fun ReadingNowScreen(
     onOpenCastle: () -> Unit,
     onOpenMirror: () -> Unit = {}
 ) {
+    if (com.veilreader.app.BuildConfig.DEBUG && com.veilreader.app.BuildConfig.REBORN_THRESHOLD) {
+        RebornThresholdScreen(
+            books = books,
+            onOpenBook = onOpenBook,
+            onOpenLibrary = onOpenLibrary,
+            onOpenCastle = onOpenCastle,
+            highlights = highlights,
+            onOpenPassage = onOpenPassage
+        )
+        return
+    }
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
     val windowSize = currentVeilWindowSizeDp()
