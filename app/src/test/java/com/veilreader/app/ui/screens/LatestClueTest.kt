@@ -31,6 +31,23 @@ class LatestClueTest {
         assertEquals(winner, deriveLatestClue(listOf(book), marks.reversed())?.highlight)
     }
 
+    @Test fun linearSelectionMatchesOriginalSortedOracleEvenWhenBookProgressReset() {
+        val reread = book.copy(progress = 0f)
+        val marks = (0 until 1200).map { i ->
+            mark("id%04d".format(i), (i % 27).toLong()).copy(
+                quote = "Clue $i", locatorJson = "{saved-anchor-$i}"
+            )
+        } + mark("not-visible", 200L).copy(bookId = "removed-book")
+        val expected = marks.filter { it.bookId == reread.id && it.quote.isNotBlank() &&
+            it.locatorJson.isNotBlank() }.sortedWith(
+            compareByDescending<Highlight> { it.createdAtEpochMs }
+                .thenBy { it.id }.thenBy { it.bookId }
+                .thenBy { it.locatorJson }.thenBy { it.quote }
+        ).first()
+        assertEquals(expected, deriveLatestClue(listOf(reread), marks)?.highlight)
+        assertEquals(expected, deriveLatestClue(listOf(reread), marks.reversed())?.highlight)
+    }
+
     @Test fun anyAvailableLibraryBookCanSupplyClueWithoutChangingSavedTextOrLocator() {
         val saved = mark().copy(quote = "  Saved\nمتن  ", locatorJson = " {untouched} ")
         val clue = requireNotNull(deriveLatestClue(listOf(book), listOf(saved)))

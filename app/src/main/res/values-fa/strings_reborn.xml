@@ -18,6 +18,7 @@
     <string name="reborn_open_castle">دیدن قلعه</string>
     <string name="reborn_latest_clue">تازه‌ترین سرنخ</string>
     <string name="reborn_saved_passage">از نشان‌گذاری‌های ذخیره‌شدهٔ شما</string>
+    <string name="reborn_clue_sealed">متن سرنخ در بایگانی محفوظ است.</string>
     <string name="reborn_trace_archive">ردگیری در بایگانی</string>
     <string name="reborn_trace_description">بازگشت به متن ذخیره‌شده در %1$s</string>
 </resources>

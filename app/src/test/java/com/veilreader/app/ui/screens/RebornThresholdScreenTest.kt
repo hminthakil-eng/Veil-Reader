@@ -92,6 +92,7 @@ class RebornThresholdScreenTest {
         }
         compose.onNodeWithText("Earlier volume").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(recent, opened); assertEquals(0, castleOpens) }
+        compose.onNodeWithTag("reborn-threshold-scroll").performScrollToIndex(4)
         compose.onNodeWithText("Show Castle note").performScrollTo().performClick()
         compose.onNodeWithText("Visit Castle").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, castleOpens) }
@@ -112,6 +113,7 @@ class RebornThresholdScreenTest {
                 }
             }
         }
+        compose.onNodeWithText(saved.quote).assertDoesNotExist()
         compose.onNodeWithText("Trace in the Archive").performScrollTo()
             .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
         compose.runOnIdle { assertEquals(book to saved.locatorJson, opened); assertEquals(0, bookOpens) }

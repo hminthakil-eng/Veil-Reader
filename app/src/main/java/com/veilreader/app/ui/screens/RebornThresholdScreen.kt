@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
@@ -38,7 +39,7 @@ fun RebornThresholdScreen(
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(contentAlignment = Alignment.TopCenter) {
             LazyColumn(
-                modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth(),
+                modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().testTag("reborn-threshold-scroll"),
                 contentPadding = PaddingValues(24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
@@ -131,8 +132,7 @@ private fun RebornLatestClueCard(clue: LatestClue, onOpenPassage: (Book, String)
             Text(clue.book.title, style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(stringResource(R.string.reborn_saved_passage), style = MaterialTheme.typography.labelMedium)
-            Text(clue.highlight.quote, style = MaterialTheme.typography.bodyMedium,
-                maxLines = 4, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.reborn_clue_sealed), style = MaterialTheme.typography.bodySmall)
             val actionDescription = stringResource(R.string.reborn_trace_description, clue.book.title)
             TextButton(
                 onClick = { onOpenPassage(clue.book, clue.highlight.locatorJson) },

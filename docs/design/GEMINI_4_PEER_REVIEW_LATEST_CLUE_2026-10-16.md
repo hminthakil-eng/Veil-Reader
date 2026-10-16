@@ -55,3 +55,13 @@ Second-round raw review stored locally at:
 C:\Users\Microsoft\EyadStudio\Tools\GeminiBridge\gemini_reborn_peer_review3_response_20261016.txt
 
 Recommendation: accept conceptual improvements, but change no runtime reader/persistence code in this consultation-only turn. First implementation next is linear pure selector with an opaque Home summary and controlled privacy, after focused tests are diagnosable. Pending Robolectric test runtime still unverified at this consultation.
+
+## Implemented prototype patch — 2026-10-16, following peer review
+
+This decision has now been implemented only in branch design/veil-reborn-ux-v1-20261016; NOT released or merged:
+- LatestClue selector switched from full sortedWith().firstOrNull() to filtered minWithOrNull() using the same comparator. O(N) selection, preserving descending timestamp / ascending ID deterministic ordering, with all original tie conditions preserved.
+- Home clue no longer renders any saved quote. A neutral localized line replaces it; exact same one-tap Book + locator callback remains. Access to underlying highlight data stays in memory; this is presentation privacy, not encryption.
+- Reborn LazyColumn was assigned a stable semantics tag; the previously failing Castle lazy-list UI test explicitly scrolls to the world item before finding its action. The failure was from an off-screen uncomposed item.
+- Added a 1200-highlight oracle-comparison test (including reverse ordering, invalid orphan and a restarted reread) and a UI assertion that saved quote text is absent.
+- No Room migration, Readium changes, release-flag change or new dependencies. Pure saved highlight lookup is NOT claimed to solve spoiler-safe full-book text search.
+- Debug Kotlin and Debug unit-test Kotlin compilation reached the Gradle test task in initial verification. At the time of this document update the NEW test rerun had not produced fresh final XML; do NOT mark green or generate a public release from this patch without test & device QA.

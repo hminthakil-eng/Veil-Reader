@@ -12,8 +12,8 @@ internal fun deriveLatestClue(books: List<Book>, highlights: List<Highlight>): L
     val highlight = highlights.asSequence()
         .filter { it.bookId.isNotBlank() && it.bookId in availableBooks &&
             it.quote.isNotBlank() && it.locatorJson.isNotBlank() }
-        .sortedWith(compareByDescending<Highlight> { it.createdAtEpochMs }
+        .minWithOrNull(compareByDescending<Highlight> { it.createdAtEpochMs }
             .thenBy { it.id }.thenBy { it.bookId }.thenBy { it.locatorJson }.thenBy { it.quote })
-        .firstOrNull() ?: return null
+        ?: return null
     return LatestClue(availableBooks.getValue(highlight.bookId), highlight)
 }

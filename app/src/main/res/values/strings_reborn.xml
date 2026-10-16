@@ -18,6 +18,7 @@
     <string name="reborn_open_castle">Visit Castle</string>
     <string name="reborn_latest_clue">Latest Clue</string>
     <string name="reborn_saved_passage">From your saved highlights</string>
+    <string name="reborn_clue_sealed">A saved passage is sealed in your archive.</string>
     <string name="reborn_trace_archive">Trace in the Archive</string>
     <string name="reborn_trace_description">Return to your saved passage in %1$s</string>
 </resources>
