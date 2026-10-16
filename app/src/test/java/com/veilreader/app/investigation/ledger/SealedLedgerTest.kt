@@ -74,7 +74,10 @@ class SealedLedgerTest {
 
     @Test fun `sealed projection has no private text quote body or locator`() {
         val summary = predictionSummary(prediction, context)
-        assertEquals(setOf("id", "status"), summary.javaClass.declaredFields.filterNot { it.isSynthetic }.map { it.name }.toSet())
+        // Compose adds a compiler-only $stable field that Java reflection does not mark synthetic.
+        // Exclude only that known metadata; any new private data field must still fail this test.
+        assertEquals(setOf("id", "status"), summary.javaClass.declaredFields
+            .filterNot { it.isSynthetic || it.name == "\$stable" }.map { it.name }.toSet())
         assertFalse(summary.toString().contains("opaque-target"))
         assertFalse(summary.toString().contains("PRIVATE"))
     }
