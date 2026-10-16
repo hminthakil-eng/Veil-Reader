@@ -6,6 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -101,7 +104,16 @@ private fun RebornDeskClueCard(
     highlight: Highlight,
     onOpenPassage: (Book, String) -> Unit
 ) {
-    var isRevealed by rememberSaveable(book.id, highlight.id) { mutableStateOf(false) }
+    // A reveal is ephemeral. Never persist it through rotation or process-state restore.
+    var isRevealed by remember(book.id, highlight.id) { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, book.id, highlight.id) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) isRevealed = false
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.reborn_desk_saved), style = MaterialTheme.typography.labelLarge)
