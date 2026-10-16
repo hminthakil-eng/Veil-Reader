@@ -21,4 +21,15 @@
     <string name="reborn_clue_sealed">A saved passage is sealed in your archive.</string>
     <string name="reborn_trace_archive">Trace in the Archive</string>
     <string name="reborn_trace_description">Return to your saved passage in %1$s</string>
+    <string name="reborn_desk_title">Investigation Desk</string>
+    <string name="reborn_desk_back">Back to Home</string>
+    <string name="reborn_desk_subtitle">Your saved passages and notes, sealed until you choose to reveal them.</string>
+    <string name="reborn_desk_search">Search book title</string>
+    <string name="reborn_desk_empty">No saved passages available</string>
+    <string name="reborn_desk_no_results">No saved clues match that title.</string>
+    <string name="reborn_desk_saved">Saved passage</string>
+    <string name="reborn_desk_sealed">This clue is sealed until you reveal it.</string>
+    <string name="reborn_desk_reveal">Reveal</string>
+    <string name="reborn_desk_hide">Hide</string>
+    <string name="reborn_desk_return">Return to passage</string>
 </resources>

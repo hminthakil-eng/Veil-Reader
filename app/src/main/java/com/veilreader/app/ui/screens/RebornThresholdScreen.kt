@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -35,7 +36,18 @@ fun RebornThresholdScreen(
 ) {
     val snapshot = remember(books) { buildThresholdSnapshot(books) }
     val clue = remember(books, highlights) { deriveLatestClue(books, highlights) }
+    val deskGroups = remember(books, highlights) { indexInvestigationDesk(books, highlights) }
+    var showInvestigationDesk by rememberSaveable { mutableStateOf(false) }
     var showWorldNote by remember { mutableStateOf(false) }
+    if (showInvestigationDesk && deskGroups.isNotEmpty()) {
+        RebornInvestigationDesk(
+            groups = deskGroups,
+            onOpenPassage = onOpenPassage,
+            onBack = { showInvestigationDesk = false },
+            modifier = modifier
+        )
+        return
+    }
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(contentAlignment = Alignment.TopCenter) {
             LazyColumn(
@@ -69,6 +81,16 @@ fun RebornThresholdScreen(
                 }
                 if (clue != null) {
                     item(key = "latest_clue") { RebornLatestClueCard(clue, onOpenPassage) }
+                }
+                if (deskGroups.isNotEmpty()) {
+                    item(key = "investigation_desk") {
+                        OutlinedButton(
+                            onClick = { showInvestigationDesk = true },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        ) {
+                            Text(stringResource(R.string.reborn_desk_title))
+                        }
+                    }
                 }
                 if (snapshot.hero != null) {
                     item(key = "recent_heading") {

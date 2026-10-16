@@ -65,3 +65,30 @@ This decision has now been implemented only in branch design/veil-reborn-ux-v1-2
 - Added a 1200-highlight oracle-comparison test (including reverse ordering, invalid orphan and a restarted reread) and a UI assertion that saved quote text is absent.
 - No Room migration, Readium changes, release-flag change or new dependencies. Pure saved highlight lookup is NOT claimed to solve spoiler-safe full-book text search.
 - Debug Kotlin and Debug unit-test Kotlin compilation reached the Gradle test task in initial verification. At the time of this document update the NEW test rerun had not produced fresh final XML; do NOT mark green or generate a public release from this patch without test & device QA.
+
+
+## Investigation Desk MVP ? 2026-10-16
+
+Implementation scope (debug opt-in presentation only): a nested Desk inside RebornThresholdScreen, using the existing Book/Highlight inputs and exact onOpenPassage callback. No application navigation, database, Reader, or release flag changes.
+
+Working-code contract:
+- Group real saved highlights/notes by book, with stable book-title/ID ordering and newest-first timestamp/ID ordering inside each book. Individual marks are lazy items; a 1,000-mark input does not compose 1,000 cards.
+- Search book titles only, with an explicit label. Hidden quotes and notes never influence search results. No publication text search or inferred reading coverage.
+- Book title and neutral saved-passage metadata precede explicit Reveal/Hide actions. Hidden quote/note composables are absent from both merged and unmerged accessibility trees. Reveal is local UI state and is not written to the database; recomposition and restoration behavior still need explicit validation.
+- Return forwards the original Book object and unmodified locatorJson. Desk validation performs a minimal JSON href/type structure check without opening a publication. It cannot establish that a formerly valid chapter still exists in a modified publication; existing Reader error handling remains responsible for that case.
+- Orphaned books, unavailable source URIs, blank IDs, blank text plus blank note, malformed locators, and ambiguous duplicate mark IDs are omitted consistently. Duplicate book IDs are also excluded. The empty state explains that only saved marks with available sources are listed.
+- Home offers the Desk only when this validated index is nonempty. The latest Home clue remains private and unchanged. The on-screen Back button returns locally to Home. System Back integration still requires confirmation. No replacement bottom navigation.
+- Controls stack vertically, have minimum 48dp targets, and text has no fixed card height. English and Persian strings are resources.
+
+Future concepts, NOT implemented: clue-link graph, research threads, generated relationships, sealed prediction, scheduled chapter unlock, AI interpretation, and spoiler-safe full-publication retrieval. Figma node 6:2 was consulted for the archive hierarchy; its example quote, graph, prediction and duplicate bottom navigation are not shipped in this slice.
+
+Verification evidence for this increment will be recorded below after focused offline execution. Prior ten-test evidence above belongs to the earlier Latest Clue patch and is not evidence for the Desk.
+
+## Investigation Desk — implemented experimental vertical slice (2026-10-16)
+- Actual screen: RebornInvestigationDesk.kt; pure model: InvestigationDesk.kt; integrated behind existing RebornThresholdScreen while BuildConfig.DEBUG and REBORN_THRESHOLD are both true.
+- Uses saved Highlight rows and existing Book and onOpenPassage(Book, originalLocatorJson). No Room migration, scraping, AI-suggested discoveries, hidden book-content extraction, or new reader navigator.
+- Groups highlights by surviving book, sorts marks latest-first with deterministic ID tie breaking, searches only the book title, and lazily renders large collections.
+- Privacy contract: the home remains quote-free; in Investigation Desk quote and user note are omitted from UI semantics and the visible tree until a per-clue explicit Reveal action. Hide returns it to sealed state. Return to passage works without revealing text in the desk.
+- Data hygiene: unavailable/deleted books and corrupted/malformed locators are not offered as navigable marks. Duplicate highlight IDs are rejected as ambiguous. Readium is still responsible for resolving locators against actual publications at navigation time; JSON shape checks alone are not the final link-verification gate.
+- Design references: Grayfog/archival investigation inspired by the atmosphere of Lord of Mysteries without copying its character names or canon. The Investigation Desk Figma concept depicts a future graph, but links, sealed predictions, classifications and knowledge-network persistence are NOT part of this first implementation.
+- Tests: InvestigationDeskTest (4 model scenarios) and RebornInvestigationDeskTest (3 interaction scenarios, including RTL and 200% font). Existing focused tests retained. Verification state must come from new Gradle XML reports; a successful compilation alone is not enough.

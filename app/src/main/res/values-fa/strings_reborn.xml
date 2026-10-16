@@ -21,4 +21,15 @@
     <string name="reborn_clue_sealed">متن سرنخ در بایگانی محفوظ است.</string>
     <string name="reborn_trace_archive">ردگیری در بایگانی</string>
     <string name="reborn_trace_description">بازگشت به متن ذخیره‌شده در %1$s</string>
+    <string name="reborn_desk_title">دفتر سرنخ‌ها</string>
+    <string name="reborn_desk_back">بازگشت به خانه</string>
+    <string name="reborn_desk_subtitle">نشانه‌ها و یادداشت‌های ذخیره‌شدهٔ خودت؛ بدون افشای متن پیش از درخواست تو.</string>
+    <string name="reborn_desk_search">جست‌وجوی عنوان کتاب</string>
+    <string name="reborn_desk_empty">هنوز بخشی برای بررسی ذخیره نکرده‌ای.</string>
+    <string name="reborn_desk_no_results">کتابی با این عنوان در سرنخ‌ها پیدا نشد.</string>
+    <string name="reborn_desk_saved">نشانهٔ ثبت‌شده</string>
+    <string name="reborn_desk_sealed">متن این سرنخ مهروموم شده است.</string>
+    <string name="reborn_desk_reveal">آشکار کردن</string>
+    <string name="reborn_desk_hide">پنهان کردن</string>
+    <string name="reborn_desk_return">بازگشت به این بخش</string>
 </resources>
