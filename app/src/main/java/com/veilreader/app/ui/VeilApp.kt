@@ -36,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.core.layout.WindowSizeClass
 import com.veilreader.app.R
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
@@ -84,6 +85,7 @@ import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
+import com.veilreader.app.ui.screens.RebornThresholdScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
@@ -1047,21 +1049,34 @@ fun VeilApp(
 
     val mainContent: @Composable (VeilTab) -> Unit = { tab ->
         when (tab) {
-            VeilTab.READING -> ReadingNowScreen(
-                books = books,
-                profile = requireNotNull(profile),
-                quests = quests,
-                highlights = highlights,
-                bookmarks = bookmarks,
-                readingSessions = readingSessions,
-                onOpenBook = { requestOpenBook(it) },
-                onOpenPassage = { book, locator ->
-                    requestOpenBook(book, locator)
-                },
-                onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
-                onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
-                onOpenMirror = { routeViewModel.openChamber("mirror") }
-            )
+            VeilTab.READING -> {
+                if (BuildConfig.DEBUG && BuildConfig.REBORN_THRESHOLD) {
+                    // Opt-in only. Preserve all route, locator, book and privacy owners.
+                    // The regular ReadingNowScreen remains the production default.
+                    RebornThresholdScreen(
+                        books = books,
+                        highlights = highlights,
+                        onOpenBook = { requestOpenBook(it) },
+                        onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
+                        onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
+                        onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
+                    )
+                } else {
+                    ReadingNowScreen(
+                        books = books,
+                        profile = requireNotNull(profile),
+                        quests = quests,
+                        highlights = highlights,
+                        bookmarks = bookmarks,
+                        readingSessions = readingSessions,
+                        onOpenBook = { requestOpenBook(it) },
+                        onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
+                        onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
+                        onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
+                        onOpenMirror = { routeViewModel.openChamber("mirror") }
+                    )
+                }
+            }
 
             VeilTab.LIBRARY -> LibraryScreen(
                 books = books,
