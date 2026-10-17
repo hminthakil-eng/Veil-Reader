@@ -39,6 +39,10 @@ jobs:
           gradle :app:dependencies --configuration debugRuntimeClasspath --no-daemon --console=plain > build/reports/station3d/debugRuntimeClasspath.txt
           gradle :app:dependencies --configuration releaseRuntimeClasspath --no-daemon --console=plain > build/reports/station3d/releaseRuntimeClasspath.txt
           grep -E 'io.github.sceneview:sceneview:4.56.0' build/reports/station3d/debugRuntimeClasspath.txt
+          if grep -F 'org.jetbrains.kotlin:kotlin-android-extensions-runtime' build/reports/station3d/debugRuntimeClasspath.txt; then
+            echo 'FAIL: deprecated Fuel/Parcel runtime conflicts with supported Kotlin parcelize'
+            exit 1
+          fi
           if grep -iE 'io[.]github[.]sceneview|com[.]google[.]android[.]filament' build/reports/station3d/releaseRuntimeClasspath.txt; then
             echo 'FAIL: scene engine accidentally entered release classpath'
             exit 1
