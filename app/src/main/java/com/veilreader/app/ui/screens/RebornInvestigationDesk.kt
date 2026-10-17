@@ -1,6 +1,8 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -43,17 +45,15 @@ internal fun RebornInvestigationDesk(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item(key = "desk_header") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     TextButton(
                         onClick = onBack,
                         modifier = Modifier.heightIn(min = 48.dp).testTag("reborn-desk-back")
                     ) { Text(stringResource(R.string.reborn_desk_back)) }
-                    Text(
-                        stringResource(R.string.reborn_desk_title),
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.semantics { heading() }
+                    GrayfogThresholdHeader(
+                        brand = stringResource(R.string.reborn_desk_subtitle),
+                        title = stringResource(R.string.reborn_desk_title)
                     )
-                    Text(stringResource(R.string.reborn_desk_subtitle), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             if (groups.isNotEmpty()) {
@@ -80,11 +80,7 @@ internal fun RebornInvestigationDesk(
             }
             filtered.forEach { group ->
                 item(key = "book_header:${group.book.id}") {
-                    Text(
-                        group.book.title,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.semantics { heading() }
-                    )
+                    GrayfogSectionHeading(group.book.title)
                 }
                 items(
                     items = group.highlights,
@@ -114,9 +110,19 @@ private fun RebornDeskClueCard(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.reborn_desk_saved), style = MaterialTheme.typography.labelLarge)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                stringResource(R.string.reborn_desk_saved),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
             if (!isRevealed) {
                 Text(
                     stringResource(R.string.reborn_desk_sealed),
@@ -124,11 +130,19 @@ private fun RebornDeskClueCard(
                 )
             }
             if (isRevealed) {
-                if (highlight.quote.isNotBlank()) {
-                    Text(highlight.quote, style = MaterialTheme.typography.bodyLarge)
-                }
-                if (highlight.note.isNotBlank()) {
-                    Text(highlight.note, style = MaterialTheme.typography.bodyMedium)
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (highlight.quote.isNotBlank()) {
+                            Text(highlight.quote, style = MaterialTheme.typography.bodyLarge)
+                        }
+                        if (highlight.note.isNotBlank()) {
+                            Text(highlight.note, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
                 }
             }
             TextButton(
