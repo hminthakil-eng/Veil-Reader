@@ -41,13 +41,13 @@ try {
     if (-not $uv) { throw 'uv.exe not found; install uv before Windows-MCP setup.' }
     $pyDir = Join-Path $Root 'python-runtimes'
     $env:UV_PYTHON_INSTALL_DIR = $pyDir
-    & $uv.Source python install 3.13
+    & $uvCommand python install 3.13
     Check-Exit 'uv python install 3.13'
     $venv = Join-Path $Root 'windows-mcp\.venv'
-    & $uv.Source venv --python 3.13 $venv
+    & $uvCommand venv --python 3.13 $venv
     Check-Exit 'uv venv'
     $exe = Join-Path $venv 'Scripts\python.exe'
-    & $uv.Source pip install --python $exe 'windows-mcp==0.7.0'
+    & $uvCommand pip install --python $exe 'windows-mcp==0.7.0'
     Check-Exit 'windows-mcp install'
     & $exe -c "import importlib.metadata; print(importlib.metadata.version('windows-mcp'))"
     Check-Exit 'Windows-MCP version check'
@@ -62,7 +62,7 @@ Write-Status
 try {
     if (-not $node -or -not $npm) { throw 'Node.js 22.12+ and npm are required.' }
     $nodeVersion = (& $node.Source -p "process.versions.node").Trim()
-    $v = [version](($nodeVersion -split '-') [0])
+    $v = [version](($nodeVersion -split '-')[0])
     if ($v -lt [version]'22.12.0') { throw "Node.js >=22.12.0 required, found $nodeVersion" }
     $prefix = Join-Path $Root 'desktop-commander-mcp'
     New-Item -ItemType Directory -Force -Path $prefix | Out-Null
