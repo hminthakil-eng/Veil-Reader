@@ -1,0 +1,47 @@
+name: Export Full Veil Reader Source for Gemini
+
+on:
+  pull_request:
+    branches:
+      - review/reborn-ledger-baseline-20261017
+    paths:
+      - '.github/workflows/gemini-full-source-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PR head (no merges, no submodules)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Export all Git tracked source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p export
+          head_sha="$(git rev-parse HEAD)"
+          file_count="$(git ls-files -z | tr -cd '\0' | wc -c | tr -d ' ')"
+          zip_name="VeilReader_FULL_SOURCE_${head_sha:0:12}.zip"
+          git archive --format=zip --prefix=VeilReader/ --output="export/${zip_name}" HEAD
+          unzip -tqq "export/${zip_name}"
+          sha256sum "export/${zip_name}" > export/SOURCE_SHA256.txt
+          printf 'repo=hminthakil-eng/Veil-Reader\ncommit=%s\ntracked_files=%s\narchive=%s\n' "$head_sha" "$file_count" "$zip_name" > export/SOURCE_MANIFEST.txt
+          echo "Verified $file_count tracked files from $head_sha"
+          ls -lh export/
+
+      - name: Upload exact-source ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-complete-source-for-gemini
+          path: export/
+          if-no-files-found: error
+          retention-days: 7

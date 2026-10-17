@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "project": "Veil Reader",
+  "baseline_revision": "3f0d92e8b",
+  "benchmark_date": "2026-10-17",
+  "method": "Paired task-based benchmark; every scored row requires signed supporting evidence. Static source evidence is not device proof.",
+  "statuses": [
+    "unmeasured",
+    "measured-pass",
+    "measured-fail",
+    "blocked"
+  ],
+  "competitors": [
+    "Apple Books (separate OS, qualitative only)",
+    "Amazon Kindle Android",
+    "Moon+ Reader Pro Android",
+    "ReadEra Android",
+    "Readest Android",
+    "Kobo Books Android"
+  ],
+  "tests": [
+    {
+      "id": "reader-curl-ltr-rtl",
+      "priority": "P0",
+      "area": "paper-engine",
+      "acceptance": "Real EPUB pages show bending, actual ink, a moving fold/underside and valid shadow across held/cancel/commit, LTR+Persian RTL; no unexpected progress on cancel",
+      "method": "Android instrumentation + captured frames + blind visual review",
+      "evidence": [],
+      "status": "blocked"
+    },
+    {
+      "id": "reader-gesture-race",
+      "priority": "P0",
+      "area": "reliability",
+      "acceptance": "One commit per completed turn; stale releases and page requests never change a newer session locator, including process restart",
+      "method": "JUnit race scheduler + instrumented real EPUB",
+      "evidence": [],
+      "status": "unmeasured"
+    },
+    {
+      "id": "reader-resume",
+      "priority": "P0",
+      "area": "reliability",
+      "acceptance": "Import, read, kill and relaunch; restores same semantic anchor across reflow and rotation, all supported book formats",
+      "method": "Android instrumentation on real EPUB/PDF fixtures",
+      "evidence": [],
+      "status": "unmeasured"
+    },
+    {
+      "id": "visual-home",
+      "priority": "P0",
+      "area": "visual-identity",
+      "acceptance": "Approved Figma visual compared to actual Compose screenshot; no fake progress, dynamic book data, understandable hierarchy in light/dark and 320/390/600+dp",
+      "method": "Editable Figma + side-by-side annotated actual device screens and user review",
+      "evidence": [],
+      "status": "blocked"
+    },
+    {
+      "id": "visual-desk",
+      "priority": "P0",
+      "area": "visual-identity",
+      "acceptance": "Actual source-grounded clues and privacy sealed by default, readable research hierarchy, no fake graph or predictions",
+      "method": "Actual app capture and privacy/evidence acceptance",
+      "evidence": [],
+      "status": "blocked"
+    },
+    {
+      "id": "library-quick-resume",
+      "priority": "P0",
+      "area": "library",
+      "acceptance": "Offline import EPUB/PDF, corrupt/duplicate/permissions error and progress resume, retrievable within agreed user task budget",
+      "method": "Same scenario on Veil and ReadEra/Kindle where comparable",
+      "evidence": [],
+      "status": "unmeasured"
+    },
+    {
+      "id": "appearance-live-preview",
+      "priority": "P1",
+      "area": "personalization",
+      "acceptance": "At most one tap to show controls then one action to open appearance; live preview preserves semantic anchor, can revert and distinguish global/per-book options",
+      "method": "Paired task tests with Moon+/Apple reference, actual device traces",
+      "evidence": [],
+      "status": "unmeasured"
+    },
+    {
+      "id": "accessible-adaptive",
+      "priority": "P0",
+      "area": "accessibility",
+      "acceptance": "320dp+200% font, Persian RTL mixed Latin, TalkBack, reduced motion, system Back and hinge/IME do not hide controls or lose focus",
+      "method": "Manual accessibility plus scripted semantics on phone/tablet/foldable",
+      "evidence": [],
+      "status": "unmeasured"
+    },
+    {
+      "id": "performance",
+      "priority": "P0",
+      "area": "performance",
+      "acceptance": "Measured startup/first book display/turn jank and memory on 2 Android device tiers, same compilation modes with and without profile; no unproven speed claims",
+      "method": "Macrobenchmark JSON/traces and baseline-profile verification",
+      "evidence": [],
+      "status": "blocked"
+    },
+    {
+      "id": "tts-continuity",
+      "priority": "P1",
+      "area": "audiobook",
+      "acceptance": "30-minute speech session with pause/resume/background/interruption, stable book position and no repeated or lost paragraphs",
+      "method": "Device endurance with listener review and recorded locator log",
+      "evidence": [],
+      "status": "unmeasured"
+    }
+  ],
+  "global_gates": {
+    "visual_user_acceptance": "blocked",
+    "android_device_evidence": "blocked",
+    "current_gradle_unit_tests": "blocked",
+    "independent_competitor_benchmark": "unmeasured",
+    "manual_license_review": "unmeasured"
+  },
+  "release_decision": "BLOCKED",
+  "do_not_promote_without": [
+    "visual-home",
+    "visual-desk",
+    "reader-curl-ltr-rtl",
+    "reader-resume",
+    "accessible-adaptive",
+    "performance"
+  ]
+}
