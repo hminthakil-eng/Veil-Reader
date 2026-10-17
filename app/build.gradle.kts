@@ -115,7 +115,14 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
 dependencies {
     // Gate 1: isolated 3D lab — must NEVER add Filament / SceneView to release.
     // Native Compose + Filament only in the debug source set. Promotion requires real-device evidence.
-    debugImplementation("io.github.sceneview:sceneview:4.56.0")
+    debugImplementation("io.github.sceneview:sceneview:4.56.0") {
+        // Fuel Android 2.3.1 (transitive) still pulls Kotlin's obsolete
+        // kotlin-android-extensions-runtime 1.4.10. The real app/Readium
+        // brings supported kotlin-parcelize-runtime; the old jar duplicates
+        // classes and fails checkDebugDuplicateClasses. Keep Fuel itself,
+        // exclude ONLY its superseded parcel runtime; validate on device.
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
+    }
 
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
