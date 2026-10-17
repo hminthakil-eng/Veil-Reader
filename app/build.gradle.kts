@@ -9,6 +9,7 @@ plugins {
 // Manual device QA installs alongside Veil, with independent data and non-production signing.
 // Default app/benchmark builds retain their existing identity.
 val forgeQaBuild = providers.gradleProperty("veilForgeQa").orNull == "true"
+val station3dQaVariant = forgeQaBuild && providers.gradleProperty("veilStation3dLab").orNull == "true"
 val forgeQaRevision = providers.gradleProperty("veilForgeRevision").orNull
     ?.takeIf { it.matches(Regex("[0-9a-f]{7,40}")) }?.take(8) ?: "local"
 
@@ -18,7 +19,11 @@ android {
 
     defaultConfig {
         buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
-        applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
+        applicationId = when {
+            station3dQaVariant -> "com.veilreader.app.station3dqa"
+            forgeQaBuild -> "com.veilreader.app.forgeqa"
+            else -> "com.veilreader.app"
+        }
         minSdk = 26
         targetSdk = 37
         versionCode = 10
@@ -27,8 +32,11 @@ android {
             if (forgeQaBuild) "@string/forge_qa_app_name" else "@string/app_name"
         // Debug manifest only: hide 3D Lab unless the explicit Forge QA opt-in is present.
         manifestPlaceholders["station3dLabEnabled"] =
-            (forgeQaBuild && providers.gradleProperty("veilStation3dLab").orNull == "true").toString()
-        if (forgeQaBuild) resValue("string", "forge_qa_app_name", "Veil Reader Forge QA")
+            station3dQaVariant.toString()
+        if (forgeQaBuild) resValue(
+            "string", "forge_qa_app_name",
+            if (station3dQaVariant) "Veil Reader 3D QA" else "Veil Reader Forge QA"
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -46,7 +54,7 @@ android {
         getByName("debug") {
             buildConfigField("boolean", "REBORN_THRESHOLD", (providers.gradleProperty("veilRebornThreshold").orNull == "true").toString())
             buildConfigField("boolean", "VICTORIAN_STATION", (providers.gradleProperty("veilVictorianStation").orNull == "true").toString())
-            buildConfigField("boolean", "STATION_3D_LAB", (forgeQaBuild && providers.gradleProperty("veilStation3dLab").orNull == "true").toString())
+            buildConfigField("boolean", "STATION_3D_LAB", station3dQaVariant.toString())
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
         }
         getByName("release") {
