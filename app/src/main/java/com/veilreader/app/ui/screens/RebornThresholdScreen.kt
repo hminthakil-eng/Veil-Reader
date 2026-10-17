@@ -39,7 +39,8 @@ fun RebornThresholdScreen(
     modifier: Modifier = Modifier,
     highlights: List<Highlight> = emptyList(),
     onOpenPassage: (Book, String) -> Unit = { _, _ -> },
-    showWorldEntry: Boolean = true
+    showWorldEntry: Boolean = true,
+    onOpenStationLab: (() -> Unit)? = null
 ) {
     val snapshot = remember(books) { buildThresholdSnapshot(books) }
     val clue = remember(books, highlights) { deriveLatestClue(books, highlights) }
@@ -63,6 +64,19 @@ fun RebornThresholdScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
+                if (onOpenStationLab != null) {
+                    item(key = "station_lab") {
+                        OutlinedButton(
+                            onClick = onOpenStationLab,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .testTag("station3d-open-lab")
+                        ) {
+                            Text(stringResource(R.string.station3d_open_lab))
+                        }
+                    }
+                }
                 item(key = "welcome") {
                     if (BuildConfig.DEBUG && BuildConfig.VICTORIAN_STATION) {
                         VictorianStationHeader(
@@ -244,7 +258,7 @@ private fun RebornBookDetails(book: Book) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(book.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
         Text(book.author, style = MaterialTheme.typography.bodyLarge)
-        if (book.currentChapter.isNotBlank()) {
+        if (book.currentChapter.isNotBlank() && book.currentChapter != "Not started") {
             Text(book.currentChapter, style = MaterialTheme.typography.bodyMedium)
         }
         // A newly imported, unopened book has no observed reading progress to display.
