@@ -1,0 +1,34 @@
+name: Eyad Desktop Tools - Windows Runner Probe
+
+on:
+  push:
+    branches:
+      - tools/eyad-desktop-mcp-install-20261017
+    paths:
+      - .github/workflows/eyad-desktop-tools.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: [self-hosted, Windows, X64, veil-reader]
+    timeout-minutes: 7
+    steps:
+      - name: Confirm target machine and install prerequisites
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Output ("HOSTNAME=" + $env:COMPUTERNAME)
+          Write-Output ("RUNNER_NAME=" + $env:RUNNER_NAME)
+          Write-Output ("DRIVE_E_AVAILABLE=" + (Test-Path "E:\"))
+          Write-Output ("DRIVE_E_FREE_GB=" + [math]::Round((Get-PSDrive -Name E -ErrorAction SilentlyContinue).Free / 1GB, 2))
+          Write-Output ("PYTHON=" + (Get-Command python -ErrorAction SilentlyContinue).Source)
+          Write-Output ("UV=" + (Get-Command uv -ErrorAction SilentlyContinue).Source)
+          Write-Output ("UVX=" + (Get-Command uvx -ErrorAction SilentlyContinue).Source)
+          Write-Output ("NODE=" + (Get-Command node -ErrorAction SilentlyContinue).Source)
+          Write-Output ("NPM=" + (Get-Command npm -ErrorAction SilentlyContinue).Source)
+          Write-Output ("GIT=" + (Get-Command git -ErrorAction SilentlyContinue).Source)
+          if ($env:COMPUTERNAME -ne "DESKTOP-GSV91KV") { throw "Runner does not match target PC. No installation permitted." }
+          if (-not (Test-Path "E:\")) { throw "E: missing; no installation permitted." }
+          Write-Output "RUNNER_PROBE_GREEN"
