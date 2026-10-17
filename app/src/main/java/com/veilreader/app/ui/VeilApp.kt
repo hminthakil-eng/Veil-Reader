@@ -1059,7 +1059,8 @@ fun VeilApp(
                         onOpenBook = { requestOpenBook(it) },
                         onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
                         onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
-                        onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
+                        onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
+                        showWorldEntry = appSettings.gameVisible
                     )
                 } else {
                     ReadingNowScreen(
