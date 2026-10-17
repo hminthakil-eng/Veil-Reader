@@ -134,4 +134,15 @@ class RebornThresholdScreenTest {
         compose.onNodeWithText("Latest Clue").assertDoesNotExist()
         compose.onNodeWithText("Trace in the Archive").assertDoesNotExist()
     }
+    @Test fun unopenedBookDoesNotClaimZeroPercentWasMeasured() {
+        val book = Book("new", "Unopened volume", "Writer", sourceUri = "file:///new.epub")
+        compose.setContent {
+            VeilTheme(AppThemeMode.LIGHT) {
+                RebornThresholdScreen(listOf(book), {}, {}, {})
+            }
+        }
+        compose.onNodeWithText("Start Reading").assertExists()
+        compose.onNodeWithText("0%", substring = true).assertDoesNotExist()
+    }
+
 }
