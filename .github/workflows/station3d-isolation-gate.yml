@@ -51,11 +51,49 @@ jobs:
           set -euo pipefail
           gradle :app:compileDebugKotlin :app:compileReleaseKotlin --no-daemon --max-workers=2 --stacktrace --console=plain
 
-      - name: Preserve dependency and compile evidence
+      - name: Validate original glTF geometry and local provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/station3d/validate_station_gltf.py
+
+      - name: Run original station policies and retained 2.5D UI tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle :app:testDebugUnitTest \
+            --tests 'com.veilreader.app.ui.station.*' \
+            --no-daemon --max-workers=2 --stacktrace --console=plain
+
+      - name: Create ephemeral QA signing material
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .forge-qa
+          keytool -genkeypair -keystore .forge-qa/debug.keystore \
+            -alias AndroidDebugKey -storepass android -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname 'CN=Veil Station 3D Lab,OU=Test Build,O=Eyad Studio,C=US' -noprompt
+
+      - name: Assemble separately installable 3D lab QA APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle :app:assembleDebug \
+            -PveilForgeQa=true -PveilRebornThreshold=true -PveilVictorianStation=true \
+            -PveilStation3dLab=true -PveilForgeRevision="${GITHUB_SHA}" \
+            --no-daemon --max-workers=2 --stacktrace --console=plain
+          stat -c '%n %s bytes' app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Preserve dependency, manifest, tests and QA APK
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: station3d-dependency-isolation-report-NOT-APK
-          path: build/reports/station3d/*.txt
+          name: station3d-lab-qa-NOT-RELEASE
+          path: |
+            build/reports/station3d/*.txt
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/test-results/testDebugUnitTest/TEST-*.xml
+            app/build/outputs/logs/manifest-merger-debug-report.txt
           if-no-files-found: ignore
           retention-days: 7
