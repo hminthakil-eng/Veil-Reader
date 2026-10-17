@@ -1,6 +1,9 @@
 package com.veilreader.app.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -54,18 +57,14 @@ fun RebornThresholdScreen(
         Box(contentAlignment = Alignment.TopCenter) {
             LazyColumn(
                 modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().testTag("reborn-threshold-scroll"),
-                contentPadding = PaddingValues(24.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item(key = "welcome") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.reborn_brand), style = MaterialTheme.typography.labelLarge)
-                        Text(
-                            stringResource(R.string.reborn_welcome),
-                            style = MaterialTheme.typography.headlineLarge,
-                            modifier = Modifier.semantics { heading() }
-                        )
-                    }
+                    GrayfogThresholdHeader(
+                        brand = stringResource(R.string.reborn_brand),
+                        title = stringResource(R.string.reborn_welcome)
+                    )
                 }
                 item(key = "continue") {
                     val book = snapshot.hero
@@ -98,11 +97,7 @@ fun RebornThresholdScreen(
                     item(key = "recent_heading") {
                         Column {
                             if (snapshot.recent.isNotEmpty()) {
-                                Text(
-                                    stringResource(R.string.reborn_recent),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier = Modifier.semantics { heading() }
-                                )
+                                GrayfogSectionHeading(stringResource(R.string.reborn_recent))
                             }
                             TextButton(onClick = onOpenLibrary, modifier = Modifier.heightIn(min = 48.dp)) {
                                 Text(stringResource(R.string.reborn_view_library))
@@ -116,12 +111,20 @@ fun RebornThresholdScreen(
                             items(snapshot.recent, key = { it.id }, contentType = { "book" }) { book ->
                                 OutlinedCard(
                                     onClick = { onOpenBook(book) },
-                                    modifier = Modifier.width(160.dp)
+                                    modifier = Modifier.width(168.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
                                 ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        RebornCover(book, Modifier.width(80.dp).height(120.dp))
+                                    Column(
+                                        Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        RebornCover(book, Modifier.width(88.dp).height(132.dp))
+                                        Box(Modifier.width(32.dp).height(2.dp).background(MaterialTheme.colorScheme.primary))
                                         Text(book.title, style = MaterialTheme.typography.titleMedium)
-                                        Text(book.author, style = MaterialTheme.typography.bodyMedium)
+                                        Text(book.author, style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
@@ -148,8 +151,13 @@ fun RebornThresholdScreen(
 
 @Composable
 private fun RebornLatestClueCard(clue: LatestClue, onOpenPassage: (Book, String) -> Unit) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.reborn_latest_clue),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.semantics { heading() })
@@ -169,9 +177,25 @@ private fun RebornLatestClueCard(clue: LatestClue, onOpenPassage: (Book, String)
 
 @Composable
 private fun RebornContinueCard(book: Book, onOpenBook: (Book) -> Unit) {
-    ElevatedCard {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.reborn_continue_section), style = MaterialTheme.typography.labelLarge)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.width(3.dp).height(18.dp).background(MaterialTheme.colorScheme.primary))
+                Text(
+                    stringResource(R.string.reborn_continue_section),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 // Stack at narrow widths or large text sizes; no fixed text/card heights.
                 val stack = maxWidth < 360.dp || LocalDensity.current.fontScale >= 1.3f
