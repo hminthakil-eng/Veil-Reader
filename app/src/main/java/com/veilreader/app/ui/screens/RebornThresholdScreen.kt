@@ -231,12 +231,18 @@ private fun RebornBookDetails(book: Book) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(book.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
         Text(book.author, style = MaterialTheme.typography.bodyLarge)
-        Text(book.currentChapter, style = MaterialTheme.typography.bodyMedium)
-        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
-        Text(
-            stringResource(R.string.reborn_progress, NumberFormat.getPercentInstance().format(progress)),
-            style = MaterialTheme.typography.bodyMedium
-        )
+        if (book.currentChapter.isNotBlank()) {
+            Text(book.currentChapter, style = MaterialTheme.typography.bodyMedium)
+        }
+        // A newly imported, unopened book has no observed reading progress to display.
+        // The CTA will say Start Reading; never manufacture a 0% session.
+        if (book.lastOpenedAtEpochMs > 0L || book.progress > 0f || book.finished) {
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+            Text(
+                stringResource(R.string.reborn_progress, NumberFormat.getPercentInstance().format(progress)),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 
