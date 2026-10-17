@@ -1,0 +1,96 @@
+name: Grayfog Reborn Slice A CI
+
+on:
+  pull_request:
+    branches:
+      - review/reborn-ledger-baseline-20261017
+    paths:
+      - 'app/**'
+      - 'tools/quality/**'
+      - 'quality/market-leader/**'
+      - '.github/workflows/grayfog-reborn-slice-a.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grayfog-reborn-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual-slice-build:
+    name: Robolectric RTL + Forge QA Debug Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Configure Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Validate quality gate contract (must remain blocked)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools/quality -p test_market_leader_gate.py -v
+          python3 tools/quality/market_leader_gate.py --output build/reports/grayfog/market-gate.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('build/reports/grayfog/market-gate.json').read_text())
+          assert data['decision'] == 'BLOCKED', 'Do not mark physical/visual gates green from source-only checks'
+          print('Source preflight OK; device and human visual acceptance STILL BLOCKED')
+          PY
+
+      - name: Native Compose UI focused tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle :app:testDebugUnitTest \
+            --tests 'com.veilreader.app.ui.screens.RebornThresholdScreenTest' \
+            --tests 'com.veilreader.app.ui.screens.RebornInvestigationDeskTest' \
+            --tests 'com.veilreader.app.ui.screens.GrayfogThresholdSurfacesTest' \
+            --tests 'com.veilreader.app.ui.screens.GrayfogRebornRenderCaptureTest' \
+            --no-daemon --max-workers=2 --stacktrace --console=plain
+
+      - name: Create isolated Forge QA signing key (not a release key)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .forge-qa
+          keytool -genkeypair -keystore .forge-qa/debug.keystore \
+            -alias AndroidDebugKey -storepass android -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname 'CN=Veil Reader Forge QA,OU=Test Build,O=Eyad Studio,C=US' -noprompt
+
+      - name: Assemble opt-in visual review APK (NOT approved for distribution)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle :app:assembleDebug \
+            -PveilForgeQa=true -PveilRebornThreshold=true \
+            -PveilForgeRevision="${GITHUB_SHA}" \
+            --no-daemon --max-workers=2 --stacktrace --console=plain
+
+      - name: Retain test XML and review APK in private workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: grayfog-reborn-source-review-not-a-release
+          path: |
+            app/build/test-results/testDebugUnitTest/TEST-*.xml
+            app/build/reports/grayfog/compose-render-fixtures/*.png
+            app/build/outputs/apk/debug/app-debug.apk
+            build/reports/grayfog/market-gate.json
+          if-no-files-found: ignore
+          retention-days: 7
