@@ -67,6 +67,7 @@ jobs:
           set -euo pipefail
           gradle :app:testDebugUnitTest \
             --tests 'com.veilreader.app.ui.station.*' \
+            --tests 'com.veilreader.app.ui.screens.RebornThresholdScreenTest' \
             --no-daemon --max-workers=2 --stacktrace --console=plain
 
       - name: Create ephemeral QA signing material
@@ -88,6 +89,8 @@ jobs:
             -PveilStation3dLab=true -PveilForgeRevision="${GITHUB_SHA}" \
             --no-daemon --max-workers=2 --stacktrace --console=plain
           stat -c '%n %s bytes' app/build/outputs/apk/debug/app-debug.apk
+          grep -F 'com.veilreader.app.station3dqa' app/build/outputs/apk/debug/output-metadata.json
+          echo 'Verified separate 3D QA install identity'
 
       - name: Preserve dependency, manifest, tests and QA APK
         if: always()
