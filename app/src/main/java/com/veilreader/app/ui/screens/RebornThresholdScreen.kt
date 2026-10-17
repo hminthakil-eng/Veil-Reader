@@ -36,7 +36,8 @@ fun RebornThresholdScreen(
     onOpenCastle: () -> Unit,
     modifier: Modifier = Modifier,
     highlights: List<Highlight> = emptyList(),
-    onOpenPassage: (Book, String) -> Unit = { _, _ -> }
+    onOpenPassage: (Book, String) -> Unit = { _, _ -> },
+    showWorldEntry: Boolean = true
 ) {
     val snapshot = remember(books) { buildThresholdSnapshot(books) }
     val clue = remember(books, highlights) { deriveLatestClue(books, highlights) }
@@ -131,15 +132,17 @@ fun RebornThresholdScreen(
                         }
                     }
                 }
-                item(key = "world") {
-                    Column {
-                        TextButton(onClick = { showWorldNote = !showWorldNote }, modifier = Modifier.heightIn(min = 48.dp)) {
-                            Text(stringResource(if (showWorldNote) R.string.reborn_hide_world else R.string.reborn_show_world))
-                        }
-                        if (showWorldNote) {
-                            Text(stringResource(R.string.reborn_world_note), style = MaterialTheme.typography.bodyMedium)
-                            TextButton(onClick = onOpenCastle, modifier = Modifier.heightIn(min = 48.dp)) {
-                                Text(stringResource(R.string.reborn_open_castle))
+                if (showWorldEntry) {
+                    item(key = "world") {
+                        Column {
+                            TextButton(onClick = { showWorldNote = !showWorldNote }, modifier = Modifier.heightIn(min = 48.dp)) {
+                                Text(stringResource(if (showWorldNote) R.string.reborn_hide_world else R.string.reborn_show_world))
+                            }
+                            if (showWorldNote) {
+                                Text(stringResource(R.string.reborn_world_note), style = MaterialTheme.typography.bodyMedium)
+                                TextButton(onClick = onOpenCastle, modifier = Modifier.heightIn(min = 48.dp)) {
+                                    Text(stringResource(R.string.reborn_open_castle))
+                                }
                             }
                         }
                     }
