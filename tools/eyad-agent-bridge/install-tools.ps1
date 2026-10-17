@@ -100,10 +100,11 @@ Write-Status
 # Write integration examples only. Do NOT auto-modify credentials or AI app settings.
 $wmcp = Join-Path $Root 'windows-mcp\.venv\Scripts\windows-mcp.exe'
 $localMcp = Join-Path $Root 'desktop-commander-mcp\node_modules\@wonderwhy-er\desktop-commander\dist\index.js'
+$nodeExecutable = if ($node) { $node.Source } else { 'node' }
 $config = [ordered]@{
   mcpServers = [ordered]@{
      'windows-mcp' = [ordered]@{ command=$wmcp; args=@('serve') }
-     'desktop-commander-local' = [ordered]@{ command=if($node){$node.Source}else{'node'}; args=@($localMcp) }
+     'desktop-commander-local' = [ordered]@{ command=$nodeExecutable; args=@($localMcp) }
   }
 }
 $config | ConvertTo-Json -Depth 6 | Set-Content -Path (Join-Path $Root 'mcp-servers.example.json') -Encoding UTF8
@@ -161,7 +162,7 @@ To send a file later (run from your own Windows session):
 See installation-status.json for verified install state.
 '@
 $readme | Set-Content -Path (Join-Path $Root 'README.txt') -Encoding UTF8
-$report.finished=(Get-Date -Format o)
+$report['finished']=(Get-Date -Format o)
 Write-Status
 Write-Output "EYAD_SETUP_REPORT_BEGIN"
 Get-Content -Path $log
