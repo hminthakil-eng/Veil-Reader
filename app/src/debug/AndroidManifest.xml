@@ -11,5 +11,17 @@
             android:taskAffinity="com.veilreader.app.reader.durability.probe" />
         <!-- Real ReaderScreen / EPUB harness. Never a second app launcher. -->
         <activity android:name=".debug.NativePaperReaderActivity" android:exported="false" />
+        <!-- Optional experimental Filament scene, never present in release. -->
+        <activity
+            android:name=".ui.station.Station3DLabActivity"
+            android:exported="true"
+            android:enabled="${station3dLabEnabled}"
+            android:label="Veil Station 3D Lab"
+            android:theme="@style/Theme.VeilReader">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
