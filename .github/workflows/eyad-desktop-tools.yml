@@ -1,4 +1,4 @@
-name: Eyad Desktop Tools - Windows Runner Probe
+name: Eyad Desktop Tools - Install on Verified PC
 
 on:
   push:
@@ -6,29 +6,64 @@ on:
       - tools/eyad-desktop-mcp-install-20261017
     paths:
       - .github/workflows/eyad-desktop-tools.yml
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: eyad-desktop-tools
+  cancel-in-progress: false
+
 jobs:
-  probe:
+  install-local-tools:
     runs-on: [self-hosted, Windows, X64, veil-reader]
-    timeout-minutes: 7
+    timeout-minutes: 40
     steps:
-      - name: Confirm target machine and install prerequisites
+      - name: Verify requested desktop is the target
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-          Write-Output ("HOSTNAME=" + $env:COMPUTERNAME)
           Write-Output ("RUNNER_NAME=" + $env:RUNNER_NAME)
-          Write-Output ("DRIVE_E_AVAILABLE=" + (Test-Path "E:\"))
-          Write-Output ("DRIVE_E_FREE_GB=" + [math]::Round((Get-PSDrive -Name E -ErrorAction SilentlyContinue).Free / 1GB, 2))
-          Write-Output ("PYTHON=" + (Get-Command python -ErrorAction SilentlyContinue).Source)
-          Write-Output ("UV=" + (Get-Command uv -ErrorAction SilentlyContinue).Source)
-          Write-Output ("UVX=" + (Get-Command uvx -ErrorAction SilentlyContinue).Source)
-          Write-Output ("NODE=" + (Get-Command node -ErrorAction SilentlyContinue).Source)
-          Write-Output ("NPM=" + (Get-Command npm -ErrorAction SilentlyContinue).Source)
-          Write-Output ("GIT=" + (Get-Command git -ErrorAction SilentlyContinue).Source)
-          if ($env:COMPUTERNAME -ne "DESKTOP-GSV91KV") { throw "Runner does not match target PC. No installation permitted." }
-          if (-not (Test-Path "E:\")) { throw "E: missing; no installation permitted." }
-          Write-Output "RUNNER_PROBE_GREEN"
+          Write-Output ("HOSTNAME=" + $env:COMPUTERNAME)
+          if ($env:COMPUTERNAME -ne "DESKTOP-GSV91KV") {
+            throw "Target hostname mismatch; installation refused."
+          }
+          if (-not (Test-Path 'E:\')) {
+            throw 'Drive E: is absent; installation refused.'
+          }
+          Write-Output "TARGET_VERIFIED"
+      - name: Checkout pinned installation script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Windows-MCP, Desktop Commander MCP and Telethon
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "tools\eyad-agent-bridge\install-tools.ps1"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Installer failed; inspect installation-status.json on E:."
+          }
+      - name: Validate installed executables and integration manifest
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root='E:\AI\Tools\EyadAgentBridge'
+          $status = Get-Content -Raw (Join-Path $root 'installation-status.json') | ConvertFrom-Json
+          foreach($key in @('windowsMcp','desktopCommander','telethon')) {
+            Write-Output ($key + '=' + $status.$key)
+            if($status.$key -ne 'installed') {throw "Missing installation: $key"}
+          }
+          foreach($p in @(
+            'windows-mcp\.venv\Scripts\windows-mcp.exe',
+            'desktop-commander-mcp\node_modules\@wonderwhy-er\desktop-commander\dist\index.js',
+            'telethon\.venv\Scripts\python.exe',
+            'mcp-servers.example.json',
+            'send_saved_messages.py'
+          )) {
+            if (-not (Test-Path (Join-Path $root $p))) {
+              throw "Missing file: $p"
+            }
+          }
+          Write-Output 'INSTALL_VERIFIED_ALL_THREE'
