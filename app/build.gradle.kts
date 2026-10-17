@@ -42,10 +42,12 @@ android {
     buildTypes {
         getByName("debug") {
             buildConfigField("boolean", "REBORN_THRESHOLD", (providers.gradleProperty("veilRebornThreshold").orNull == "true").toString())
+            buildConfigField("boolean", "VICTORIAN_STATION", (providers.gradleProperty("veilVictorianStation").orNull == "true").toString())
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
         }
         getByName("release") {
             buildConfigField("boolean", "REBORN_THRESHOLD", "false")
+            buildConfigField("boolean", "VICTORIAN_STATION", "false")
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "false")
             isMinifyEnabled = true
             isShrinkResources = true
@@ -54,6 +56,7 @@ android {
         create("benchmark") {
             initWith(getByName("release"))
             buildConfigField("boolean", "REBORN_THRESHOLD", "false")
+            buildConfigField("boolean", "VICTORIAN_STATION", "false")
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")

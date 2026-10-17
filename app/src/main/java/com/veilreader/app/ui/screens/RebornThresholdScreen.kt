@@ -23,6 +23,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
+import com.veilreader.app.BuildConfig
+import com.veilreader.app.ui.station.VictorianStationHeader
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Highlight
 import java.text.NumberFormat
@@ -62,10 +64,18 @@ fun RebornThresholdScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 item(key = "welcome") {
-                    GrayfogThresholdHeader(
-                        brand = stringResource(R.string.reborn_brand),
-                        title = stringResource(R.string.reborn_welcome)
-                    )
+                    if (BuildConfig.DEBUG && BuildConfig.VICTORIAN_STATION) {
+                        VictorianStationHeader(
+                            brand = stringResource(R.string.reborn_brand),
+                            title = stringResource(R.string.reborn_welcome),
+                            onOpenLibrary = onOpenLibrary
+                        )
+                    } else {
+                        GrayfogThresholdHeader(
+                            brand = stringResource(R.string.reborn_brand),
+                            title = stringResource(R.string.reborn_welcome)
+                        )
+                    }
                 }
                 item(key = "continue") {
                     val book = snapshot.hero
