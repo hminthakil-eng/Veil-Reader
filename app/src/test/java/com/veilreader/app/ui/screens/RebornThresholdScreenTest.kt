@@ -163,4 +163,51 @@ class RebornThresholdScreenTest {
         compose.onNodeWithText("Start Reading").assertExists()
     }
 
+    @Test fun qaStationLabShortcutIsPresentAndOpensExactCallback() {
+        var opened = 0
+        compose.setContent {
+            VeilTheme(AppThemeMode.DARK) {
+                RebornThresholdScreen(
+                    books = emptyList(),
+                    onOpenBook = {},
+                    onOpenLibrary = {},
+                    onOpenCastle = {},
+                    onOpenStationLab = { opened++ }
+                )
+            }
+        }
+        compose.onNodeWithTag("station3d-open-lab")
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle { assertEquals(1, opened) }
+    }
+
+    @Test fun stationLabShortcutNeverAppearsWithoutQaCallback() {
+        compose.setContent {
+            VeilTheme(AppThemeMode.DARK) {
+                RebornThresholdScreen(emptyList(), {}, {}, {})
+            }
+        }
+        compose.onNodeWithTag("station3d-open-lab").assertDoesNotExist()
+    }
+
+    @Test fun legacyNotStartedChapterIsHiddenWhenRealReadingProgressExists() {
+        val book = Book(
+            "progress",
+            "Novel with persisted progress",
+            "Author",
+            sourceUri = "file:///progress.epub",
+            progress = .22f,
+            currentChapter = "Not started",
+            lastOpenedAtEpochMs = 100L
+        )
+        compose.setContent {
+            VeilTheme(AppThemeMode.DARK) {
+                RebornThresholdScreen(listOf(book), {}, {}, {})
+            }
+        }
+        compose.onNodeWithText("Not started").assertDoesNotExist()
+        compose.onNodeWithText("22%", substring = true).assertExists()
+        compose.onNodeWithText("Continue Reading").assertExists()
+    }
+
 }

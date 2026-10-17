@@ -11,5 +11,13 @@
             android:taskAffinity="com.veilreader.app.reader.durability.probe" />
         <!-- Real ReaderScreen / EPUB harness. Never a second app launcher. -->
         <activity android:name=".debug.NativePaperReaderActivity" android:exported="false" />
+        <!-- Debug-only station lab, accessed from the QA Home shortcut.
+             Non-exported: only our own app may open it. -->
+        <activity
+            android:name=".ui.station.Station3DLabActivity"
+            android:exported="false"
+            android:enabled="${station3dLabEnabled}"
+            android:label="Veil Station 3D Lab"
+            android:theme="@style/Theme.VeilReader" />
     </application>
 </manifest>

@@ -9,6 +9,7 @@ plugins {
 // Manual device QA installs alongside Veil, with independent data and non-production signing.
 // Default app/benchmark builds retain their existing identity.
 val forgeQaBuild = providers.gradleProperty("veilForgeQa").orNull == "true"
+val station3dQaVariant = forgeQaBuild && providers.gradleProperty("veilStation3dLab").orNull == "true"
 val forgeQaRevision = providers.gradleProperty("veilForgeRevision").orNull
     ?.takeIf { it.matches(Regex("[0-9a-f]{7,40}")) }?.take(8) ?: "local"
 
@@ -18,14 +19,24 @@ android {
 
     defaultConfig {
         buildConfigField("boolean", "FORGE_QA", forgeQaBuild.toString())
-        applicationId = if (forgeQaBuild) "com.veilreader.app.forgeqa" else "com.veilreader.app"
+        applicationId = when {
+            station3dQaVariant -> "com.veilreader.app.station3dqa"
+            forgeQaBuild -> "com.veilreader.app.forgeqa"
+            else -> "com.veilreader.app"
+        }
         minSdk = 26
         targetSdk = 37
         versionCode = 10
         versionName = if (forgeQaBuild) "0.10.0-forge-$forgeQaRevision" else "0.10.0"
         manifestPlaceholders["veilAppLabel"] =
             if (forgeQaBuild) "@string/forge_qa_app_name" else "@string/app_name"
-        if (forgeQaBuild) resValue("string", "forge_qa_app_name", "Veil Reader Forge QA")
+        // Debug manifest only: hide 3D Lab unless the explicit Forge QA opt-in is present.
+        manifestPlaceholders["station3dLabEnabled"] =
+            station3dQaVariant.toString()
+        if (forgeQaBuild) resValue(
+            "string", "forge_qa_app_name",
+            if (station3dQaVariant) "Veil Reader 3D QA" else "Veil Reader Forge QA"
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,11 +54,13 @@ android {
         getByName("debug") {
             buildConfigField("boolean", "REBORN_THRESHOLD", (providers.gradleProperty("veilRebornThreshold").orNull == "true").toString())
             buildConfigField("boolean", "VICTORIAN_STATION", (providers.gradleProperty("veilVictorianStation").orNull == "true").toString())
+            buildConfigField("boolean", "STATION_3D_LAB", station3dQaVariant.toString())
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
         }
         getByName("release") {
             buildConfigField("boolean", "REBORN_THRESHOLD", "false")
             buildConfigField("boolean", "VICTORIAN_STATION", "false")
+            buildConfigField("boolean", "STATION_3D_LAB", "false")
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "false")
             isMinifyEnabled = true
             isShrinkResources = true
@@ -57,6 +70,7 @@ android {
             initWith(getByName("release"))
             buildConfigField("boolean", "REBORN_THRESHOLD", "false")
             buildConfigField("boolean", "VICTORIAN_STATION", "false")
+            buildConfigField("boolean", "STATION_3D_LAB", "false")
             buildConfigField("boolean", "NATIVE_PAPER_REBUILD", "true")
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
@@ -110,6 +124,17 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
 }
 
 dependencies {
+    // Gate 1: isolated 3D lab — must NEVER add Filament / SceneView to release.
+    // Native Compose + Filament only in the debug source set. Promotion requires real-device evidence.
+    debugImplementation("io.github.sceneview:sceneview:4.56.0") {
+        // Fuel Android 2.3.1 (transitive) still pulls Kotlin's obsolete
+        // kotlin-android-extensions-runtime 1.4.10. The real app/Readium
+        // brings supported kotlin-parcelize-runtime; the old jar duplicates
+        // classes and fails checkDebugDuplicateClasses. Keep Fuel itself,
+        // exclude ONLY its superseded parcel runtime; validate on device.
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-android-extensions-runtime")
+    }
+
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.9")

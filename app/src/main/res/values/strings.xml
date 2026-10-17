@@ -1440,4 +1440,5 @@
     <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
     <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
     <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
+    <string name="station3d_open_lab">Open 3D Station Lab</string>
 </resources>
