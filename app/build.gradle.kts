@@ -25,6 +25,9 @@ android {
         versionName = if (forgeQaBuild) "0.10.0-forge-$forgeQaRevision" else "0.10.0"
         manifestPlaceholders["veilAppLabel"] =
             if (forgeQaBuild) "@string/forge_qa_app_name" else "@string/app_name"
+        // Debug manifest only: hide 3D Lab unless the explicit Forge QA opt-in is present.
+        manifestPlaceholders["station3dLabEnabled"] =
+            (forgeQaBuild && providers.gradleProperty("veilStation3dLab").orNull == "true").toString()
         if (forgeQaBuild) resValue("string", "forge_qa_app_name", "Veil Reader Forge QA")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
