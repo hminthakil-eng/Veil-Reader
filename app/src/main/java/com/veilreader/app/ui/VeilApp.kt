@@ -1,5 +1,6 @@
 package com.veilreader.app.ui
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.rememberScrollState
@@ -1060,7 +1061,21 @@ fun VeilApp(
                         onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
                         onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
                         onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
-                        showWorldEntry = appSettings.gameVisible
+                        showWorldEntry = appSettings.gameVisible,
+                        // QA-only explicit activity: the 3D renderer is absent in release.
+                        // Keep this navigation at the app-shell layer, not in scene nodes.
+                        onOpenStationLab = if (
+                            BuildConfig.DEBUG && BuildConfig.FORGE_QA && BuildConfig.STATION_3D_LAB
+                        ) {
+                            {
+                                context.startActivity(
+                                    Intent().setClassName(
+                                        context.packageName,
+                                        "com.veilreader.app.ui.station.Station3DLabActivity"
+                                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                            }
+                        } else null
                     )
                 } else {
                     ReadingNowScreen(
