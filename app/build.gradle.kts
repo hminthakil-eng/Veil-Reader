@@ -110,6 +110,10 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
 }
 
 dependencies {
+    // Gate 1: isolated 3D lab — must NEVER add Filament / SceneView to release.
+    // Native Compose + Filament only in the debug source set. Promotion requires real-device evidence.
+    debugImplementation("io.github.sceneview:sceneview:4.56.0")
+
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.9")
