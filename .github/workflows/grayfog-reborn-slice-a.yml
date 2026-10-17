@@ -60,6 +60,7 @@ jobs:
             --tests 'com.veilreader.app.ui.screens.RebornThresholdScreenTest' \
             --tests 'com.veilreader.app.ui.screens.RebornInvestigationDeskTest' \
             --tests 'com.veilreader.app.ui.screens.GrayfogThresholdSurfacesTest' \
+            --tests 'com.veilreader.app.ui.screens.GrayfogRebornRenderCaptureTest' \
             --no-daemon --max-workers=2 --stacktrace --console=plain
 
       - name: Create isolated Forge QA signing key (not a release key)
@@ -88,6 +89,7 @@ jobs:
           name: grayfog-reborn-source-review-not-a-release
           path: |
             app/build/test-results/testDebugUnitTest/TEST-*.xml
+            app/build/reports/grayfog/compose-render-fixtures/*.png
             app/build/outputs/apk/debug/app-debug.apk
             build/reports/grayfog/market-gate.json
           if-no-files-found: ignore
