@@ -2,7 +2,7 @@ name: Reliable Reader QA
 
 on:
   push:
-    branches: ["reader/reliable-loading-20261015"]
+    branches: ["reader/reliable-loading-20261015", "fix/reader-rtl-evidence-upload-20261017"]
   workflow_dispatch:
 
 permissions:
@@ -79,5 +79,6 @@ jobs:
             app/build/outputs/androidTest-results/connected/debug/TEST-*.xml
             build/reports/emulator-storage.log
             build/reports/logcat-storage.log
+            build/reports/veil-native-paper-evidence/*.png
           if-no-files-found: ignore
           retention-days: 14
