@@ -145,4 +145,22 @@ class RebornThresholdScreenTest {
         compose.onNodeWithText("0%", substring = true).assertDoesNotExist()
     }
 
+    @Test fun optionalWorldDoesNotLeakWhenDisabled() {
+        val book = Book("book", "Quiet Volume", "Author", sourceUri = "file:///volume.epub")
+        compose.setContent {
+            VeilTheme(AppThemeMode.DARK) {
+                RebornThresholdScreen(
+                    books = listOf(book),
+                    onOpenBook = {},
+                    onOpenLibrary = {},
+                    onOpenCastle = { error("Hidden world route must not be called") },
+                    showWorldEntry = false
+                )
+            }
+        }
+        compose.onNodeWithText("Show Castle note").assertDoesNotExist()
+        compose.onNodeWithText("Visit Castle").assertDoesNotExist()
+        compose.onNodeWithText("Start Reading").assertExists()
+    }
+
 }
