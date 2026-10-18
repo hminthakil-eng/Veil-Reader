@@ -1,0 +1,3602 @@
+{
+  "type": "third_party_link_index",
+  "generated_on": "2026-10-18",
+  "source_repository": "https://github.com/codecrafters-io/build-your-own-x",
+  "source_ref": "master",
+  "source_readme_blob_sha": "9a553c729b29bc69296d7092fc1c314c2c811bad",
+  "disclaimer": "Metadata transcribed from upstream curated tutorial index, not individual tutorial vetting, installations, builds, copyright permission, or security review. Follow each link's own license.",
+  "count": 359,
+  "category_count": 30,
+  "items": [
+    {
+      "id": "BYOX-001",
+      "category": "Distributed Systems",
+      "language": "Java",
+      "title": "Building Your Own Kafka-like System From Scratch: A Step-by-Step Guide",
+      "url": "https://github.com/buildthingsuseful/build-your-own-kafka",
+      "source_line": 45,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-002",
+      "category": "3D Renderer",
+      "language": "C++",
+      "title": "Introduction to Ray Tracing: a Simple Method for Creating 3D Images",
+      "url": "https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work",
+      "source_line": 49,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-003",
+      "category": "3D Renderer",
+      "language": "C++",
+      "title": "How OpenGL works: software rendering in 500 lines of code",
+      "url": "https://github.com/ssloy/tinyrenderer/wiki",
+      "source_line": 50,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-004",
+      "category": "3D Renderer",
+      "language": "C++",
+      "title": "Raycasting engine of Wolfenstein 3D",
+      "url": "http://lodev.org/cgtutor/raycasting.html",
+      "source_line": 51,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-005",
+      "category": "3D Renderer",
+      "language": "C++",
+      "title": "Physically Based Rendering:From Theory To Implementation",
+      "url": "http://www.pbr-book.org/",
+      "source_line": 52,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-006",
+      "category": "3D Renderer",
+      "language": "C++",
+      "title": "Ray Tracing in One Weekend",
+      "url": "https://raytracing.github.io/books/RayTracingInOneWeekend.html",
+      "source_line": 53,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-007",
+      "category": "3D Renderer",
+      "language": "C++",
+      "title": "Rasterization: a Practical Implementation",
+      "url": "https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/overview-rasterization-algorithm",
+      "source_line": 54,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-008",
+      "category": "3D Renderer",
+      "language": "C# / TypeScript / JavaScript",
+      "title": "Learning how to write a 3D soft engine from scratch in C#, TypeScript or JavaScript",
+      "url": "https://www.davrous.com/2013/06/13/tutorial-series-learning-how-to-write-a-3d-soft-engine-from-scratch-in-c-typescript-or-javascript/",
+      "source_line": 55,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-009",
+      "category": "3D Renderer",
+      "language": "Java / JavaScript",
+      "title": "Build your own 3D renderer",
+      "url": "https://avik-das.github.io/build-your-own-raytracer/",
+      "source_line": 56,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-010",
+      "category": "3D Renderer",
+      "language": "Java",
+      "title": "How to create your own simple 3D render engine in pure Java",
+      "url": "http://blog.rogach.org/2015/08/how-to-create-your-own-simple-3d-render.html",
+      "source_line": 57,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-011",
+      "category": "3D Renderer",
+      "language": "JavaScript / Pseudocode",
+      "title": "Computer Graphics from scratch",
+      "url": "http://www.gabrielgambetta.com/computer-graphics-from-scratch/introduction.html",
+      "source_line": 58,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-012",
+      "category": "3D Renderer",
+      "language": "Python",
+      "title": "A 3D Modeller",
+      "url": "http://aosabook.org/en/500L/a-3d-modeller.html",
+      "source_line": 59,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-013",
+      "category": "AI Model",
+      "language": "Python",
+      "title": "A Large Language Model (LLM)",
+      "url": "https://github.com/rasbt/LLMs-from-scratch",
+      "source_line": 62,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-014",
+      "category": "AI Model",
+      "language": "Python",
+      "title": "Diffusion Models for Image Generation",
+      "url": "https://huggingface.co/learn/diffusion-course/en/unit1/3",
+      "source_line": 63,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-015",
+      "category": "AI Model",
+      "language": "Python",
+      "title": "RAG for Document Search",
+      "url": "https://github.com/langchain-ai/rag-from-scratch",
+      "source_line": 64,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-016",
+      "category": "Augmented Reality",
+      "language": "C#",
+      "title": "How To: Augmented Reality App Tutorial for Beginners with Vuforia and Unity 3D",
+      "url": "https://www.youtube.com/watch?v=uXNjNcqW4kY",
+      "source_line": 68,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-017",
+      "category": "Augmented Reality",
+      "language": "C#",
+      "title": "How To Unity ARCore",
+      "url": "https://www.youtube.com/playlist?list=PLKIKuXdn4ZMjuUAtdQfK1vwTZPQn_rgSv",
+      "source_line": 69,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-018",
+      "category": "Augmented Reality",
+      "language": "C#",
+      "title": "AR Portal Tutorial with Unity",
+      "url": "https://www.youtube.com/playlist?list=PLPCqNOwwN794Gz5fzUSi1p4OqLU0HTmvn",
+      "source_line": 70,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-019",
+      "category": "Augmented Reality",
+      "language": "C#",
+      "title": "How to create a Dragon in Augmented Reality in Unity ARCore",
+      "url": "https://www.youtube.com/watch?v=qTSDPkPyPqs",
+      "source_line": 71,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-020",
+      "category": "Augmented Reality",
+      "language": "C#",
+      "title": "How to Augmented Reality AR Tutorial: ARKit Portal to the Upside Down",
+      "url": "https://www.youtube.com/watch?v=Z5AmqMuNi08",
+      "source_line": 72,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-021",
+      "category": "Augmented Reality",
+      "language": "Python",
+      "title": "Augmented Reality with Python and OpenCV",
+      "url": "https://bitesofcode.wordpress.com/2017/09/12/augmented-reality-with-python-and-opencv-part-1/",
+      "source_line": 73,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-022",
+      "category": "BitTorrent Client",
+      "language": "C#",
+      "title": "Building a BitTorrent client from scratch in C#",
+      "url": "https://www.seanjoflynn.com/research/bittorrent.html",
+      "source_line": 77,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-023",
+      "category": "BitTorrent Client",
+      "language": "Go",
+      "title": "Building a BitTorrent client from the ground up in Go",
+      "url": "https://blog.jse.li/posts/torrent/",
+      "source_line": 78,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-024",
+      "category": "BitTorrent Client",
+      "language": "Nim",
+      "title": "Writing a Bencode Parser",
+      "url": "https://xmonader.github.io/nimdays/day02_bencode.html",
+      "source_line": 79,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-025",
+      "category": "BitTorrent Client",
+      "language": "Node.js",
+      "title": "Write your own bittorrent client",
+      "url": "https://allenkim67.github.io/programming/2016/05/04/how-to-make-your-own-bittorrent-client.html",
+      "source_line": 80,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-026",
+      "category": "BitTorrent Client",
+      "language": "Python",
+      "title": "A BitTorrent client in Python 3.5",
+      "url": "http://markuseliasson.se/article/bittorrent-in-python/",
+      "source_line": 81,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-027",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "ATS",
+      "title": "Functional Blockchain",
+      "url": "https://beta.observablehq.com/@galletti94/functional-blockchain",
+      "source_line": 85,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-028",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Crystal",
+      "title": "Write your own blockchain and PoW algorithm using Crystal",
+      "url": "https://medium.com/@bradford_hamilton/write-your-own-blockchain-and-pow-algorithm-using-crystal-d53d5d9d0c52",
+      "source_line": 86,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-029",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Go",
+      "title": "Building Blockchain in Go",
+      "url": "https://jeiwan.net/posts/building-blockchain-in-go-part-1/",
+      "source_line": 87,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-030",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Go",
+      "title": "Code your own blockchain in less than 200 lines of Go",
+      "url": "https://medium.com/@mycoralhealth/code-your-own-blockchain-in-less-than-200-lines-of-go-e296282bcffc",
+      "source_line": 88,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-031",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Java",
+      "title": "Creating Your First Blockchain with Java",
+      "url": "https://medium.com/programmers-blockchain/create-simple-blockchain-java-tutorial-from-scratch-6eeed3cb03fa",
+      "source_line": 89,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-032",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "JavaScript",
+      "title": "A cryptocurrency implementation in less than 1500 lines of code",
+      "url": "https://github.com/conradoqg/naivecoin",
+      "source_line": 90,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-033",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "JavaScript",
+      "title": "Build your own Blockchain in JavaScript",
+      "url": "https://github.com/nambrot/blockchain-in-js",
+      "source_line": 91,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-034",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "JavaScript",
+      "title": "Learn & Build a JavaScript Blockchain",
+      "url": "https://medium.com/digital-alchemy-holdings/learn-build-a-javascript-blockchain-part-1-ca61c285821e",
+      "source_line": 92,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-035",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "JavaScript",
+      "title": "Creating a blockchain with JavaScript",
+      "url": "https://github.com/SavjeeTutorials/SavjeeCoin",
+      "source_line": 93,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-036",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "JavaScript",
+      "title": "How To Launch Your Own Production-Ready Cryptocurrency",
+      "url": "https://hackernoon.com/how-to-launch-your-own-production-ready-cryptocurrency-ab97cb773371",
+      "source_line": 94,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-037",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "JavaScript",
+      "title": "Writing a Blockchain in Node.js",
+      "url": "https://www.smashingmagazine.com/2020/02/cryptocurrency-blockchain-node-js/",
+      "source_line": 95,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-038",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Kotlin",
+      "title": "Let’s implement a cryptocurrency in Kotlin",
+      "url": "https://medium.com/@vasilyf/lets-implement-a-cryptocurrency-in-kotlin-part-1-blockchain-8704069f8580",
+      "source_line": 96,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-039",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Python",
+      "title": "Learn Blockchains by Building One",
+      "url": "https://hackernoon.com/learn-blockchains-by-building-one-117428612f46",
+      "source_line": 97,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-040",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Python",
+      "title": "Build your own blockchain: a Python tutorial",
+      "url": "http://ecomunsing.com/build-your-own-blockchain",
+      "source_line": 98,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-041",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Python",
+      "title": "A Practical Introduction to Blockchain with Python",
+      "url": "http://adilmoujahid.com/posts/2018/03/intro-blockchain-bitcoin-python/",
+      "source_line": 99,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-042",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Python",
+      "title": "Let’s Build the Tiniest Blockchain",
+      "url": "https://medium.com/crypto-currently/lets-build-the-tiniest-blockchain-e70965a248b",
+      "source_line": 100,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-043",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Ruby",
+      "title": "Programming Blockchains Step-by-Step (Manuscripts Book Edition)",
+      "url": "https://github.com/yukimotopress/programming-blockchains-step-by-step",
+      "source_line": 101,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-044",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Scala",
+      "title": "How to build a simple actor-based blockchain",
+      "url": "https://medium.freecodecamp.org/how-to-build-a-simple-actor-based-blockchain-aac1e996c177",
+      "source_line": 102,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-045",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "TypeScript",
+      "title": "Naivecoin: a tutorial for building a cryptocurrency",
+      "url": "https://lhartikk.github.io/",
+      "source_line": 103,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-046",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "TypeScript",
+      "title": "NaivecoinStake: a tutorial for building a cryptocurrency with the Proof of Stake consensus",
+      "url": "https://naivecoinstake.learn.uno/",
+      "source_line": 104,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-047",
+      "category": "Blockchain / Cryptocurrency",
+      "language": "Rust",
+      "title": "Building A Blockchain in Rust & Substrate",
+      "url": "https://hackernoon.com/building-a-blockchain-in-rust-and-substrate-a-step-by-step-guide-for-developers-kc223ybp",
+      "source_line": 105,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-048",
+      "category": "Bot",
+      "language": "Haskell",
+      "title": "Roll your own IRC bot",
+      "url": "https://wiki.haskell.org/Roll_your_own_IRC_bot",
+      "source_line": 110,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-049",
+      "category": "Bot",
+      "language": "Node.js",
+      "title": "Creating a Simple Facebook Messenger AI Bot with API.ai in Node.js",
+      "url": "https://tutorials.botsfloor.com/creating-a-simple-facebook-messenger-ai-bot-with-api-ai-in-node-js-50ae2fa5c80d",
+      "source_line": 111,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-050",
+      "category": "Bot",
+      "language": "Node.js",
+      "title": "How to make a responsive telegram bot",
+      "url": "https://www.sohamkamani.com/blog/2016/09/21/making-a-telegram-bot/",
+      "source_line": 112,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-051",
+      "category": "Bot",
+      "language": "Node.js",
+      "title": "Create a Discord bot",
+      "url": "https://discordjs.guide/",
+      "source_line": 113,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-052",
+      "category": "Bot",
+      "language": "Node.js",
+      "title": "gifbot - Building a GitHub App",
+      "url": "https://blog.scottlogic.com/2017/05/22/gifbot-github-integration.html",
+      "source_line": 114,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-053",
+      "category": "Bot",
+      "language": "Node.js",
+      "title": "Building A Simple AI Chatbot With Web Speech API And Node.js",
+      "url": "https://www.smashingmagazine.com/2017/08/ai-chatbot-web-speech-api-node-js/",
+      "source_line": 115,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-054",
+      "category": "Bot",
+      "language": "Python",
+      "title": "How to Build Your First Slack Bot with Python",
+      "url": "https://www.fullstackpython.com/blog/build-first-slack-bot-python.html",
+      "source_line": 116,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-055",
+      "category": "Bot",
+      "language": "Python",
+      "title": "How to build a Slack Bot with Python using Slack Events API & Django under 20 minute",
+      "url": "https://medium.com/freehunch/how-to-build-a-slack-bot-with-python-using-slack-events-api-django-under-20-minute-code-included-269c3a9bf64e",
+      "source_line": 117,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-056",
+      "category": "Bot",
+      "language": "Python",
+      "title": "Build a Reddit Bot",
+      "url": "https://pythonforengineers.com/blog/build-a-reddit-bot-part-1/",
+      "source_line": 118,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-057",
+      "category": "Bot",
+      "language": "Python",
+      "title": "How To Make A Reddit Bot",
+      "url": "https://www.youtube.com/watch?v=krTUf7BpTc0",
+      "source_line": 119,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-058",
+      "category": "Bot",
+      "language": "Python",
+      "title": "How To Create a Telegram Bot Using Python",
+      "url": "https://www.freecodecamp.org/news/how-to-create-a-telegram-bot-using-python/",
+      "source_line": 120,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-059",
+      "category": "Bot",
+      "language": "Python",
+      "title": "Create a Twitter Bot in Python Using Tweepy",
+      "url": "https://medium.freecodecamp.org/creating-a-twitter-bot-in-python-with-tweepy-ac524157a607",
+      "source_line": 121,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-060",
+      "category": "Bot",
+      "language": "Python",
+      "title": "Creating Reddit Bot with Python & PRAW",
+      "url": "https://www.youtube.com/playlist?list=PLIFBTFgFpoJ9vmYYlfxRFV6U_XhG-4fpP",
+      "source_line": 122,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-061",
+      "category": "Bot",
+      "language": "R",
+      "title": "Build A Cryptocurrency Trading Bot with R",
+      "url": "https://towardsdatascience.com/build-a-cryptocurrency-trading-bot-with-r-1445c429e1b1",
+      "source_line": 123,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-062",
+      "category": "Bot",
+      "language": "Rust",
+      "title": "A bot for Starcraft in Rust, C or any other language",
+      "url": "https://habr.com/en/post/436254/",
+      "source_line": 124,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-063",
+      "category": "Command-Line Tool",
+      "language": "Go",
+      "title": "Visualize your local git contributions with Go",
+      "url": "https://flaviocopes.com/go-git-contributions/",
+      "source_line": 128,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-064",
+      "category": "Command-Line Tool",
+      "language": "Go",
+      "title": "Build a command line app with Go: lolcat",
+      "url": "https://flaviocopes.com/go-tutorial-lolcat/",
+      "source_line": 129,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-065",
+      "category": "Command-Line Tool",
+      "language": "Go",
+      "title": "Building a cli command with Go: cowsay",
+      "url": "https://flaviocopes.com/go-tutorial-cowsay/",
+      "source_line": 130,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-066",
+      "category": "Command-Line Tool",
+      "language": "Go",
+      "title": "Go CLI tutorial: fortune clone",
+      "url": "https://flaviocopes.com/go-tutorial-fortune/",
+      "source_line": 131,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-067",
+      "category": "Command-Line Tool",
+      "language": "Nim",
+      "title": "Writing a stow alternative to manage dotfiles",
+      "url": "https://xmonader.github.io/nimdays/day06_nistow.html",
+      "source_line": 132,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-068",
+      "category": "Command-Line Tool",
+      "language": "Node.js",
+      "title": "Create a CLI tool in Javascript",
+      "url": "https://citw.dev/tutorial/create-your-own-cli-tool",
+      "source_line": 133,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-069",
+      "category": "Command-Line Tool",
+      "language": "Rust",
+      "title": "Command line apps in Rust",
+      "url": "https://rust-cli.github.io/book/index.html",
+      "source_line": 134,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-070",
+      "category": "Command-Line Tool",
+      "language": "Rust",
+      "title": "Writing a Command Line Tool in Rust",
+      "url": "https://mattgathu.dev/2017/08/29/writing-cli-app-rust.html",
+      "source_line": 135,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-071",
+      "category": "Command-Line Tool",
+      "language": "Zig",
+      "title": "Build Your Own CLI App in Zig from Scratch",
+      "url": "https://rebuild-x.github.io/docs/#/./zig/terminal/cli",
+      "source_line": 136,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-072",
+      "category": "Database",
+      "language": "C",
+      "title": "Let's Build a Simple Database",
+      "url": "https://cstack.github.io/db_tutorial/",
+      "source_line": 141,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-073",
+      "category": "Database",
+      "language": "C++",
+      "title": "Build Your Own Redis from Scratch",
+      "url": "https://build-your-own.org/redis",
+      "source_line": 142,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-074",
+      "category": "Database",
+      "language": "C#",
+      "title": "Build Your Own Database",
+      "url": "https://www.codeproject.com/Articles/1029838/Build-Your-Own-Database",
+      "source_line": 143,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-075",
+      "category": "Database",
+      "language": "Clojure",
+      "title": "An Archaeology-Inspired Database",
+      "url": "http://aosabook.org/en/500L/an-archaeology-inspired-database.html",
+      "source_line": 144,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-076",
+      "category": "Database",
+      "language": "Crystal",
+      "title": "Why you should build your own NoSQL Database",
+      "url": "https://medium.com/@marceloboeira/why-you-should-build-your-own-nosql-database-9bbba42039f5",
+      "source_line": 145,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-077",
+      "category": "Database",
+      "language": "Go",
+      "title": "Build Your Own Database from Scratch: From B+Tree To SQL in 3000 Lines",
+      "url": "https://build-your-own.org/database/",
+      "source_line": 146,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-078",
+      "category": "Database",
+      "language": "Go",
+      "title": "Code a database in 45 steps: a series of test-driven small coding puzzles",
+      "url": "https://trialofcode.org/database/",
+      "source_line": 147,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-079",
+      "category": "Database",
+      "language": "Go",
+      "title": "Build Your Own Redis from Scratch",
+      "url": "https://www.build-redis-from-scratch.dev/",
+      "source_line": 148,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-080",
+      "category": "Database",
+      "language": "JavaScript",
+      "title": "Dagoba: an in-memory graph database",
+      "url": "http://aosabook.org/en/500L/dagoba-an-in-memory-graph-database.html",
+      "source_line": 149,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-081",
+      "category": "Database",
+      "language": "Python",
+      "title": "DBDB: Dog Bed Database",
+      "url": "http://aosabook.org/en/500L/dbdb-dog-bed-database.html",
+      "source_line": 150,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-082",
+      "category": "Database",
+      "language": "Python",
+      "title": "Write your own miniature Redis with Python",
+      "url": "http://charlesleifer.com/blog/building-a-simple-redis-server-with-python/",
+      "source_line": 151,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-083",
+      "category": "Database",
+      "language": "Ruby",
+      "title": "Build your own fast, persistent KV store in Ruby",
+      "url": "https://dineshgowda.com/posts/build-your-own-persistent-kv-store/",
+      "source_line": 152,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-084",
+      "category": "Database",
+      "language": "Rust",
+      "title": "Build your own Redis client and server",
+      "url": "https://tokio.rs/tokio/tutorial/setup",
+      "source_line": 153,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-085",
+      "category": "Docker",
+      "language": "C",
+      "title": "Linux containers in 500 lines of code",
+      "url": "https://blog.lizzie.io/linux-containers-in-500-loc.html",
+      "source_line": 157,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-086",
+      "category": "Docker",
+      "language": "Go",
+      "title": "Build Your Own Container Using Less than 100 Lines of Go",
+      "url": "https://www.infoq.com/articles/build-a-container-golang",
+      "source_line": 158,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-087",
+      "category": "Docker",
+      "language": "Go",
+      "title": "Building a container from scratch in Go",
+      "url": "https://www.youtube.com/watch?v=8fi7uSYlOdc",
+      "source_line": 159,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-088",
+      "category": "Docker",
+      "language": "Python",
+      "title": "A workshop on Linux containers: Rebuild Docker from Scratch",
+      "url": "https://github.com/Fewbytes/rubber-docker",
+      "source_line": 160,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-089",
+      "category": "Docker",
+      "language": "Python",
+      "title": "A proof-of-concept imitation of Docker, written in 100% Python",
+      "url": "https://github.com/tonybaloney/mocker",
+      "source_line": 161,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-090",
+      "category": "Docker",
+      "language": "Shell",
+      "title": "Docker implemented in around 100 lines of bash",
+      "url": "https://github.com/p8952/bocker",
+      "source_line": 162,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-091",
+      "category": "Emulator / Virtual Machine",
+      "language": "C",
+      "title": "Home-grown bytecode interpreters",
+      "url": "https://medium.com/bumble-tech/home-grown-bytecode-interpreters-51e12d59b25c",
+      "source_line": 166,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-092",
+      "category": "Emulator / Virtual Machine",
+      "language": "C",
+      "title": "Virtual machine in C",
+      "url": "http://web.archive.org/web/20200121100942/https://blog.felixangell.com/virtual-machine-in-c/",
+      "source_line": 167,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-093",
+      "category": "Emulator / Virtual Machine",
+      "language": "C",
+      "title": "Write your Own Virtual Machine",
+      "url": "https://justinmeiners.github.io/lc3-vm/",
+      "source_line": 168,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-094",
+      "category": "Emulator / Virtual Machine",
+      "language": "C",
+      "title": "Writing a Game Boy emulator, Cinoop",
+      "url": "https://cturt.github.io/cinoop.html",
+      "source_line": 169,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-095",
+      "category": "Emulator / Virtual Machine",
+      "language": "C++",
+      "title": "How to write an emulator (CHIP-8 interpreter)",
+      "url": "http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/",
+      "source_line": 170,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-096",
+      "category": "Emulator / Virtual Machine",
+      "language": "C++",
+      "title": "Emulation tutorial (CHIP-8 interpreter)",
+      "url": "http://www.codeslinger.co.uk/pages/projects/chip8.html",
+      "source_line": 171,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-097",
+      "category": "Emulator / Virtual Machine",
+      "language": "C++",
+      "title": "Emulation tutorial (GameBoy emulator)",
+      "url": "http://www.codeslinger.co.uk/pages/projects/gameboy.html",
+      "source_line": 172,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-098",
+      "category": "Emulator / Virtual Machine",
+      "language": "C++",
+      "title": "Emulation tutorial (Master System emulator)",
+      "url": "http://www.codeslinger.co.uk/pages/projects/mastersystem/memory.html",
+      "source_line": 173,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-099",
+      "category": "Emulator / Virtual Machine",
+      "language": "C++",
+      "title": "NES Emulator From Scratch",
+      "url": "https://www.youtube.com/playlist?list=PLrOv9FMX8xJHqMvSGB_9G9nZZ_4IgteYf",
+      "source_line": 174,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-100",
+      "category": "Emulator / Virtual Machine",
+      "language": "Common Lisp",
+      "title": "CHIP-8 in Common Lisp",
+      "url": "http://stevelosh.com/blog/2016/12/chip8-cpu/",
+      "source_line": 175,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-101",
+      "category": "Emulator / Virtual Machine",
+      "language": "JavaScript",
+      "title": "GameBoy Emulation in JavaScript",
+      "url": "http://imrannazar.com/GameBoy-Emulation-in-JavaScript",
+      "source_line": 176,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-102",
+      "category": "Emulator / Virtual Machine",
+      "language": "Python",
+      "title": "Emulation Basics: Write your own Chip 8 Emulator/Interpreter",
+      "url": "http://omokute.blogspot.com.br/2012/06/emulation-basics-write-your-own-chip-8.html",
+      "source_line": 177,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-103",
+      "category": "Emulator / Virtual Machine",
+      "language": "Rust",
+      "title": "0dmg: Learning Rust by building a partial Game Boy emulator",
+      "url": "https://jeremybanks.github.io/0dmg/",
+      "source_line": 178,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-104",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "WTF is JSX (Let's Build a JSX Renderer)",
+      "url": "https://jasonformat.com/wtf-is-jsx/",
+      "source_line": 182,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-105",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "A DIY guide to build your own React",
+      "url": "https://github.com/hexacta/didact",
+      "source_line": 183,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-106",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Building React From Scratch",
+      "url": "https://www.youtube.com/watch?v=_MAD4Oly9yg",
+      "source_line": 184,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-107",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Gooact: React in 160 lines of JavaScript",
+      "url": "https://medium.com/@sweetpalma/gooact-react-in-160-lines-of-javascript-44e0742ad60f",
+      "source_line": 185,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-108",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Learn how React Reconciler package works by building your own lightweight React DOM",
+      "url": "https://hackernoon.com/learn-you-some-custom-react-renderers-aed7164a4199",
+      "source_line": 186,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-109",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Build Yourself a Redux",
+      "url": "https://zapier.com/engineering/how-to-build-redux/",
+      "source_line": 187,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-110",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Let’s Write Redux!",
+      "url": "https://www.jamasoftware.com/blog/lets-write-redux/",
+      "source_line": 188,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-111",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Redux: Implementing Store from Scratch",
+      "url": "https://egghead.io/lessons/react-redux-implementing-store-from-scratch",
+      "source_line": 189,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-112",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Build Your own Simplified AngularJS in 200 Lines of JavaScript",
+      "url": "https://blog.mgechev.com/2015/03/09/build-learn-your-own-light-lightweight-angularjs/",
+      "source_line": 190,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-113",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Make Your Own AngularJS",
+      "url": "http://teropa.info/blog/2013/11/03/make-your-own-angular-part-1-scopes-and-digest.html",
+      "source_line": 191,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-114",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "How to write your own Virtual DOM",
+      "url": "https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060",
+      "source_line": 192,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-115",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Building a frontend framework, from scratch, with components (templating, state, VDOM)",
+      "url": "https://mfrachet.github.io/create-frontend-framework/",
+      "source_line": 193,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-116",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Build your own React",
+      "url": "https://pomb.us/build-your-own-react/",
+      "source_line": 194,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-117",
+      "category": "Front-end Framework / Library",
+      "language": "JavaScript",
+      "title": "Building a Custom React Renderer",
+      "url": "https://youtu.be/CGpMlWVcHok",
+      "source_line": 195,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-118",
+      "category": "Game",
+      "language": "C",
+      "title": "Handmade Hero",
+      "url": "https://handmadehero.org/",
+      "source_line": 199,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-119",
+      "category": "Game",
+      "language": "C",
+      "title": "How to Program an NES game in C",
+      "url": "https://nesdoug.com/",
+      "source_line": 200,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-120",
+      "category": "Game",
+      "language": "C",
+      "title": "Chess Engine In C",
+      "url": "https://www.youtube.com/playlist?list=PLZ1QII7yudbc-Ky058TEaOstZHVbT-2hg",
+      "source_line": 201,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-121",
+      "category": "Game",
+      "language": "C",
+      "title": "Let's Make: Dangerous Dave",
+      "url": "https://www.youtube.com/playlist?list=PLSkJey49cOgTSj465v2KbLZ7LMn10bCF9",
+      "source_line": 202,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-122",
+      "category": "Game",
+      "language": "C",
+      "title": "Learn Video Game Programming in C",
+      "url": "https://www.youtube.com/playlist?list=PLT6WFYYZE6uLMcPGS3qfpYm7T_gViYMMt",
+      "source_line": 203,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-123",
+      "category": "Game",
+      "language": "C",
+      "title": "Coding A Sudoku Solver in C",
+      "url": "https://www.youtube.com/playlist?list=PLkTXsX7igf8edTYU92nU-f5Ntzuf-RKvW",
+      "source_line": 205,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-124",
+      "category": "Game",
+      "language": "C",
+      "title": "Coding a Rogue/Nethack RPG in C",
+      "url": "https://www.youtube.com/playlist?list=PLkTXsX7igf8erbWGYT4iSAhpnJLJ0Nk5G",
+      "source_line": 206,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-125",
+      "category": "Game",
+      "language": "C",
+      "title": "On Tetris and Reimplementation",
+      "url": "https://brennan.io/2015/06/12/tetris-reimplementation/",
+      "source_line": 207,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-126",
+      "category": "Game",
+      "language": "C++",
+      "title": "Breakout",
+      "url": "https://learnopengl.com/In-Practice/2D-Game/Breakout",
+      "source_line": 208,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-127",
+      "category": "Game",
+      "language": "C++",
+      "title": "Beginning Game Programming v2.0",
+      "url": "http://lazyfoo.net/tutorials/SDL/",
+      "source_line": 209,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-128",
+      "category": "Game",
+      "language": "C++",
+      "title": "Tetris tutorial in C++ platform independent focused in game logic for beginners",
+      "url": "http://javilop.com/gamedev/tetris-tutorial-in-c-platform-independent-focused-in-game-logic-for-beginners/",
+      "source_line": 210,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-129",
+      "category": "Game",
+      "language": "C++",
+      "title": "Remaking Cavestory in C++",
+      "url": "https://www.youtube.com/watch?v=ETvApbD5xRo&list=PLNOBk_id22bw6LXhrGfhVwqQIa-M2MsLa",
+      "source_line": 211,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-130",
+      "category": "Game",
+      "language": "C++",
+      "title": "Reconstructing Cave Story",
+      "url": "https://www.youtube.com/playlist?list=PL006xsVEsbKjSKBmLu1clo85yLrwjY67X",
+      "source_line": 212,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-131",
+      "category": "Game",
+      "language": "C++",
+      "title": "Space Invaders from Scratch",
+      "url": "http://nicktasios.nl/posts/space-invaders-from-scratch-part-1.html",
+      "source_line": 213,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-132",
+      "category": "Game",
+      "language": "C#",
+      "title": "Learn C# by Building a Simple RPG",
+      "url": "http://scottlilly.com/learn-c-by-building-a-simple-rpg-index/",
+      "source_line": 214,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-133",
+      "category": "Game",
+      "language": "C#",
+      "title": "Creating a Roguelike Game in C#",
+      "url": "https://roguesharp.wordpress.com/",
+      "source_line": 215,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-134",
+      "category": "Game",
+      "language": "C#",
+      "title": "Build a C#/WPF RPG",
+      "url": "https://scottlilly.com/build-a-cwpf-rpg/",
+      "source_line": 216,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-135",
+      "category": "Game",
+      "language": "Go",
+      "title": "Games With Go",
+      "url": "https://www.youtube.com/playlist?list=PLDZujg-VgQlZUy1iCqBbe5faZLMkA3g2x",
+      "source_line": 217,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-136",
+      "category": "Game",
+      "language": "Java",
+      "title": "Code a 2D Game Engine using Java - Full Course for Beginners",
+      "url": "https://www.youtube.com/watch?v=025QFeZfeyM",
+      "source_line": 218,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-137",
+      "category": "Game",
+      "language": "Java",
+      "title": "3D Game Development with LWJGL 3",
+      "url": "https://lwjglgamedev.gitbooks.io/3d-game-development-with-lwjgl/content/",
+      "source_line": 219,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-138",
+      "category": "Game",
+      "language": "JavaScript",
+      "title": "2D breakout game using Phaser",
+      "url": "https://developer.mozilla.org/en-US/docs/Games/Tutorials/2D_breakout_game_Phaser",
+      "source_line": 220,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-139",
+      "category": "Game",
+      "language": "JavaScript",
+      "title": "How to Make Flappy Bird in HTML5 With Phaser",
+      "url": "http://www.lessmilk.com/tutorial/flappy-bird-phaser-1",
+      "source_line": 221,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-140",
+      "category": "Game",
+      "language": "JavaScript",
+      "title": "Developing Games with React, Redux, and SVG",
+      "url": "https://auth0.com/blog/developing-games-with-react-redux-and-svg-part-1/",
+      "source_line": 222,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-141",
+      "category": "Game",
+      "language": "JavaScript",
+      "title": "Build your own 8-Ball Pool game from scratch",
+      "url": "https://www.youtube.com/watch?v=aXwCrtAo4Wc",
+      "source_line": 223,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-142",
+      "category": "Game",
+      "language": "JavaScript",
+      "title": "How to Make Your First Roguelike",
+      "url": "https://gamedevelopment.tutsplus.com/tutorials/how-to-make-your-first-roguelike--gamedev-13677",
+      "source_line": 224,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-143",
+      "category": "Game",
+      "language": "JavaScript",
+      "title": "Think like a programmer: How to build Snake using only JavaScript, HTML & CSS",
+      "url": "https://medium.freecodecamp.org/think-like-a-programmer-how-to-build-snake-using-only-javascript-html-and-css-7b1479c3339e",
+      "source_line": 225,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-144",
+      "category": "Game",
+      "language": "Lua",
+      "title": "BYTEPATH",
+      "url": "https://github.com/SSYGEN/blog/issues/30",
+      "source_line": 226,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-145",
+      "category": "Game",
+      "language": "Python",
+      "title": "Developing Games With PyGame",
+      "url": "https://pythonprogramming.net/pygame-python-3-part-1-intro/",
+      "source_line": 227,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-146",
+      "category": "Game",
+      "language": "Python",
+      "title": "Making Games with Python & Pygame",
+      "url": "https://inventwithpython.com/makinggames.pdf",
+      "source_line": 228,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-147",
+      "category": "Game",
+      "language": "Python",
+      "title": "Roguelike Tutorial Revised",
+      "url": "http://rogueliketutorials.com/",
+      "source_line": 229,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-148",
+      "category": "Game",
+      "language": "Ruby",
+      "title": "Developing Games With Ruby",
+      "url": "https://leanpub.com/developing-games-with-ruby/read",
+      "source_line": 230,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-149",
+      "category": "Game",
+      "language": "Ruby",
+      "title": "Ruby Snake",
+      "url": "https://www.diatomenterprises.com/gamedev-on-ruby-why-not/",
+      "source_line": 231,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-150",
+      "category": "Game",
+      "language": "Rust",
+      "title": "Adventures in Rust: A Basic 2D Game",
+      "url": "https://a5huynh.github.io/posts/2018/adventures-in-rust/",
+      "source_line": 232,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-151",
+      "category": "Game",
+      "language": "Rust",
+      "title": "Roguelike Tutorial in Rust + tcod",
+      "url": "https://tomassedovic.github.io/roguelike-tutorial/",
+      "source_line": 233,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-152",
+      "category": "Git",
+      "language": "Haskell",
+      "title": "Reimplementing “git clone” in Haskell from the bottom up",
+      "url": "http://stefan.saasen.me/articles/git-clone-in-haskell-from-the-bottom-up/",
+      "source_line": 237,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-153",
+      "category": "Git",
+      "language": "JavaScript",
+      "title": "Gitlet",
+      "url": "http://gitlet.maryrosecook.com/docs/gitlet.html",
+      "source_line": 238,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-154",
+      "category": "Git",
+      "language": "JavaScript",
+      "title": "Build GIT - Learn GIT",
+      "url": "https://kushagra.dev/blog/build-git-learn-git/",
+      "source_line": 239,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-155",
+      "category": "Git",
+      "language": "Python",
+      "title": "Just enough of a Git client to create a repo, commit, and push itself to GitHub",
+      "url": "https://benhoyt.com/writings/pygit/",
+      "source_line": 240,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-156",
+      "category": "Git",
+      "language": "Python",
+      "title": "Write yourself a Git!",
+      "url": "https://wyag.thb.lt/",
+      "source_line": 241,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-157",
+      "category": "Git",
+      "language": "Python",
+      "title": "ugit: Learn Git Internals by Building Git Yourself",
+      "url": "https://www.leshenko.net/p/ugit/",
+      "source_line": 242,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-158",
+      "category": "Git",
+      "language": "Ruby",
+      "title": "Rebuilding Git in Ruby",
+      "url": "https://robots.thoughtbot.com/rebuilding-git-in-ruby",
+      "source_line": 243,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-159",
+      "category": "Memory Allocator",
+      "language": "C",
+      "title": "Malloc is not magic -- Implementing your own memory allocator",
+      "url": "https://medium.com/p/e0354e914402",
+      "source_line": 247,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-160",
+      "category": "Network Stack",
+      "language": "C",
+      "title": "Beej's Guide to Network Programming",
+      "url": "http://beej.us/guide/bgnet/",
+      "source_line": 251,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-161",
+      "category": "Network Stack",
+      "language": "C",
+      "title": "Let's code a TCP/IP stack",
+      "url": "http://www.saminiir.com/lets-code-tcp-ip-stack-1-ethernet-arp/",
+      "source_line": 252,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-162",
+      "category": "Network Stack",
+      "language": "C / Python",
+      "title": "Build your own VPN/Virtual Switch",
+      "url": "https://github.com/peiyuanix/build-your-own-zerotier",
+      "source_line": 253,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-163",
+      "category": "Network Stack",
+      "language": "Ruby",
+      "title": "How to build a network stack in Ruby",
+      "url": "https://medium.com/geckoboard-under-the-hood/how-to-build-a-network-stack-in-ruby-f73aeb1b661b",
+      "source_line": 254,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-164",
+      "category": "Neural Network",
+      "language": "C#",
+      "title": "Neural Network OCR",
+      "url": "https://www.codeproject.com/Articles/11285/Neural-Network-OCR",
+      "source_line": 258,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-165",
+      "category": "Neural Network",
+      "language": "F#",
+      "title": "Building Neural Networks in F#: Part 1",
+      "url": "https://medium.com/data-science/building-neural-networks-in-f-part-1-a2832ae972e6",
+      "source_line": 259,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-166",
+      "category": "Neural Network",
+      "language": "F#",
+      "title": "Building Neural Networks in F#: Part 2",
+      "url": "https://medium.com/data-science/building-neural-networks-in-f-part-2-training-evaluation-5e3a68889da6",
+      "source_line": 260,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-167",
+      "category": "Neural Network",
+      "language": "Go",
+      "title": "Build a multilayer perceptron with Golang",
+      "url": "https://made2591.github.io/posts/neuralnetwork",
+      "source_line": 261,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-168",
+      "category": "Neural Network",
+      "language": "Go",
+      "title": "How to build a simple artificial neural network with Go",
+      "url": "https://sausheong.github.io/posts/how-to-build-a-simple-artificial-neural-network-with-go/",
+      "source_line": 262,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-169",
+      "category": "Neural Network",
+      "language": "Go",
+      "title": "Building a Neural Net from Scratch in Go",
+      "url": "https://datadan.io/blog/neural-net-with-go",
+      "source_line": 263,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-170",
+      "category": "Neural Network",
+      "language": "JavaScript / Java",
+      "title": "Neural Networks - The Nature of Code",
+      "url": "https://www.youtube.com/playlist?list=PLRqwX-V7Uu6aCibgK1PTWWu9by6XFdCfh",
+      "source_line": 264,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-171",
+      "category": "Neural Network",
+      "language": "JavaScript",
+      "title": "Neural networks from scratch for JavaScript linguists (Part1 — The Perceptron)",
+      "url": "https://hackernoon.com/neural-networks-from-scratch-for-javascript-linguists-part1-the-perceptron-632a4d1fbad2",
+      "source_line": 265,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-172",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "A Neural Network in 11 lines of Python",
+      "url": "https://iamtrask.github.io/2015/07/12/basic-python-network/",
+      "source_line": 266,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-173",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "Build Deep Learning From Scratch (reimplement PyTorch internals across 34 stages)",
+      "url": "https://github.com/roiamiel1/Build-Deep-Learning-From-Scratch",
+      "source_line": 267,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-174",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "Implement a Neural Network from Scratch",
+      "url": "https://victorzhou.com/blog/intro-to-neural-networks/",
+      "source_line": 268,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-175",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "Optical Character Recognition (OCR)",
+      "url": "http://aosabook.org/en/500L/optical-character-recognition-ocr.html",
+      "source_line": 269,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-176",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "Traffic signs classification with a convolutional network",
+      "url": "https://navoshta.com/traffic-signs-classification/",
+      "source_line": 270,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-177",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "Generate Music using LSTM Neural Network in Keras",
+      "url": "https://towardsdatascience.com/how-to-generate-music-using-a-lstm-neural-network-in-keras-68786834d4c5",
+      "source_line": 271,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-178",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "An Introduction to Convolutional Neural Networks",
+      "url": "https://victorzhou.com/blog/intro-to-cnns-part-1/",
+      "source_line": 272,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-179",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "Neural Networks: Zero to Hero",
+      "url": "https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ",
+      "source_line": 273,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-180",
+      "category": "Neural Network",
+      "language": "Python",
+      "title": "SlowTorch: Implementation of PyTorch from the ground up in 100% pure Python",
+      "url": "https://github.com/xames3/slowtorch",
+      "source_line": 274,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-181",
+      "category": "Operating System",
+      "language": "Assembly",
+      "title": "Writing a Tiny x86 Bootloader",
+      "url": "http://joebergeron.io/posts/post_two.html",
+      "source_line": 278,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-182",
+      "category": "Operating System",
+      "language": "Assembly",
+      "title": "Baking Pi – Operating Systems Development",
+      "url": "http://www.cl.cam.ac.uk/projects/raspberrypi/tutorials/os/index.html",
+      "source_line": 279,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-183",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Building a software and hardware stack for a simple computer from scratch",
+      "url": "https://www.youtube.com/watch?v=ZjwvMcP3Nf0&list=PLU94OURih-CiP4WxKSMt3UcwMSDM3aTtX",
+      "source_line": 280,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-184",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Operating Systems: From 0 to 1",
+      "url": "https://tuhdo.github.io/os01/",
+      "source_line": 281,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-185",
+      "category": "Operating System",
+      "language": "C",
+      "title": "The little book about OS development",
+      "url": "https://littleosbook.github.io/",
+      "source_line": 282,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-186",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Roll your own toy UNIX-clone OS",
+      "url": "http://jamesmolloy.co.uk/tutorial_html/",
+      "source_line": 283,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-187",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Kernel 101 – Let’s write a Kernel",
+      "url": "https://arjunsreedharan.org/post/82710718100/kernel-101-lets-write-a-kernel",
+      "source_line": 284,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-188",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Kernel 201 – Let’s write a Kernel with keyboard and screen support",
+      "url": "https://arjunsreedharan.org/post/99370248137/kernel-201-lets-write-a-kernel-with-keyboard",
+      "source_line": 285,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-189",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Build a minimal multi-tasking kernel for ARM from scratch",
+      "url": "https://github.com/jserv/mini-arm-os",
+      "source_line": 286,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-190",
+      "category": "Operating System",
+      "language": "C",
+      "title": "How to create an OS from scratch",
+      "url": "https://github.com/cfenollosa/os-tutorial",
+      "source_line": 287,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-191",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Malloc tutorial",
+      "url": "https://danluu.com/malloc-tutorial/",
+      "source_line": 288,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-192",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Hack the virtual memory",
+      "url": "https://blog.holbertonschool.com/hack-the-virtual-memory-c-strings-proc/",
+      "source_line": 289,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-193",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Learning operating system development using Linux kernel and Raspberry Pi",
+      "url": "https://github.com/s-matyukevich/raspberry-pi-os",
+      "source_line": 290,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-194",
+      "category": "Operating System",
+      "language": "C",
+      "title": "Operating systems development for Dummies",
+      "url": "https://medium.com/@lduck11007/operating-systems-development-for-dummies-3d4d786e8ac",
+      "source_line": 291,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-195",
+      "category": "Operating System",
+      "language": "C++",
+      "title": "Write your own Operating System",
+      "url": "https://www.youtube.com/playlist?list=PLHh55M_Kq4OApWScZyPl5HhgsTJS9MZ6M",
+      "source_line": 292,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-196",
+      "category": "Operating System",
+      "language": "C++",
+      "title": "Writing a Bootloader",
+      "url": "http://3zanders.co.uk/2017/10/13/writing-a-bootloader/",
+      "source_line": 293,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-197",
+      "category": "Operating System",
+      "language": "Rust",
+      "title": "Writing an OS in Rust",
+      "url": "https://os.phil-opp.com/",
+      "source_line": 294,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-198",
+      "category": "Operating System",
+      "language": "Rust",
+      "title": "Add RISC-V Rust Operating System Tutorial",
+      "url": "https://osblog.stephenmarz.com/",
+      "source_line": 295,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-199",
+      "category": "Operating System",
+      "language": "(any)",
+      "title": "Linux from scratch",
+      "url": "https://linuxfromscratch.org/lfs",
+      "source_line": 296,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-200",
+      "category": "Physics Engine",
+      "language": "C",
+      "title": "Video Game Physics Tutorial",
+      "url": "https://www.toptal.com/game/video-game-physics-part-i-an-introduction-to-rigid-body-dynamics",
+      "source_line": 300,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-201",
+      "category": "Physics Engine",
+      "language": "C++",
+      "title": "Game physics series by Allen Chou",
+      "url": "http://allenchou.net/game-physics-series/",
+      "source_line": 301,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-202",
+      "category": "Physics Engine",
+      "language": "C++",
+      "title": "How to Create a Custom Physics Engine",
+      "url": "https://gamedevelopment.tutsplus.com/series/how-to-create-a-custom-physics-engine--gamedev-12715",
+      "source_line": 302,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-203",
+      "category": "Physics Engine",
+      "language": "C++",
+      "title": "3D Physics Engine Tutorial",
+      "url": "https://www.youtube.com/playlist?list=PLEETnX-uPtBXm1KEr_2zQ6K_0hoGH6JJ0",
+      "source_line": 303,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-204",
+      "category": "Physics Engine",
+      "language": "JavaScript",
+      "title": "How Physics Engines Work",
+      "url": "http://buildnewgames.com/gamephysics/",
+      "source_line": 304,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-205",
+      "category": "Physics Engine",
+      "language": "JavaScript",
+      "title": "Broad Phase Collision Detection Using Spatial Partitioning",
+      "url": "http://buildnewgames.com/broad-phase-collision-detection/",
+      "source_line": 305,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-206",
+      "category": "Physics Engine",
+      "language": "JavaScript",
+      "title": "Build a simple 2D physics engine for JavaScript games",
+      "url": "https://developer.ibm.com/tutorials/wa-build2dphysicsengine/?mhsrc=ibmsearch_a&mhq=2dphysic",
+      "source_line": 306,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-207",
+      "category": "Processor",
+      "language": "Verilog",
+      "title": "From Blinker to RISC-V",
+      "url": "https://github.com/BrunoLevy/learn-fpga/tree/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV",
+      "source_line": 310,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-208",
+      "category": "Programming Language",
+      "language": "(any)",
+      "title": "mal - Make a Lisp",
+      "url": "https://github.com/kanaka/mal#mal---make-a-lisp",
+      "source_line": 314,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-209",
+      "category": "Programming Language",
+      "language": "Assembly",
+      "title": "Jonesforth",
+      "url": "https://github.com/nornagon/jonesforth/blob/master/jonesforth.S",
+      "source_line": 315,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-210",
+      "category": "Programming Language",
+      "language": "C",
+      "title": "Baby's First Garbage Collector",
+      "url": "http://journal.stuffwithstuff.com/2013/12/08/babys-first-garbage-collector/",
+      "source_line": 316,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-211",
+      "category": "Programming Language",
+      "language": "C",
+      "title": "Build Your Own Lisp: Learn C and build your own programming language in 1000 lines of code",
+      "url": "http://www.buildyourownlisp.com/",
+      "source_line": 317,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-212",
+      "category": "Programming Language",
+      "language": "C",
+      "title": "Writing a Simple Garbage Collector in C",
+      "url": "http://maplant.com/gc.html",
+      "source_line": 318,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-213",
+      "category": "Programming Language",
+      "language": "C",
+      "title": "C interpreter that interprets itself.",
+      "url": "https://github.com/lotabout/write-a-C-interpreter",
+      "source_line": 319,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-214",
+      "category": "Programming Language",
+      "language": "C",
+      "title": "A C & x86 version of the \"Let's Build a Compiler\" by Jack Crenshaw",
+      "url": "https://github.com/lotabout/Let-s-build-a-compiler",
+      "source_line": 320,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-215",
+      "category": "Programming Language",
+      "language": "C",
+      "title": "A journey explaining how to build a compiler from scratch",
+      "url": "https://github.com/DoctorWkt/acwj",
+      "source_line": 321,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-216",
+      "category": "Programming Language",
+      "language": "C++",
+      "title": "Writing Your Own Toy Compiler Using Flex",
+      "url": "https://gnuu.org/2009/09/18/writing-your-own-toy-compiler/",
+      "source_line": 322,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-217",
+      "category": "Programming Language",
+      "language": "C++",
+      "title": "How to Create a Compiler",
+      "url": "https://www.youtube.com/watch?v=eF9qWbuQLuw",
+      "source_line": 323,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-218",
+      "category": "Programming Language",
+      "language": "C++",
+      "title": "Kaleidoscope: Implementing a Language with LLVM",
+      "url": "https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html",
+      "source_line": 324,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-219",
+      "category": "Programming Language",
+      "language": "F#",
+      "title": "Understanding Parser Combinators",
+      "url": "https://fsharpforfunandprofit.com/posts/understanding-parser-combinators/",
+      "source_line": 325,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-220",
+      "category": "Programming Language",
+      "language": "Elixir",
+      "title": "Demystifying compilers by writing your own",
+      "url": "https://www.youtube.com/watch?v=zMJYoYwOCd4",
+      "source_line": 326,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-221",
+      "category": "Programming Language",
+      "language": "Go",
+      "title": "The Super Tiny Compiler",
+      "url": "https://github.com/hazbo/the-super-tiny-compiler",
+      "source_line": 327,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-222",
+      "category": "Programming Language",
+      "language": "Go",
+      "title": "Lexical Scanning in Go",
+      "url": "https://www.youtube.com/watch?v=HxaD_trXwRE",
+      "source_line": 328,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-223",
+      "category": "Programming Language",
+      "language": "Haskell",
+      "title": "Let's Build a Compiler",
+      "url": "https://g-ford.github.io/cradle/",
+      "source_line": 329,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-224",
+      "category": "Programming Language",
+      "language": "Haskell",
+      "title": "Write You a Haskell",
+      "url": "http://dev.stephendiehl.com/fun/",
+      "source_line": 330,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-225",
+      "category": "Programming Language",
+      "language": "Haskell",
+      "title": "Write Yourself a Scheme in 48 Hours",
+      "url": "https://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours",
+      "source_line": 331,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-226",
+      "category": "Programming Language",
+      "language": "Haskell",
+      "title": "Write You A Scheme",
+      "url": "https://www.wespiser.com/writings/wyas/home.html",
+      "source_line": 332,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-227",
+      "category": "Programming Language",
+      "language": "Java",
+      "title": "Crafting interpreters: A handbook for making programming languages",
+      "url": "http://www.craftinginterpreters.com/",
+      "source_line": 333,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-228",
+      "category": "Programming Language",
+      "language": "Java",
+      "title": "Creating JVM Language",
+      "url": "http://jakubdziworski.github.io/categories.html#Enkel-ref",
+      "source_line": 334,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-229",
+      "category": "Programming Language",
+      "language": "JavaScript",
+      "title": "The Super Tiny Compiler",
+      "url": "https://github.com/jamiebuilds/the-super-tiny-compiler",
+      "source_line": 335,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-230",
+      "category": "Programming Language",
+      "language": "JavaScript",
+      "title": "The Super Tiny Interpreter",
+      "url": "https://github.com/keyanzhang/the-super-tiny-interpreter",
+      "source_line": 336,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-231",
+      "category": "Programming Language",
+      "language": "JavaScript",
+      "title": "Little Lisp interpreter",
+      "url": "https://maryrosecook.com/blog/post/little-lisp-interpreter",
+      "source_line": 337,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-232",
+      "category": "Programming Language",
+      "language": "JavaScript",
+      "title": "How to implement a programming language in JavaScript",
+      "url": "http://lisperator.net/pltut/",
+      "source_line": 338,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-233",
+      "category": "Programming Language",
+      "language": "JavaScript",
+      "title": "Let’s go write a Lisp",
+      "url": "https://idiocy.org/lets-go-write-a-lisp/part-1.html",
+      "source_line": 339,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-234",
+      "category": "Programming Language",
+      "language": "OCaml",
+      "title": "Writing a C Compiler",
+      "url": "https://norasandler.com/2017/11/29/Write-a-Compiler.html",
+      "source_line": 340,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-235",
+      "category": "Programming Language",
+      "language": "OCaml",
+      "title": "Writing a Lisp, the series",
+      "url": "https://bernsteinbear.com/blog/lisp/",
+      "source_line": 341,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-236",
+      "category": "Programming Language",
+      "language": "Pascal",
+      "title": "Let's Build a Compiler",
+      "url": "https://compilers.iecc.com/crenshaw/",
+      "source_line": 342,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-237",
+      "category": "Programming Language",
+      "language": "Python",
+      "title": "A Python Interpreter Written in Python",
+      "url": "http://aosabook.org/en/500L/a-python-interpreter-written-in-python.html",
+      "source_line": 343,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-238",
+      "category": "Programming Language",
+      "language": "Python",
+      "title": "lisp.py: Make your own Lisp interpreter",
+      "url": "http://khamidou.com/compilers/lisp.py/",
+      "source_line": 344,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-239",
+      "category": "Programming Language",
+      "language": "Python",
+      "title": "How to Write a Lisp Interpreter in Python",
+      "url": "http://norvig.com/lispy.html",
+      "source_line": 345,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-240",
+      "category": "Programming Language",
+      "language": "Python",
+      "title": "Let’s Build A Simple Interpreter",
+      "url": "https://ruslanspivak.com/lsbasi-part1/",
+      "source_line": 346,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-241",
+      "category": "Programming Language",
+      "language": "Python",
+      "title": "Make Your Own Simple Interpreted Programming Language",
+      "url": "https://www.youtube.com/watch?v=dj9CBS3ikGA&list=PLZQftyCk7_SdoVexSmwy_tBgs7P0b97yD&index=1",
+      "source_line": 347,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-242",
+      "category": "Programming Language",
+      "language": "Python",
+      "title": "From Source Code To Machine Code: Build Your Own Compiler From Scratch",
+      "url": "https://build-your-own.org/compiler/",
+      "source_line": 348,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-243",
+      "category": "Programming Language",
+      "language": "Racket",
+      "title": "Beautiful Racket: How to make your own programming languages with Racket",
+      "url": "https://beautifulracket.com/",
+      "source_line": 349,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-244",
+      "category": "Programming Language",
+      "language": "Ruby",
+      "title": "A Compiler From Scratch",
+      "url": "https://www.destroyallsoftware.com/screencasts/catalog/a-compiler-from-scratch",
+      "source_line": 350,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-245",
+      "category": "Programming Language",
+      "language": "Ruby",
+      "title": "Markdown compiler from scratch in Ruby",
+      "url": "https://blog.beezwax.net/2017/07/07/writing-a-markdown-compiler/",
+      "source_line": 351,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-246",
+      "category": "Programming Language",
+      "language": "Rust",
+      "title": "Learning Parser Combinators With Rust",
+      "url": "https://bodil.lol/parser-combinators/",
+      "source_line": 352,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-247",
+      "category": "Programming Language",
+      "language": "Swift",
+      "title": "Building a LISP from scratch with Swift",
+      "url": "https://www.uraimo.com/2017/02/05/building-a-lisp-from-scratch-with-swift/",
+      "source_line": 353,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-248",
+      "category": "Programming Language",
+      "language": "TypeScript",
+      "title": "Build your own WebAssembly Compiler",
+      "url": "https://blog.scottlogic.com/2019/05/17/webassembly-compiler.html",
+      "source_line": 354,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-249",
+      "category": "Regex Engine",
+      "language": "C",
+      "title": "A Regular Expression Matcher",
+      "url": "https://www.cs.princeton.edu/courses/archive/spr09/cos333/beautiful.html",
+      "source_line": 358,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-250",
+      "category": "Regex Engine",
+      "language": "C",
+      "title": "Regular Expression Matching Can Be Simple And Fast",
+      "url": "https://swtch.com/~rsc/regexp/regexp1.html",
+      "source_line": 359,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-251",
+      "category": "Regex Engine",
+      "language": "Go",
+      "title": "How to build a regex engine from scratch",
+      "url": "https://rhaeguard.github.io/posts/regex",
+      "source_line": 360,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-252",
+      "category": "Regex Engine",
+      "language": "JavaScript",
+      "title": "Build a Regex Engine in Less than 40 Lines of Code",
+      "url": "https://nickdrane.com/build-your-own-regex/",
+      "source_line": 361,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-253",
+      "category": "Regex Engine",
+      "language": "JavaScript",
+      "title": "How to implement regular expressions in functional javascript using derivatives",
+      "url": "http://dpk.io/dregs/toydregs",
+      "source_line": 362,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-254",
+      "category": "Regex Engine",
+      "language": "JavaScript",
+      "title": "Implementing a Regular Expression Engine",
+      "url": "https://deniskyashif.com/2019/02/17/implementing-a-regular-expression-engine/",
+      "source_line": 363,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-255",
+      "category": "Regex Engine",
+      "language": "Perl",
+      "title": "How Regexes Work",
+      "url": "https://perl.plover.com/Regex/article.html",
+      "source_line": 364,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-256",
+      "category": "Regex Engine",
+      "language": "Python",
+      "title": "Build Your Own Regular Expression Engines: Backtracking, NFA, DFA",
+      "url": "https://build-your-own.org/b2a/r0_intro",
+      "source_line": 365,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-257",
+      "category": "Regex Engine",
+      "language": "Scala",
+      "title": "No Magic: Regular Expressions",
+      "url": "https://rcoh.svbtle.com/no-magic-regular-expressions",
+      "source_line": 366,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-258",
+      "category": "Search Engine",
+      "language": "CSS",
+      "title": "A search engine in CSS",
+      "url": "https://stories.algolia.com/a-search-engine-in-css-b5ec4e902e97",
+      "source_line": 370,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-259",
+      "category": "Search Engine",
+      "language": "Python",
+      "title": "Building a search engine using Redis and redis-py",
+      "url": "http://www.dr-josiah.com/2010/07/building-search-engine-using-redis-and.html",
+      "source_line": 371,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-260",
+      "category": "Search Engine",
+      "language": "Python",
+      "title": "Building a Vector Space Indexing Engine in Python",
+      "url": "https://boyter.org/2010/08/build-vector-space-search-engine-python/",
+      "source_line": 372,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-261",
+      "category": "Search Engine",
+      "language": "Python",
+      "title": "Building A Python-Based Search Engine",
+      "url": "https://www.youtube.com/watch?v=cY7pE7vX6MU",
+      "source_line": 373,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-262",
+      "category": "Search Engine",
+      "language": "Python",
+      "title": "Making text search learn from feedback",
+      "url": "https://medium.com/filament-ai/making-text-search-learn-from-feedback-4fe210fd87b0",
+      "source_line": 374,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-263",
+      "category": "Search Engine",
+      "language": "Python",
+      "title": "Finding Important Words in Text Using TF-IDF",
+      "url": "https://stevenloria.com/tf-idf/",
+      "source_line": 375,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-264",
+      "category": "Shell",
+      "language": "C",
+      "title": "Tutorial - Write a Shell in C",
+      "url": "https://brennan.io/2015/01/16/write-a-shell-in-c/",
+      "source_line": 379,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-265",
+      "category": "Shell",
+      "language": "C",
+      "title": "Let's build a shell!",
+      "url": "https://github.com/kamalmarhubi/shell-workshop",
+      "source_line": 380,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-266",
+      "category": "Shell",
+      "language": "C",
+      "title": "Writing a UNIX Shell",
+      "url": "https://indradhanush.github.io/blog/writing-a-unix-shell-part-1/",
+      "source_line": 381,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-267",
+      "category": "Shell",
+      "language": "C",
+      "title": "Build Your Own Shell",
+      "url": "https://github.com/tokenrove/build-your-own-shell",
+      "source_line": 382,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-268",
+      "category": "Shell",
+      "language": "C",
+      "title": "unparsed",
+      "url": "https://danishpraka.sh/posts/write-a-shell/",
+      "source_line": 383,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-269",
+      "category": "Shell",
+      "language": "Go",
+      "title": "Writing a simple shell in Go",
+      "url": "https://sj14.gitlab.io/post/2018-07-01-go-unix-shell/",
+      "source_line": 384,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-270",
+      "category": "Shell",
+      "language": "Rust",
+      "title": "Build Your Own Shell using Rust",
+      "url": "https://www.joshmcguigan.com/blog/build-your-own-shell-rust/",
+      "source_line": 385,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-271",
+      "category": "Template Engine",
+      "language": "JavaScript",
+      "title": "JavaScript template engine in just 20 lines",
+      "url": "http://krasimirtsonev.com/blog/article/Javascript-template-engine-in-just-20-line",
+      "source_line": 389,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-272",
+      "category": "Template Engine",
+      "language": "JavaScript",
+      "title": "Understanding JavaScript Micro-Templating",
+      "url": "https://medium.com/wdstack/understanding-javascript-micro-templating-f37a37b3b40e",
+      "source_line": 390,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-273",
+      "category": "Template Engine",
+      "language": "Python",
+      "title": "Approach: Building a toy template engine in Python",
+      "url": "http://alexmic.net/building-a-template-engine/",
+      "source_line": 391,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-274",
+      "category": "Template Engine",
+      "language": "Python",
+      "title": "A Template Engine",
+      "url": "http://aosabook.org/en/500L/a-template-engine.html",
+      "source_line": 392,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-275",
+      "category": "Template Engine",
+      "language": "Ruby",
+      "title": "How to write a template engine in less than 30 lines of code",
+      "url": "http://bits.citrusbyte.com/how-to-write-a-template-library/",
+      "source_line": 393,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-276",
+      "category": "Text Editor",
+      "language": "C",
+      "title": "Build Your Own Text Editor",
+      "url": "https://viewsourcecode.org/snaptoken/kilo/",
+      "source_line": 397,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-277",
+      "category": "Text Editor",
+      "language": "C++",
+      "title": "Designing a Simple Text Editor",
+      "url": "http://www.fltk.org/doc-1.1/editor.html",
+      "source_line": 398,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-278",
+      "category": "Text Editor",
+      "language": "Python",
+      "title": "Python Tutorial: Make Your Own Text Editor",
+      "url": "https://www.youtube.com/watch?v=xqDonHEYPgA",
+      "source_line": 399,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-279",
+      "category": "Text Editor",
+      "language": "Python",
+      "title": "Create a Simple Python Text Editor!",
+      "url": "http://www.instructables.com/id/Create-a-Simple-Python-Text-Editor/",
+      "source_line": 400,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-280",
+      "category": "Text Editor",
+      "language": "Ruby",
+      "title": "Build a Collaborative Text Editor Using Rails",
+      "url": "https://blog.aha.io/text-editor/",
+      "source_line": 401,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-281",
+      "category": "Text Editor",
+      "language": "Rust",
+      "title": "unparsed",
+      "url": "https://www.flenker.blog/hecto/",
+      "source_line": 402,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-282",
+      "category": "Visual Recognition System",
+      "language": "Python",
+      "title": "Developing a License Plate Recognition System with Machine Learning in Python",
+      "url": "https://medium.com/devcenter/developing-a-license-plate-recognition-system-with-machine-learning-in-python-787833569ccd",
+      "source_line": 406,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-283",
+      "category": "Visual Recognition System",
+      "language": "Python",
+      "title": "Building a Facial Recognition Pipeline with Deep Learning in Tensorflow",
+      "url": "https://hackernoon.com/building-a-facial-recognition-pipeline-with-deep-learning-in-tensorflow-66e7645015b8",
+      "source_line": 407,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-284",
+      "category": "Voxel Engine",
+      "language": "C++",
+      "title": "Let's Make a Voxel Engine",
+      "url": "https://sites.google.com/site/letsmakeavoxelengine/home",
+      "source_line": 411,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-285",
+      "category": "Web Browser",
+      "language": "Rust",
+      "title": "Let's build a browser engine",
+      "url": "https://limpet.net/mbrubeck/2014/08/08/toy-layout-engine-1.html",
+      "source_line": 415,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-286",
+      "category": "Web Browser",
+      "language": "Python",
+      "title": "Browser Engineering",
+      "url": "https://browser.engineering",
+      "source_line": 416,
+      "relevance": "review",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-287",
+      "category": "Web Server",
+      "language": "C#",
+      "title": "Writing a Web Server from Scratch",
+      "url": "https://www.codeproject.com/Articles/859108/Writing-a-Web-Server-from-Scratch",
+      "source_line": 420,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-288",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "Build Your Own Web Server From Scratch In JavaScript",
+      "url": "https://build-your-own.org/webserver/",
+      "source_line": 421,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-289",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "Let's code a web server from scratch with NodeJS Streams",
+      "url": "https://www.codementor.io/@ziad-saab/let-s-code-a-web-server-from-scratch-with-nodejs-streams-h4uc9utji",
+      "source_line": 422,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-290",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "lets-build-express",
+      "url": "https://github.com/antoaravinth/lets-build-express",
+      "source_line": 423,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-291",
+      "category": "Web Server",
+      "language": "PHP",
+      "title": "Writing a webserver in pure PHP",
+      "url": "http://station.clancats.com/writing-a-webserver-in-pure-php/",
+      "source_line": 424,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-292",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "A Simple Web Server",
+      "url": "http://aosabook.org/en/500L/a-simple-web-server.html",
+      "source_line": 425,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-293",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Let’s Build A Web Server.",
+      "url": "https://ruslanspivak.com/lsbaws-part1/",
+      "source_line": 426,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-294",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Web application from scratch",
+      "url": "https://defn.io/2018/02/25/web-app-from-scratch-01/",
+      "source_line": 427,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-295",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Building a basic HTTP Server from scratch in Python",
+      "url": "http://joaoventura.net/blog/2017/python-webserver/",
+      "source_line": 428,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-296",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Implementing a RESTful Web API with Python & Flask",
+      "url": "http://blog.luisrei.com/articles/flaskrest.html",
+      "source_line": 429,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-297",
+      "category": "Web Server",
+      "language": "Ruby",
+      "title": "Building a simple websockets server from scratch in Ruby",
+      "url": "http://blog.honeybadger.io/building-a-simple-websockets-server-from-scratch-in-ruby/",
+      "source_line": 430,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-298",
+      "category": "Web Server",
+      "language": "(any)",
+      "title": "From NAND to Tetris: Building a Modern Computer From First Principles",
+      "url": "http://nand2tetris.org/",
+      "source_line": 434,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-299",
+      "category": "Web Server",
+      "language": "(any)",
+      "title": "unparsed",
+      "url": "https://github.com/inFaaa/build-your-own-x-vibe-coding",
+      "source_line": 435,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-300",
+      "category": "Web Server",
+      "language": "Alloy",
+      "title": "The Same-Origin Policy",
+      "url": "http://aosabook.org/en/500L/the-same-origin-policy.html",
+      "source_line": 436,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-301",
+      "category": "Web Server",
+      "language": "C",
+      "title": "How to Write a Video Player in Less Than 1000 Lines",
+      "url": "http://dranger.com/ffmpeg/ffmpeg.html",
+      "source_line": 437,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-302",
+      "category": "Web Server",
+      "language": "C",
+      "title": "Learn how to write a hash table in C",
+      "url": "https://github.com/jamesroutley/write-a-hash-table",
+      "source_line": 438,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-303",
+      "category": "Web Server",
+      "language": "C",
+      "title": "The very basics of a terminal emulator",
+      "url": "https://www.uninformativ.de/blog/postings/2018-02-24/0/POSTING-en.html",
+      "source_line": 439,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-304",
+      "category": "Web Server",
+      "language": "C",
+      "title": "Write a System Call",
+      "url": "https://brennan.io/2016/11/14/kernel-dev-ep3/",
+      "source_line": 440,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-305",
+      "category": "Web Server",
+      "language": "C",
+      "title": "Sol - An MQTT broker from scratch",
+      "url": "https://codepr.github.io/posts/sol-mqtt-broker",
+      "source_line": 441,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-306",
+      "category": "Web Server",
+      "language": "C++",
+      "title": "Build your own VR headset for $200",
+      "url": "https://github.com/relativty/Relativ",
+      "source_line": 442,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-307",
+      "category": "Web Server",
+      "language": "C++",
+      "title": "How X Window Managers work and how to write one",
+      "url": "https://seasonofcode.com/posts/how-x-window-managers-work-and-how-to-write-one-part-i.html",
+      "source_line": 443,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-308",
+      "category": "Web Server",
+      "language": "C++",
+      "title": "Writing a Linux Debugger",
+      "url": "https://blog.tartanllama.xyz/writing-a-linux-debugger-setup/",
+      "source_line": 444,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-309",
+      "category": "Web Server",
+      "language": "C++",
+      "title": "How a 64k intro is made",
+      "url": "http://www.lofibucket.com/articles/64k_intro.html",
+      "source_line": 445,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-310",
+      "category": "Web Server",
+      "language": "C++",
+      "title": "Make your own Game Engine",
+      "url": "https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT",
+      "source_line": 446,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-311",
+      "category": "Web Server",
+      "language": "C#",
+      "title": "C# Networking: Create a TCP chater server, TCP games, UDP Pong and more",
+      "url": "https://16bpp.net/tutorials/csharp-networking",
+      "source_line": 447,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-312",
+      "category": "Web Server",
+      "language": "C#",
+      "title": "Loading and rendering 3D skeletal animations from scratch in C# and GLSL",
+      "url": "https://www.seanjoflynn.com/research/skeletal-animation.html",
+      "source_line": 448,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-313",
+      "category": "Web Server",
+      "language": "Clojure",
+      "title": "Building a spell-checker",
+      "url": "https://bernhardwenzel.com/articles/clojure-spellchecker/",
+      "source_line": 449,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-314",
+      "category": "Web Server",
+      "language": "Go",
+      "title": "Build A Simple Terminal Emulator In 100 Lines of Golang",
+      "url": "https://ishuah.com/2021/03/10/build-a-terminal-emulator-in-100-lines-of-go/",
+      "source_line": 450,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-315",
+      "category": "Web Server",
+      "language": "Go",
+      "title": "Let's Create a Simple Load Balancer",
+      "url": "https://kasvith.me/posts/lets-create-a-simple-lb-go/",
+      "source_line": 451,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-316",
+      "category": "Web Server",
+      "language": "Go",
+      "title": "Video Encoding from Scratch",
+      "url": "https://github.com/kevmo314/codec-from-scratch",
+      "source_line": 452,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-317",
+      "category": "Web Server",
+      "language": "Java",
+      "title": "How to Build an Android Reddit App",
+      "url": "https://www.youtube.com/playlist?list=PLgCYzUzKIBE9HUJU-upNvl3TRVAo9W47y",
+      "source_line": 453,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-318",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "Build Your Own Module Bundler - Minipack",
+      "url": "https://github.com/ronami/minipack",
+      "source_line": 454,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-319",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "Learn JavaScript Promises by Building a Promise from Scratch",
+      "url": "https://levelup.gitconnected.com/understand-javascript-promises-by-building-a-promise-from-scratch-84c0fd855720",
+      "source_line": 455,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-320",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "Implementing promises from scratch (TDD way)",
+      "url": "https://www.mauriciopoppe.com/notes/computer-science/computation/promises/",
+      "source_line": 456,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-321",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "Implement your own — call(), apply() and bind() method in JavaScript",
+      "url": "https://blog.usejournal.com/implement-your-own-call-apply-and-bind-method-in-javascript-42cc85dba1b",
+      "source_line": 457,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-322",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "JavaScript Algorithms and Data Structures",
+      "url": "https://github.com/trekhleb/javascript-algorithms",
+      "source_line": 458,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-323",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "Build a ride hailing app with React Native",
+      "url": "https://pusher.com/tutorials/ride-hailing-react-native",
+      "source_line": 459,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-324",
+      "category": "Web Server",
+      "language": "JavaScript",
+      "title": "Build Your Own AdBlocker in (Literally) 10 Minutes",
+      "url": "https://levelup.gitconnected.com/building-your-own-adblocker-in-literally-10-minutes-1eec093b04cd",
+      "source_line": 460,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-325",
+      "category": "Web Server",
+      "language": "Kotlin",
+      "title": "Build Your Own Cache",
+      "url": "https://github.com/kezhenxu94/cache-lite",
+      "source_line": 461,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-326",
+      "category": "Web Server",
+      "language": "Lua",
+      "title": "Building a CDN from Scratch to Learn about CDN",
+      "url": "https://github.com/leandromoreira/cdn-up-and-running",
+      "source_line": 462,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-327",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a Redis Protocol Parser",
+      "url": "https://xmonader.github.io/nimdays/day12_resp.html",
+      "source_line": 463,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-328",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a Build system",
+      "url": "https://xmonader.github.io/nimdays/day11_buildsystem.html",
+      "source_line": 464,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-329",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a MiniTest Framework",
+      "url": "https://xmonader.github.io/nimdays/day08_minitest.html",
+      "source_line": 465,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-330",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a DMIDecode Parser",
+      "url": "https://xmonader.github.io/nimdays/day01_dmidecode.html",
+      "source_line": 466,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-331",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a INI Parser",
+      "url": "https://xmonader.github.io/nimdays/day05_iniparser.html",
+      "source_line": 467,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-332",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a Link Checker",
+      "url": "https://xmonader.github.io/nimdays/day04_asynclinkschecker.html",
+      "source_line": 468,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-333",
+      "category": "Web Server",
+      "language": "Nim",
+      "title": "Writing a URL Shortening Service",
+      "url": "https://xmonader.github.io/nimdays/day07_shorturl.html",
+      "source_line": 469,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-334",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "Build a static site generator in 40 lines with Node.js",
+      "url": "https://www.webdevdrops.com/en/build-static-site-generator-nodejs-8969ebe34b22/",
+      "source_line": 470,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-335",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "Building A Simple Single Sign On(SSO) Server And Solution From Scratch In Node.js.",
+      "url": "https://codeburst.io/building-a-simple-single-sign-on-sso-server-and-solution-from-scratch-in-node-js-ea6ee5fdf340",
+      "source_line": 471,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-336",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "How to create a real-world Node CLI app with Node",
+      "url": "https://medium.freecodecamp.org/how-to-create-a-real-world-node-cli-app-with-node-391b727bbed3",
+      "source_line": 472,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-337",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "Build a DNS Server in Node.js",
+      "url": "https://engineerhead.github.io/dns-server/",
+      "source_line": 473,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-338",
+      "category": "Web Server",
+      "language": "Node.js",
+      "title": "Build a Synchronization Engine with Node.js and Y.js",
+      "url": "https://greenvitriol.com/posts/sync-engine-for-everyone",
+      "source_line": 474,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-339",
+      "category": "Web Server",
+      "language": "PHP",
+      "title": "unparsed",
+      "url": "https://chaitya62.github.io/2018/04/29/Writing-your-own-MVC-from-Scratch-in-PHP.html",
+      "source_line": 475,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-340",
+      "category": "Web Server",
+      "language": "PHP",
+      "title": "Make your own blog",
+      "url": "https://ilovephp.jondh.me.uk/en/tutorial/make-your-own-blog",
+      "source_line": 476,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-341",
+      "category": "Web Server",
+      "language": "PHP",
+      "title": "Modern PHP Without a Framework",
+      "url": "https://kevinsmith.io/modern-php-without-a-framework",
+      "source_line": 477,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-342",
+      "category": "Web Server",
+      "language": "PHP",
+      "title": "Code a Web Search Engine in PHP",
+      "url": "https://boyter.org/2013/01/code-for-a-search-engine-in-php-part-1/",
+      "source_line": 478,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-343",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Build a Deep Learning Library",
+      "url": "https://www.youtube.com/watch?v=o64FV-ez6Gw",
+      "source_line": 479,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-344",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "How to Build a Kick-Ass Mobile Document Scanner in Just 5 Minutes",
+      "url": "https://www.pyimagesearch.com/2014/09/01/build-kick-ass-mobile-document-scanner-just-5-minutes/",
+      "source_line": 480,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-345",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Continuous Integration System",
+      "url": "http://aosabook.org/en/500L/a-continuous-integration-system.html",
+      "source_line": 481,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-346",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Recommender Systems in Python: Beginner Tutorial",
+      "url": "https://www.datacamp.com/community/tutorials/recommender-systems-python",
+      "source_line": 482,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-347",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Write SMS-spam detector with Scikit-learn",
+      "url": "https://medium.com/@kopilov.vlad/detect-sms-spam-in-kaggle-with-scikit-learn-5f6afa7a3ca2",
+      "source_line": 483,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-348",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "A Simple Content-Based Recommendation Engine in Python",
+      "url": "http://blog.untrod.com/2016/06/simple-similar-products-recommendation-engine-in-python.html",
+      "source_line": 484,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-349",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Stock Market Predictions with LSTM in Python",
+      "url": "https://www.datacamp.com/community/tutorials/lstm-python-stock-market",
+      "source_line": 485,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-350",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Building a simple Generative Adversarial Network (GAN) using Tensorflow",
+      "url": "https://blog.paperspace.com/implementing-gans-in-tensorflow/",
+      "source_line": 486,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-351",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Learn ML Algorithms by coding: Decision Trees",
+      "url": "https://lethalbrains.com/learn-ml-algorithms-by-coding-decision-trees-439ac503c9a4",
+      "source_line": 487,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-352",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "JSON Decoding Algorithm",
+      "url": "https://github.com/cheery/json-algorithm",
+      "source_line": 488,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-353",
+      "category": "Web Server",
+      "language": "Python",
+      "title": "Build your own Git plugin with python",
+      "url": "https://joshburns-xyz.vercel.app/posts/build-your-own-git-plugin",
+      "source_line": 489,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-354",
+      "category": "Web Server",
+      "language": "Ruby",
+      "title": "A Pedometer in the Real World",
+      "url": "http://aosabook.org/en/500L/a-pedometer-in-the-real-world.html",
+      "source_line": 490,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-355",
+      "category": "Web Server",
+      "language": "Ruby",
+      "title": "Creating a Linux Desktop application with Ruby",
+      "url": "https://iridakos.com/tutorials/2018/01/25/creating-a-gtk-todo-application-with-ruby",
+      "source_line": 491,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-356",
+      "category": "Web Server",
+      "language": "Rust",
+      "title": "Building a DNS server in Rust",
+      "url": "https://github.com/EmilHernvall/dnsguide/blob/master/README.md",
+      "source_line": 492,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-357",
+      "category": "Web Server",
+      "language": "Rust",
+      "title": "Writing Scalable Chat Service from Scratch",
+      "url": "https://nbaksalyar.github.io/2015/07/10/writing-chat-in-rust.html",
+      "source_line": 493,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-358",
+      "category": "Web Server",
+      "language": "Rust",
+      "title": "WebGL + Rust: Basic Water Tutorial",
+      "url": "https://www.chinedufn.com/3d-webgl-basic-water-tutorial/",
+      "source_line": 494,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    },
+    {
+      "id": "BYOX-359",
+      "category": "Web Server",
+      "language": "TypeScript",
+      "title": "Tiny Package Manager: Learns how npm or Yarn works",
+      "url": "https://github.com/g-plane/tiny-package-manager",
+      "source_line": 495,
+      "relevance": "reference",
+      "verified_status": "listed_in_upstream_readme_only"
+    }
+  ]
+}
