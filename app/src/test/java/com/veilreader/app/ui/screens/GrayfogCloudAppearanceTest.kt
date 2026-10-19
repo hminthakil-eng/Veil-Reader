@@ -30,14 +30,19 @@ import org.robolectric.annotation.GraphicsMode
 class GrayfogCloudAppearanceTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun checkPreviewDisclosure(rtl: Boolean = false) {
+    private fun checkPreviewDisclosure(rtl: Boolean? = null) {
         var changes = 0
         var commits = 0
         compose.setContent {
             val density = LocalDensity.current
+            val direction = LocalLayoutDirection.current
             CompositionLocalProvider(
                 LocalDensity provides Density(density.density, 2f),
-                LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+                LocalLayoutDirection provides when (rtl) {
+                    true -> LayoutDirection.Rtl
+                    false -> LayoutDirection.Ltr
+                    null -> direction
+                }
             ) {
                 VeilTheme(AppThemeMode.DARK) {
                     EpubAppearancePanel(ReaderAppearance(), false, ReaderFixedLayoutSpread.AUTO, null,
@@ -52,6 +57,12 @@ class GrayfogCloudAppearanceTest {
         compose.onNodeWithText(context.getString(R.string.reader_hide_reading_preview))
             .performScrollTo().performClick()
         compose.onNodeWithText(context.getString(R.string.reader_show_reading_preview)).assertIsDisplayed()
+        if (rtl == true) {
+            compose.onNodeWithText(context.getString(R.string.settings_mode_paged))
+                .performScrollTo().assertIsDisplayed().assertIsSelected()
+            compose.onNodeWithText(context.getString(R.string.settings_mode_curl))
+                .performScrollTo().assertIsDisplayed().assertIsSelected()
+        }
         compose.runOnIdle { assertEquals(0, changes); assertEquals(0, commits) }
     }
 
