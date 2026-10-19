@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.domain.AppThemeMode
@@ -28,12 +30,15 @@ import org.robolectric.annotation.GraphicsMode
 class GrayfogCloudAppearanceTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun checkPreviewDisclosure() {
+    private fun checkPreviewDisclosure(rtl: Boolean = false) {
         var changes = 0
         var commits = 0
         compose.setContent {
             val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, 2f),
+                LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+            ) {
                 VeilTheme(AppThemeMode.DARK) {
                     EpubAppearancePanel(ReaderAppearance(), false, ReaderFixedLayoutSpread.AUTO, null,
                         onSpreadChange = {}, onChange = { changes++ }, onDone = { commits++ },
@@ -55,4 +60,8 @@ class GrayfogCloudAppearanceTest {
 
     @Test @Config(qualifiers = "fa-rIR-w900dp-h420dp-mdpi")
     fun shortPersianWindowKeepsPreviewOptionalAndReachable() = checkPreviewDisclosure()
+
+    @Test @Config(qualifiers = "fa-rIR-w320dp-h720dp-mdpi")
+    fun narrowPersianWindowKeepsLargeTextPreviewReachableWithoutPreferenceChanges() =
+        checkPreviewDisclosure(rtl = true)
 }
