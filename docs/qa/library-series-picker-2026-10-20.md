@@ -25,3 +25,10 @@ Final: minor (deferred): selection/cancellation tests do not explicitly exercise
 Declined runtime judgments remain pending: compilation, GREEN suite, real TalkBack, screenshot inspection, exact emulator window dimensions and measured performance. A 10,000-choice functional test is not a latency benchmark.
 
 Learning: shelf preview limits must not determine retrieval completeness; keyboard search equivalence must not redefine persisted identity; Dialog layout/focus must be checked within its own window. Project-specific evidence remains here for the next skill-maintenance pass.
+
+Observed RED: Android CI run 39498819871, job 118890759084, exact head 8c77b39ad7997c7222c77d83f13769534c47621b. Full command gradle :app:testDebugUnitTest --stacktrace completed with 1064 tests, exactly four failures, all newly added production interactions:
+- seriesSearchAcceptsPersianKeyboardVariantsAtLargeFont (missing search field, line194)
+- seriesChooserShowsCountsSelectedStateAndClearSelection (missing dialog row, line206)
+- cancelledSeriesSearchRetainsLibraryQueryAndSelection (missing dialog row, line222)
+- seriesOutsideEightPreviewCanBeSelected (missing full-choice dialog list, line176)
+The existing 1060 tests passed. Build failed in 9m6s as intended; this is RED evidence, not a successful application build. Policy, Paper guards and performance/release parser checks passed before unit execution.
