@@ -198,14 +198,15 @@ internal fun LibraryArchiveContent(
             .sortedWith(String.CASE_INSENSITIVE_ORDER)
     }
 
-    val reconciledCollection = reconcileLibraryLabel(collection, collections)
+    // Empty snapshots include initial asynchronous loading; they do not prove metadata absence.
+    val reconciledCollection = reconcileLibraryLabel(collection, collections, allowRemoval = books.isNotEmpty())
     LaunchedEffect(collection, reconciledCollection) {
         if (collection != reconciledCollection) collection = reconciledCollection
     }
     val availableSeries = remember(books) {
         books.mapNotNull { it.seriesName }.filter { it.isNotBlank() }
     }
-    val reconciledSeries = reconcileLibraryLabel(seriesFilter, availableSeries)
+    val reconciledSeries = reconcileLibraryLabel(seriesFilter, availableSeries, allowRemoval = books.isNotEmpty())
     LaunchedEffect(seriesFilter, reconciledSeries) {
         if (seriesFilter != reconciledSeries) seriesFilter = reconciledSeries
     }

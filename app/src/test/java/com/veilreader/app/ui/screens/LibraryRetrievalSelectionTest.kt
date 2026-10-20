@@ -94,6 +94,13 @@ class LibraryRetrievalSelectionTest {
         assertEquals("", reconcileLibraryLabel(" ", listOf("Cycle")))
     }
 
+    @Test fun unknownMetadataAbsenceDefersRemovalUntilCanonicalBooksArrive() {
+        assertEquals("Cycle", reconcileLibraryLabel("Cycle", emptyList(), allowRemoval = false))
+        assertEquals("Cycle", reconcileLibraryLabel("Cycle", listOf("Cycle"), allowRemoval = true))
+        assertEquals("", reconcileLibraryLabel("Cycle", listOf("Different"), allowRemoval = true))
+        assertEquals("", reconcileLibraryLabel(" ", emptyList(), allowRemoval = false))
+    }
+
     @Test fun matchingUsesGroupIdentityWithoutFuzzyMergingNames() {
         assertTrue(libraryLabelMatches(" Cycle ", "cycle"))
         assertTrue(libraryLabelMatches(null, ""))

@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalDensity
@@ -7,6 +8,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import com.veilreader.app.R
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
@@ -33,8 +35,8 @@ class LibraryRetrievalInteractionTest {
         sourceUri = "veil-test://$id", coverCachePath = "", addedAtEpochMs = 100L
     )
 
-    private fun show(books: () -> List<Book>, query: String = "", fontScale: Float = 1f) {
-        compose.setContent {
+    private fun show(books: () -> List<Book>, query: String = "", fontScale: Float = 1f, restoration: StateRestorationTester? = null) {
+        val content: @Composable () -> Unit = {
             val density = LocalDensity.current
             CompositionLocalProvider(
                 LocalVeilReducedMotion provides true,
@@ -50,6 +52,7 @@ class LibraryRetrievalInteractionTest {
                 }
             }
         }
+        if (restoration == null) compose.setContent(content) else restoration.setContent(content)
         compose.awaitGrayfogArtwork()
     }
 
@@ -124,6 +127,32 @@ class LibraryRetrievalInteractionTest {
         compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertExists()
         search.performTextClearance()
         compose.onNodeWithText("First volume").assertExists()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun restoredSeriesSurvivesEmptySnapshotUntilBooksArrive() {
+        val original = book("one", "First volume", "Cycle")
+        val books = mutableStateOf(listOf(original))
+        var restoreWithEmpty = false
+        val restoration = StateRestorationTester(compose)
+        show({
+            val snapshot = books.value
+            if (restoreWithEmpty) emptyList() else snapshot
+        }, restoration = restoration)
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onAllNodes(hasText("Cycle") and hasClickAction()).onLast().performClick()
+        compose.awaitGrayfogArtwork()
+        // Change the next restored input without recomposing away the saved selection first.
+        compose.runOnIdle { restoreWithEmpty = true }
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertExists()
+        compose.runOnIdle {
+            restoreWithEmpty = false
+            books.value = listOf(original.copy(title = "Restored volume"))
+        }
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertExists()
+        compose.onNodeWithText("Restored volume").assertExists()
         compose.awaitGrayfogArtwork()
     }
 

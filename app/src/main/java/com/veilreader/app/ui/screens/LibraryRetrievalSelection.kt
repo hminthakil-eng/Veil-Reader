@@ -51,10 +51,15 @@ internal fun sortLibraryBooks(
 internal fun libraryLabelKey(value: String): String = value.trim().lowercase(Locale.ROOT)
 
 /** Available labels must come from all canonical books, not a query or truncated wing preview. */
-internal fun reconcileLibraryLabel(selected: String, available: List<String>): String {
+internal fun reconcileLibraryLabel(
+    selected: String,
+    available: List<String>,
+    allowRemoval: Boolean = true
+): String {
     if (selected.isBlank()) return ""
     val key = libraryLabelKey(selected)
-    return available.firstOrNull { libraryLabelKey(it) == key }?.trim().orEmpty()
+    return available.firstOrNull { libraryLabelKey(it) == key }?.trim()
+        ?: if (allowRemoval) "" else selected
 }
 
 internal fun libraryLabelMatches(value: String?, selected: String): Boolean =
