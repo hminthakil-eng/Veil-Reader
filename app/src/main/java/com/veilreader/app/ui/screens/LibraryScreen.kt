@@ -203,9 +203,8 @@ internal fun LibraryArchiveContent(
     LaunchedEffect(collection, reconciledCollection) {
         if (collection != reconciledCollection) collection = reconciledCollection
     }
-    val availableSeries = remember(books) {
-        books.mapNotNull { it.seriesName }.filter { it.isNotBlank() }
-    }
+    val seriesChoices = remember(books) { buildLibrarySeriesChoices(books) }
+    val availableSeries = remember(seriesChoices) { seriesChoices.map { it.name } }
     val reconciledSeries = reconcileLibraryLabel(seriesFilter, availableSeries, allowRemoval = books.isNotEmpty())
     LaunchedEffect(seriesFilter, reconciledSeries) {
         if (seriesFilter != reconciledSeries) seriesFilter = reconciledSeries
@@ -528,43 +527,17 @@ internal fun LibraryArchiveContent(
                         }
                     }
 
-                    if (wingState.seriesWings.isNotEmpty()) {
-                        Box {
-                            TextButton(
-                                onClick = { seriesMenu = true },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(horizontal = VeilSpacing.sm)
-                            ) {
-                                Text(
-                                    stringResource(R.string.library_group_series),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = seriesMenu,
-                                onDismissRequest = { seriesMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.library_all_series)) },
-                                    onClick = { seriesFilter = ""; seriesMenu = false }
-                                )
-                                wingState.seriesWings.forEach { wing ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                wing.name,
-                                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(wing.name)
-                                            )
-                                        },
-                                        onClick = {
-                                            seriesFilter = wing.name
-                                            collection = ""
-                                            seriesMenu = false
-                                        }
-                                    )
-                                }
-                            }
+                    if (seriesChoices.isNotEmpty()) {
+                        TextButton(
+                            onClick = { seriesMenu = true },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            contentPadding = PaddingValues(horizontal = VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.library_group_series),
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
 
@@ -925,6 +898,19 @@ internal fun LibraryArchiveContent(
                 }
             )
         }
+
+    if (seriesMenu) {
+        LibrarySeriesPickerDialog(
+            choices = seriesChoices,
+            selected = seriesFilter,
+            onSelect = { name ->
+                seriesFilter = name
+                if (name.isNotBlank()) collection = ""
+                seriesMenu = false
+            },
+            onDismiss = { seriesMenu = false }
+        )
+    }
 
     editing?.let { book ->
         val parsedSeriesIndex = seriesIndex

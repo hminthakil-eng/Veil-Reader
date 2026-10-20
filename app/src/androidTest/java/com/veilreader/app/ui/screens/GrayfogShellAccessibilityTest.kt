@@ -234,13 +234,51 @@ class GrayfogShellAccessibilityTest(
         capture("archive-gallery")
     }
 
-    private fun capture(surface: String) {
+
+    @Test
+    fun seriesPickerRetainsLongLabelsSelectionAndAccessibleActions() {
+        val localized = localizedContext()
+        val name = if (language == "fa") "کتاب‌های تاریخ و رصدخانهٔ خاکستری"
+            else "Records of the Observatory and the Grayfog Archive"
+        val choices = buildLibrarySeriesChoices(listOf(
+            Book(id = "series-one", title = "One", author = "Fixture", seriesName = name),
+            Book(id = "series-two", title = "Two", author = "Fixture", seriesName = name)
+        ))
+        var chosen: String? = null
+        var dismissals = 0
+        present {
+            LibrarySeriesPickerDialog(
+                choices = choices, selected = name,
+                onSelect = { chosen = it }, onDismiss = { dismissals++ },
+                modifier = Modifier.width(320.dp)
+            )
+        }
+        val search = compose.onNode(hasText(localized.getString(R.string.library_series_search)) and hasSetTextAction())
+        search.performClick().performTextInput(if (language == "fa") "تاريخ" else "Observatory")
+        search.assertIsFocused().performImeAction().assertIsNotFocused()
+        compose.onNode(hasScrollAction() and hasAnyAncestor(isDialog())).performScrollToNode(hasText(name))
+        val row = compose.onNode(hasText(name) and hasClickAction() and hasAnyAncestor(isDialog()))
+        row.assertIsDisplayed().assertIsSelected().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText(localized.resources.getQuantityString(R.plurals.library_series_books, 2, 2))
+            .assertExists()
+        capture("archive-series-picker", dialog = true)
+        row.performClick()
+        compose.onNodeWithText(localized.getString(R.string.common_cancel))
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle {
+            assertEquals(name, chosen)
+            assertEquals(1, dismissals)
+        }
+    }
+
+    private fun capture(surface: String, dialog: Boolean = false) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val directory = File(context.filesDir, "grayfog-review").apply { mkdirs() }
         val name = "$surface-$language-${(scale * 100).toInt()}-${if (highContrast) "contrast" else "standard"}.png"
         val file = File(directory, name)
         file.outputStream().use { output ->
-            check(compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
+            val root = if (dialog) compose.onNode(isDialog()) else compose.onRoot()
+            check(root.captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
         }
         com.veilreader.app.exportGrayfogCapture(file)
     }

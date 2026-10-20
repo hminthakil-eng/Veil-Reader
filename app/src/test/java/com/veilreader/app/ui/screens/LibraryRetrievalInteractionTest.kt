@@ -231,4 +231,16 @@ class LibraryRetrievalInteractionTest {
             .assertTextContains("veil")
         compose.awaitGrayfogArtwork()
     }
+
+    @Test fun seriesSearchImeActionReleasesDialogFocus() {
+        show({ listOf(book("one", "First volume", "Cycle")) })
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        val search = compose.onNode(hasText("Search series") and hasSetTextAction())
+        search.performClick().performTextInput("Cycle")
+        search.assertIsFocused().performImeAction().assertIsNotFocused()
+        compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog())).performClick()
+        compose.onNodeWithText("First volume").assertExists()
+        compose.awaitGrayfogArtwork()
+    }
 }

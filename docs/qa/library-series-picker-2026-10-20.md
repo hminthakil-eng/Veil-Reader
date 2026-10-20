@@ -10,3 +10,9 @@ Recovery ruling: the sandbox execution environment became unavailable on 2026-10
 Mission: GitHub's existing pull-request workflows provide bounded remote verification because no usable sandbox execution environment is available. Inputs are this branch's exact commits; workflow permissions and retention remain unchanged. No custom privileged workflow or paid infrastructure is introduced.
 
 Step 1: Four production Compose regressions added before implementation. Expected RED: missing dialog/search/full choices. Existing seven cases retained. Await fresh Actions results.
+
+Step 2 implementation prepared: canonical case/trim grouping shared with shelves; separate precomputed Persian search normalization; deterministic names and distinct volume counts; lazy keyed options; localized no-match and clear-search actions; All series stays available under search; radio selection semantics; wrapping labels and 48dp minimum actions; dialog-local IME focus handling. Nonblank series selection clears collection as before. All series and Cancel preserve collection, query and sort.
+
+Additional coverage: five pure choice tests including 10,000 series, identity/count invariants and Persian variants; one production IME-focus interaction; parameterized device test across English/Persian, 100/130/150/200% font and standard/high contrast (16 combinations), with dialog capture. These checks are pending execution.
+
+Pre-flight: the choice model feeds both canonical filter reconciliation and picker options. Existing shelf preview limits remain presentation-only. No changes to reader, database, dependency graph or runtime toolchains.
