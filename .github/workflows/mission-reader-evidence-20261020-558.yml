@@ -1,0 +1,67 @@
+name: Verify reader evidence artifacts
+
+on:
+  push:
+    branches: ["diagnostics/reader-toolchain-20261020-558"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect-owned-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify source, ZIP checksums, reports and capture inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, io, json, subprocess, zipfile
+          import xml.etree.ElementTree as ET
+          repo = "hminthakil-eng/Veil-Reader"
+          head = "e182b46cdf982383c96bbe26dfc0dc521263c08c"
+          reports = [
+              ("unit", 12303183743, 39502326161, "e1152dfdc0657fb0a0af92ed70289358212c69459e90d4766e3c072702fe5b59"),
+              ("device", 12301927946, 39502326165, "4de538f7c89f991cc74ed7d68f3142bbe246cb0d66b2cb7d15eb35422803f622"),
+          ]
+          def api(path):
+              return subprocess.run(["gh", "api", path], check=True, capture_output=True).stdout
+          for label, artifact, run, digest in reports:
+              metadata = json.loads(api(f"/repos/{repo}/actions/artifacts/{artifact}"))
+              assert metadata["workflow_run"]["head_sha"] == head
+              assert metadata["workflow_run"]["id"] == run
+              assert metadata["size_in_bytes"] < 128_000_000
+              payload = api(f"/repos/{repo}/actions/artifacts/{artifact}/zip")
+              assert hashlib.sha256(payload).hexdigest() == digest
+              print("VERIFIED", label, "source", head, "artifact", artifact, "sha256", digest)
+              with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+                  entries = [i for i in archive.infolist() if i.filename.rsplit("/", 1)[-1].startswith("TEST-") and i.filename.endswith(".xml")]
+                  assert entries, archive.namelist()
+                  assert sum(i.file_size for i in entries) < 16_000_000
+                  counts = dict(tests=0, failures=0, errors=0, skipped=0)
+                  for entry in entries:
+                      root = ET.fromstring(archive.read(entry))
+                      suites = [root] if root.tag == "testsuite" else root.findall("testsuite")
+                      for suite in suites:
+                          for key in counts:
+                              counts[key] += int(suite.attrib.get(key, "0"))
+                  print("TEST_TOTALS", label, "files", len(entries), json.dumps(counts, sort_keys=True))
+                  assert counts["tests"] > 0
+                  assert counts["failures"] == counts["errors"] == counts["skipped"] == 0
+                  if label == "unit":
+                      lint_names = [n for n in archive.namelist() if n.endswith("lint-results-debug.xml")]
+                      assert len(lint_names) == 1
+                      lint = ET.fromstring(archive.read(lint_names[0]))
+                      errors = sum(i.attrib.get("severity") in ("Error", "Fatal") for i in lint.findall("issue"))
+                      warnings = sum(i.attrib.get("severity") == "Warning" for i in lint.findall("issue"))
+                      print("LINT_TOTALS", json.dumps(dict(errors=errors, warnings=warnings)))
+                      assert errors == 0
+                  else:
+                      captures = sorted({n.rsplit("/", 1)[-1] for n in archive.namelist() if "archive-series-picker-" in n and n.endswith(".png")})
+                      print("SERIES_CAPTURE_COUNT", len(captures))
+                      for name in captures:
+                          print("SERIES_CAPTURE", name)
+                      assert len(captures) == 16
+          PY
