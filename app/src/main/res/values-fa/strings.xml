@@ -481,6 +481,7 @@
     <string name="library_all_collections">همهٔ مجموعه‌ها</string>
     <string name="library_sort_books">مرتب‌سازی کتاب‌ها: %1$s</string>
     <string name="library_sort_recent">تازه‌ترین</string>
+    <string name="library_sort_relevance">مرتبط‌ترین</string>
     <string name="library_sort_archive_depth">عمق آرشیو</string>
     <string name="library_sort_title">عنوان</string>
     <string name="library_sort_author">نویسنده</string>

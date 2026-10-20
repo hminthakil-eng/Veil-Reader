@@ -162,7 +162,7 @@ internal fun LibraryArchiveContent(
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
     var seriesFilter by rememberSaveable { mutableStateOf("") }
-    var sort by rememberSaveable { mutableStateOf("Recent") }
+    var sort by rememberSaveable { mutableStateOf(LibrarySortMode.AUTO.name) }
     var viewModeName by rememberSaveable { mutableStateOf(initialViewMode.name) }
     val viewMode = libraryViewModeFromStored(viewModeName)
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
@@ -198,10 +198,16 @@ internal fun LibraryArchiveContent(
             .sortedWith(String.CASE_INSENSITIVE_ORDER)
     }
 
-    LaunchedEffect(collections) {
-        if (collection.isNotEmpty() && collections.none { it.equals(collection, ignoreCase = true) }) {
-            collection = ""
-        }
+    val reconciledCollection = reconcileLibraryLabel(collection, collections)
+    LaunchedEffect(collection, reconciledCollection) {
+        if (collection != reconciledCollection) collection = reconciledCollection
+    }
+    val availableSeries = remember(books) {
+        books.mapNotNull { it.seriesName }.filter { it.isNotBlank() }
+    }
+    val reconciledSeries = reconcileLibraryLabel(seriesFilter, availableSeries)
+    LaunchedEffect(seriesFilter, reconciledSeries) {
+        if (seriesFilter != reconciledSeries) seriesFilter = reconciledSeries
     }
 
     val memoryState = remember(books, highlights, readingSessions, libraryNowEpochMs) {
@@ -257,6 +263,7 @@ internal fun LibraryArchiveContent(
 
     val trimmedQuery = query.trim()
     val normalizedQuery = remember(trimmedQuery) { normalizeLibrarySearchText(trimmedQuery) }
+    val effectiveSort = effectiveLibrarySort(restoreLibrarySort(sort), normalizedQuery.isNotBlank())
     val searchableByBookId = remember(books) {
         books.associate { book ->
             book.id to normalizedLibrarySearchDocument(
@@ -284,9 +291,9 @@ internal fun LibraryArchiveContent(
         normalizedQuery,
         searchScoreByBookId,
         shelf,
-        collection,
-        seriesFilter,
-        sort,
+        reconciledCollection,
+        reconciledSeries,
+        effectiveSort,
         deepShelfBookIds,
         memoryState
     ) {
@@ -301,42 +308,14 @@ internal fun LibraryArchiveContent(
                 "Deep Shelf" -> book.id in deepShelfBookIds
                 else -> true
             }
-            val matchesCollection = collection.isEmpty() || book.allCollections.any {
-                it.equals(collection, ignoreCase = true)
+            val matchesCollection = reconciledCollection.isEmpty() || book.allCollections.any {
+                libraryLabelMatches(it, reconciledCollection)
             }
-            val matchesSeries = seriesFilter.isEmpty() ||
-                book.seriesName?.equals(seriesFilter, ignoreCase = true) == true
+            val matchesSeries = libraryLabelMatches(book.seriesName, reconciledSeries)
             matchesQuery && matchesShelf && matchesCollection && matchesSeries
         }.let { list ->
-            when (sort) {
-                "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
-                "Author" -> list.sortedBy { it.author.lowercase(Locale.ROOT) }
-                "Progress" -> list.sortedByDescending { it.progress }
-                "Archive Depth" -> list.sortedByDescending {
-                    memoryState.memoryFor(it.id)?.inactiveMillis ?: 0L
-                }
-                "Series" -> list.sortedWith(
-                    compareBy<Book> { it.seriesName?.lowercase(Locale.ROOT) ?: "\uffff" }
-                        .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
-                        .thenBy { it.title.lowercase(Locale.ROOT) }
-                )
-                else -> if (normalizedQuery.isNotBlank()) {
-                    list.sortedWith(
-                        compareByDescending<Book> {
-                            searchScoreByBookId[it.id] ?: Int.MIN_VALUE
-                        }
-                            .thenByDescending {
-                                maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
-                            }
-                            .thenBy { it.id }
-                    )
-                } else {
-                    list.sortedWith(
-                        compareByDescending<Book> {
-                            maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
-                        }.thenBy { it.id }
-                    )
-                }
+            sortLibraryBooks(list, effectiveSort, searchScoreByBookId) { bookId ->
+                memoryState.memoryFor(bookId)?.inactiveMillis ?: 0L
             }
         }
     }
@@ -589,14 +568,15 @@ internal fun LibraryArchiveContent(
                     }
 
                     Box {
-                        val sortLabel = when (sort) {
-                            "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
-                            "Title" -> stringResource(R.string.library_sort_title)
-                            "Author" -> stringResource(R.string.library_sort_author)
-                            "Series" -> stringResource(R.string.library_sort_series)
-                            "Progress" -> stringResource(R.string.library_sort_progress)
-                            else -> stringResource(R.string.library_sort_recent)
-                        }
+                        val sortLabel = stringResource(when (effectiveSort) {
+                            LibrarySortMode.ARCHIVE_DEPTH -> R.string.library_sort_archive_depth
+                            LibrarySortMode.TITLE -> R.string.library_sort_title
+                            LibrarySortMode.AUTHOR -> R.string.library_sort_author
+                            LibrarySortMode.SERIES -> R.string.library_sort_series
+                            LibrarySortMode.PROGRESS -> R.string.library_sort_progress
+                            LibrarySortMode.RELEVANCE -> R.string.library_sort_relevance
+                            LibrarySortMode.AUTO, LibrarySortMode.RECENT -> R.string.library_sort_recent
+                        })
                         val sortDescription = stringResource(R.string.library_sort_books, sortLabel)
                         TextButton(
                             onClick = { sortMenu = true },
@@ -617,17 +597,26 @@ internal fun LibraryArchiveContent(
                             expanded = sortMenu,
                             onDismissRequest = { sortMenu = false }
                         ) {
-                            listOf(
-                                "Recent" to R.string.library_sort_recent,
-                                "Archive Depth" to R.string.library_sort_archive_depth,
-                                "Title" to R.string.library_sort_title,
-                                "Author" to R.string.library_sort_author,
-                                "Series" to R.string.library_sort_series,
-                                "Progress" to R.string.library_sort_progress
-                            ).forEach { (key, labelRes) ->
+                            buildList {
+                                if (normalizedQuery.isNotBlank()) {
+                                    add(LibrarySortMode.RELEVANCE to R.string.library_sort_relevance)
+                                }
+                                add(LibrarySortMode.RECENT to R.string.library_sort_recent)
+                                add(LibrarySortMode.ARCHIVE_DEPTH to R.string.library_sort_archive_depth)
+                                add(LibrarySortMode.TITLE to R.string.library_sort_title)
+                                add(LibrarySortMode.AUTHOR to R.string.library_sort_author)
+                                add(LibrarySortMode.SERIES to R.string.library_sort_series)
+                                add(LibrarySortMode.PROGRESS to R.string.library_sort_progress)
+                            }.forEach { (mode, labelRes) ->
                                 DropdownMenuItem(
                                     text = { Text(stringResource(labelRes)) },
-                                    onClick = { sort = key; sortMenu = false }
+                                    modifier = Modifier.semantics { selected = effectiveSort == mode },
+                                    onClick = {
+                                        sort = if (mode == LibrarySortMode.RELEVANCE) {
+                                            LibrarySortMode.AUTO.name
+                                        } else mode.name
+                                        sortMenu = false
+                                    }
                                 )
                             }
                         }

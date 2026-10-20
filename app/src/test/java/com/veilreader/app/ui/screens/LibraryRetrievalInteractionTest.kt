@@ -2,6 +2,9 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.veilreader.app.R
@@ -30,9 +33,13 @@ class LibraryRetrievalInteractionTest {
         sourceUri = "veil-test://$id", coverCachePath = "", addedAtEpochMs = 100L
     )
 
-    private fun show(books: () -> List<Book>, query: String = "") {
+    private fun show(books: () -> List<Book>, query: String = "", fontScale: Float = 1f) {
         compose.setContent {
-            CompositionLocalProvider(LocalVeilReducedMotion provides true) {
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalVeilReducedMotion provides true,
+                LocalDensity provides Density(density.density, fontScale)
+            ) {
                 VeilTheme(AppThemeMode.DARK) {
                     LibraryArchiveContent(
                         books = books(), isImporting = false, onImportUri = {},
@@ -64,6 +71,14 @@ class LibraryRetrievalInteractionTest {
         compose.awaitGrayfogArtwork()
     }
 
+    @Test @Config(qualifiers = "fa-rIR-w320dp-h900dp-mdpi")
+    fun persianSearchSortRemainsReachableAtTwoHundredPercent() {
+        show({ listOf(book("fa", "کتاب")) }, "كتاب", fontScale = 2f)
+        compose.onNodeWithContentDescription(context.getString(R.string.library_sort_books, "مرتبط‌ترین"))
+            .performScrollTo().assertHasClickAction().assertHeightIsAtLeast(48.dp)
+        compose.awaitGrayfogArtwork()
+    }
+
     @Test fun metadataRemovalClearsStaleSeriesWithoutHidingRemainingBooks() {
         val books = mutableStateOf(listOf(book("one", "First volume", "Cycle")))
         show({ books.value })
@@ -75,6 +90,39 @@ class LibraryRetrievalInteractionTest {
         compose.awaitGrayfogArtwork()
         compose.runOnIdle { books.value = listOf(book("one", "First volume", "New cycle")) }
         compose.onNodeWithText(chip).assertDoesNotExist()
+        compose.onNodeWithText("First volume").assertExists()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun validSeriesSurvivesFallingOutsideTheEightWingPreview() {
+        val original = book("one", "First volume", "Cycle")
+        val books = mutableStateOf(listOf(original))
+        show({ books.value })
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onAllNodes(hasText("Cycle") and hasClickAction()).onLast().performClick()
+        compose.awaitGrayfogArtwork()
+        compose.runOnIdle {
+            books.value = listOf(original) + (1..9).map {
+                book("other-$it", "Other volume $it", "Other cycle $it")
+                    .copy(lastOpenedAtEpochMs = 1_000L)
+            }
+        }
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertExists()
+        compose.onNodeWithText("First volume").assertExists()
+        compose.onNodeWithText("Other volume 1").assertDoesNotExist()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun emptySearchResultsDoNotClearAValidSeries() {
+        show({ listOf(book("one", "First volume", "Cycle")) })
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onAllNodes(hasText("Cycle") and hasClickAction()).onLast().performClick()
+        val search = compose.onNode(hasContentDescription(context.getString(R.string.library_search_hint)) and hasSetTextAction())
+        search.performScrollTo().performTextInput("no-matching-volume")
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertExists()
+        search.performTextClearance()
         compose.onNodeWithText("First volume").assertExists()
         compose.awaitGrayfogArtwork()
     }
