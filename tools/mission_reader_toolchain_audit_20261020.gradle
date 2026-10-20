@@ -1,0 +1,18 @@
+gradle.projectsEvaluated {
+    println("AUDIT_SOURCE_EXPECTED=e182b46cdf982383c96bbe26dfc0dc521263c08c")
+    gradle.rootProject.allprojects.each { p ->
+        def config = p.buildscript.configurations.findByName("classpath")
+        if (config != null && config.canBeResolved) {
+            config.resolvedConfiguration.resolvedArtifacts.findAll {
+                it.moduleVersion.id.group == "org.bouncycastle"
+            }.each {
+                println("AUDIT_RESOLVED project=" + p.path + " module=" + it.moduleVersion.id)
+            }
+        }
+    }
+    def app = gradle.rootProject.project(":app")
+    def plugin = app.plugins.getPlugin("com.android.application")
+    def provider = Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider", false, plugin.getClass().classLoader)
+    println("AUDIT_AGP_PROVIDER_JAR=" + provider.protectionDomain.codeSource.location)
+    println("AUDIT_AGP_PROVIDER_VERSION=" + provider.getPackage().implementationVersion)
+}
