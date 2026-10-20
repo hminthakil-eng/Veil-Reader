@@ -241,7 +241,7 @@ class LibraryRetrievalInteractionTest {
         search.assertIsFocused()
         search.performImeAction()
         search.assertIsNotFocused()
-        compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog())).performClick()
+        compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog()) and !hasSetTextAction()).performClick()
         compose.onNodeWithText("First volume").assertExists()
         compose.awaitGrayfogArtwork()
     }
