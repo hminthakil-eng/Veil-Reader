@@ -481,6 +481,7 @@
     <string name="library_all_collections">All collections</string>
     <string name="library_sort_books">Sort books: %1$s</string>
     <string name="library_sort_recent">Recent</string>
+    <string name="library_sort_relevance">Relevance</string>
     <string name="library_sort_archive_depth">Archive Depth</string>
     <string name="library_sort_title">Title</string>
     <string name="library_sort_author">Author</string>
