@@ -32,3 +32,5 @@ Observed RED: Android CI run 39498819871, job 118890759084, exact head 8c77b39ad
 - cancelledSeriesSearchRetainsLibraryQueryAndSelection (missing dialog row, line222)
 - seriesOutsideEightPreviewCanBeSelected (missing full-choice dialog list, line176)
 The existing 1060 tests passed. Build failed in 9m6s as intended; this is RED evidence, not a successful application build. Policy, Paper guards and performance/release parser checks passed before unit execution.
+
+Candidate verification run 39500213598 stopped at test compilation: LibraryRetrievalInteractionTest.kt:241 chained assertIsNotFocused after performImeAction. Compose's performImeAction returns Unit, not SemanticsNodeInteraction (compiler receiver mismatch). The same chain existed in the added device case. Split the focus assertion, IME action and subsequent focus assertion into separate calls in both tests; assertions are retained. Production code is unchanged. Re-run full configured workflows on the corrected exact head. This failed compile is not GREEN evidence.

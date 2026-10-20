@@ -255,7 +255,9 @@ class GrayfogShellAccessibilityTest(
         }
         val search = compose.onNode(hasText(localized.getString(R.string.library_series_search)) and hasSetTextAction())
         search.performClick().performTextInput(if (language == "fa") "تاريخ" else "Observatory")
-        search.assertIsFocused().performImeAction().assertIsNotFocused()
+        search.assertIsFocused()
+        search.performImeAction()
+        search.assertIsNotFocused()
         compose.onNode(hasScrollAction() and hasAnyAncestor(isDialog())).performScrollToNode(hasText(name))
         val row = compose.onNode(hasText(name) and hasClickAction() and hasAnyAncestor(isDialog()))
         row.assertIsDisplayed().assertIsSelected().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
