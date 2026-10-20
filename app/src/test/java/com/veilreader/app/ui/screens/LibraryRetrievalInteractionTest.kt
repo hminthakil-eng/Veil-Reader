@@ -164,4 +164,71 @@ class LibraryRetrievalInteractionTest {
         compose.onNodeWithText("Only volume").assertExists()
         compose.awaitGrayfogArtwork()
     }
+
+    @Test fun seriesOutsideEightPreviewCanBeSelected() {
+        show({ (1..12).map { index ->
+            book("book-$index", "Volume $index", "Cycle %02d".format(index))
+                .copy(lastOpenedAtEpochMs = (100 - index).toLong())
+        } })
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onNode(hasScrollAction() and hasAnyAncestor(isDialog()))
+            .performScrollToNode(hasText("Cycle 12"))
+        compose.onNode(hasText("Cycle 12") and hasClickAction() and hasAnyAncestor(isDialog()))
+            .performClick()
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle 12")).assertExists()
+        compose.onNodeWithText("Volume 12").assertExists()
+        compose.onNodeWithText("Volume 1").assertDoesNotExist()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test @Config(qualifiers = "fa-rIR-w320dp-h900dp-mdpi")
+    fun seriesSearchAcceptsPersianKeyboardVariantsAtLargeFont() {
+        show({ listOf(
+            book("fa", "جلد اول", "کتاب‌های تاریخ"),
+            book("other", "Other", "Other")
+        ) }, fontScale = 2f)
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onNode(hasText("جست‌وجوی مجموعه‌ها") and hasSetTextAction())
+            .performTextInput("كتاب هاي تاريخ")
+        compose.onNode(hasText("کتاب‌های تاریخ") and hasClickAction() and hasAnyAncestor(isDialog()))
+            .assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithText("جلد اول").assertExists()
+        compose.onNodeWithText("Other").assertDoesNotExist()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun seriesChooserShowsCountsSelectedStateAndClearSelection() {
+        show({ listOf(book("one", "First volume", " Cycle "), book("two", "Second volume", "cycle")) })
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog())).performClick()
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog())).assertIsSelected()
+        compose.onNodeWithText("2 books").assertExists()
+        compose.onNodeWithText(context.getString(R.string.library_all_series)).performClick()
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertDoesNotExist()
+        compose.onNodeWithText("First volume").assertExists()
+        compose.onNodeWithText("Second volume").assertExists()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun cancelledSeriesSearchRetainsLibraryQueryAndSelection() {
+        show({ listOf(book("one", "Veil volume", "Cycle"), book("other", "Other", "Other")) }, query = "veil")
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog())).performClick()
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        compose.onNode(hasText("Search series") and hasSetTextAction()).performTextInput("no-matching-series")
+        compose.onNodeWithText("No matching series").assertExists()
+        compose.onNodeWithText(context.getString(R.string.common_cancel)).performClick()
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Cycle")).assertExists()
+        compose.onNodeWithText("Veil volume").assertExists()
+        compose.onNode(hasContentDescription(context.getString(R.string.library_search_hint)) and hasSetTextAction())
+            .assertTextContains("veil")
+        compose.awaitGrayfogArtwork()
+    }
 }
