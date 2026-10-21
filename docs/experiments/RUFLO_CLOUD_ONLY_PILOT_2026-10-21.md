@@ -49,3 +49,12 @@
 - The second job verified both the exact stored value and one semantic search match (score 0.91). `memory peek` showed one record in both the CLI and MCP memory files.
 - Open limitation: the search reported `Partial result` due to split CLI vs MCP/AgentDB stores; explicit path selection or unified memory policy is needed before multi-agent sharing.
 - This establishes an explicit **artifact handoff between independent jobs in one run**. It does not mean Ruflo automatically retains state on GitHub runners between unrelated workflow runs.
+
+## Run 4: actual inference via isolated local model
+- URL: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39633068312
+- **PASS, real inference confirmed**, using Ruflo 3.59.8 `agent_execute`, `RUFLO_PROVIDER=ollama`, a local Ollama daemon, and `qwen2.5:0.5b`.
+- Researcher output: 123 tokens / 4.116s; reviewer: 127 tokens / 3.357s.
+- No personal PC, no API keys, no checkout or repository mutations. Model prompts stayed on the temporary runner's local HTTP inference server.
+- Output artifact: `ruflo-real-agent-report` in the run; contains a preliminary diagnosis of PR #509.
+- **QUALITY FAIL**: model's investigator proposed a weakly specified verification; reviewer mostly repeated input facts instead of challenging the hypothesis. This proves technical routing, not trustworthy expert engineering quality.
+- Next comparison: `Ruflo Engineering Review Pilot` using a larger `qwen2.5-coder:3b` model with explicit evidence/hypothesis separation and adversarial reviewer prompt. This is still an experiment.
