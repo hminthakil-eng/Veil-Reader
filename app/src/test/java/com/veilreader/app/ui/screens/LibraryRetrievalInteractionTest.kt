@@ -89,6 +89,27 @@ class LibraryRetrievalInteractionTest {
         compose.onNodeWithText(favorite.title).assertExists()
     }
 
+    @Test fun pendingHomeShelfWinsOverRestoredSearchAndSeries() {
+        var restoringWithShelf = false
+        val restoration = StateRestorationTester(compose)
+        val ordinary = book("ordinary-restored", "Ordinary restored volume", "Old cycle")
+        val favorite = book("favorite-restored", "Favorite restored volume", "New cycle").copy(favorite = true)
+        show({ listOf(ordinary, favorite) }, restoration = restoration,
+            requestedShelf = { if (restoringWithShelf) LibraryShelfDestination.FAVORITES else null },
+            onShelfRequestConsumed = { restoringWithShelf = false })
+        compose.onNodeWithText(context.getString(R.string.library_group_series)).performScrollTo().performClick()
+        compose.onAllNodes(hasText("Old cycle") and hasClickAction()).onLast().performClick()
+        compose.onNode(hasContentDescription(context.getString(R.string.library_search_hint)) and hasSetTextAction())
+            .performScrollTo().performTextInput("no-matching-volume")
+        // Recreate with the old retrieval state and a not-yet-consumed Home destination.
+        // A plain flag deliberately avoids processing the request before recreation.
+        restoringWithShelf = true
+        restoration.emulateSavedInstanceStateRestore()
+        compose.awaitGrayfogArtwork()
+        compose.onNodeWithText(favorite.title).assertExists()
+        compose.onNodeWithText(ordinary.title).assertDoesNotExist()
+    }
+
     @Test fun effectiveSearchShowsRelevanceAndExplicitRecentRemainsRecent() {
         show({ listOf(book("one", "Veil"), book("two", "Veil Notes")) }, "veil")
         val relevanceDescription = context.getString(R.string.library_sort_books, "Relevance")
