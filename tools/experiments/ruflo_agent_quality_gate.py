@@ -9,14 +9,14 @@ import re
 from pathlib import Path
 
 CORRECT_API = '/dependency-graph/compare/'
-WRONG_API_RE = re.compile(r'/repos/\\{[^}]+\\}/\\{[^}]+\\}/compare/', re.I)
+WRONG_API_RE = re.compile(r'/repos/\{[^}]+\}/\{[^}]+\}/compare/', re.I)
 
 
 def evaluate(content: str) -> dict:
     errors = []
-    if not re.search(r'^##\\s+CI investigator\\s*$', content, re.M):
+    if not re.search(r'^##\s+CI investigator\s*$', content, re.M):
         errors.append('missing investigator section')
-    if not re.search(r'^##\\s+Skeptical reviewer\\s*$', content, re.M):
+    if not re.search(r'^##\s+Skeptical reviewer\s*$', content, re.M):
         errors.append('missing independent reviewer section')
     if WRONG_API_RE.search(content):
         errors.append('wrong GitHub commits-compare endpoint proposed for dependency snapshot checks')
