@@ -68,3 +68,18 @@
 - The reviewer repeated the bad endpoint and the unchanged `refs/pull/509/merge` instead of critically examining the alternate head branch ref hypothesis. This **fails independent-review quality** despite both model calls succeeding.
 - Artifact: `ruflo-engineering-review` in this workflow run. Treat its contents as experimental untrusted suggestions, **not an approved fix**.
 - Decision: keep `Ruflo` as experimental orchestration infrastructure; use a materially stronger, properly authenticated model plus deterministic source-grounded tests before permitting unattended engineering writes. Do not weaken dependency policy or promote this pilot.
+
+## Run 6: adversarial static quality screen
+- URL: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39639953254
+- **PASS (9 tests)** against deterministic no-false-green tests.
+- Screen rejects the real 3B model's erroneous ordinary code-compare API path, missing exact source SHAs, duplicate/missing reviewer, missing snapshot-warnings header, and unreviewed merge-ref-only logic.
+- Even a syntactically compliant report gets `approved_for_merge: false`. Static screening is not evidence of technical correctness.
+- Production branch and PR #509 have not been changed by this test.
+
+## Source-grounded LLM evidence trials: correct fail-closed outcome
+- Runs: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39638198262 and https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39639481598
+- The source files used by the PR were read, without execution, and the local Qwen2.5-Coder 3B attempted the analysis.
+- First run: reviewer produced only 5 output tokens and the run stopped at inference output validation.
+- Second run: both agent calls returned, but reviewer output was only 15 characters; independent evidence gate rejected the report. **Correct safety behavior is FAIL**, not a successful engineering review.
+- Avoid allowing small CPU models to approve security/release changes. They remain experiments.
+- Subsequent exact dependency-graph compare diagnostic: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39640375339 (read-only; record outcome separately).
