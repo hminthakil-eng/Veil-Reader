@@ -83,3 +83,11 @@
 - Second run: both agent calls returned, but reviewer output was only 15 characters; independent evidence gate rejected the report. **Correct safety behavior is FAIL**, not a successful engineering review.
 - Avoid allowing small CPU models to approve security/release changes. They remain experiments.
 - Subsequent exact dependency-graph compare diagnostic: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39640375339 (read-only; record outcome separately).
+
+## Read-only exact snapshot diagnostic and successful policy rerun (2026-10-21)
+- Diagnostic: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39640375339 — PASS; exact PR 509 base/head dependency-graph compare API returned HTTP 200, valid JSON list and an empty snapshot-warnings header.
+- Previous failed policy workflow: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/38422084217. Re-ran **only failed dependency-review job** using GitHub workflow rerun; the latest attempt completed **SUCCESS** with all review/policy steps passing.
+- Latest step evidence: exact source snapshots ready; dependency-review action reported zero vulnerable packages of severity high or greater, zero incompatible/denied licenses, 11 dependencies with unknown license metadata (warnings, not denied by current policy).
+- This confirms the dependency-review gate passes on the original PR source *now*; it does **not** establish that the suspected refs/pull merge metadata was the root cause or that future ingestion will be reliable. Avoid speculative production edits.
+- PR #509 remains OPEN and DRAFT and UNMERGED. Native Android physical-device acceptance in issue #408 is independent and not satisfied by this policy result.
+- All Ruflo experiments and report screening live only on experiment/ruflo-keyless-cloud-20261021.
