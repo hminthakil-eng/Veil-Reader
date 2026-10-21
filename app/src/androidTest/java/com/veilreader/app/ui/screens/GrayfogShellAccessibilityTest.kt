@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ApplicationProvider
 import com.veilreader.app.R
@@ -318,6 +319,10 @@ class GrayfogShellAccessibilityTest(
             assertTrue(action(layouts))
         }
         assertEquals(scale, layouts.single().layoutInput.density.fontScale, 0f)
+        // The card's nearest scroll ancestor is horizontal. First bring the whole
+        // shelf into the vertical viewport, then reveal the selected card within it.
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
+            .performScrollTo()
         compose.onNode(hasText(recent.title) and hasClickAction()).performScrollTo()
             .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
         capture("station-recent")
