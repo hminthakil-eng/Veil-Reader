@@ -8,4 +8,8 @@ The repository itself defines its runtimes, services, dependencies, architecture
 
 Treat exact GitHub commit and PR state as durable source truth, preserve unrelated work, and do not make access to the user's computer a dependency of the workflow.
 
+## Veil change acceptance
+
+For Veil Reader features, bugfixes, refactors, and PR reviews, load `.agents/skills/veil-change-acceptance/SKILL.md` and apply its four discipline gates together with the existing Reforge GREEN contract. This supplements, but does not override, Luna's repository-state policy or specialized development and verification skills.
+
 When this repository is used as a template, keep this entry point and add the project's own engineering instructions alongside it.
