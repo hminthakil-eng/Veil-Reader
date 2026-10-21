@@ -45,7 +45,7 @@ internal fun groupLibraryBooksByLabel(
         .mapNotNull { (rawName, book) ->
             rawName.trim().takeIf { it.isNotEmpty() }?.let { it to book }
         }
-        .groupBy { (name, _) -> name.lowercase(Locale.ROOT) }
+        .groupBy { (name, _) -> libraryLabelKey(name) }
         .map { (_, taggedBooks) ->
             val displayName = taggedBooks
                 .map { it.first }

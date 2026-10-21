@@ -481,6 +481,7 @@
     <string name="library_all_collections">All collections</string>
     <string name="library_sort_books">Sort books: %1$s</string>
     <string name="library_sort_recent">Recent</string>
+    <string name="library_sort_relevance">Relevance</string>
     <string name="library_sort_archive_depth">Archive Depth</string>
     <string name="library_sort_title">Title</string>
     <string name="library_sort_author">Author</string>
@@ -1439,4 +1440,11 @@
     <string name="reader_fixed_layout_transition_unavailable">This fixed-layout book uses simple paging. Animated turns and scrolling are unavailable; your saved preference is unchanged.</string>
     <string name="tts_checkpoint_failed">Listening position could not be saved or restored. Speech pauses to protect your place. Retry after checking storage.</string>
     <string name="notice_highlight_delete_failed">Couldn’t remove the highlight. The saved passage and note are still kept.</string>
+    <string name="library_series_search">Search series</string>
+    <string name="library_series_search_clear">Clear series search</string>
+    <string name="library_series_no_match">No matching series</string>
+    <plurals name="library_series_books">
+        <item quantity="one">%1$d book</item>
+        <item quantity="other">%1$d books</item>
+    </plurals>
 </resources>
