@@ -1,0 +1,89 @@
+# Cross-runner persistence proof for Ruflo. Includes only synthetic test data.
+name: Ruflo Cross Runner Memory
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-cross-runner-memory.yml
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  CI: "true"
+  NO_COLOR: "1"
+  RUFLO_TELEMETRY: "false"
+  npm_config_audit: "false"
+  npm_config_fund: "false"
+
+jobs:
+  write-memory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install pinned Ruflo + native SQLite
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ruflo-cross-runner"
+          cd "$RUNNER_TEMP/ruflo-cross-runner"
+          npm install --no-save --no-audit --no-fund --ignore-scripts=false ruflo@3.59.8 better-sqlite3@12.9.0
+          node -e "const D=require('better-sqlite3'); const x=new D(':memory:'); x.exec('create table t (v int)'); x.close();"
+
+      - name: Write synthetic memory and package stores
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ruflo-cross-runner"
+          ./node_modules/.bin/ruflo memory init
+          ./node_modules/.bin/ruflo memory store --namespace veil-cloud-proof --key cross-runner-proof --value "Ruflo memory moved between independent GitHub-hosted runners" 2>&1 | tee store.log
+          if grep -Eiq 'Invalid PRAGMA|persistence is not guaranteed' store.log; then exit 1; fi
+          ./node_modules/.bin/ruflo daemon stop || true
+          test -s .swarm/memory.db
+          test -s .swarm/agentdb-memory.db
+          tar -czf "$RUNNER_TEMP/ruflo-memory-synthetic.tar.gz" .swarm .claude
+          echo "Synthetic snapshot packaged; no API keys, source code or personal files included"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ruflo-synthetic-memory-cross-runner
+          path: ${{ runner.temp }}/ruflo-memory-synthetic.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  read-memory:
+    needs: write-memory
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install pinned Ruflo + native SQLite on different cloud runner
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ruflo-cross-runner"
+          cd "$RUNNER_TEMP/ruflo-cross-runner"
+          npm install --no-save --no-audit --no-fund --ignore-scripts=false ruflo@3.59.8 better-sqlite3@12.9.0
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: ruflo-synthetic-memory-cross-runner
+          path: ${{ runner.temp }}/
+
+      - name: Restore memory and assert retrieval in a fresh cloud job
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ruflo-cross-runner"
+          tar -xzf "$RUNNER_TEMP/ruflo-memory-synthetic.tar.gz"
+          ./node_modules/.bin/ruflo memory peek 2>&1 | tee peek.log
+          ./node_modules/.bin/ruflo memory retrieve --namespace veil-cloud-proof --key cross-runner-proof 2>&1 | tee retrieved.log
+          grep -Fq 'Ruflo memory moved between independent GitHub-hosted runners' retrieved.log
+          ./node_modules/.bin/ruflo memory search --namespace veil-cloud-proof --query 'Ruflo memory GitHub runners' 2>&1 | tee search.log
+          grep -Eq 'Found [1-9][0-9]* results|cross-runner-proof' search.log
+          if grep -Eiq 'Invalid PRAGMA|persistence is not guaranteed|No results found' retrieved.log search.log; then exit 1; fi
+          echo "PASS: synthetic memory survived transfer to a separate GitHub runner"
+          {
+            echo "## Ruflo cross-runner persistence"
+            echo "- Separate GitHub-hosted jobs and runtime processes"
+            echo "- Pinned Ruflo 3.59.8 + native better-sqlite3 12.9.0"
+            echo "- Restored known synthetic memory value and found semantic result"
+            echo "- No provider/API credentials or project checkout"
+            echo "- Snapshot transfer in one workflow is proven; automatic memory across future workflows is not yet configured"
+          } >> "$GITHUB_STEP_SUMMARY"
