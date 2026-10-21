@@ -35,6 +35,15 @@ Apply four disciplined checks alongside existing engineering and Reforge rules. 
 - Record the exact tested commit SHA, commands/results, screenshots/videos, hardware when relevant, and remaining limitations. Never invent measurements.
 - Respect `docs/governance/REFORGE_GREEN_CONTRACT.md`: CI is not device proof; unfinished user-visible work remains YELLOW/RED, not GREEN-PRODUCT.
 
+## Failure and proportionality rules
+
+- **Do not fake progress:** if original behavior remains broken, evidence is missing, or an applicable check fails, record `HOLD` or `FAIL` and name the blocker instead of silently weakening acceptance.
+- **High-risk changes:** never trade away reader data, migration safety, privacy, accessibility, or independent page-turn modes for speed or aesthetics. Stop unsafe proposals and offer a reversible alternative.
+- **Concurrent work:** resolve current GitHub SHA before publishing; preserve other agents' changes and do not overwrite drift or silently force-push.
+- **Proportionate review:** for trivial documentation edits, use document-level validation; do not require device testing unrelated to the change. For user-visible UI/reader behavior, require applicable real-device proof.
+- **Human-controlled release:** an agent's `PASS` is a review input, not automatic permission to merge, deploy, sign, or call work `GREEN-PRODUCT`.
+- **Evaluate instructions:** consult `docs/quality/VEIL_CHANGE_ACCEPTANCE_PRESSURE_MATRIX_2026-10-21.md`. Pressure-case status is `NOT RUN` until actual agent tool traces have been evaluated.
+
 ## PR acceptance record
 
 A proposed change is **reviewable** when its description records:
