@@ -89,14 +89,17 @@ class LibraryRetrievalInteractionTest {
         compose.onNodeWithText(favorite.title).assertExists()
     }
 
-    @Test fun pendingHomeShelfWinsOverRestoredSearchAndSeries() {
+    @Test fun pendingHomeShelfWinsOverRestoredRetrievalContext() {
         var restoringWithShelf = false
         val restoration = StateRestorationTester(compose)
-        val ordinary = book("ordinary-restored", "Ordinary restored volume", "Old cycle")
-        val favorite = book("favorite-restored", "Favorite restored volume", "New cycle").copy(favorite = true)
+        val ordinary = book("ordinary-restored", "Ordinary restored volume", "Old cycle").copy(collections = listOf("Old collection"))
+        val favorite = book("favorite-restored", "Favorite restored volume", "New cycle").copy(favorite = true, collections = listOf("New collection"))
         show({ listOf(ordinary, favorite) }, restoration = restoration,
             requestedShelf = { if (restoringWithShelf) LibraryShelfDestination.FAVORITES else null },
             onShelfRequestConsumed = { restoringWithShelf = false })
+        compose.onNode(hasText(context.getString(R.string.library_collection)) and hasClickAction())
+            .performScrollTo().performClick()
+        compose.onNode(hasText("Old collection") and hasClickAction()).performClick()
         compose.onNodeWithText(context.getString(R.string.library_group_series)).performScrollTo().performClick()
         compose.onAllNodes(hasText("Old cycle") and hasClickAction()).onLast().performClick()
         compose.onNode(hasContentDescription(context.getString(R.string.library_search_hint)) and hasSetTextAction())
@@ -106,6 +109,8 @@ class LibraryRetrievalInteractionTest {
         restoringWithShelf = true
         restoration.emulateSavedInstanceStateRestore()
         compose.awaitGrayfogArtwork()
+        compose.onNode(hasText("Old collection") and hasClickAction()).assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.library_series_filter, "Old cycle")).assertDoesNotExist()
         compose.onNodeWithText(favorite.title).assertExists()
         compose.onNodeWithText(ordinary.title).assertDoesNotExist()
     }
