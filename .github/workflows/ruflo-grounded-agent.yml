@@ -100,10 +100,17 @@ jobs:
           import {pathToFileURL} from 'node:url';
           const root=process.env.GITHUB_WORKSPACE;
           const src=join(root,'source');
-          const read=(p,n=4500)=>readFileSync(join(src,p),'utf8').slice(0,n);
-          const verifier=read('tools/verify_dependency_review_snapshots.py',4000);
-          const baseline=read('.github/workflows/dependency-baseline.yml',4400);
-          const review=read('.github/workflows/dependency-review.yml',1800);
+          // Small, line-attributed, literal excerpts: source files are read, not executed.
+          const excerpt=(path,needles,limit=18)=>readFileSync(join(src,path),'utf8')
+            .split('\n').map((line,i)=>({line,number:i+1}))
+            .filter(({line})=>needles.some(needle=>line.includes(needle)))
+            .slice(0,limit).map(({line,number})=>number+': '+line).join('\n');
+          const verifier=excerpt('tools/verify_dependency_review_snapshots.py',
+            ['dependency-graph/compare/','WARNINGS_HEADER','base_sha','head_sha','wait_for_snapshots','return response.headers']);
+          const baseline=excerpt('.github/workflows/dependency-baseline.yml',
+            ['GITHUB_DEPENDENCY_GRAPH_SHA','GITHUB_DEPENDENCY_GRAPH_REF','JOB_CORRELATOR','Generate and submit','github.event.pull_request.head.sha']);
+          const review=excerpt('.github/workflows/dependency-review.yml',
+            ['Verify complete exact-source snapshots','DEPENDENCY_REVIEW_BASE_SHA','DEPENDENCY_REVIEW_HEAD_SHA','retry-on-snapshot-warnings']);
           const evidence='EXACT source commit: e37869bb68e0497b5cbb9ca9f9b56c4e53286020\n'
             +'Exact base SHA: bfac95f4b82e23b9f277f985bf3282f3e9c584fb\n'
             +'Prior runtime log: submission GITHUB_DEPENDENCY_GRAPH_SHA=e37869bb68e0497b5cbb9ca9f9b56c4e53286020, '
@@ -118,13 +125,20 @@ jobs:
           const {executeAgentTask}=await import(pathToFileURL(resolve('node_modules/@claude-flow/cli/dist/src/mcp-tools/agent-execute-core.js')).href);
           const exactApi='/repos/hminthakil-eng/Veil-Reader/dependency-graph/compare/bfac95f4b82e23b9f277f985bf3282f3e9c584fb...e37869bb68e0497b5cbb9ca9f9b56c4e53286020?per_page=5';
           async function task(agent,prompt){
-            const x=await executeAgentTask({agentId:agent.agentId,prompt,maxTokens:620,timeoutMs:190000,temperature:0.1});
-            console.log('INFERENCE '+JSON.stringify({role:agent.agentType,success:x.success,model:x.model,usage:x.usage,durationMs:x.durationMs,error:x.error||null}));
-            if(!x.success || !x.output || x.output.trim().length<130) throw Error('No usable LLM response for '+agent.agentType);
-            return x.output.trim();
+            const x=await executeAgentTask({agentId:agent.agentId,prompt,maxTokens:480,timeoutMs:170000,temperature:0.1});
+            console.log('INFERENCE '+JSON.stringify({
+              role:agent.agentType,success:x.success,model:x.model,usage:x.usage,
+              durationMs:x.durationMs,stopReason:x.stopReason||null,
+              outputChars:x.output?.length||0,error:x.error||null
+            }));
+            // Do not hide empty/short outputs: preserve them and let the independent gate reject.
+            return x.success ? (x.output||'').trim() : ('ERROR: '+(x.error||'model call failed'));
           }
           const a=await task(investigator,'Respond ONLY with your analysis body; do not add a heading. Source-grounded CI diagnosis. Required: distinguish Observation from Hypothesis, quote exact base and head SHA, mention observed refs/pull/509/merge and proposed UNPROVEN test refs/heads/reader/native-paper-rebuild-20261011, provide the exact dependency graph comparison API path '+exactApi+' and the header x-github-dependency-graph-snapshot-warnings. Define an isolated experiment and failure conditions. NEVER use the ordinary GitHub commits comparison API. DO NOT approve a merge.\nSOURCE EVIDENCE:\n'+evidence);
-          const b=await task(reviewer,'Review this UNTRUSTED investigator answer critically against the original source evidence. Respond ONLY with reviewer body; do not add heading. REQUIRE: independent alternative cause/risk, exact dependency compare API path '+exactApi+' and x-github-dependency-graph-snapshot-warnings. A valid empty header plus complete policy evaluation is required; missing/incomplete snapshot means fail. End with an exact line: Decision: BLOCK. Never use ordinary commits comparison API. Explicitly reject an incorrect API if investigator used one.\nSOURCE EVIDENCE:\n'+evidence+'\nUNTRUSTED DRAFT:\n'+a);
+          const reviewEvidence='Head SHA e37869bb68e0497b5cbb9ca9f9b56c4e53286020; base bfac95f4b82e23b9f277f985bf3282f3e9c584fb.\n'
+            +'Actual ref refs/pull/509/merge; alternative ref refs/heads/reader/native-paper-rebuild-20261011 unproven.\n'
+            +'SOURCE VERIFIED CHECK:\n'+verifier+'\nSOURCE SUBMISSION CONFIG:\n'+baseline;
+          const b=await task(reviewer,'Independently assess investigator; give one alternative cause, correct full dependency graph API '+exactApi+', condition on x-github-dependency-graph-snapshot-warnings being present and empty. Reject incomplete snapshot. End exactly: Decision: BLOCK. Do NOT use ordinary commits compare API.\nFACTS:\n'+reviewEvidence+'\nINVESTIGATOR DRAFT (untrusted):\n'+a.slice(0,1500));
           const report='# PR 509 Ruflo source-grounded review (unverified agent output)\n\n'
             +'> Proposed fixes are NOT validated. No agent can modify product code.\n\n'
             +'## CI investigator\n'+a+'\n\n## Skeptical reviewer\n'+b+'\n';
