@@ -41,3 +41,11 @@
 3. Keep model credentials scoped to a separate trusted execution flow, with no untrusted PR checkout or arbitrary code execution in the same job.
 4. Verify the proposed dependency snapshot ref correction on an isolated branch and compare the exact head/base GitHub API warnings.
 5. Only after functional model inference, security and quality gates can Ruflo be promoted beyond pilot.
+
+## Run 3: independent cloud-runner handoff (cross-job)
+- URL: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39632021184
+- Conclusion: **PASS**. `write-memory` and `read-memory` were successful jobs on separate GitHub-hosted runners.
+- Synthetic `.swarm` and `.claude` state was archived and uploaded using `actions/upload-artifact@v7`; the second job downloaded and restored it.
+- The second job verified both the exact stored value and one semantic search match (score 0.91). `memory peek` showed one record in both the CLI and MCP memory files.
+- Open limitation: the search reported `Partial result` due to split CLI vs MCP/AgentDB stores; explicit path selection or unified memory policy is needed before multi-agent sharing.
+- This establishes an explicit **artifact handoff between independent jobs in one run**. It does not mean Ruflo automatically retains state on GitHub runners between unrelated workflow runs.
