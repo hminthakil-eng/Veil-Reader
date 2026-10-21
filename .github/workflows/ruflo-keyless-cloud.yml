@@ -1,0 +1,76 @@
+# Isolated keyless Ruflo pilot. Nothing here needs a user's PC or API credentials.
+name: Ruflo Cloud Keyless Pilot
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-keyless-cloud.yml
+  workflow_dispatch:
+
+# No repository mutation, no secrets, no checkout, no inherited write scope.
+permissions: {}
+
+jobs:
+  keyless-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      CI: "true"
+      NO_COLOR: "1"
+      RUFLO_TELEMETRY: "false"
+      npm_config_audit: "false"
+      npm_config_fund: "false"
+      npm_config_ignore_scripts: "true"
+    steps:
+      - name: Show isolated runtime
+        run: |
+          node --version
+          npm --version
+          echo "Project repository content is NOT checked out"
+          echo "This experiment passes NO LLM provider API keys"
+
+      - name: Install exact tested Ruflo version without lifecycle scripts
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ruflo-pilot"
+          cd "$RUNNER_TEMP/ruflo-pilot"
+          npm install --no-save --ignore-scripts --no-audit --no-fund ruflo@3.59.8
+          test -x node_modules/.bin/ruflo
+          node_modules/.bin/ruflo --version
+
+      - name: Check orchestrator commands and keyless coordination
+        run: |
+          set -uo pipefail
+          cd "$RUNNER_TEMP/ruflo-pilot"
+          cli="$PWD/node_modules/.bin/ruflo"
+          failed=0
+          attempt() {
+            local label="$1"
+            shift
+            echo "::group::$label"
+            timeout 90s "$@"
+            rc=$?
+            echo "COMMAND_RESULT $label=$rc"
+            echo "::endgroup::"
+            return 0
+          }
+          attempt doctor-readonly "$cli" doctor
+          attempt swarm-init "$cli" swarm init --topology hierarchical --max-agents 3
+          attempt researcher-register "$cli" agent spawn --type researcher --name dependency-evidence
+          attempt reviewer-register "$cli" agent spawn --type reviewer --name security-review
+          attempt swarm-status "$cli" swarm status
+          attempt agent-list "$cli" agent list
+          attempt memory-store "$cli" memory store --key evidence-gate --value "Require exact base/head dependency snapshot availability before policy review" --namespace veil-pilot
+          attempt memory-retrieve "$cli" memory retrieve --key evidence-gate --namespace veil-pilot
+          attempt memory-search "$cli" memory search --query "dependency snapshot gate" --namespace veil-pilot
+          echo "This is a KEYLESS CLI/coordination smoke test, NOT LLM-based agent work."
+          {
+            echo "## Ruflo cloud smoke test"
+            echo "- Version: \`ruflo@3.59.8\` (exact)"
+            echo "- GitHub-hosted Ubuntu runner; no PC used"
+            echo "- Repository files not checked out; no provider credentials supplied"
+            echo "- Command statuses are in job logs (COMMAND_RESULT)"
+            echo "- Agents here are registry records, not proven autonomous LLM execution"
+            echo "- No changes to main, the Android app or the Paper PR"
+          } >> "$GITHUB_STEP_SUMMARY"
