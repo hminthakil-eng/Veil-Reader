@@ -1,0 +1,84 @@
+# Direct read-only check of PR 509 dependency-graph compare API, no checkout, no writes.
+name: Ruflo Exact Snapshot Readonly Probe
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-exact-snapshot-readonly.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-dependency-compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Read exact PR 509 graph comparison and warnings
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GH_API_URL: ${{ github.api_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, json, os, sys, urllib.request, urllib.error
+          base = 'bfac95f4b82e23b9f277f985bf3282f3e9c584fb'
+          head = 'e37869bb68e0497b5cbb9ca9f9b56c4e53286020'
+          url = os.environ['GH_API_URL']+'/repos/'+os.environ['GH_REPO']+'/dependency-graph/compare/'+base+'...'+head+'?per_page=5'
+          req = urllib.request.Request(url, headers={
+            'Accept':'application/vnd.github+json',
+            'X-GitHub-Api-Version':'2022-11-28',
+            'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+            'Cache-Control':'no-cache'
+          })
+          status, raw, header, error = None, b'', None, None
+          try:
+            with urllib.request.urlopen(req,timeout=25) as resp:
+              status=resp.status
+              raw=resp.read(2_000_000)
+              header=resp.headers.get('x-github-dependency-graph-snapshot-warnings')
+          except urllib.error.HTTPError as e:
+            status=e.code
+            raw=e.read(2000)
+            header=e.headers.get('x-github-dependency-graph-snapshot-warnings')
+            error='HTTP '+str(status)
+          except Exception as e:
+            error=type(e).__name__
+          problems=[]
+          if error: problems.append('request error: '+error)
+          if status!=200: problems.append('expected HTTP 200; got '+str(status))
+          if header is None:
+            warnings='<missing>'
+            problems.append('missing required snapshot warnings header')
+          else:
+            try:
+              warnings=base64.b64decode(header,validate=True).decode('utf-8').strip()
+            except Exception:
+              warnings='<invalid base64/utf8>'
+              problems.append('invalid snapshot warnings header')
+            if warnings and warnings!='<invalid base64/utf8>':
+              problems.append('snapshot warnings: '+warnings[:450])
+          try:
+            payload=json.loads(raw)
+            if not isinstance(payload,list): problems.append('comparison JSON not a list')
+          except Exception:
+            problems.append('invalid comparison JSON')
+          print('Exact source base:',base)
+          print('Exact source head:',head)
+          print('HTTP status:',status)
+          print('Snapshot header:',warnings)
+          print('Result:', 'PASS' if not problems else 'FAIL/BLOCKED')
+          for problem in problems: print('Reason:',problem)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## Dependency snapshot read-only diagnostic\n')
+            f.write('- Exact base: '+base+'\n- Exact head: '+head+'\n')
+            f.write('- HTTP status: '+str(status)+'\n')
+            f.write('- Snapshot readiness header: '+warnings.replace('\n',' ')+'\n')
+            f.write('- Verdict: '+('PASS' if not problems else 'FAIL/BLOCKED')+'\n')
+            f.write('- No dependency submission, branch update, or policy bypass was performed.\n')
+          sys.exit(1 if problems else 0)
+          PY
