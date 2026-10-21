@@ -1,0 +1,116 @@
+# Real Ruflo -> local Ollama model inference, fully cloud-hosted and keyless.
+# This pilot never checks out project code and uses no GitHub or model tokens.
+name: Ruflo Real Agent Cloud Pilot
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-real-agent-cloud.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  autonomous-local-inference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      NO_COLOR: "1"
+      RUFLO_TELEMETRY: "false"
+      RUFLO_PROVIDER: "ollama"
+      OLLAMA_BASE_URL: "http://127.0.0.1:11434"
+      OLLAMA_DEFAULT_MODEL: "qwen2.5:0.5b"
+      OLLAMA_HOST: "127.0.0.1:11434"
+      npm_config_audit: "false"
+      npm_config_fund: "false"
+    steps:
+      - name: Install pinned Ruflo runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ruflo-live-ai"
+          cd "$RUNNER_TEMP/ruflo-live-ai"
+          npm install --no-save --no-audit --no-fund --ignore-scripts=false ruflo@3.59.8 better-sqlite3@12.9.0
+          ./node_modules/.bin/ruflo --version
+          test -f node_modules/@claude-flow/cli/dist/src/mcp-tools/agent-execute-core.js
+          node -e "const D=require('better-sqlite3'); const d=new D(':memory:'); d.close()"
+
+      - name: Install Ollama for ephemeral cloud-only CPU inference
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://ollama.com/install.sh -o "$RUNNER_TEMP/ollama-install.sh"
+          bash "$RUNNER_TEMP/ollama-install.sh"
+          ollama --version
+          nohup ollama serve > "$RUNNER_TEMP/ollama-server.log" 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull qwen2.5:0.5b
+          curl -fsS http://127.0.0.1:11434/api/tags | python3 -c 'import json,sys; x=json.load(sys.stdin); assert any("qwen2.5:0.5b" in m["name"] for m in x["models"]), x'
+
+      - name: Spawn two actual Ruflo agents on local-model backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ruflo-live-ai"
+          ./node_modules/.bin/ruflo swarm init --topology hierarchical --max-agents 2
+          ./node_modules/.bin/ruflo agent spawn --type researcher --name dependency-investigator --provider ollama --model qwen2.5:0.5b
+          ./node_modules/.bin/ruflo agent spawn --type reviewer --name evidence-auditor --provider ollama --model qwen2.5:0.5b
+
+      - name: Execute real model calls through Ruflo agent executor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ruflo-live-ai"
+          cat > pilot.mjs <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {resolve} from 'node:path';
+          import {pathToFileURL} from 'node:url';
+
+          const store=JSON.parse(readFileSync('.claude-flow/agents/store.json','utf8'));
+          const agents=Object.values(store.agents);
+          if(agents.length!==2) throw Error('Expected two agents; got '+agents.length);
+          const moduleUrl=pathToFileURL(resolve('node_modules/@claude-flow/cli/dist/src/mcp-tools/agent-execute-core.js')).href;
+          const {executeAgentTask}=await import(moduleUrl);
+          const observed=[
+            'Veil Reader PR 509 dependency policy failed after 600 seconds because the exact HEAD snapshot was missing from the comparison API.',
+            'The Gradle dependency submission reported success for head SHA e37869bb68e0497b5cbb9ca9f9b56c4e53286020.',
+            'The submission context showed GITHUB_DEPENDENCY_GRAPH_REF=refs/pull/509/merge instead of the exact head branch ref.',
+            'The repo MUST NOT weaken the dependency review gate, skip policy, change main, or merge until confirmed.'
+          ].join('\n');
+          const goals={
+            researcher: 'You are an evidence-based CI investigator. In 4-6 concise sentences, explain the likely cause, what remains unproven, and one SAFE controlled verification experiment for the GitHub dependency graph snapshot issue. Do not claim the proposed fix is proven.',
+            reviewer: 'You are an independent security and release reviewer. In 4-6 concise sentences, challenge any weak assumptions about the dependency graph snapshot issue; define a non-negotiable fail-closed release acceptance check and a reproducible test. Do not say to bypass policy.'
+          };
+          const report=[];
+          for(const a of agents){
+            if(!goals[a.agentType]) throw Error('Unexpected agent '+a.agentType);
+            const prompt=goals[a.agentType]+'\n\nFacts:\n'+observed;
+            const out=await executeAgentTask({agentId:a.agentId,prompt,maxTokens:300,timeoutMs:140000,temperature:0.2});
+            console.log(JSON.stringify({type:a.agentType,success:out.success,model:out.model,usage:out.usage,durationMs:out.durationMs,error:out.error||null}));
+            if(!out.success || !out.output || out.output.trim().length<40 || !/qwen2\.5:0\.5b/.test(out.model||'')){
+              throw Error('Real Ruflo inference not proven for '+a.agentType+': '+JSON.stringify({success:out.success,model:out.model,error:out.error,outputLength:out.output?.length}));
+            }
+            report.push('## '+a.agentType+'\n\n'+out.output.trim()+'\n');
+          }
+          writeFileSync('ruflo-real-agent-report.md',
+            '# Veil Reader Ruflo real-agent pilot\n\n' +
+            '> Experimental small CPU local model; not verified engineering advice. No project code checked out and no repo edits made.\n\n'+report.join('\n'));
+          console.log('PASS: two LLM completions via Ruflo agent_execute');
+          NODE
+          node pilot.mjs
+          cat ruflo-real-agent-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve generated draft for review
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ruflo-real-agent-report
+          path: ${{ runner.temp }}/ruflo-live-ai/ruflo-real-agent-report.md
+          if-no-files-found: warn
+          retention-days: 3
