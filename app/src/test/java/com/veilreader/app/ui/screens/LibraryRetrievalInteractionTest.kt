@@ -14,6 +14,7 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import com.veilreader.app.R
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.navigation.LibraryShelfDestination
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilTheme
 import org.junit.Rule
@@ -37,7 +38,9 @@ class LibraryRetrievalInteractionTest {
         sourceUri = "veil-test://$id", coverCachePath = "", addedAtEpochMs = 100L
     )
 
-    private fun show(books: () -> List<Book>, query: String = "", fontScale: Float = 1f, restoration: StateRestorationTester? = null) {
+    private fun show(books: () -> List<Book>, query: String = "", fontScale: Float = 1f, restoration: StateRestorationTester? = null,
+        requestedShelf: () -> LibraryShelfDestination? = { null },
+        onShelfRequestConsumed: (LibraryShelfDestination) -> Unit = {}) {
         val content: @Composable () -> Unit = {
             val density = LocalDensity.current
             CompositionLocalProvider(
@@ -49,13 +52,41 @@ class LibraryRetrievalInteractionTest {
                         books = books(), isImporting = false, onImportUri = {},
                         onOpenBook = {}, onFavorite = {}, onEditMetadata = {},
                         onDeleteBook = {}, onOpenSettings = {},
-                        initialViewMode = LibraryViewMode.INDEX, initialQuery = query
+                        initialViewMode = LibraryViewMode.INDEX, initialQuery = query,
+                        requestedShelf = requestedShelf(), onShelfRequestConsumed = onShelfRequestConsumed
                     )
                 }
             }
         }
         if (restoration == null) compose.setContent(content) else restoration.setContent(content)
         compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun homeShelfClearsConflictingSearchAndSeriesWithoutOverwritingLaterUserChoice() {
+        val request = mutableStateOf<LibraryShelfDestination?>(null)
+        val restoration = StateRestorationTester(compose)
+        val ordinary = book("ordinary", "Ordinary volume", "Old cycle")
+        val favorite = book("favorite", "Favorite volume", "New cycle").copy(favorite = true)
+        show({ listOf(ordinary, favorite) }, restoration = restoration,
+            requestedShelf = { request.value }, onShelfRequestConsumed = { request.value = null })
+        compose.onNodeWithText(context.getString(R.string.library_group_series)).performScrollTo().performClick()
+        compose.onAllNodes(hasText("Old cycle") and hasClickAction()).onLast().performClick()
+        val search = compose.onNode(hasContentDescription(context.getString(R.string.library_search_hint)) and hasSetTextAction())
+        search.performScrollTo().performTextInput("no-matching-volume")
+        compose.onNodeWithText(favorite.title).assertDoesNotExist()
+        compose.runOnIdle { request.value = LibraryShelfDestination.FAVORITES }
+        compose.awaitGrayfogArtwork()
+        compose.onNodeWithText(favorite.title).assertExists()
+        compose.onNodeWithText(ordinary.title).assertDoesNotExist()
+        compose.onNodeWithContentDescription(context.getString(R.string.library_reading_filter_selection,
+            context.getString(R.string.library_shelf_favorites), 1)).performScrollTo().performClick()
+        compose.onNode(hasText(context.getString(R.string.library_shelf_all)) and hasClickAction()).performClick()
+        compose.awaitGrayfogArtwork()
+        compose.onNodeWithText(ordinary.title).assertExists()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.awaitGrayfogArtwork()
+        compose.onNodeWithText(ordinary.title).assertExists()
+        compose.onNodeWithText(favorite.title).assertExists()
     }
 
     @Test fun effectiveSearchShowsRelevanceAndExplicitRecentRemainsRecent() {

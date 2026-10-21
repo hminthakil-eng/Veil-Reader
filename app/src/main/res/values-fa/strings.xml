@@ -1447,4 +1447,7 @@
         <item quantity="one">%1$d کتاب</item>
         <item quantity="other">%1$d کتاب</item>
     </plurals>
+    <string name="home_current_book">کتاب کنونی</string>
+    <string name="home_recent_books">کتاب‌های اخیر</string>
+    <string name="home_library_title">کتابخانه و بایگانی</string>
 </resources>

@@ -46,8 +46,8 @@ import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
+import com.veilreader.app.ui.navigation.LibraryShelfDestination
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
-import com.veilreader.app.ui.theme.shouldAbbreviateThresholdEntry
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -67,7 +67,8 @@ fun ReadingNowScreen(
     onOpenPassage: (Book, String) -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenCastle: () -> Unit,
-    onOpenMirror: () -> Unit = {}
+    onOpenMirror: () -> Unit = {},
+    onOpenLibraryShelf: (LibraryShelfDestination) -> Unit = { onOpenLibrary() }
 ) {
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
@@ -132,10 +133,9 @@ fun ReadingNowScreen(
                 primary = {
                     VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
                         Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
-                            ThresholdHeader(
+                            StationDoorway(
                                 bookCount = books.size,
-                                hasCurrentBook = current != null,
-                                headerHeightDp = thresholdLayout.headerHeightDp
+                                hasCurrentBook = current != null
                             )
                         }
                     }
@@ -178,6 +178,11 @@ fun ReadingNowScreen(
                         )
                     }
                 }
+            }
+
+            Spacer(Modifier.height(VeilSpacing.xl))
+            Box(Modifier.padding(horizontal = thresholdLayout.horizontalPaddingDp.dp)) {
+                StationLibraryPanel(books, current != null, onOpenLibrary, onOpenLibraryShelf)
             }
 
             thresholdWhisper?.let { whisper ->
@@ -232,248 +237,6 @@ fun ReadingNowScreen(
 }
 
 @Composable
-private fun ThresholdHeader(
-    bookCount: Int,
-    hasCurrentBook: Boolean,
-    headerHeightDp: Float
-) {
-    val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
-    val windowSize = currentVeilWindowSizeDp()
-    val compactReturningEntry =
-        hasCurrentBook &&
-            windowSize.width < com.veilreader.app.ui.theme.VeilComposition.ArchitecturalPairMinWidthDp
-    // Returning phone users came here to resume reading. Preserve the doorway,
-    // but do not make them re-read the cinematic prologue on every visit.
-    val abbreviatedEntry = shouldAbbreviateThresholdEntry(
-        hasCurrentBook = hasCurrentBook,
-        widthDp = windowSize.width,
-        heightDp = windowSize.height,
-        fontScale = LocalDensity.current.fontScale
-    )
-    val approachHeightDp = if (compactReturningEntry) {
-        headerHeightDp.coerceAtMost(
-            com.veilreader.app.ui.theme.VeilComposition.ThresholdActiveApproachMaxHeightDp
-        )
-    } else {
-        headerHeightDp
-    }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilPalette.Ink)
-    ) {
-        Image(
-            painter = painterResource(R.drawable.grayfog_threshold_v1),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            alpha = if (highContrast) 0.18f else 1f,
-            modifier = Modifier.matchParentSize()
-        )
-        Box(
-            Modifier.matchParentSize().background(
-                Brush.verticalGradient(
-                    0f to VeilPalette.Ink.copy(alpha = 0.48f),
-                    0.38f to VeilPalette.Ink.copy(alpha = 0.18f),
-                    0.70f to VeilPalette.Ink.copy(alpha = 0.92f),
-                    1f to VeilPalette.Ink
-                )
-            )
-        )
-        ThresholdDepthField(bookCount = bookCount, modifier = Modifier.matchParentSize())
-
-        // Copy determines height. At 200% the doorway grows instead of painting over the seal.
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = if (abbreviatedEntry) 0.dp else approachHeightDp.dp)
-                .padding(
-                    horizontal = VeilSpacing.Content,
-                    vertical = if (abbreviatedEntry) VeilSpacing.Cluster else VeilSpacing.Content
-                ),
-            verticalArrangement = Arrangement.spacedBy(
-                if (abbreviatedEntry) VeilSpacing.Inline else VeilSpacing.Cluster
-            ),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ThresholdLiminalSeal(
-                    modifier = Modifier.size(40.dp),
-                    waking = bookCount.coerceIn(0, 12) / 12f
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    VeilMicroLabel(text = stringResource(R.string.app_name), strong = true)
-                    VeilMicroLabel(
-                        text = stringResource(R.string.threshold_grayfog_archive),
-                        color = VeilPalette.Mist
-                    )
-                }
-            }
-            if (!abbreviatedEntry) Spacer(Modifier.height(VeilSpacing.Section))
-            Text(
-                stringResource(
-                    when {
-                        bookCount == 0 -> R.string.threshold_title_unwritten
-                        bookCount == 1 -> R.string.threshold_title_first_volume
-                        hasCurrentBook -> R.string.threshold_title_library_awaits
-                        else -> R.string.threshold_title_return_archive
-                    }
-                ),
-                style = if (abbreviatedEntry) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.semantics { heading() },
-                color = VeilPalette.Moon,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-            if (!abbreviatedEntry) {
-                Text(
-                    stringResource(
-                        when {
-                            bookCount == 0 -> R.string.threshold_body_unwritten
-                            bookCount == 1 -> R.string.threshold_body_first_volume
-                            hasCurrentBook -> R.string.threshold_body_library_awaits
-                            else -> R.string.threshold_body_return_archive
-                        }
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Moon,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.widthIn(max = 540.dp)
-                )
-            }
-            BrassRule(Modifier.width(112.dp), strong = true)
-        }
-    }
-}
-
-@Composable
-private fun ThresholdDepthField(
-    bookCount: Int,
-    modifier: Modifier = Modifier
-) {
-    Canvas(modifier) {
-        val waking = (bookCount.coerceIn(0, 12) / 12f)
-        val vanishing = Offset(
-            x = size.width * 0.53f,
-            y = size.height * 0.46f
-        )
-        val line = VeilPalette.Brass.copy(
-            alpha = 0.028f + waking * 0.032f
-        )
-        val mist = VeilPalette.Mist.copy(
-            alpha = 0.018f + waking * 0.018f
-        )
-
-        repeat(4) { index ->
-            val lane = (index + 1f) / 5f
-            drawLine(
-                color = line,
-                start = Offset(size.width * lane, size.height),
-                end = vanishing,
-                strokeWidth = 0.65.dp.toPx()
-            )
-        }
-
-        repeat(3) { index ->
-            val y = size.height * (0.63f + index * 0.105f)
-            val halfWidth = size.width * (0.20f + index * 0.13f)
-            drawLine(
-                color = line.copy(alpha = line.alpha * (0.92f - index * 0.16f)),
-                start = Offset(
-                    (vanishing.x - halfWidth).coerceAtLeast(0f),
-                    y
-                ),
-                end = Offset(
-                    (vanishing.x + halfWidth).coerceAtMost(size.width),
-                    y
-                ),
-                strokeWidth = 0.55.dp.toPx()
-            )
-        }
-
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color.Transparent,
-                    mist,
-                    Color.Transparent
-                ),
-                startY = size.height * 0.42f,
-                endY = size.height * 0.84f
-            ),
-            topLeft = Offset(0f, size.height * 0.40f),
-            size = androidx.compose.ui.geometry.Size(
-                size.width,
-                size.height * 0.46f
-            )
-        )
-    }
-}
-
-@Composable
-private fun ThresholdLiminalSeal(
-    modifier: Modifier = Modifier,
-    waking: Float
-) {
-    Canvas(modifier) {
-        val center = Offset(size.width / 2f, size.height / 2f)
-        val glow = (0.22f + waking * 0.28f).coerceIn(0f, 0.56f)
-        val outer = size.minDimension * 0.44f
-        val inner = size.minDimension * 0.25f
-
-        drawCircle(
-            color = VeilPalette.Brass.copy(alpha = 0.34f + waking * 0.12f),
-            radius = outer,
-            center = center,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx())
-        )
-        drawCircle(
-            color = VeilPalette.Moon.copy(alpha = glow),
-            radius = inner,
-            center = center,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(0.8.dp.toPx())
-        )
-
-        repeat(8) { index ->
-            val angle = Math.toRadians((index * 45.0) - 90.0)
-            val start = Offset(
-                x = center.x + kotlin.math.cos(angle).toFloat() * inner,
-                y = center.y + kotlin.math.sin(angle).toFloat() * inner
-            )
-            val end = Offset(
-                x = center.x + kotlin.math.cos(angle).toFloat() * outer,
-                y = center.y + kotlin.math.sin(angle).toFloat() * outer
-            )
-            drawLine(
-                color = VeilPalette.Brass.copy(alpha = 0.24f + waking * 0.08f),
-                start = start,
-                end = end,
-                strokeWidth = 0.7.dp.toPx()
-            )
-        }
-
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    VeilPalette.Brass.copy(alpha = 0.11f + waking * 0.08f),
-                    Color.Transparent
-                ),
-                center = center,
-                radius = outer
-            ),
-            radius = outer,
-            center = center
-        )
-    }
-}
-
-@Composable
 private fun ContinueReadingHero(
     current: Book,
     artifactMemory: BookArtifactMemory?,
@@ -492,9 +255,9 @@ private fun ContinueReadingHero(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        VeilPalette.LightSurface,
-                        VeilPalette.ReaderPaper,
-                        VeilPalette.LightElevated
+                        VeilPalette.RaisedIron,
+                        VeilPalette.Archive,
+                        VeilPalette.Ink
                     )
                 )
             )
@@ -516,14 +279,7 @@ private fun ContinueReadingHero(
         val stacked = (maxWidth.value - 36f - objectWidth - 16f) /
             fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ResumeIdentityMinWidthDp
 
-        ThresholdParchmentTexture(
-            modifier = Modifier.matchParentSize()
-        )
-
-        GrayfogOrnamentFrame(
-            modifier = Modifier.matchParentSize(),
-            strength = 0.20f
-        )
+        StationOrnamentFrame(Modifier.matchParentSize())
 
         @Composable
         fun ResumeAction() {
@@ -533,7 +289,7 @@ private fun ContinueReadingHero(
                     .fillMaxWidth()
                     .heightIn(min = 52.dp),
                 shape = shellShape,
-                color = Color.Transparent,
+                color = VeilPalette.ReaderPaper,
                 contentColor = VeilPalette.LightInk,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
@@ -585,8 +341,8 @@ private fun ContinueReadingHero(
             if (stacked) {
                 HeroDetails(
                     current = current,
-                    ink = VeilPalette.LightInk,
-                    secondaryInk = VeilPalette.LightMist,
+                    ink = VeilPalette.Moon,
+                    secondaryInk = VeilPalette.Mist,
                     readingAction = { ResumeAction() },
                     includeMetadata = false
                 )
@@ -601,7 +357,7 @@ private fun ContinueReadingHero(
                         objectHeight
                     )
                 }
-                HeroMetadata(current, VeilPalette.LightMist)
+                HeroMetadata(current, VeilPalette.Mist)
 
             } else {
                 Row(
@@ -617,8 +373,8 @@ private fun ContinueReadingHero(
                     )
                     HeroDetails(
                         current = current,
-                        ink = VeilPalette.LightInk,
-                        secondaryInk = VeilPalette.LightMist,
+                        ink = VeilPalette.Moon,
+                        secondaryInk = VeilPalette.Mist,
                         maxTitleLines = 4,
                         modifier = Modifier.weight(1f)
                     )
@@ -630,8 +386,8 @@ private fun ContinueReadingHero(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp),
-                color = VeilPalette.LightBrass,
-                trackColor = VeilPalette.BorderLight.copy(alpha = 0.58f),
+                color = VeilPalette.Brass,
+                trackColor = VeilPalette.BorderDark.copy(alpha = 0.58f),
                 drawStopIndicator = {}
             )
 
@@ -640,80 +396,12 @@ private fun ContinueReadingHero(
             Text(
                 progressInscription,
                 style = MaterialTheme.typography.labelMedium.withVeilContentScript(progressInscription),
-                color = VeilPalette.LightMist,
+                color = VeilPalette.Mist,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
 
         }
-    }
-}
-
-@Composable
-private fun ThresholdParchmentTexture(
-    modifier: Modifier = Modifier
-) {
-    Canvas(modifier) {
-        val ink = VeilPalette.LightInk
-        val brass = VeilPalette.LightBrass
-
-        repeat(9) { index ->
-            val y = size.height * ((index + 1f) / 10f)
-            val inset = size.width * (0.018f + (index % 3) * 0.008f)
-            drawLine(
-                color = ink.copy(alpha = 0.022f + (index % 2) * 0.006f),
-                start = Offset(inset, y),
-                end = Offset(size.width - inset, y + (index % 3 - 1) * 0.7f),
-                strokeWidth = 0.55.dp.toPx()
-            )
-        }
-
-        repeat(6) { index ->
-            val x = size.width * ((index + 1f) / 7f)
-            drawLine(
-                color = brass.copy(alpha = 0.016f),
-                start = Offset(x, size.height * 0.03f),
-                end = Offset(x + ((index % 2) * 2 - 1) * 1.2f, size.height * 0.97f),
-                strokeWidth = 0.45.dp.toPx()
-            )
-        }
-
-        drawRect(
-            brush = Brush.verticalGradient(
-                listOf(
-                    VeilPalette.LightSurface.copy(alpha = 0.16f),
-                    Color.Transparent,
-                    VeilPalette.LightInk.copy(alpha = 0.035f)
-                )
-            )
-        )
-
-        val corner = 12.dp.toPx()
-        val cornerInk = VeilPalette.LightBrass.copy(alpha = 0.34f)
-        drawLine(
-            cornerInk,
-            Offset(0f, corner),
-            Offset(corner, 0f),
-            0.8.dp.toPx()
-        )
-        drawLine(
-            cornerInk,
-            Offset(size.width - corner, 0f),
-            Offset(size.width, corner),
-            0.8.dp.toPx()
-        )
-        drawLine(
-            cornerInk,
-            Offset(0f, size.height - corner),
-            Offset(corner, size.height),
-            0.8.dp.toPx()
-        )
-        drawLine(
-            cornerInk,
-            Offset(size.width - corner, size.height),
-            Offset(size.width, size.height - corner),
-            0.8.dp.toPx()
-        )
     }
 }
 
@@ -750,6 +438,7 @@ private fun HeroDetails(
 ) {
     val displayTitle = bookDisplayTitle(current.title)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        VeilMicroLabel(stringResource(R.string.home_current_book), color = VeilPalette.Brass, strong = true)
         Text(
             displayTitle,
             style = MaterialTheme.typography.titleLarge.withVeilContentScript(displayTitle),
@@ -802,38 +491,12 @@ private fun RecentBooksShelf(
     onOpenLibrary: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                VeilMicroLabel(
-                    text = stringResource(R.string.threshold_recent_eyebrow),
-                    strong = true
-                )
-                Text(
-                    stringResource(R.string.threshold_recent_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            TextButton(
-                onClick = onOpenLibrary,
-                modifier = Modifier.heightIn(min = 48.dp),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = VeilPalette.Brass
-                )
-            ) {
+        StationSectionHeading(stringResource(R.string.home_recent_books)) {
+            TextButton(onClick = onOpenLibrary, modifier = Modifier.heightIn(min = 48.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)) {
                 Text(stringResource(R.string.common_view_all))
             }
         }
-
-        BrassRule(Modifier.fillMaxWidth())
 
         Row(
             modifier = Modifier
@@ -869,7 +532,8 @@ private fun RecentBookCard(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(itemWidthDp.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        color = Color.Transparent,
+        color = VeilPalette.Archive,
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = .65f)),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {

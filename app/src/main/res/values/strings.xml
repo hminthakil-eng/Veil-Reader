@@ -1447,4 +1447,7 @@
         <item quantity="one">%1$d book</item>
         <item quantity="other">%1$d books</item>
     </plurals>
+    <string name="home_current_book">Current book</string>
+    <string name="home_recent_books">Recent books</string>
+    <string name="home_library_title">Library &amp; Archive</string>
 </resources>

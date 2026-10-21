@@ -85,6 +85,7 @@ import com.veilreader.app.ui.books.BookReadingState
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.navigation.LibraryShelfDestination
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.galleryCellMeasureDp
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
@@ -118,12 +119,15 @@ fun LibraryScreen(
     onEditMetadata: (BookMetadataUpdate) -> Unit,
     onDeleteBook: (Book) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenManga: () -> Unit = {}
+    onOpenManga: () -> Unit = {},
+    requestedShelf: LibraryShelfDestination? = null,
+    onShelfRequestConsumed: (LibraryShelfDestination) -> Unit = {}
 ) {
     LibraryArchiveContent(
         books, highlights, bookmarks, readingSessions, readingCycles, readingMilestones,
         isImporting, onImportUri, onOpenBook, onFavorite, onEditMetadata, onDeleteBook,
-        onOpenSettings, onOpenManga
+        onOpenSettings, onOpenManga,
+        requestedShelf = requestedShelf, onShelfRequestConsumed = onShelfRequestConsumed
     )
 }
 
@@ -144,7 +148,9 @@ internal fun LibraryArchiveContent(
     onOpenSettings: () -> Unit,
     onOpenManga: () -> Unit = {},
     initialViewMode: LibraryViewMode = LibraryViewMode.GALLERY,
-    initialQuery: String = ""
+    initialQuery: String = "",
+    requestedShelf: LibraryShelfDestination? = null,
+    onShelfRequestConsumed: (LibraryShelfDestination) -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val archiveAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
@@ -159,7 +165,7 @@ internal fun LibraryArchiveContent(
         archiveTimePhaseForHour(LocalTime.now().hour)
     }
     var query by rememberSaveable { mutableStateOf(initialQuery) }
-    var shelf by rememberSaveable { mutableStateOf("All") }
+    var shelf by rememberSaveable { mutableStateOf(requestedShelf?.filterId ?: "All") }
     var collection by rememberSaveable { mutableStateOf("") }
     var seriesFilter by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf(LibrarySortMode.AUTO.name) }
@@ -178,6 +184,22 @@ internal fun LibraryArchiveContent(
     var seriesName by remember { mutableStateOf("") }
     var seriesIndex by remember { mutableStateOf("") }
     var language by remember { mutableStateOf("") }
+
+    // A Home entrance is an explicit destination, not a sticky default. Clear conflicting
+    // retrieval context once, then let the user's own filters and saved state take over.
+    LaunchedEffect(requestedShelf) {
+        requestedShelf?.let { destination ->
+            shelf = destination.filterId
+            query = ""
+            collection = ""
+            seriesFilter = ""
+            detailBookId = null
+            collectionMenu = false
+            seriesMenu = false
+            sortMenu = false
+            onShelfRequestConsumed(destination)
+        }
+    }
 
     fun beginMetadataEdit(book: Book) {
         editing = book
@@ -300,11 +322,9 @@ internal fun LibraryArchiveContent(
         books.filter { book ->
             val matchesQuery = normalizedQuery.isBlank() ||
                 searchScoreByBookId.containsKey(book.id)
-            val matchesShelf = when (shelf) {
-                "Reading" -> !book.finished && book.progress > 0f
+            val matchesShelf = LibraryShelfDestination.entries.firstOrNull { it.filterId == shelf }
+                ?.contains(book) ?: when (shelf) {
                 "Unread" -> !book.finished && book.progress == 0f
-                "Finished" -> book.finished
-                "Favorites" -> book.favorite
                 "Deep Shelf" -> book.id in deepShelfBookIds
                 else -> true
             }
