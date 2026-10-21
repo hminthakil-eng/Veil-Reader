@@ -58,3 +58,13 @@
 - Output artifact: `ruflo-real-agent-report` in the run; contains a preliminary diagnosis of PR #509.
 - **QUALITY FAIL**: model's investigator proposed a weakly specified verification; reviewer mostly repeated input facts instead of challenging the hypothesis. This proves technical routing, not trustworthy expert engineering quality.
 - Next comparison: `Ruflo Engineering Review Pilot` using a larger `qwen2.5-coder:3b` model with explicit evidence/hypothesis separation and adversarial reviewer prompt. This is still an experiment.
+
+## Run 5: stronger 3B coding-model evaluation — engine PASS, reasoning QUALITY FAIL
+- URL: https://github.com/hminthakil-eng/Veil-Reader/actions/runs/39633644560
+- Environment: ephemeral GitHub-hosted Ubuntu, locked `ruflo@3.59.8`, isolated local Ollama `qwen2.5-coder:3b`, no project checkout, no secrets or repo write access.
+- Investigator: real `agent_execute` completion (427 output tokens, 49.013s); reviewer: real completion (409 output tokens, 59.395s).
+- The investigator separated some observations and hypotheses, **but selected the wrong GitHub API endpoint**: `GET /repos/{owner}/{repo}/compare/{base}...{head}` is the ordinary commit comparison, not the dependency-graph snapshot readiness endpoint.
+- The actual production gate uses `GET /repos/{owner}/{repo}/dependency-graph/compare/{base_sha}...{head_sha}?per_page=5` with exact source SHAs and requires the `x-github-dependency-graph-snapshot-warnings` response header to be present, valid and empty.
+- The reviewer repeated the bad endpoint and the unchanged `refs/pull/509/merge` instead of critically examining the alternate head branch ref hypothesis. This **fails independent-review quality** despite both model calls succeeding.
+- Artifact: `ruflo-engineering-review` in this workflow run. Treat its contents as experimental untrusted suggestions, **not an approved fix**.
+- Decision: keep `Ruflo` as experimental orchestration infrastructure; use a materially stronger, properly authenticated model plus deterministic source-grounded tests before permitting unattended engineering writes. Do not weaken dependency policy or promote this pilot.
