@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -243,6 +245,24 @@ class LibraryRetrievalInteractionTest {
         search.assertIsNotFocused()
         compose.onNode(hasText("Cycle") and hasClickAction() and hasAnyAncestor(isDialog()) and !hasSetTextAction()).performClick()
         compose.onNodeWithText("First volume").assertExists()
+        compose.awaitGrayfogArtwork()
+    }
+
+    @Test fun seriesDialogUsesParentAccessibilityFontScaleInActualTextLayout() {
+        val name = "Records of the Observatory and the Grayfog Archive"
+        show({ listOf(book("one", "First volume", name)) }, fontScale = 2f)
+        compose.onNodeWithText(context.getString(R.string.library_group_series))
+            .performScrollTo().performClick()
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNode(
+            hasText(name) and hasAnyAncestor(isDialog()) and
+                SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
+            useUnmergedTree = true
+        ).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+            org.junit.Assert.assertTrue(action(layouts))
+        }
+        org.junit.Assert.assertEquals(2f, layouts.single().layoutInput.density.fontScale, 0f)
+        compose.onNodeWithText(context.getString(R.string.common_cancel)).performClick()
         compose.awaitGrayfogArtwork()
     }
 }

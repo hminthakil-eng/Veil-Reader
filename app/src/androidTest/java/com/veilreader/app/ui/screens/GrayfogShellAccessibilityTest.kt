@@ -24,6 +24,8 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ApplicationProvider
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
@@ -259,6 +261,15 @@ class GrayfogShellAccessibilityTest(
         search.performImeAction()
         search.assertIsNotFocused()
         compose.onNode(hasScrollAction() and hasAnyAncestor(isDialog())).performScrollToNode(hasText(name))
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNode(
+            hasText(name) and hasAnyAncestor(isDialog()) and
+                SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
+            useUnmergedTree = true
+        ).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+            assertTrue(action(layouts))
+        }
+        assertEquals(scale, layouts.single().layoutInput.density.fontScale, 0f)
         val row = compose.onNode(hasText(name) and hasClickAction() and hasAnyAncestor(isDialog()))
         row.assertIsDisplayed().assertIsSelected().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
         compose.onNodeWithText(localized.resources.getQuantityString(R.plurals.library_series_books, 2, 2))

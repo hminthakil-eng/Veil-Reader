@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.pluralStringResource
@@ -71,100 +72,104 @@ internal fun LibrarySeriesPickerDialog(
     var query by rememberSaveable { mutableStateOf("") }
     val matches = remember(choices, query) { filterLibrarySeriesChoices(choices, query) }
     val selectedKey = libraryLabelKey(selected)
+    val parentDensity = LocalDensity.current
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        // A Dialog owns a distinct Compose focus root; use its locals for the IME action.
-        val focus = LocalFocusManager.current
-        val keyboard = LocalSoftwareKeyboardController.current
-        Box(
-            Modifier.fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .imePadding()
-                .padding(VeilSpacing.md),
-            contentAlignment = Alignment.Center
-        ) {
-            Surface(
-                modifier = modifier.widthIn(max = 620.dp).fillMaxWidth()
-                    .heightIn(max = 720.dp).fillMaxHeight(0.9f),
-                shape = MaterialTheme.shapes.medium,
-                color = VeilPalette.Archive,
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.5f)),
-                tonalElevation = 0.dp
+        // Preserve caller font conversion across the dialog's separate Compose owner.
+        CompositionLocalProvider(LocalDensity provides parentDensity) {
+            // A Dialog owns a distinct Compose focus root; use its locals for the IME action.
+            val focus = LocalFocusManager.current
+            val keyboard = LocalSoftwareKeyboardController.current
+            Box(
+                Modifier.fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+                    .padding(VeilSpacing.md),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    Modifier.padding(VeilSpacing.md),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                Surface(
+                    modifier = modifier.widthIn(max = 620.dp).fillMaxWidth()
+                        .heightIn(max = 720.dp).fillMaxHeight(0.9f),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.5f)),
+                    tonalElevation = 0.dp
                 ) {
-                    val title = stringResource(R.string.library_group_series)
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleLarge.withVeilContentScript(title),
-                        modifier = Modifier.semantics { heading() }
-                    )
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.library_series_search)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = {
-                            focus.clearFocus()
-                            keyboard?.hide()
-                        }),
-                        trailingIcon = if (query.isNotEmpty()) {
-                            {
-                                val label = stringResource(R.string.library_series_search_clear)
-                                IconButton(
-                                    onClick = { query = "" },
-                                    modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                        .semantics { contentDescription = label }
-                                ) { Text("×", modifier = Modifier.clearAndSetSemantics {}) }
-                            }
-                        } else null
-                    )
-                    HorizontalDivider(color = VeilPalette.Brass.copy(alpha = 0.3f))
-                    LazyColumn(
-                        Modifier.weight(1f).fillMaxWidth().selectableGroup(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Column(
+                        Modifier.padding(VeilSpacing.md),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
-                        item(key = "series:all") {
-                            SeriesChoiceRow(
-                                stringResource(R.string.library_all_series), null,
-                                selectedKey.isEmpty(), onClick = { onSelect("") }
-                            )
-                        }
-                        items(matches, key = { "series:choice:${it.key}" }) { choice ->
-                            SeriesChoiceRow(
-                                choice.name,
-                                pluralStringResource(R.plurals.library_series_books, choice.bookCount, choice.bookCount),
-                                selectedKey == choice.key,
-                                onClick = { onSelect(choice.name) }
-                            )
-                        }
-                        if (matches.isEmpty()) {
-                            item(key = "series:no-results") {
-                                Column(Modifier.padding(VeilSpacing.sm)) {
-                                    Text(
-                                        stringResource(R.string.library_series_no_match),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    if (query.isNotEmpty()) {
-                                        TextButton(
-                                            onClick = { query = "" },
-                                            modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text(stringResource(R.string.library_series_search_clear)) }
+                        val title = stringResource(R.string.library_group_series)
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.titleLarge.withVeilContentScript(title),
+                            modifier = Modifier.semantics { heading() }
+                        )
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(stringResource(R.string.library_series_search)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = {
+                                focus.clearFocus()
+                                keyboard?.hide()
+                            }),
+                            trailingIcon = if (query.isNotEmpty()) {
+                                {
+                                    val label = stringResource(R.string.library_series_search_clear)
+                                    IconButton(
+                                        onClick = { query = "" },
+                                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .semantics { contentDescription = label }
+                                    ) { Text("×", modifier = Modifier.clearAndSetSemantics {}) }
+                                }
+                            } else null
+                        )
+                        HorizontalDivider(color = VeilPalette.Brass.copy(alpha = 0.3f))
+                        LazyColumn(
+                            Modifier.weight(1f).fillMaxWidth().selectableGroup(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            item(key = "series:all") {
+                                SeriesChoiceRow(
+                                    stringResource(R.string.library_all_series), null,
+                                    selectedKey.isEmpty(), onClick = { onSelect("") }
+                                )
+                            }
+                            items(matches, key = { "series:choice:${it.key}" }) { choice ->
+                                SeriesChoiceRow(
+                                    choice.name,
+                                    pluralStringResource(R.plurals.library_series_books, choice.bookCount, choice.bookCount),
+                                    selectedKey == choice.key,
+                                    onClick = { onSelect(choice.name) }
+                                )
+                            }
+                            if (matches.isEmpty()) {
+                                item(key = "series:no-results") {
+                                    Column(Modifier.padding(VeilSpacing.sm)) {
+                                        Text(
+                                            stringResource(R.string.library_series_no_match),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        if (query.isNotEmpty()) {
+                                            TextButton(
+                                                onClick = { query = "" },
+                                                modifier = Modifier.heightIn(min = 48.dp)
+                                            ) { Text(stringResource(R.string.library_series_search_clear)) }
+                                        }
                                     }
                                 }
                             }
                         }
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)
+                        ) { Text(stringResource(R.string.common_cancel)) }
                     }
-                    TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)
-                    ) { Text(stringResource(R.string.common_cancel)) }
                 }
             }
         }
