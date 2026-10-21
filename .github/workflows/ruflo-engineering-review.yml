@@ -1,0 +1,97 @@
+# Ruflo engineering-quality pilot: small cloud-hosted coding model, no secrets or checkout.
+name: Ruflo Engineering Review Pilot
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-engineering-review.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  engineering-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      NO_COLOR: "1"
+      RUFLO_PROVIDER: ollama
+      RUFLO_TELEMETRY: "false"
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_DEFAULT_MODEL: qwen2.5-coder:3b
+      npm_config_audit: "false"
+      npm_config_fund: "false"
+    steps:
+      - name: Install exact Ruflo and Ollama in isolated cloud runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ruflo-quality"
+          cd "$RUNNER_TEMP/ruflo-quality"
+          npm install --no-save --ignore-scripts=false --no-audit --no-fund ruflo@3.59.8 better-sqlite3@12.9.0
+          test -f node_modules/@claude-flow/cli/dist/src/mcp-tools/agent-execute-core.js
+          curl -fsSL https://ollama.com/install.sh -o "$RUNNER_TEMP/ollama-install.sh"
+          bash "$RUNNER_TEMP/ollama-install.sh"
+          nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          for i in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:11434/api/tags >/dev/null; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:11434/api/tags >/dev/null
+          ollama pull qwen2.5-coder:3b
+          ./node_modules/.bin/ruflo swarm init --topology hierarchical --max-agents 2
+          ./node_modules/.bin/ruflo agent spawn --type researcher --name ci-investigator --provider ollama --model qwen2.5-coder:3b
+          ./node_modules/.bin/ruflo agent spawn --type reviewer --name adversarial-reviewer --provider ollama --model qwen2.5-coder:3b
+
+      - name: Execute independent investigation followed by adversarial review
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ruflo-quality"
+          cat > evaluate.mjs <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { resolve } from 'node:path';
+          import { pathToFileURL } from 'node:url';
+          const mod=await import(pathToFileURL(resolve('node_modules/@claude-flow/cli/dist/src/mcp-tools/agent-execute-core.js')).href);
+          const agents=Object.values(JSON.parse(readFileSync('.claude-flow/agents/store.json','utf8')).agents);
+          const researcher=agents.find(x=>x.agentType==='researcher');
+          const reviewer=agents.find(x=>x.agentType==='reviewer');
+          if(!researcher || !reviewer) throw Error('Missing real agent records');
+          const evidence=[
+            'A Veil Reader PR dependency-review run returned failure after waiting 600 seconds for the exact PR HEAD dependency graph snapshot.',
+            'The head Gradle dependency submission workflow itself succeeded.',
+            'It reported GITHUB_DEPENDENCY_GRAPH_SHA=e37869bb68e0497b5cbb9ca9f9b56c4e53286020 and GITHUB_DEPENDENCY_GRAPH_REF=refs/pull/509/merge.',
+            'The GitHub dependency submission response said accepted, non-default branch and would not update default-branch dependency results.',
+            'The exact-head comparison API reported no snapshot for head SHA. Base graph existed.',
+            'Existing policy forbids treating incomplete dependency snapshots as passing.'
+          ].join('\n');
+          async function run(agent,prompt){
+            const o=await mod.executeAgentTask({agentId:agent.agentId,prompt,timeoutMs:180000,maxTokens:520,temperature:0.15});
+            console.log('AGENT_METRIC '+JSON.stringify({role:agent.agentType,model:o.model,success:o.success,error:o.error||null,durationMs:o.durationMs,usage:o.usage}));
+            if(!o.success || !o.output || o.output.length<120 || !/qwen2.5-coder:3b/.test(o.model||'')) throw Error('No verified model output: '+JSON.stringify({success:o.success,role:agent.agentType,error:o.error,len:o.output?.length,model:o.model}));
+            return o.output.trim();
+          }
+          const a=await run(researcher,
+            'Act as a careful GitHub Actions engineer. Separate confirmed observations from hypotheses. Explain precisely why the successful submission does NOT prove the compare API has the exact HEAD snapshot. Propose a minimal isolated branch or PR experiment including which exact SHA/ref env pair you would test, how you would verify result via GitHub REST, and what constitutes FAIL. Do not change main or weaken policy. Be concise.\n\nEvidence:\n'+evidence);
+          const b=await run(reviewer,
+            'Be a skeptical independent release/security reviewer. Inspect the evidence and proposed investigation. Identify TWO plausible alternative causes or risks, and write ONE precise fail-closed acceptance test. Do not assume the ref mismatch alone proves causality; do not bypass policy. Produce testable advice, not paraphrase.\n\nEvidence:\n'+evidence+'\n\nInvestigators proposed analysis (untrusted):\n'+a);
+          const report='# Ruflo engineering-quality cloud pilot\n\n' +
+            '> Two real Ruflo -> local Ollama Qwen2.5 Coder 3B calls. Draft opinions only, not verified fixes. No code checkout, no token, no writes to product.\n\n' +
+            '## CI investigator\n\n'+a+'\n\n## Skeptical reviewer\n\n'+b+'\n';
+          writeFileSync('engineering-review.md',report);
+          console.log('=== BEGIN AGENT REPORT ===\n'+report+'\n=== END AGENT REPORT ===');
+          console.log('PASS: two real local-model inference calls via Ruflo');
+          NODE
+          node evaluate.mjs
+          cat engineering-review.md >> "$GITHUB_STEP_SUMMARY"
+
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ruflo-engineering-review
+          path: ${{ runner.temp }}/ruflo-quality/engineering-review.md
+          if-no-files-found: warn
+          retention-days: 3
