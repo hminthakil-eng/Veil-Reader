@@ -1,0 +1,34 @@
+# Static regression suite for Ruflo agents, on an isolated branch only.
+name: Ruflo Agent Quality Gate Tests
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-agent-quality-tests.yml
+      - tools/experiments/ruflo_agent_quality_gate.py
+      - tools/experiments/test_ruflo_agent_quality_gate.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adversarial-static-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run adversarial no-false-green quality tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools/experiments -p 'test_ruflo_agent_quality_gate.py' -v
+          echo "PASS: flawed model answer blocked; controlled example only statically accepted"
+          {
+            echo "## Ruflo experimental quality gate"
+            echo "- Real Qwen model's mistaken code-compare API is in a negative regression case"
+            echo "- Good structured sample passes static checks, but is never merge-approved"
+            echo "- No external LLM calls, no project modifications, no merge"
+          } >> "$GITHUB_STEP_SUMMARY"
