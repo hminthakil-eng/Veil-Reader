@@ -14,6 +14,21 @@
 
 <!-- What is intentionally included and excluded? -->
 
+## Four-discipline change gate
+
+- [ ] **Think before coding:** user outcome, actual baseline, assumptions, and touched owner identified
+- [ ] **Simplicity:** existing patterns reused; no speculative architecture or unnecessary dependency
+- [ ] **Surgical scope:** changed paths and non-goals recorded; unrelated behavior preserved
+- [ ] **Verify the goal:** exact commit SHA and applicable user-journey/test evidence attached (or gap flagged HOLD)
+
+**Assumptions / non-goals:**
+
+**Regression risk / rollback approach:**
+
+**Gate result:** [ ] PASS  [ ] HOLD — missing evidence:
+
+See `.agents/skills/veil-change-acceptance/SKILL.md`. PASS here does not replace Reforge GREEN or release gates.
+
 ## Ownership / architecture impact
 
 - [ ] Reader navigation/input ownership changed
