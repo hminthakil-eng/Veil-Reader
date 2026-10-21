@@ -99,7 +99,7 @@ class LibraryRetrievalInteractionTest {
             onShelfRequestConsumed = { restoringWithShelf = false })
         compose.onNode(hasText(context.getString(R.string.library_collection)) and hasClickAction())
             .performScrollTo().performClick()
-        compose.onNode(hasText("Old collection") and hasClickAction()).performClick()
+        compose.onNode(hasTextExactly("Old collection") and hasClickAction()).performClick()
         compose.onNodeWithText(context.getString(R.string.library_group_series)).performScrollTo().performClick()
         compose.onAllNodes(hasText("Old cycle") and hasClickAction()).onLast().performClick()
         compose.onNode(hasContentDescription(context.getString(R.string.library_search_hint)) and hasSetTextAction())
@@ -109,7 +109,7 @@ class LibraryRetrievalInteractionTest {
         restoringWithShelf = true
         restoration.emulateSavedInstanceStateRestore()
         compose.awaitGrayfogArtwork()
-        compose.onNode(hasText("Old collection") and hasClickAction()).assertDoesNotExist()
+        compose.onNode(hasTextExactly("Old collection") and hasClickAction()).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.library_series_filter, "Old cycle")).assertDoesNotExist()
         compose.onNodeWithText(favorite.title).assertExists()
         compose.onNodeWithText(ordinary.title).assertDoesNotExist()
