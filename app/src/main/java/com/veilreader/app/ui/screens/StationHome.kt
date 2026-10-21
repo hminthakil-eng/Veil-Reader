@@ -42,8 +42,9 @@ internal fun StationDoorway(bookCount: Int, hasCurrentBook: Boolean) {
     val contrast = LocalVeilHighContrast.current
     val scale = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxWidth().background(VeilPalette.Ink)) {
+        val doorwayWidth = maxWidth
         val artworkHeight = if (hasCurrentBook && scale >= 1.5f) 72.dp
-            else (maxWidth / 2).coerceIn(128.dp, 188.dp)
+            else (doorwayWidth / 2).coerceIn(128.dp, 188.dp)
         val signBrand = scale <= 1.05f && !contrast
         Column(horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -53,7 +54,7 @@ internal fun StationDoorway(bookCount: Int, hasCurrentBook: Boolean) {
                     alpha = if (contrast) .25f else 1f, modifier = Modifier.matchParentSize())
                 if (signBrand) {
                     Box(Modifier.align(Alignment.TopCenter).offset(y = artworkHeight * .13f)
-                        .width(maxWidth * .39f).height(artworkHeight * .16f), contentAlignment = Alignment.Center) {
+                        .width(doorwayWidth * .39f).height(artworkHeight * .16f), contentAlignment = Alignment.Center) {
                         Text(stringResource(R.string.app_name), color = VeilPalette.Brass,
                             style = MaterialTheme.typography.titleLarge, fontSize = 18.sp,
                             lineHeight = 22.sp, maxLines = 1, textAlign = TextAlign.Center)
