@@ -1,0 +1,71 @@
+# Isolated Cloud smoke test for durable Ruflo memory. No model keys, code checkout, or personal PC.
+name: Ruflo Durable Memory Pilot
+on:
+  push:
+    branches:
+      - experiment/ruflo-keyless-cloud-20261021
+    paths:
+      - .github/workflows/ruflo-durable-memory.yml
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  durable-memory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      NO_COLOR: "1"
+      RUFLO_TELEMETRY: "false"
+      npm_config_audit: "false"
+      npm_config_fund: "false"
+    steps:
+      - name: Install locked Ruflo and native SQLite on isolated cloud runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ruflo-persistence"
+          cd "$RUNNER_TEMP/ruflo-persistence"
+          node --version
+          npm --version
+          npm install --no-save --ignore-scripts=false --no-audit --no-fund ruflo@3.59.8 better-sqlite3@12.9.0
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const db = new Database(':memory:');
+          db.exec('create table pilot_check (value text not null)');
+          db.prepare('insert into pilot_check (value) values (?)').run('native-ok');
+          if (db.prepare('select value from pilot_check').get().value !== 'native-ok') throw Error('native sqlite test failed');
+          console.log('Native better-sqlite3 loaded and SQL writes verified');
+          db.close();
+          NODE
+          ./node_modules/.bin/ruflo --version
+
+      - name: Verify durable memory in independent CLI processes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ruflo-persistence"
+          cli="$PWD/node_modules/.bin/ruflo"
+          "$cli" memory init 2>&1 | tee init.log
+          "$cli" memory store --namespace veil-persistence-pilot --key dependency-review-p0 --value "Block merges when exact head and base dependency graphs cannot be verified" 2>&1 | tee store.log
+          "$cli" daemon stop >/dev/null 2>&1 || true
+          "$cli" memory retrieve --namespace veil-persistence-pilot --key dependency-review-p0 2>&1 | tee retrieve.log
+          grep -Fq 'Block merges when exact head and base dependency graphs cannot be verified' retrieve.log
+          "$cli" memory search --namespace veil-persistence-pilot --query "missing head base dependency graphs" 2>&1 | tee search.log
+          grep -Eq 'Found [1-9][0-9]* results|dependency-review-p0' search.log
+          "$cli" memory peek 2>&1 | tee peek.log
+          if grep -Eiq 'persistence is not guaranteed|Invalid PRAGMA|Data stored, but|no results found' store.log retrieve.log search.log; then
+            echo "::error::Memory durability warning found: FAIL CLOSED"
+            exit 1
+          fi
+          echo "Verified separate-process read and semantic search without fallback durability warnings"
+          {
+            echo "## Ruflo durable-memory pilot"
+            echo "- Exact version: Ruflo 3.59.8"
+            echo "- Native better-sqlite3: loaded"
+            echo "- Distinct CLI processes: store, retrieve, search"
+            echo "- Verified known test value and semantic match"
+            echo "- No personal PC, external model credentials, repository checkout or write permission"
+            echo "- No claim of autonomous LLM agent work"
+          } >> "$GITHUB_STEP_SUMMARY"
