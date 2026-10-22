@@ -125,6 +125,35 @@ class LibraryRetrievalInteractionTest {
         compose.onNodeWithText(ordinary.title).assertDoesNotExist()
     }
 
+    @Test fun pendingHomeShelfClearsRestoredCollectionWithoutResurrection() {
+        var restoringWithShelf = false
+        val consumed = mutableListOf<LibraryShelfDestination>()
+        val restoration = StateRestorationTester(compose)
+        val ordinary = book("ordinary-collection", "Ordinary collection volume").copy(collections = listOf("Old collection"))
+        val favorite = book("favorite-collection", "Favorite collection volume")
+            .copy(favorite = true, collections = listOf("New collection"))
+        show({ listOf(ordinary, favorite) }, restoration = restoration,
+            requestedShelf = { if (restoringWithShelf) LibraryShelfDestination.FAVORITES else null },
+            onShelfRequestConsumed = { destination ->
+                consumed += destination
+                restoringWithShelf = false
+            })
+        compose.onNode(hasText(context.getString(R.string.library_collection)) and hasClickAction())
+            .performScrollTo().performClick()
+        compose.onNode(hasTextExactly("Old collection") and hasClickAction()).performClick()
+        compose.onNodeWithText(ordinary.title).assertExists()
+
+        restoringWithShelf = true
+        restoration.emulateSavedInstanceStateRestore()
+        compose.awaitGrayfogArtwork()
+        compose.runOnIdle {
+            org.junit.Assert.assertEquals(listOf(LibraryShelfDestination.FAVORITES), consumed)
+        }
+        compose.onNode(hasTextExactly("Old collection") and hasClickAction()).assertDoesNotExist()
+        compose.onNodeWithText(favorite.title).assertExists()
+        compose.onNodeWithText(ordinary.title).assertDoesNotExist()
+    }
+
     @Test fun effectiveSearchShowsRelevanceAndExplicitRecentRemainsRecent() {
         show({ listOf(book("one", "Veil"), book("two", "Veil Notes")) }, "veil")
         val relevanceDescription = context.getString(R.string.library_sort_books, "Relevance")
