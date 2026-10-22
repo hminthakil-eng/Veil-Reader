@@ -1,0 +1,32 @@
+{
+  "assets": [
+    {
+      "file": "app/src/main/res/drawable-nodpi/station_home_v1.webp",
+      "description": "Victorian midnight rail station, blank sign, moonlit castle and train",
+      "generation": "built-in imagegen, 2026-10-21; independently generated decorative artwork",
+      "prompt_specification": "Wide 2:1 decorative illustration. Ornate brass and gaslight Victorian station, glass roof, blank hanging navy sign upper center, clock upper right, moonlit gothic castle center, steam train right. Dark navy fade below. No text, UI or device frame.",
+      "processing": "Pillow LANCZOS thumbnail; WebP quality 88, method 6; original transparency preserved",
+      "sha256": "1a041f00b259a34482302dd2e3d2bb450fd01201fe2c52665f4bded9f43bbed9",
+      "bytes": 334510
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/station_library_portals_v1.webp",
+      "description": "Four equal library alcoves: books, hourglass, armillary sphere, reading chair",
+      "generation": "built-in imagegen, 2026-10-21; independently generated decorative artwork",
+      "prompt_specification": "Wide 3:1 atlas with four equal frontal gilded arches: bookshelves and ladder; hourglass and writing desk; armillary sphere and globe; leather reading armchair and gas lamp. Midnight navy, brass, amber. Lower 22 percent dark empty for native labels. No text, numbers or UI.",
+      "processing": "Pillow LANCZOS thumbnail; WebP quality 88, method 6; original transparency preserved",
+      "sha256": "28786f32f7b7f6ffbd22699e9d2429b30f9a808b7810539095c706e058b288fa",
+      "bytes": 249820
+    },
+    {
+      "file": "app/src/main/res/drawable-nodpi/station_brass_corner_v1.webp",
+      "description": "Transparent top-left brass acanthus corner",
+      "generation": "built-in imagegen, 2026-10-21; independently generated decorative artwork",
+      "prompt_specification": "Square transparent top-left antique gilded brass frame corner, front facing, carved acanthus rosette and scrolls, thin rails along top and left, lower right transparent. No text, symbols, clock or UI.",
+      "processing": "Pillow LANCZOS thumbnail; WebP quality 88, method 6; original transparency preserved",
+      "sha256": "9c6bca3473552e3a9585291d2f887db8d23affff6b041813bc22851b3d97c384",
+      "bytes": 26928
+    }
+  ],
+  "note": "Artwork is decorative. Labels, counts, covers, navigation and reading progress remain native. New generations replace lost uncommitted assets; previous hashes are not acceptance evidence for these files."
+}
