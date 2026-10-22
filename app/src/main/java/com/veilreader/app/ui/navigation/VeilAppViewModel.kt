@@ -23,7 +23,8 @@ data class VeilRouteState(
     val activeBookId: String? = null,
     val readerSessionInstanceId: String? = null,
     val locatorOverrideJson: String? = null,
-    val readerLocatorCheckpointJson: String? = null
+    val readerLocatorCheckpointJson: String? = null,
+    val libraryShelfRequest: LibraryShelfDestination? = null
 )
 
 /**
@@ -47,6 +48,7 @@ class VeilAppViewModel(
     fun selectTab(tab: VeilTab) = update {
         copy(
             selectedTab = tab,
+            libraryShelfRequest = null,
             showSettings = false,
             showArchive = false,
             activeChamber = null,
@@ -55,6 +57,17 @@ class VeilAppViewModel(
             locatorOverrideJson = null,
             readerLocatorCheckpointJson = null
         )
+    }
+
+    fun openLibraryShelf(destination: LibraryShelfDestination) = update {
+        copy(selectedTab = VeilTab.LIBRARY, libraryShelfRequest = destination,
+            showSettings = false, showArchive = false, activeChamber = null,
+            activeBookId = null, readerSessionInstanceId = null,
+            locatorOverrideJson = null, readerLocatorCheckpointJson = null)
+    }
+
+    fun consumeLibraryShelfRequest(expected: LibraryShelfDestination) = update {
+        if (libraryShelfRequest == expected) copy(libraryShelfRequest = null) else this
     }
 
     fun openArchive() = update {
@@ -217,6 +230,8 @@ class VeilAppViewModel(
 
     private fun persist(next: VeilRouteState) {
         savedStateHandle[KEY_TAB] = next.selectedTab.name
+        if (next.libraryShelfRequest == null) savedStateHandle.remove<String>(KEY_LIBRARY_SHELF)
+        else savedStateHandle[KEY_LIBRARY_SHELF] = next.libraryShelfRequest.name
         savedStateHandle[KEY_SETTINGS] = next.showSettings
         savedStateHandle[KEY_ARCHIVE] = next.showArchive
         if (next.activeChamber == null) savedStateHandle.remove<String>(KEY_CHAMBER)
@@ -249,7 +264,9 @@ class VeilAppViewModel(
             activeBookId = savedStateHandle.get<String>(KEY_BOOK),
             readerSessionInstanceId = savedStateHandle.get<String>(KEY_READER_SESSION),
             locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR),
-            readerLocatorCheckpointJson = savedStateHandle.get<String>(KEY_READER_CHECKPOINT)
+            readerLocatorCheckpointJson = savedStateHandle.get<String>(KEY_READER_CHECKPOINT),
+            libraryShelfRequest = savedStateHandle.get<String>(KEY_LIBRARY_SHELF)
+                ?.let { raw -> LibraryShelfDestination.entries.firstOrNull { it.name == raw } }
         ).normalized()
     }
 
@@ -257,6 +274,7 @@ class VeilAppViewModel(
         val cleanBookId = activeBookId?.takeIf(String::isNotBlank)
         if (cleanBookId != null) {
             return copy(
+                libraryShelfRequest = null,
                 showSettings = false,
                 showArchive = false,
                 activeChamber = null,
@@ -271,6 +289,9 @@ class VeilAppViewModel(
         val cleanChamber = activeChamber?.takeIf { it in RESTORABLE_CHAMBERS }
         val cleanSettings = showSettings && cleanChamber == null
         return copy(
+            libraryShelfRequest = libraryShelfRequest.takeIf {
+                selectedTab == VeilTab.LIBRARY && !showSettings && !showArchive && cleanChamber == null
+            },
             showSettings = cleanSettings,
             showArchive = showArchive && cleanChamber == null && !cleanSettings,
             activeChamber = cleanChamber,
@@ -283,6 +304,7 @@ class VeilAppViewModel(
 
     companion object {
         private const val KEY_TAB = "veil.route.tab"
+        private const val KEY_LIBRARY_SHELF = "veil.route.library_shelf"
         private const val KEY_SETTINGS = "veil.route.settings"
         private const val KEY_ARCHIVE = "veil.route.archive"
         private const val KEY_CHAMBER = "veil.route.chamber"
