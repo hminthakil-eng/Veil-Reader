@@ -222,14 +222,20 @@ internal fun LibraryArchiveContent(
 
     // Empty snapshots include initial asynchronous loading; they do not prove metadata absence.
     val reconciledCollection = reconcileLibraryLabel(collection, collections, allowRemoval = books.isNotEmpty())
-    LaunchedEffect(collection, reconciledCollection) {
-        if (collection != reconciledCollection) collection = reconciledCollection
+    LaunchedEffect(collection, reconciledCollection, requestedShelf) {
+        // A pending Home destination owns retrieval state until it is consumed.
+        // Do not let reconciliation from restored filters overwrite that request.
+        if (requestedShelf == null && collection != reconciledCollection) {
+            collection = reconciledCollection
+        }
     }
     val seriesChoices = remember(books) { buildLibrarySeriesChoices(books) }
     val availableSeries = remember(seriesChoices) { seriesChoices.map { it.name } }
     val reconciledSeries = reconcileLibraryLabel(seriesFilter, availableSeries, allowRemoval = books.isNotEmpty())
-    LaunchedEffect(seriesFilter, reconciledSeries) {
-        if (seriesFilter != reconciledSeries) seriesFilter = reconciledSeries
+    LaunchedEffect(seriesFilter, reconciledSeries, requestedShelf) {
+        if (requestedShelf == null && seriesFilter != reconciledSeries) {
+            seriesFilter = reconciledSeries
+        }
     }
 
     val memoryState = remember(books, highlights, readingSessions, libraryNowEpochMs) {
