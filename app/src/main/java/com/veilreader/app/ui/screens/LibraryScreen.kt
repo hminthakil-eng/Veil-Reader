@@ -221,15 +221,23 @@ internal fun LibraryArchiveContent(
     }
 
     // Empty snapshots include initial asynchronous loading; they do not prove metadata absence.
-    val reconciledCollection = reconcileLibraryLabel(collection, collections, allowRemoval = books.isNotEmpty())
-    LaunchedEffect(collection, reconciledCollection) {
-        if (collection != reconciledCollection) collection = reconciledCollection
+    val collectionAtComposition = collection
+    val reconciledCollection = reconcileLibraryLabel(collectionAtComposition, collections, allowRemoval = books.isNotEmpty())
+    LaunchedEffect(collectionAtComposition, reconciledCollection) {
+        // A pending Home shelf can clear restored filters while this effect is queued.
+        // Do not reapply a reconciliation derived from an obsolete snapshot.
+        if (collection == collectionAtComposition && collection != reconciledCollection) {
+            collection = reconciledCollection
+        }
     }
     val seriesChoices = remember(books) { buildLibrarySeriesChoices(books) }
     val availableSeries = remember(seriesChoices) { seriesChoices.map { it.name } }
-    val reconciledSeries = reconcileLibraryLabel(seriesFilter, availableSeries, allowRemoval = books.isNotEmpty())
-    LaunchedEffect(seriesFilter, reconciledSeries) {
-        if (seriesFilter != reconciledSeries) seriesFilter = reconciledSeries
+    val seriesAtComposition = seriesFilter
+    val reconciledSeries = reconcileLibraryLabel(seriesAtComposition, availableSeries, allowRemoval = books.isNotEmpty())
+    LaunchedEffect(seriesAtComposition, reconciledSeries) {
+        if (seriesFilter == seriesAtComposition && seriesFilter != reconciledSeries) {
+            seriesFilter = reconciledSeries
+        }
     }
 
     val memoryState = remember(books, highlights, readingSessions, libraryNowEpochMs) {
