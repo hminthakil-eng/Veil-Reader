@@ -91,12 +91,16 @@ class LibraryRetrievalInteractionTest {
 
     @Test fun pendingHomeShelfWinsOverRestoredRetrievalContext() {
         var restoringWithShelf = false
+        val consumed = mutableListOf<LibraryShelfDestination>()
         val restoration = StateRestorationTester(compose)
         val ordinary = book("ordinary-restored", "Ordinary restored volume", "Old cycle").copy(collections = listOf("Old collection"))
         val favorite = book("favorite-restored", "Favorite restored volume", "New cycle").copy(favorite = true, collections = listOf("New collection"))
         show({ listOf(ordinary, favorite) }, restoration = restoration,
             requestedShelf = { if (restoringWithShelf) LibraryShelfDestination.FAVORITES else null },
-            onShelfRequestConsumed = { restoringWithShelf = false })
+            onShelfRequestConsumed = { destination ->
+                consumed += destination
+                restoringWithShelf = false
+            })
         compose.onNode(hasText(context.getString(R.string.library_collection)) and hasClickAction())
             .performScrollTo().performClick()
         compose.onNode(hasTextExactly("Old collection") and hasClickAction()).performClick()
@@ -109,6 +113,12 @@ class LibraryRetrievalInteractionTest {
         restoringWithShelf = true
         restoration.emulateSavedInstanceStateRestore()
         compose.awaitGrayfogArtwork()
+        // Distinguish an ignored restored request from a stale filter after consumption.
+        compose.runOnIdle {
+            org.junit.Assert.assertEquals(
+                "Restored Home shelf must be consumed once",
+                listOf(LibraryShelfDestination.FAVORITES), consumed)
+        }
         compose.onNode(hasTextExactly("Old collection") and hasClickAction()).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.library_series_filter, "Old cycle")).assertDoesNotExist()
         compose.onNodeWithText(favorite.title).assertExists()
