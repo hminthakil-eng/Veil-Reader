@@ -1060,7 +1060,8 @@ fun VeilApp(
                 },
                 onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
                 onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
-                onOpenMirror = { routeViewModel.openChamber("mirror") }
+                onOpenMirror = { routeViewModel.openChamber("mirror") },
+                onOpenLibraryShelf = routeViewModel::openLibraryShelf
             )
 
             VeilTab.LIBRARY -> LibraryScreen(
@@ -1077,7 +1078,9 @@ fun VeilApp(
                 onEditMetadata = library::editMetadata,
                 onDeleteBook = ::deleteBook,
                 onOpenSettings = routeViewModel::openSettings,
-                onOpenManga = { routeViewModel.openChamber("manga") }
+                onOpenManga = { routeViewModel.openChamber("manga") },
+                requestedShelf = route.libraryShelfRequest,
+                onShelfRequestConsumed = routeViewModel::consumeLibraryShelfRequest
             )
 
             VeilTab.CASTLE -> CastleScreen(

@@ -83,6 +83,25 @@ class ReaderPreferenceMappingTest {
         assertEquals(0.75, readiumFontSizeRatio(0.1), 0.0001)
         assertEquals(1.8, readiumFontSizeRatio(20.0), 0.0001)
         assertEquals(1.0, readiumFontSizeRatio(Double.NaN), 0.0001)
+        assertEquals(1.0, readiumFontSizeRatio(Double.POSITIVE_INFINITY), 0.0001)
+        assertEquals(1.0, readiumFontSizeRatio(Double.NEGATIVE_INFINITY), 0.0001)
+    }
+
+    @Test
+    fun `hidden EPUB theme and page turn choices do not change PDF preferences`() {
+        listOf(false, true).forEach { scroll ->
+            val original = ReaderAppearance(scroll = scroll)
+            val expected = original.toPdfiumPreferences()
+            ReaderTheme.entries.forEach { theme ->
+                PageTurnStyle.entries.forEach { style ->
+                    assertEquals(
+                        "scroll=$scroll theme=$theme style=$style",
+                        expected,
+                        original.copy(theme = theme, pageTurnStyle = style).toPdfiumPreferences()
+                    )
+                }
+            }
+        }
     }
 
     @Test

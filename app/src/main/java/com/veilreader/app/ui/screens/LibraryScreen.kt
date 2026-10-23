@@ -85,6 +85,7 @@ import com.veilreader.app.ui.books.BookReadingState
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.navigation.LibraryShelfDestination
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.galleryCellMeasureDp
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
@@ -118,12 +119,15 @@ fun LibraryScreen(
     onEditMetadata: (BookMetadataUpdate) -> Unit,
     onDeleteBook: (Book) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenManga: () -> Unit = {}
+    onOpenManga: () -> Unit = {},
+    requestedShelf: LibraryShelfDestination? = null,
+    onShelfRequestConsumed: (LibraryShelfDestination) -> Unit = {}
 ) {
     LibraryArchiveContent(
         books, highlights, bookmarks, readingSessions, readingCycles, readingMilestones,
         isImporting, onImportUri, onOpenBook, onFavorite, onEditMetadata, onDeleteBook,
-        onOpenSettings, onOpenManga
+        onOpenSettings, onOpenManga,
+        requestedShelf = requestedShelf, onShelfRequestConsumed = onShelfRequestConsumed
     )
 }
 
@@ -144,7 +148,9 @@ internal fun LibraryArchiveContent(
     onOpenSettings: () -> Unit,
     onOpenManga: () -> Unit = {},
     initialViewMode: LibraryViewMode = LibraryViewMode.GALLERY,
-    initialQuery: String = ""
+    initialQuery: String = "",
+    requestedShelf: LibraryShelfDestination? = null,
+    onShelfRequestConsumed: (LibraryShelfDestination) -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val archiveAdaptiveClass = adaptiveClassFor(currentVeilWindowSizeDp().width)
@@ -159,10 +165,10 @@ internal fun LibraryArchiveContent(
         archiveTimePhaseForHour(LocalTime.now().hour)
     }
     var query by rememberSaveable { mutableStateOf(initialQuery) }
-    var shelf by rememberSaveable { mutableStateOf("All") }
+    var shelf by rememberSaveable { mutableStateOf(requestedShelf?.filterId ?: "All") }
     var collection by rememberSaveable { mutableStateOf("") }
     var seriesFilter by rememberSaveable { mutableStateOf("") }
-    var sort by rememberSaveable { mutableStateOf("Recent") }
+    var sort by rememberSaveable { mutableStateOf(LibrarySortMode.AUTO.name) }
     var viewModeName by rememberSaveable { mutableStateOf(initialViewMode.name) }
     val viewMode = libraryViewModeFromStored(viewModeName)
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
@@ -178,6 +184,22 @@ internal fun LibraryArchiveContent(
     var seriesName by remember { mutableStateOf("") }
     var seriesIndex by remember { mutableStateOf("") }
     var language by remember { mutableStateOf("") }
+
+    // A Home entrance is an explicit destination, not a sticky default. Clear conflicting
+    // retrieval context once, then let the user's own filters and saved state take over.
+    LaunchedEffect(requestedShelf) {
+        requestedShelf?.let { destination ->
+            shelf = destination.filterId
+            query = ""
+            collection = ""
+            seriesFilter = ""
+            detailBookId = null
+            collectionMenu = false
+            seriesMenu = false
+            sortMenu = false
+            onShelfRequestConsumed(destination)
+        }
+    }
 
     fun beginMetadataEdit(book: Book) {
         editing = book
@@ -198,9 +220,23 @@ internal fun LibraryArchiveContent(
             .sortedWith(String.CASE_INSENSITIVE_ORDER)
     }
 
-    LaunchedEffect(collections) {
-        if (collection.isNotEmpty() && collections.none { it.equals(collection, ignoreCase = true) }) {
-            collection = ""
+    // Empty snapshots include initial asynchronous loading; they do not prove metadata absence.
+    val collectionAtComposition = collection
+    val reconciledCollection = reconcileLibraryLabel(collectionAtComposition, collections, allowRemoval = books.isNotEmpty())
+    LaunchedEffect(collectionAtComposition, reconciledCollection) {
+        // A pending Home shelf can clear restored filters while this effect is queued.
+        // Do not reapply a reconciliation derived from an obsolete snapshot.
+        if (collection == collectionAtComposition && collection != reconciledCollection) {
+            collection = reconciledCollection
+        }
+    }
+    val seriesChoices = remember(books) { buildLibrarySeriesChoices(books) }
+    val availableSeries = remember(seriesChoices) { seriesChoices.map { it.name } }
+    val seriesAtComposition = seriesFilter
+    val reconciledSeries = reconcileLibraryLabel(seriesAtComposition, availableSeries, allowRemoval = books.isNotEmpty())
+    LaunchedEffect(seriesAtComposition, reconciledSeries) {
+        if (seriesFilter == seriesAtComposition && seriesFilter != reconciledSeries) {
+            seriesFilter = reconciledSeries
         }
     }
 
@@ -257,6 +293,7 @@ internal fun LibraryArchiveContent(
 
     val trimmedQuery = query.trim()
     val normalizedQuery = remember(trimmedQuery) { normalizeLibrarySearchText(trimmedQuery) }
+    val effectiveSort = effectiveLibrarySort(restoreLibrarySort(sort), normalizedQuery.isNotBlank())
     val searchableByBookId = remember(books) {
         books.associate { book ->
             book.id to normalizedLibrarySearchDocument(
@@ -284,59 +321,29 @@ internal fun LibraryArchiveContent(
         normalizedQuery,
         searchScoreByBookId,
         shelf,
-        collection,
-        seriesFilter,
-        sort,
+        reconciledCollection,
+        reconciledSeries,
+        effectiveSort,
         deepShelfBookIds,
         memoryState
     ) {
         books.filter { book ->
             val matchesQuery = normalizedQuery.isBlank() ||
                 searchScoreByBookId.containsKey(book.id)
-            val matchesShelf = when (shelf) {
-                "Reading" -> !book.finished && book.progress > 0f
+            val matchesShelf = LibraryShelfDestination.entries.firstOrNull { it.filterId == shelf }
+                ?.contains(book) ?: when (shelf) {
                 "Unread" -> !book.finished && book.progress == 0f
-                "Finished" -> book.finished
-                "Favorites" -> book.favorite
                 "Deep Shelf" -> book.id in deepShelfBookIds
                 else -> true
             }
-            val matchesCollection = collection.isEmpty() || book.allCollections.any {
-                it.equals(collection, ignoreCase = true)
+            val matchesCollection = reconciledCollection.isEmpty() || book.allCollections.any {
+                libraryLabelMatches(it, reconciledCollection)
             }
-            val matchesSeries = seriesFilter.isEmpty() ||
-                book.seriesName?.equals(seriesFilter, ignoreCase = true) == true
+            val matchesSeries = libraryLabelMatches(book.seriesName, reconciledSeries)
             matchesQuery && matchesShelf && matchesCollection && matchesSeries
         }.let { list ->
-            when (sort) {
-                "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
-                "Author" -> list.sortedBy { it.author.lowercase(Locale.ROOT) }
-                "Progress" -> list.sortedByDescending { it.progress }
-                "Archive Depth" -> list.sortedByDescending {
-                    memoryState.memoryFor(it.id)?.inactiveMillis ?: 0L
-                }
-                "Series" -> list.sortedWith(
-                    compareBy<Book> { it.seriesName?.lowercase(Locale.ROOT) ?: "\uffff" }
-                        .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
-                        .thenBy { it.title.lowercase(Locale.ROOT) }
-                )
-                else -> if (normalizedQuery.isNotBlank()) {
-                    list.sortedWith(
-                        compareByDescending<Book> {
-                            searchScoreByBookId[it.id] ?: Int.MIN_VALUE
-                        }
-                            .thenByDescending {
-                                maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
-                            }
-                            .thenBy { it.id }
-                    )
-                } else {
-                    list.sortedWith(
-                        compareByDescending<Book> {
-                            maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
-                        }.thenBy { it.id }
-                    )
-                }
+            sortLibraryBooks(list, effectiveSort, searchScoreByBookId) { bookId ->
+                memoryState.memoryFor(bookId)?.inactiveMillis ?: 0L
             }
         }
     }
@@ -548,55 +555,30 @@ internal fun LibraryArchiveContent(
                         }
                     }
 
-                    if (wingState.seriesWings.isNotEmpty()) {
-                        Box {
-                            TextButton(
-                                onClick = { seriesMenu = true },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(horizontal = VeilSpacing.sm)
-                            ) {
-                                Text(
-                                    stringResource(R.string.library_group_series),
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = seriesMenu,
-                                onDismissRequest = { seriesMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.library_all_series)) },
-                                    onClick = { seriesFilter = ""; seriesMenu = false }
-                                )
-                                wingState.seriesWings.forEach { wing ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                wing.name,
-                                                style = MaterialTheme.typography.bodyLarge.withVeilContentScript(wing.name)
-                                            )
-                                        },
-                                        onClick = {
-                                            seriesFilter = wing.name
-                                            collection = ""
-                                            seriesMenu = false
-                                        }
-                                    )
-                                }
-                            }
+                    if (seriesChoices.isNotEmpty()) {
+                        TextButton(
+                            onClick = { seriesMenu = true },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            contentPadding = PaddingValues(horizontal = VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.library_group_series),
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
 
                     Box {
-                        val sortLabel = when (sort) {
-                            "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
-                            "Title" -> stringResource(R.string.library_sort_title)
-                            "Author" -> stringResource(R.string.library_sort_author)
-                            "Series" -> stringResource(R.string.library_sort_series)
-                            "Progress" -> stringResource(R.string.library_sort_progress)
-                            else -> stringResource(R.string.library_sort_recent)
-                        }
+                        val sortLabel = stringResource(when (effectiveSort) {
+                            LibrarySortMode.ARCHIVE_DEPTH -> R.string.library_sort_archive_depth
+                            LibrarySortMode.TITLE -> R.string.library_sort_title
+                            LibrarySortMode.AUTHOR -> R.string.library_sort_author
+                            LibrarySortMode.SERIES -> R.string.library_sort_series
+                            LibrarySortMode.PROGRESS -> R.string.library_sort_progress
+                            LibrarySortMode.RELEVANCE -> R.string.library_sort_relevance
+                            LibrarySortMode.AUTO, LibrarySortMode.RECENT -> R.string.library_sort_recent
+                        })
                         val sortDescription = stringResource(R.string.library_sort_books, sortLabel)
                         TextButton(
                             onClick = { sortMenu = true },
@@ -617,17 +599,26 @@ internal fun LibraryArchiveContent(
                             expanded = sortMenu,
                             onDismissRequest = { sortMenu = false }
                         ) {
-                            listOf(
-                                "Recent" to R.string.library_sort_recent,
-                                "Archive Depth" to R.string.library_sort_archive_depth,
-                                "Title" to R.string.library_sort_title,
-                                "Author" to R.string.library_sort_author,
-                                "Series" to R.string.library_sort_series,
-                                "Progress" to R.string.library_sort_progress
-                            ).forEach { (key, labelRes) ->
+                            buildList {
+                                if (normalizedQuery.isNotBlank()) {
+                                    add(LibrarySortMode.RELEVANCE to R.string.library_sort_relevance)
+                                }
+                                add(LibrarySortMode.RECENT to R.string.library_sort_recent)
+                                add(LibrarySortMode.ARCHIVE_DEPTH to R.string.library_sort_archive_depth)
+                                add(LibrarySortMode.TITLE to R.string.library_sort_title)
+                                add(LibrarySortMode.AUTHOR to R.string.library_sort_author)
+                                add(LibrarySortMode.SERIES to R.string.library_sort_series)
+                                add(LibrarySortMode.PROGRESS to R.string.library_sort_progress)
+                            }.forEach { (mode, labelRes) ->
                                 DropdownMenuItem(
                                     text = { Text(stringResource(labelRes)) },
-                                    onClick = { sort = key; sortMenu = false }
+                                    modifier = Modifier.semantics { selected = effectiveSort == mode },
+                                    onClick = {
+                                        sort = if (mode == LibrarySortMode.RELEVANCE) {
+                                            LibrarySortMode.AUTO.name
+                                        } else mode.name
+                                        sortMenu = false
+                                    }
                                 )
                             }
                         }
@@ -935,6 +926,19 @@ internal fun LibraryArchiveContent(
                 }
             )
         }
+
+    if (seriesMenu) {
+        LibrarySeriesPickerDialog(
+            choices = seriesChoices,
+            selected = seriesFilter,
+            onSelect = { name ->
+                seriesFilter = name
+                if (name.isNotBlank()) collection = ""
+                seriesMenu = false
+            },
+            onDismiss = { seriesMenu = false }
+        )
+    }
 
     editing?.let { book ->
         val parsedSeriesIndex = seriesIndex

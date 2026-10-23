@@ -24,11 +24,15 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.test.core.app.ApplicationProvider
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.navigation.LibraryShelfDestination
 import com.veilreader.app.ui.review.GrayfogReviewContent
 import com.veilreader.app.ui.review.GrayfogReviewFixtures
 import com.veilreader.app.ui.review.GrayfogReviewSurface
@@ -234,13 +238,116 @@ class GrayfogShellAccessibilityTest(
         capture("archive-gallery")
     }
 
-    private fun capture(surface: String) {
+
+    @Test
+    fun seriesPickerRetainsLongLabelsSelectionAndAccessibleActions() {
+        val localized = localizedContext()
+        val name = if (language == "fa") "کتاب‌های تاریخ و رصدخانهٔ خاکستری"
+            else "Records of the Observatory and the Grayfog Archive"
+        val choices = buildLibrarySeriesChoices(listOf(
+            Book(id = "series-one", title = "One", author = "Fixture", seriesName = name),
+            Book(id = "series-two", title = "Two", author = "Fixture", seriesName = name)
+        ))
+        var chosen: String? = null
+        var dismissals = 0
+        present {
+            LibrarySeriesPickerDialog(
+                choices = choices, selected = name,
+                onSelect = { chosen = it }, onDismiss = { dismissals++ },
+                modifier = Modifier.width(320.dp)
+            )
+        }
+        val search = compose.onNode(hasText(localized.getString(R.string.library_series_search)) and hasSetTextAction())
+        search.performClick().performTextInput(if (language == "fa") "تاريخ" else "Observatory")
+        search.assertIsFocused()
+        search.performImeAction()
+        search.assertIsNotFocused()
+        compose.onNode(hasScrollAction() and hasAnyAncestor(isDialog())).performScrollToNode(hasText(name))
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNode(
+            hasText(name) and hasAnyAncestor(isDialog()) and
+                SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
+            useUnmergedTree = true
+        ).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+            assertTrue(action(layouts))
+        }
+        assertEquals(scale, layouts.single().layoutInput.density.fontScale, 0f)
+        val row = compose.onNode(hasText(name) and hasClickAction() and hasAnyAncestor(isDialog()))
+        row.assertIsDisplayed().assertIsSelected().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText(localized.resources.getQuantityString(R.plurals.library_series_books, 2, 2))
+            .assertExists()
+        capture("archive-series-picker", dialog = true)
+        row.performClick()
+        compose.onNodeWithText(localized.getString(R.string.common_cancel))
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle {
+            assertEquals(name, chosen)
+            assertEquals(1, dismissals)
+        }
+    }
+
+    @Test
+    fun stationHomeKeepsRealBookActionsAndAllFourShelfDestinations() {
+        val localized = localizedContext()
+        val fixture = GrayfogReviewFixtures.booksWithOriginalCover(localized).first()
+        val current = fixture.copy(id = "station-current", progress = .42f, finished = false,
+            favorite = false, lastOpenedAtEpochMs = 100L)
+        val recent = fixture.copy(id = "station-recent", title = if (language == "fa") "دفتر سفرهای اخیر" else "Recent journeys",
+            progress = .25f, finished = false, favorite = true, lastOpenedAtEpochMs = 90L)
+        val completed = fixture.copy(id = "station-completed", progress = 1f, finished = true,
+            favorite = true, lastOpenedAtEpochMs = 80L)
+        val opened = mutableListOf<String>()
+        val shelves = mutableListOf<LibraryShelfDestination>()
+        present {
+            ReadingNowScreen(listOf(current, recent, completed), SampleData.profile, emptyList(),
+                onOpenBook = { opened += it.id }, onOpenPassage = { _, _ -> },
+                onOpenLibrary = {}, onOpenCastle = {}, onOpenLibraryShelf = { shelves += it })
+        }
+        compose.waitUntil(20_000) {
+            val nodes = compose.onAllNodes(SemanticsMatcher.keyIsDefined(BookCoverArtworkReady), useUnmergedTree = true)
+                .fetchSemanticsNodes()
+            nodes.isNotEmpty() && nodes.all { it.config[BookCoverArtworkReady] }
+        }
+        compose.mainClock.advanceTimeBy(200)
+        capture("station-home")
+        val resumeLabel = localized.getString(R.string.threshold_return_volume)
+        compose.onNodeWithText(resumeLabel).performScrollTo().assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp).performClick()
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNode(hasText(resumeLabel) and SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult),
+            useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action ->
+            assertTrue(action(layouts))
+        }
+        assertEquals(scale, layouts.single().layoutInput.density.fontScale, 0f)
+        // The card's nearest scroll ancestor is horizontal. First bring the whole
+        // shelf into the vertical viewport, then reveal the selected card within it.
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange))
+            .performScrollTo()
+        compose.onNode(hasText(recent.title) and hasClickAction()).performScrollTo()
+            .assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        capture("station-recent")
+        listOf(R.string.library_shelf_all to 3, R.string.library_shelf_reading to 2,
+            R.string.library_shelf_completed to 1, R.string.library_shelf_favorites to 2).forEachIndexed { index, (label, count) ->
+            compose.onNode(hasText(localized.getString(label)) and hasText(localized.resources.getQuantityString(
+                R.plurals.library_series_books, count, count)) and hasClickAction())
+                .performScrollTo().assertIsDisplayed().assertWidthIsAtLeast(48.dp)
+                .assertHeightIsAtLeast(48.dp).performClick()
+            if (index == 0 || index == 3) capture("station-library-$index")
+        }
+        compose.runOnIdle {
+            assertEquals(listOf(current.id, recent.id), opened)
+            assertEquals(LibraryShelfDestination.entries.toList(), shelves)
+        }
+    }
+
+    private fun capture(surface: String, dialog: Boolean = false) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val directory = File(context.filesDir, "grayfog-review").apply { mkdirs() }
         val name = "$surface-$language-${(scale * 100).toInt()}-${if (highContrast) "contrast" else "standard"}.png"
         val file = File(directory, name)
         file.outputStream().use { output ->
-            check(compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
+            val root = if (dialog) compose.onNode(isDialog()) else compose.onRoot()
+            check(root.captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
         }
         com.veilreader.app.exportGrayfogCapture(file)
     }
