@@ -10,6 +10,7 @@ import androidx.room.withTransaction
 import com.veilreader.app.data.db.BookCollectionCrossRef
 import com.veilreader.app.data.db.CollectionEntity
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.db.SyncPreferenceEntity
 import com.veilreader.app.data.db.normalizeCollectionName
 import com.veilreader.app.data.db.toDomain
 import com.veilreader.app.data.db.toEntity
@@ -85,6 +86,7 @@ class LocalLibraryRepository internal constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val readingPaceStore = ReadingPaceStore(appContext)
     private val readerCrashCheckpointStore = ReaderCrashCheckpointStore(appContext)
+    private val syncCapture = SyncLocalChangeCapture(database)
     private val readingPaceGeneration = AtomicLong(0L)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
@@ -221,6 +223,25 @@ class LocalLibraryRepository internal constructor(
      * ordered transaction, so rapid taps and stale observer snapshots cannot create duplicates.
      * Room's observer publishes the result; failure must never create a phantom cached bookmark.
      */
+    /**
+     * Reserved for the future authenticated transport's consent screen.
+     * Default V4 migration does not opt users in or initiate network traffic.
+     */
+    internal suspend fun configureLocalSyncCapture(enabled: Boolean, confirmedUserConsent: Boolean) {
+        require(!enabled || confirmedUserConsent) { "Explicit consent is required to enable sync capture" }
+        orderedWrite {
+            val previous = database.sync().preference()
+            database.sync().setPreference(
+                SyncPreferenceEntity(
+                    enabled = enabled,
+                    deviceId = previous?.deviceId?.takeIf { it.isNotBlank() }
+                        ?: UUID.randomUUID().toString(),
+                    updatedAtEpochMs = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
     suspend fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean =
         orderedWrite {
             database.withTransaction {
@@ -229,20 +250,29 @@ class LocalLibraryRepository internal constructor(
                 }
                 val bookmark = Bookmark(UUID.randomUUID().toString(), bookId, label, locatorJson)
                 database.bookmarks().upsert(bookmark.toEntity())
+                syncCapture.bookmarkUpsert(bookmark)
                 true
             }
         }
 
     suspend fun deleteBookmark(id: String) {
-        // Keep the visible record until Room commits, including when deletion fails.
-        orderedWrite { database.bookmarks().deleteById(id) }
+        // A tombstone and the delete must commit together; a failed Room write never syncs a phantom delete.
+        orderedWrite {
+            database.withTransaction {
+                val prior = database.bookmarks().findById(id) ?: return@withTransaction
+                database.bookmarks().deleteById(id)
+                syncCapture.deleted("BOOKMARK", prior.bookId, prior.id)
+            }
+        }
     }
 
     suspend fun updateHighlightNote(id: String, note: String): Boolean = orderedWrite {
         database.withTransaction {
             val persisted = database.highlights().findById(id)?.toDomain()
                 ?: return@withTransaction false
-            database.highlights().upsert(persisted.copy(note = note.trim()).toEntity())
+            val updated = persisted.copy(note = note.trim())
+            database.highlights().upsert(updated.toEntity())
+            syncCapture.highlightUpsert(updated)
             true
         }
     }
@@ -734,6 +764,7 @@ class LocalLibraryRepository internal constructor(
                 quote = cleanQuote, locatorJson = locatorJson
             )
             database.highlights().upsert(record.toEntity())
+            syncCapture.highlightUpsert(record)
             SelectionHighlightCommit(record, true)
         }
     }
@@ -765,13 +796,14 @@ class LocalLibraryRepository internal constructor(
             if (!existingHighlightId.isNullOrBlank() && existingHighlightId in deletedHighlightIds) {
                 return@orderedWrite null
             }
+            database.withTransaction {
             val existing = when {
                 !existingHighlightId.isNullOrBlank() ->
                     database.highlights()
                         .findById(existingHighlightId)
                         ?.toDomain()
                         ?.takeIf { it.bookId == bookId }
-                        ?: return@orderedWrite null
+                        ?: return@withTransaction null
 
                 else ->
                     database.highlights()
@@ -795,10 +827,12 @@ class LocalLibraryRepository internal constructor(
                 )
 
             database.highlights().upsert(committed.toEntity())
+            syncCapture.highlightUpsert(committed)
             SelectionNoteCommit(
                 highlight = committed,
                 created = created
             )
+            }
         }
 
         if (result == null) {
@@ -952,7 +986,11 @@ class LocalLibraryRepository internal constructor(
     suspend fun deleteHighlight(id: String) {
         if (id.isBlank()) return
         orderedWrite {
-            database.highlights().deleteById(id)
+            database.withTransaction {
+                val prior = database.highlights().findById(id) ?: return@withTransaction
+                database.highlights().deleteById(id)
+                syncCapture.deleted("HIGHLIGHT", prior.bookId, prior.id)
+            }
             deletedHighlightIds += id
         }
         _highlights.value = _highlights.value.filterNot { it.id == id }
@@ -1137,6 +1175,8 @@ class LocalLibraryRepository internal constructor(
         discardAllPendingReadingSessions()
         orderedWrite {
             database.withTransaction {
+                // Restored data becomes a new local authority: stale outgoing events must never replay.
+                database.sync().resetForRestore()
                 database.passageVisits().deleteAll()
                 database.readingCycles().deleteAll()
                 database.readingMilestones().deleteAll()
@@ -1309,6 +1349,7 @@ class LocalLibraryRepository internal constructor(
                 ) {
                     "Book disappeared before its progress could be persisted: ${value.id}"
                 }
+                syncCapture.progress(value.id, value.progress.toDouble(), value.locatorJson, value.finished)
             }
 
             val completionAt = value.completionAtEpochMs
@@ -1351,7 +1392,8 @@ class LocalLibraryRepository internal constructor(
                     )
                 }
             } else {
-                persistProgress()
+                // Keep the opt-in outbox and persisted position atomic even for ordinary progress.
+                database.withTransaction { persistProgress() }
             }
 
             runCatching {

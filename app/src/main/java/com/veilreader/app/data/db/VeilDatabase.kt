@@ -23,9 +23,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MangaChapterSourceEntity::class,
         MangaProgressEntity::class,
         MangaOfflineChapterEntity::class,
-        MangaOfflinePageEntity::class
+        MangaOfflinePageEntity::class,
+        SyncPreferenceEntity::class,
+        SyncOutboxEntity::class,
+        SyncTombstoneEntity::class,
+        SyncDeviceEntity::class,
+        SyncDeletionAckEntity::class,
+        SyncConflictEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class VeilDatabase : RoomDatabase() {
@@ -40,6 +46,7 @@ abstract class VeilDatabase : RoomDatabase() {
     abstract fun mangaCatalog(): MangaCatalogDao
     abstract fun mangaProgress(): MangaProgressDao
     abstract fun mangaOffline(): MangaOfflineDao
+    abstract fun sync(): SyncDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -262,6 +269,52 @@ abstract class VeilDatabase : RoomDatabase() {
             }
         }
 
+        /** Opt-in sync infrastructure: all existing V3 tables and contents remain unchanged. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_preferences` " +
+                        "(`id` INTEGER NOT NULL, `enabled` INTEGER NOT NULL, " +
+                        "`deviceId` TEXT NOT NULL, `updatedAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_outbox` " +
+                        "(`eventId` TEXT NOT NULL, `bookId` TEXT NOT NULL, " +
+                        "`sourceDeviceId` TEXT NOT NULL, `kind` TEXT NOT NULL, " +
+                        "`entityId` TEXT NOT NULL, `payloadJson` TEXT NOT NULL, " +
+                        "`createdAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`eventId`))"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_outbox_bookId` ON `sync_outbox` (`bookId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_outbox_createdAtEpochMs` ON `sync_outbox` (`createdAtEpochMs`)")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_tombstones` " +
+                        "(`entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, " +
+                        "`bookId` TEXT NOT NULL, `deletedAtEpochMs` INTEGER NOT NULL, " +
+                        "`deleteRevision` INTEGER NOT NULL, PRIMARY KEY(`entityType`, `entityId`))"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_tombstones_bookId` ON `sync_tombstones` (`bookId`)")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_devices` " +
+                        "(`deviceId` TEXT NOT NULL, `active` INTEGER NOT NULL, " +
+                        "`lastSeenAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`deviceId`))"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_deletion_acks` " +
+                        "(`entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, " +
+                        "`deviceId` TEXT NOT NULL, `acknowledgedRevision` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`entityType`, `entityId`, `deviceId`))"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_conflicts` " +
+                        "(`id` TEXT NOT NULL, `bookId` TEXT NOT NULL, " +
+                        "`entityType` TEXT NOT NULL, `entityId` TEXT NOT NULL, " +
+                        "`localPayloadJson` TEXT NOT NULL, `remotePayloadJson` TEXT NOT NULL, " +
+                        "`createdAtEpochMs` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY(`id`))"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_conflicts_bookId` ON `sync_conflicts` (`bookId`)")
+            }
+        }
+
         @Volatile private var instance: VeilDatabase? = null
 
         fun get(context: Context): VeilDatabase = instance ?: synchronized(this) {
@@ -270,7 +323,7 @@ abstract class VeilDatabase : RoomDatabase() {
                 VeilDatabase::class.java,
                 "veil_reader.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 .also { instance = it }
         }
