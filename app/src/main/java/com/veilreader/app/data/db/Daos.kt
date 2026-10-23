@@ -158,6 +158,9 @@ interface BookmarkDao {
 
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId AND locatorJson = :locatorJson LIMIT 1")
     suspend fun findByBookAndLocator(bookId: String, locatorJson: String): BookmarkEntity?
+    
+    @Query("SELECT * FROM bookmarks WHERE id = :id LIMIT 1")
+    suspend fun findById(id: String): BookmarkEntity?
 
     @Upsert suspend fun upsert(bookmark: BookmarkEntity)
     @Upsert suspend fun upsertAll(bookmarks: List<BookmarkEntity>)
