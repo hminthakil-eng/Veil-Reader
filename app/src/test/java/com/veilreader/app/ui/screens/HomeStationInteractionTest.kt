@@ -65,6 +65,19 @@ class HomeStationInteractionTest {
         }
         compose.runOnIdle { assertEquals(4, opened) }
     }
+    @Test @Config(qualifiers = "fa-rIR-w320dp-h720dp-mdpi")
+    fun persianLargeTextLibraryAlcovesRemainWideAndActionable() {
+        var opened = 0
+        show(listOf(book("current", .42f).copy(lastOpenedAtEpochMs = 100L),
+            book("favorite").copy(favorite = true)), scale = 2f, onLibrary = { opened++ })
+        val title = context.getString(R.string.library_shelf_favorites)
+        val count = context.resources.getQuantityString(R.plurals.library_series_books, 1, 1)
+        compose.onNode(hasText(title) and hasText(count) and hasClickAction())
+            .performScrollTo().assertIsDisplayed().assertWidthIsAtLeast(240.dp)
+            .assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle { assertEquals(1, opened) }
+    }
+
     @Test fun largeTextResumeWithMissingCoverOpensTheCurrentBook() {
         val current = book("current", .42f).copy(lastOpenedAtEpochMs = 100L,
             title = "The Cartographer of Quiet Rooms and the Observatory Register")
