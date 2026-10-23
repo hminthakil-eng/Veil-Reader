@@ -123,7 +123,13 @@ internal fun StationLibraryPanel(
             }
         }
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val columns = if (maxWidth.value / scale >= 360f) 4 else 2
+            // Prefer readable full-width alcoves to word-fragmented labels at 150–200% text.
+            val scaledWidth = maxWidth.value / scale
+            val columns = when {
+                scaledWidth >= 360f -> 4
+                scaledWidth >= 240f -> 2
+                else -> 1
+            }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LibraryShelfDestination.entries.chunked(columns).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -147,7 +153,9 @@ internal fun StationLibraryPanel(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Image(painter, contentDescription = null, contentScale = ContentScale.Crop,
                                         alignment = Alignment.TopCenter, alpha = if (contrast) .3f else 1f,
-                                        modifier = Modifier.fillMaxWidth().aspectRatio(1.05f).clip(RoundedCornerShape(4.dp)))
+                                        modifier = Modifier.fillMaxWidth()
+                                            .then(if (columns == 1) Modifier.height(116.dp) else Modifier.aspectRatio(1.05f))
+                                            .clip(RoundedCornerShape(4.dp)))
                                     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.spacedBy(4.dp)) {
