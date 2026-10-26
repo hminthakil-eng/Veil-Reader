@@ -101,7 +101,7 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
 dependencies {
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
-    implementation("androidx.fragment:fragment-ktx:1.8.9")
+    implementation("androidx.fragment:fragment-ktx:1.9.1")
     implementation("androidx.compose.ui:ui:1.12.1")
     implementation("androidx.compose.ui:ui-tooling-preview:1.12.1")
     implementation("androidx.compose.foundation:foundation:1.12.1")
@@ -126,7 +126,7 @@ dependencies {
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")
     ksp("androidx.room:room-compiler:2.8.5")
-    implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("androidx.datastore:datastore-preferences:1.3.0")
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
     // Readium powers real EPUB/PDF parsing and navigation.
