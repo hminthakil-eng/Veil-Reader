@@ -1,0 +1,97 @@
+name: Dependency Sequential Probe (DIAGNOSTIC ONLY)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/dependency-sequential-probe.yml'
+
+# This is a throwaway, same-repository diagnostic. Never merge this workflow.
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: dependency-sequential-probe-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  sequential-probe:
+    name: diagnostic-only-exact-head-graph-then-review
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'diagnostics/dependency-sequential-probe-20261031' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout immutable PR head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Assert exact source identity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Submit Gradle graph from exact source
+        uses: gradle/actions/dependency-submission@v6
+        env:
+          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_DEPENDENCY_GRAPH_REF: ${{ format('refs/heads/{0}', github.event.pull_request.head.ref) }}
+        with:
+          dependency-graph: generate-and-submit
+          cache-provider: basic
+
+      - name: Assert generated snapshot identity and nonempty manifests
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_REF: ${{ format('refs/heads/{0}', github.event.pull_request.head.ref) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          reports = list(Path('dependency-graph-reports').glob('*.json'))
+          if len(reports) != 1:
+              raise SystemExit(f'Expected exactly one Gradle snapshot, got {len(reports)}')
+          snapshot = json.loads(reports[0].read_text(encoding='utf-8'))
+          for key, expected in [('sha', os.environ['EXPECTED_SHA']), ('ref', os.environ['EXPECTED_REF'])]:
+              if snapshot.get(key) != expected:
+                  raise SystemExit(f'Snapshot {key} mismatch: {snapshot.get(key)!r} != {expected!r}')
+          if not snapshot.get('manifests'):
+              raise SystemExit('Snapshot has no manifests')
+          print('Snapshot source/ref/manifests verified')
+          PY
+
+      - name: Dependency Review after completed graph submission
+        id: review
+        uses: actions/dependency-review-action@v5
+        with:
+          config-file: ./.github/dependency-review-config.yml
+          retry-on-snapshot-warnings: true
+          retry-on-snapshot-warnings-timeout: 120
+
+      - name: Fail closed if comparison is absent or has snapshot warnings
+        if: ${{ always() && steps.review.outcome == 'success' }}
+        env:
+          REVIEW_SUMMARY: ${{ steps.review.outputs.comment-content }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          summary = os.environ.get('REVIEW_SUMMARY', '')
+          review = re.search(r'<h1(?:\s[^>]*)?>\s*Dependency Review\s*</h1>', summary, re.I)
+          warnings = re.search(r'<h2(?:\s[^>]*)?>\s*Snapshot Warnings\s*</h2>', summary, re.I)
+          # Negative controls: an empty/malformed summary and warning-bearing summary must fail.
+          def valid(value):
+              return bool(re.search(r'<h1(?:\s[^>]*)?>\s*Dependency Review\s*</h1>', value, re.I)) and not bool(re.search(r'<h2(?:\s[^>]*)?>\s*Snapshot Warnings\s*</h2>', value, re.I))
+          assert not valid('') and not valid('<h2>Unrelated</h2>')
+          assert not valid('<h1>Dependency Review</h1><h2>Snapshot Warnings</h2>')
+          assert valid('<h1>Dependency Review</h1><p>Clean comparison</p>')
+          if not review or warnings:
+              raise SystemExit('::error::Dependency comparison missing, malformed, or snapshot warnings present')
+          print('Sequential dependency review: warning-free comparison reported')
+          PY
