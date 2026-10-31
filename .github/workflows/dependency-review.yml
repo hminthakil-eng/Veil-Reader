@@ -16,10 +16,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout exact PR head
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Verify exact checkout identity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+      - name: Test dependency review guard (positive/negative controls)
+        run: python3 -m unittest discover -s tests -p 'test_dependency_review_summary.py'
 
       - name: Review dependency delta
+        id: review
         uses: actions/dependency-review-action@v5
         with:
           config-file: ./.github/dependency-review-config.yml
+
+      # Upstream v5 may return success after 'Retry timeout exceeded. Proceeding...'
+      # even when the head/base Gradle dependency snapshots are absent.
+      # Its comment-content includes a 'Snapshot Warnings' heading in that case.
+      - name: Fail closed on missing dependency snapshots
+        if: ${{ always() && steps.review.outcome == 'success' }}
+        env:
+          REVIEW_SUMMARY: ${{ steps.review.outputs.comment-content }}
+        run: |
+          printf '%s' "$REVIEW_SUMMARY" | python3 scripts/ci/check_dependency_review_summary.py
