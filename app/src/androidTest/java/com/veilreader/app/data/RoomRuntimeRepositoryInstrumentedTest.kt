@@ -630,6 +630,57 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertFalse(stored.finished)
     }
 
+    /**
+     * Diagnostic stress test for the intermittent zero-write coalescing failure.
+     *
+     * A Room observeAll() emission can race with addImportedBook()'s optimistic
+     * _books publication. Check that immediate progress events are not silently
+     * dropped if the observer emits while imports and flushes are in flight.
+     * This is a reproduction probe, NOT evidence of a fixed durability gate.
+     */
+    @Test
+    fun importedBookObserverChurn_neverDropsImmediateProgressFlush() = runBlocking<Unit> {
+        val repository = repository()
+        repeat(24) { iteration ->
+            val id = "observer-race-$"+"iteration"
+            repository.addImportedBook(
+                Book(
+                    id = id,
+                    title = "Observer Race $"+"iteration",
+                    author = "Durability QA",
+                    totalPages = 100,
+                    sourceUri = "file:///observer-race-$"+"iteration.epub"
+                )
+            )
+            // Give the asynchronous Room observer an opportunity to publish.
+            kotlinx.coroutines.yield()
+            assertTrue(
+                "Imported book disappeared from the cache before progress: $"+"id",
+                repository.getBook(id) != null
+            )
+            repeat(20) { index ->
+                repository.saveProgress(
+                    id,
+                    index / 20.0,
+                    "{\\"href\\":\\"chapter-$"+"index.xhtml\\"}"
+                )
+            }
+            repository.flushProgress(id)
+            repository.flushWrites()
+
+            val stored = requireNotNull(db.books().findEntity(id)) {
+                "Imported book missing from Room: $"+"id"
+            }
+            assertEquals("Progress was lost for $"+"id", 0.95f, stored.progress, 0.000001f)
+            assertEquals("Page count was lost for $"+"id", 95, stored.pagesRead)
+            assertEquals(
+                "Locator was lost for $"+"id",
+                "{\\"href\\":\\"chapter-19.xhtml\\"}",
+                stored.locatorJson
+            )
+        }
+    }
+
     @Test
     fun readerOpenLookupReadsDurableBookBeforeDependingOnObserverCache() = runBlocking<Unit> {
         val writer = repository()
