@@ -1,0 +1,103 @@
+name: Dependency Compare API Probe (DIAGNOSTIC ONLY)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/dependency-compare-api-probe.yml'
+
+# Read-only forensic experiment. NEVER MERGE into main.
+# No checkout, dependency submission, product code, or third-party Actions.
+permissions:
+  contents: read
+
+jobs:
+  compare-api:
+    name: diagnostic-only-compare-api-and-snapshot-warnings
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'diagnostics/dependency-compare-api-20261031' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Compare three immutable PR heads against the same main SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          from collections import Counter
+
+          base = '811f0d7d521fc11f110638a100c315f698d52fd5'
+          cases = [
+              ('real-gradle-delta-567', 'd1f7a7fdaf8ececae7f06f5fce9165b362108d19'),
+              ('workflow-only-positive-571', 'eb027e45a6af80c04d82ff6cbcc959b3388ddb00'),
+              ('workflow-only-negative-572', '12d504981d5ad221d0d5a3a8678c76972bd0dae0'),
+          ]
+          findings = []
+          failures = []
+          for label, head in cases:
+              url = f'https://api.github.com/repos/{os.environ["GH_REPOSITORY"]}/dependency-graph/compare/{base}...{head}'
+              request = urllib.request.Request(url, headers={
+                  'Accept': 'application/vnd.github+json',
+                  'Authorization': f'Bearer {os.environ["GH_TOKEN"]}',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'veil-reader-readonly-compare-probe',
+              })
+              try:
+                  with urllib.request.urlopen(request, timeout=40) as response:
+                      status = response.status
+                      warning_header = response.headers.get('x-github-dependency-graph-snapshot-warnings', '')
+                      payload = json.load(response)
+              except urllib.error.HTTPError as error:
+                  failures.append(f'{label}: compare API HTTP {error.code}')
+                  findings.append({'case': label, 'status': error.code, 'error': 'HTTP response'})
+                  continue
+              except Exception as error:
+                  failures.append(f'{label}: compare API request failed ({type(error).__name__})')
+                  findings.append({'case': label, 'error': type(error).__name__})
+                  continue
+              if not isinstance(payload, list):
+                  failures.append(f'{label}: unexpected API response type')
+                  findings.append({'case': label, 'status': status, 'error': 'non-list JSON'})
+                  continue
+              warning_text = ''
+              if warning_header:
+                  try:
+                      warning_text = base64.b64decode(warning_header).decode('utf-8', errors='replace')
+                  except Exception:
+                      warning_text = 'UNDECODABLE WARNING HEADER'
+              ecosystems = dict(Counter(str(entry.get('ecosystem', 'unknown')) for entry in payload))
+              maven_names = sorted({str(entry.get('name', '')) for entry in payload if entry.get('ecosystem') == 'maven'})
+              actions_names = sorted({str(entry.get('name', '')) for entry in payload if entry.get('ecosystem') == 'actions'})
+              findings.append({
+                  'case': label, 'status': status, 'diff_count': len(payload),
+                  'ecosystems': ecosystems,
+                  'gradle_positive_control': 'androidx.fragment:fragment-ktx' in maven_names or 'androidx.datastore:datastore-preferences' in maven_names,
+                  'maven_names_sample': maven_names[:8],
+                  'actions_names_sample': actions_names[:8],
+                  'snapshot_warnings': warning_text[:1200],
+              })
+              if warning_text:
+                  failures.append(f'{label}: snapshot warning header is nonempty')
+              if label == 'real-gradle-delta-567' and not (
+                  'androidx.fragment:fragment-ktx' in maven_names or
+                  'androidx.datastore:datastore-preferences' in maven_names
+              ):
+                  failures.append('Positive control #567: expected Maven delta not visible')
+          print(json.dumps({'immutable_base': base, 'results': findings, 'fail_closed_reasons': failures}, indent=2))
+          summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if summary:
+              with open(summary, 'a', encoding='utf-8') as stream:
+                  stream.write('## READ-ONLY DIAGNOSTIC — NEVER MERGE\n\n')
+                  stream.write('Three exact PR-head dependency-graph comparisons against the same main SHA.\n\n')
+                  stream.write('```json\n' + json.dumps(findings, indent=2) + '\n```\n')
+                  stream.write('\nSecurity clearance: **NOT GRANTED**. This experiment never qualifies a PR for merge.\n')
+          if len(findings) != len(cases) or failures:
+              raise SystemExit('::error::Dependency graph comparison incomplete or warning-bearing; diagnostics RED by design')
+          print('Comparisons returned without snapshot warnings; still diagnostic only')
+          PY
