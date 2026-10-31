@@ -17,8 +17,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Checkout
+      - name: Checkout exact event SHA
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact checkout identity
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          if [ "$actual_sha" != "$EXPECTED_SHA" ]; then
+            echo "::error::Checkout mismatch: expected $EXPECTED_SHA, got $actual_sha"
+            exit 1
+          fi
 
       - name: Set up JDK 21
         uses: actions/setup-java@v6
@@ -55,7 +67,51 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run Room instrumentation tests
+        id: room_tests
         run: bash tools/run_android_ci_emulator.sh storage
+
+      # A green Gradle exit alone does not prove the specific flaky test ran.
+      # Keep a small, independent XML receipt on both success and failure.
+      - name: Verify both progress durability regressions executed
+        if: ${{ steps.room_tests.outcome == 'success' }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+
+          report_dir = Path("app/build/outputs/androidTest-results/connected")
+          reports = sorted(report_dir.rglob("TEST-*.xml"))
+          if not reports:
+              raise SystemExit("No instrumentation JUnit XML found; cannot certify test execution")
+          required = (
+              "rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator",
+              "importedBookObserverChurn_neverDropsImmediateProgressFlush",
+          )
+          counts = Counter()
+          for report in reports:
+              root = ET.parse(report).getroot()
+              for case in root.iter("testcase"):
+                  name = case.attrib.get("name", "")
+                  if name in required:
+                      counts[name] += 1
+                      if any(child.tag in ("failure", "error", "skipped") for child in case):
+                          raise SystemExit(f"Required test did not pass: {name} ({report})")
+          for name in required:
+              if counts[name] != 1:
+                  raise SystemExit(f"Expected exactly one passing {name}, observed {counts[name]}")
+          print(f"Verified {len(required)} targeted tests in {len(reports)} JUnit report(s)")
+          PY
+
+      - name: Upload focused progress JUnit evidence
+        if: ${{ always() && (steps.room_tests.outcome == 'success' || steps.room_tests.outcome == 'failure') }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-progress-junit
+          path: app/build/outputs/androidTest-results/connected/**/TEST-*.xml
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload production Compose review captures
         if: always()
