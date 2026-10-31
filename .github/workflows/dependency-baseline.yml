@@ -29,8 +29,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout exact dependency source
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Assert exact dependency source identity
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -40,9 +49,33 @@ jobs:
 
       - name: Generate and submit Gradle dependency graph
         uses: gradle/actions/dependency-submission@v6
+        env:
+          GITHUB_DEPENDENCY_GRAPH_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          GITHUB_DEPENDENCY_GRAPH_REF: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.event.pull_request.head.ref) || github.ref }}
         with:
           dependency-graph: generate-and-submit
           cache-provider: basic
+
+      - name: Verify generated dependency snapshot identity and content
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_REF: ${{ github.event_name == 'pull_request' && format('refs/heads/{0}', github.event.pull_request.head.ref) || github.ref }}
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          reports = list(Path("dependency-graph-reports").glob("*dependency-graph.json"))
+          if len(reports) != 1:
+              raise SystemExit(f"Expected one Gradle dependency snapshot; found {len(reports)}")
+          snapshot = json.loads(reports[0].read_text(encoding="utf-8"))
+          for field, expected in (("sha", os.environ["EXPECTED_SHA"]), ("ref", os.environ["EXPECTED_REF"])):
+              if snapshot.get(field) != expected:
+                  raise SystemExit(f"Dependency snapshot {field} mismatch: {snapshot.get(field)!r} != {expected!r}")
+          if not snapshot.get("manifests"):
+              raise SystemExit("Dependency snapshot has no manifests")
+          print("Exact source, ref and nonempty manifests verified")
+          PY
 
       - name: Prepare SBOM output
         run: mkdir -p build/reports/sbom
@@ -53,7 +86,7 @@ jobs:
           path: .
           format: cyclonedx-json
           output-file: build/reports/sbom/veil-reader.cdx.json
-          artifact-name: veil-reader-cyclonedx-json-${{ github.sha }}
+          artifact-name: veil-reader-cyclonedx-json-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           syft-version: v1.54.0
           upload-artifact-retention: 14
           upload-release-assets: false
@@ -64,7 +97,7 @@ jobs:
           path: .
           format: cyclonedx-xml
           output-file: build/reports/sbom/veil-reader.cdx.xml
-          artifact-name: veil-reader-cyclonedx-xml-${{ github.sha }}
+          artifact-name: veil-reader-cyclonedx-xml-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           syft-version: v1.54.0
           upload-artifact-retention: 14
           upload-release-assets: false
