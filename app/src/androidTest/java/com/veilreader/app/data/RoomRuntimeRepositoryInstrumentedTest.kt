@@ -642,40 +642,40 @@ class RoomRuntimeRepositoryInstrumentedTest {
     fun importedBookObserverChurn_neverDropsImmediateProgressFlush() = runBlocking<Unit> {
         val repository = repository()
         repeat(24) { iteration ->
-            val id = "observer-race-$"+"iteration"
+            val id = "observer-race-$iteration"
             repository.addImportedBook(
                 Book(
                     id = id,
-                    title = "Observer Race $"+"iteration",
+                    title = "Observer Race $iteration",
                     author = "Durability QA",
                     totalPages = 100,
-                    sourceUri = "file:///observer-race-$"+"iteration.epub"
+                    sourceUri = "file:///observer-race-$iteration.epub"
                 )
             )
             // Give the asynchronous Room observer an opportunity to publish.
             kotlinx.coroutines.yield()
             assertTrue(
-                "Imported book disappeared from the cache before progress: $"+"id",
+                "Imported book disappeared from the cache before progress: $id",
                 repository.getBook(id) != null
             )
             repeat(20) { index ->
                 repository.saveProgress(
                     id,
                     index / 20.0,
-                    "{\\"href\\":\\"chapter-$"+"index.xhtml\\"}"
+                    "{\"href\":\"chapter-$index.xhtml\"}"
                 )
             }
             repository.flushProgress(id)
             repository.flushWrites()
 
             val stored = requireNotNull(db.books().findEntity(id)) {
-                "Imported book missing from Room: $"+"id"
+                "Imported book missing from Room: $id"
             }
-            assertEquals("Progress was lost for $"+"id", 0.95f, stored.progress, 0.000001f)
-            assertEquals("Page count was lost for $"+"id", 95, stored.pagesRead)
+            assertEquals("Progress was lost for $id", 0.95f, stored.progress, 0.000001f)
+            assertEquals("Page count was lost for $id", 95, stored.pagesRead)
             assertEquals(
-                "Locator was lost for $"+"id",
-                "{\\"href\\":\\"chapter-19.xhtml\\"}",
+                "Locator was lost for $id",
+                "{\"href\":\"chapter-19.xhtml\"}",
                 stored.locatorJson
             )
         }
