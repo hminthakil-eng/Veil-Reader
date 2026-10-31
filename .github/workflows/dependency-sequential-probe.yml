@@ -55,7 +55,7 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          reports = list(Path('dependency-graph-reports').glob('*dependency-graph.json'))
+          reports = list(Path('dependency-graph-reports').glob('*.json'))
           if len(reports) != 1:
               raise SystemExit(f'Expected exactly one Gradle snapshot, got {len(reports)}')
           snapshot = json.loads(reports[0].read_text(encoding='utf-8'))
