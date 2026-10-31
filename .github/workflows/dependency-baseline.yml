@@ -86,7 +86,7 @@ jobs:
           path: .
           format: cyclonedx-json
           output-file: build/reports/sbom/veil-reader.cdx.json
-          artifact-name: veil-reader-cyclonedx-json-${{ github.sha }}
+          artifact-name: veil-reader-cyclonedx-json-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           syft-version: v1.54.0
           upload-artifact-retention: 14
           upload-release-assets: false
@@ -97,7 +97,7 @@ jobs:
           path: .
           format: cyclonedx-xml
           output-file: build/reports/sbom/veil-reader.cdx.xml
-          artifact-name: veil-reader-cyclonedx-xml-${{ github.sha }}
+          artifact-name: veil-reader-cyclonedx-xml-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           syft-version: v1.54.0
           upload-artifact-retention: 14
           upload-release-assets: false
