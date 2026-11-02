@@ -601,14 +601,14 @@ class RoomRuntimeRepositoryInstrumentedTest {
             kotlinx.coroutines.yield()
             assertTrue("Imported book vanished before progress: $id", repository.getBook(id) != null)
             repeat(20) { index ->
-                repository.saveProgress(id, index / 20.0, "{\\\"href\\\":\\\"chapter-$index.xhtml\\\"}")
+                repository.saveProgress(id, index / 20.0, "{\"href\":\"chapter-$index.xhtml\"}")
             }
             repository.flushProgress(id)
             repository.flushWrites()
             val stored = requireNotNull(db.books().findEntity(id))
             assertEquals("Lost progress for $id", 0.95f, stored.progress, 0.000001f)
             assertEquals("Lost page count for $id", 95, stored.pagesRead)
-            assertEquals("{\\\"href\\\":\\\"chapter-19.xhtml\\\"}", stored.locatorJson)
+            assertEquals("{\"href\":\"chapter-19.xhtml\"}", stored.locatorJson)
         }
     }
 
