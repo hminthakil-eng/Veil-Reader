@@ -582,6 +582,36 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals("abcdef", stored.contentFingerprint)
     }
 
+    /** Regression for the import/Room-observer visibility gap; not physical-device QA. */
+    @Test
+    fun freshImportRetainsImmediateProgressAcrossObserverChurn() = runBlocking<Unit> {
+        val repository = repository()
+        repeat(24) { iteration ->
+            val id = "fresh-import-progress-$iteration"
+            repository.addImportedBook(
+                Book(
+                    id = id,
+                    title = "Fresh import $iteration",
+                    author = "Storage QA",
+                    totalPages = 100,
+                    sourceUri = "file:///fresh-import-$iteration.epub"
+                )
+            )
+            // Give the asynchronous observer an opportunity to publish a stale snapshot.
+            kotlinx.coroutines.yield()
+            assertTrue("Imported book vanished before progress: $id", repository.getBook(id) != null)
+            repeat(20) { index ->
+                repository.saveProgress(id, index / 20.0, "{\\\"href\\\":\\\"chapter-$index.xhtml\\\"}")
+            }
+            repository.flushProgress(id)
+            repository.flushWrites()
+            val stored = requireNotNull(db.books().findEntity(id))
+            assertEquals("Lost progress for $id", 0.95f, stored.progress, 0.000001f)
+            assertEquals("Lost page count for $id", 95, stored.pagesRead)
+            assertEquals("{\\\"href\\\":\\\"chapter-19.xhtml\\\"}", stored.locatorJson)
+        }
+    }
+
     @Test
     fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking<Unit> {
         val repository = repository()
