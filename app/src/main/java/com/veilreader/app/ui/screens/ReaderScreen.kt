@@ -3388,13 +3388,11 @@ fun ReaderScreen(
                             )
                     )
 
-                    Row(
-                        Modifier
+                    ReaderChromeActionGroup(
+                        modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 10.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                        notebook = {
                         ReaderControl(
                             action = ReaderAction.NOTEBOOK,
                             label = stringResource(R.string.reader_chrome_notebook),
@@ -3406,7 +3404,8 @@ fun ReaderScreen(
                             selectionActionModeCallback.dismissSelection()
                             showNotebook = true
                         }
-
+                        },
+                        bookmark = {
                         ReaderControl(
                             action = ReaderAction.BOOKMARK,
                             label = stringResource(R.string.reader_chrome_bookmark),
@@ -3450,7 +3449,8 @@ fun ReaderScreen(
                                 }
                             }
                         }
-
+                        },
+                        focus = {
                         ReaderControl(
                             action = ReaderAction.FOCUS,
                             label = stringResource(R.string.reader_focus),
@@ -3473,7 +3473,8 @@ fun ReaderScreen(
                                 focusGuideOnMessage
                             }
                         }
-
+                        },
+                        appearance = {
                         ReaderControl(
                             action = when (contextControl) {
                                 ReaderContextControl.APPEARANCE -> ReaderAction.APPEARANCE
@@ -3503,7 +3504,8 @@ fun ReaderScreen(
                                 }
                             }
                         }
-                    }
+                        }
+                    )
 
                     if (ttsSession != null || ttsServiceController != null) {
                         TextButton(
@@ -4701,6 +4703,56 @@ internal fun ReaderChromeButton(
     }
 }
 
+/**
+ * Reader chrome switches to two readable columns when the four-across layout
+ * cannot accommodate translated labels or accessibility font scaling.
+ * Keep the production actions and RowScope weights in both configurations.
+ */
+@Composable
+internal fun ReaderChromeActionGroup(
+    modifier: Modifier = Modifier,
+    notebook: @Composable RowScope.() -> Unit,
+    bookmark: @Composable RowScope.() -> Unit,
+    focus: @Composable RowScope.() -> Unit,
+    appearance: @Composable RowScope.() -> Unit
+) {
+    val fontScale = LocalDensity.current.fontScale
+    BoxWithConstraints(modifier) {
+        val compact = maxWidth < 400.dp || fontScale >= 1.5f
+        if (compact) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    notebook()
+                    bookmark()
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    focus()
+                    appearance()
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                notebook()
+                bookmark()
+                focus()
+                appearance()
+            }
+        }
+    }
+}
+
 @Composable
 internal fun ReaderControl(
     action: ReaderAction,
@@ -4738,7 +4790,8 @@ internal fun ReaderControl(
                 fontWeight = FontWeight.Medium,
                 color = if (enabled) foreground.copy(alpha = 0.78f)
                     else foreground.copy(alpha = 0.28f),
-                maxLines = 2,
+                maxLines = 1,
+                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
