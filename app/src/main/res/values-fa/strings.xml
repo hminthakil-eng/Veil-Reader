@@ -221,7 +221,7 @@
     <string name="reader_image_viewer_title">تصویر</string>
     <string name="reader_image_viewer_close">بستن</string>
     <string name="reader_image_zoom_reset">نمایش کامل تصویر</string>
-    <string name="reader_image_viewer_hint">برای بزرگ‌نمایی نیشگون بگیرید · برای بررسی جابه‌جا کنید</string>
+    <string name="reader_image_viewer_hint">برای بزرگ‌نمایی دو بار لمس کنید یا از دو انگشت کمک بگیرید؛ برای جابه‌جایی بکشید</string>
     <string name="reader_image_viewer_loading">در حال بازکردن تصویر…</string>
     <string name="reader_image_viewer_timeout">بازکردن این تصویر بیش از حد طول کشید. می‌توانید دوباره تلاش کنید.</string>
     <string name="reader_image_viewer_too_large">حجم این تصویر از حد مجاز نمایشگر بیشتر است.</string>
