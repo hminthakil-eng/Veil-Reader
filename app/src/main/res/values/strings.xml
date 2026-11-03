@@ -221,7 +221,7 @@
     <string name="reader_image_viewer_title">Illustration</string>
     <string name="reader_image_viewer_close">Close</string>
     <string name="reader_image_zoom_reset">Fit image</string>
-    <string name="reader_image_viewer_hint">Pinch to zoom · drag to inspect</string>
+    <string name="reader_image_viewer_hint">Double-tap or pinch to zoom · drag to inspect</string>
     <string name="reader_image_viewer_loading">Opening illustration…</string>
     <string name="reader_image_viewer_timeout">Opening this illustration took too long. You can try again.</string>
     <string name="reader_image_viewer_too_large">This illustration exceeds the viewer’s size limit.</string>

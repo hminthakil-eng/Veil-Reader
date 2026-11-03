@@ -59,3 +59,28 @@ internal fun transformReaderImage(
         viewportWidth, viewportHeight, imageWidth, imageHeight
     )
 }
+
+
+/** Double tap toggles fit and a zoom centered on the tapped detail. */
+internal fun doubleTapReaderImage(
+    current: ReaderImageTransform,
+    viewportWidth: Int,
+    viewportHeight: Int,
+    imageWidth: Int,
+    imageHeight: Int,
+    tapX: Float,
+    tapY: Float
+): ReaderImageTransform {
+    val safe = clampReaderImageTransform(
+        current, viewportWidth, viewportHeight, imageWidth, imageHeight
+    )
+    if (viewportWidth <= 0 || viewportHeight <= 0 ||
+        imageWidth <= 0 || imageHeight <= 0 ||
+        !tapX.isFinite() || !tapY.isFinite()
+    ) return safe
+    if (safe.scale > 1.05f) return ReaderImageTransform()
+    return transformReaderImage(
+        safe, viewportWidth, viewportHeight, imageWidth, imageHeight,
+        tapX, tapY, 2.5f
+    )
+}

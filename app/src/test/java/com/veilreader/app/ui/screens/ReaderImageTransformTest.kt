@@ -51,4 +51,39 @@ class ReaderImageTransformTest {
         assertEquals(ReaderImageTransform(2f), clampReaderImageTransform(ReaderImageTransform(2f, 20f, 30f), 0, 1000, 1000, 1000))
         assertEquals(ReaderImageTransform(2f), transformReaderImage(ReaderImageTransform(2f), 1000, 1000, 1000, 1000, Float.NaN, Float.NaN, Float.NaN))
     }
+
+    @Test
+    fun doubleTapZoomsAboutDetailAndSecondTapRestoresFit() {
+        val zoomed = doubleTapReaderImage(
+            ReaderImageTransform(), 1000, 1000, 1000, 1000, 750f, 600f
+        )
+        assertEquals(ReaderImageTransform(2.5f, -375f, -150f), zoomed)
+        assertEquals(
+            ReaderImageTransform(),
+            doubleTapReaderImage(zoomed, 1000, 1000, 1000, 1000, 750f, 600f)
+        )
+    }
+
+    @Test
+    fun doubleTapRespectsLetterboxAndPanBounds() {
+        val zoomed = doubleTapReaderImage(
+            ReaderImageTransform(), 1000, 2000, 2000, 1000, 900f, 1850f
+        )
+        assertEquals(2.5f, zoomed.scale, 0.001f)
+        assertEquals(600f, -zoomed.panX, 0.001f)
+        assertEquals(0f, zoomed.panY, 0.001f)
+    }
+
+    @Test
+    fun doubleTapWithUnmeasuredViewportOrInvalidPointIsSafe() {
+        assertEquals(
+            ReaderImageTransform(),
+            doubleTapReaderImage(ReaderImageTransform(), 0, 1000, 1000, 1000, 500f, 500f)
+        )
+        assertEquals(
+            ReaderImageTransform(),
+            doubleTapReaderImage(ReaderImageTransform(), 1000, 1000, 1000, 1000, Float.NaN, 500f)
+        )
+    }
+
 }
