@@ -1,12 +1,11 @@
 package com.veilreader.app.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import android.graphics.Bitmap
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
@@ -43,7 +42,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Measures the real production ReaderControl composable, not a mock dimension formula.
- * Uses the same four weighted actions and spacing as ReaderScreen's bottom chrome.
+ * Renders the production responsive action group at exact widths and font scales.
  * This is a Robolectric layout/semantics regression; visual clipping and TalkBack
  * speech still require emulator/physical evidence before merging.
  */
@@ -81,28 +80,30 @@ class ReaderChromeHitTargetTest {
                     (if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr)
             ) {
                 VeilTheme(AppThemeMode.DARK) {
-                    Row(
+                    val renderControl: @Composable RowScope.(Int) -> Unit = { index ->
+                        val action = actions[index]
+                        val button = Modifier.weight(1f).testTag("reader-control-$index")
+                        val controlModifier = if (action == ReaderAction.FOCUS) {
+                            button.semantics { stateDescription = "Off" }
+                        } else button
+                        ReaderControl(
+                            action = action,
+                            label = stringResource(labelIds[index]),
+                            modifier = controlModifier,
+                            enabled = !disableBookmark || action != ReaderAction.BOOKMARK,
+                            onClick = { clicks[index]++ }
+                        )
+                    }
+                    ReaderChromeActionGroup(
                         modifier = Modifier
                             .width(widthDp.dp)
                             .padding(horizontal = 10.dp, vertical = 2.dp)
                             .testTag("reader-bottom-row"),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        actions.forEachIndexed { index, action ->
-                            val button = Modifier.weight(1f).testTag("reader-control-$index")
-                            val modifier = if (action == ReaderAction.FOCUS) {
-                                button.semantics { stateDescription = "Off" }
-                            } else button
-                            ReaderControl(
-                                action = action,
-                                label = stringResource(labelIds[index]),
-                                modifier = modifier,
-                                enabled = !disableBookmark || action != ReaderAction.BOOKMARK,
-                                onClick = { clicks[index]++ }
-                            )
-                        }
-                    }
+                        notebook = { renderControl(0) },
+                        bookmark = { renderControl(1) },
+                        focus = { renderControl(2) },
+                        appearance = { renderControl(3) }
+                    )
                 }
             }
         }
@@ -119,15 +120,27 @@ class ReaderChromeHitTargetTest {
             node.fetchSemanticsNode().boundsInRoot
         }
 
-        // Regardless of reading direction, the four measured targets stay distinct
-        // and entirely within the padded Row's actual rendered bounds.
-        val spatialOrder = measured.sortedBy { it.left }
-        spatialOrder.forEach { bounds ->
+        // The production layout is a two-row grid on compact screens and one
+        // row on wide screens. Check two-dimensional hitbox intersections.
+        measured.forEach { bounds ->
             assertTrue("target escapes row start", bounds.left >= rowBounds.left - 1f)
             assertTrue("target escapes row end", bounds.right <= rowBounds.right + 1f)
+            assertTrue("target escapes row top", bounds.top >= rowBounds.top - 1f)
+            assertTrue("target escapes row bottom", bounds.bottom <= rowBounds.bottom + 1f)
         }
-        spatialOrder.zipWithNext().forEach { (left, right) ->
-            assertTrue("reader buttons overlap", left.right <= right.left + 1f)
+        for (leftIndex in measured.indices) {
+            for (rightIndex in (leftIndex + 1) until measured.size) {
+                val a = measured[leftIndex]
+                val b = measured[rightIndex]
+                val horizontalOverlap = a.left < b.right - 1f && b.left < a.right - 1f
+                val verticalOverlap = a.top < b.bottom - 1f && b.top < a.bottom - 1f
+                assertTrue("reader buttons overlap in two dimensions",
+                    !horizontalOverlap || !verticalOverlap)
+            }
+        }
+        if (widthDp < 400 || fontScale >= 1.5f) {
+            assertTrue("compact reader chrome should use two rows",
+                measured[2].top >= measured[0].bottom - 1f)
         }
 
         // Save rendered pixels for independent visual review; not device approval.
@@ -164,6 +177,13 @@ class ReaderChromeHitTargetTest {
     @Test @Config(qualifiers = "fa-rIR-w320dp-h800dp-mdpi")
     fun persian320LargeTextKeepsDistinctActions() =
         verifyControls(widthDp = 320, fontScale = 2f, rtl = true)
+
+    @Test fun english320LargeTextUsesReadableTwoRowLayout() =
+        verifyControls(widthDp = 320, fontScale = 1.5f, rtl = false)
+
+    @Test @Config(qualifiers = "en-w600dp-h800dp-mdpi")
+    fun english600NormalTextUsesSingleRow() =
+        verifyControls(widthDp = 600, fontScale = 1f, rtl = false)
 
     @Test fun bookmarkUnavailableDoesNotTriggerClick() =
         verifyControls(widthDp = 320, fontScale = 1.5f, rtl = false,
