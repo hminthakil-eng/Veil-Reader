@@ -4702,7 +4702,7 @@ internal fun ReaderChromeButton(
 }
 
 @Composable
-private fun ReaderControl(
+internal fun ReaderControl(
     action: ReaderAction,
     label: String,
     modifier: Modifier = Modifier,
